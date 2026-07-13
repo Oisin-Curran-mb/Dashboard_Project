@@ -1,0 +1,50 @@
+{
+  "name": "@helloimjolopez-pathway/pathway-tokens",
+  "version": "5.4.0",
+  "description": "Pathway Design System tokens — CSS custom properties, JS export, and DTCG JSON",
+  "license": "UNLICENSED",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/tokens.js",
+  "style": "./dist/tokens.css",
+  "exports": {
+    ".": "./dist/tokens.js",
+    "./css": "./dist/tokens.css",
+    "./json": "./dist/tokens.json"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "scripts": {
+    "sync-tokens": "node scripts/sync-tokens.js",
+    "sync-motion-tokens": "node scripts/sync-motion-tokens.js",
+    "push-tokens": "node scripts/push-tokens.js",
+    "sync-and-push": "node scripts/sync-tokens.js && node scripts/push-tokens.js",
+    "audit-tokens": "node scripts/audit-tokens.js",
+    "fix-tokens": "node scripts/fix-tokens.js",
+    "fix-tokens-preview": "node scripts/fix-tokens.js --dry-run",
+    "build-tokens": "node scripts/sync-motion-tokens.js && node style-dictionary.config.js",
+    "build-dist": "node scripts/sync-motion-tokens.js && node style-dictionary.config.js && node scripts/build-dist.js",
+    "storybook": "node style-dictionary.config.js && storybook dev -p 6006",
+    "build-storybook": "storybook build"
+  },
+  "devDependencies": {
+    "@babel/preset-env": "^7.29.2",
+    "@babel/preset-react": "^7.28.5",
+    "@storybook/addon-a11y": "^8.6.18",
+    "@storybook/addon-docs": "^8.6.18",
+    "@storybook/addon-webpack5-compiler-babel": "^4.0.1",
+    "@storybook/blocks": "^8.6.18",
+    "@storybook/react-webpack5": "^8.6.18",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "storybook": "^8.6.18",
+    "style-dictionary": "^5.4.0"
+  }
+}

@@ -1,0 +1,102 @@
+name: Publish pathway-tokens to npm
+
+# Triggered manually from the Actions tab, or programmatically by the
+# /pathway:tokens-sync and /pathway:component-pipeline skills.
+# Choose the version bump type — patch for token value changes,
+# minor for new tokens added, major for breaking renames.
+#
+# Flow (refactored 2026-06-12 to fix version drift):
+#   1. Read the HIGHEST version actually published to npm (NOT package.json,
+#      which used to drift, and NOT the `latest` dist-tag, which can lag).
+#   2. Bump from that real high-water mark → guarantees versions only go up.
+#   3. Build tokens + dist, publish to npm.
+#   4. Commit the bumped package.json + tokens straight back to main with
+#      [skip ci] so main always reflects the published version. No release PR
+#      (the old release-PR step left orphaned PRs that never got merged, which
+#      is what caused the drift in the first place).
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "Version bump"
+        required: true
+        default: "patch"
+        type: choice
+        options: [patch, minor, major]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Determine next version (from npm's highest published version)
+        run: |
+          BUMP="${{ github.event.inputs.bump }}"
+          PKG="@helloimjolopez-pathway/pathway-tokens"
+          # Highest version ever published — robust even if package.json on main is
+          # stale or the `latest` dist-tag lags behind. This is the fix for the
+          # 2026-06 version drift (latest regressed to 4.1.0 below an existing 5.0.0).
+          CURRENT=$(npm view "$PKG" versions --json | node -e "const a=JSON.parse(require('fs').readFileSync(0));const v=Array.isArray(a)?a:[a];v.sort((x,y)=>{const A=x.split('.').map(Number),B=y.split('.').map(Number);return A[0]-B[0]||A[1]-B[1]||A[2]-B[2]});console.log(v[v.length-1])")
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
+          if [ "$BUMP" = "major" ]; then NEW="$((MAJOR+1)).0.0"
+          elif [ "$BUMP" = "minor" ]; then NEW="${MAJOR}.$((MINOR+1)).0"
+          else NEW="${MAJOR}.${MINOR}.$((PATCH+1))"
+          fi
+          jq --arg v "$NEW" '.version = $v' package.json > tmp.json && mv tmp.json package.json
+          echo "NEW_VERSION=$NEW" >> $GITHUB_ENV
+          echo "Bumping from npm high-water mark $CURRENT → $NEW (bump: $BUMP)"
+
+      - name: Build tokens (Style Dictionary)
+        run: node style-dictionary.config.js
+
+      - name: Build dist/
+        run: node scripts/build-dist.js
+
+      - name: Publish to npm
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      # Best-effort housekeeping: npm publish above is the critical step. main can
+      # advance between checkout and push (deploy-storybook commits often), so this
+      # rebases-and-retries and is NON-FATAL — a failed push here must not fail the
+      # run or skip the tag. Version correctness does not depend on it (the next run
+      # bumps from npm's high-water mark regardless of main's package.json).
+      - name: Commit version bump back to main
+        continue-on-error: true
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add package.json src/tokens/
+          git commit -m "chore(release): v${NEW_VERSION} [skip ci]" || { echo "nothing to commit"; exit 0; }
+          for i in 1 2 3; do
+            git fetch origin main
+            if git rebase origin/main && git push origin HEAD:main; then echo "pushed"; break; fi
+            echo "push attempt $i failed (main advanced); rebasing and retrying"
+            git rebase --abort 2>/dev/null || true
+            sleep 5
+          done
+
+      - name: Tag the release
+        if: always()
+        run: |
+          git tag "v${NEW_VERSION}" || echo "tag exists"
+          git push origin "v${NEW_VERSION}" || echo "tag push failed (non-fatal)"

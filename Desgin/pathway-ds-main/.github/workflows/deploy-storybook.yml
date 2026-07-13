@@ -1,0 +1,89 @@
+name: Deploy Storybook to GitHub Pages
+
+# Builds Storybook and commits the output into the /storybook/ folder
+# on the main branch. This keeps existing pages (SideNav demos, docs, specs)
+# untouched while adding Storybook at /storybook/.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "tokens/pathway-design-tokens.json"
+      - "src/**"
+      - ".storybook/**"
+      - "components/**"
+      - "docs/**"
+      - "style-dictionary.config.js"
+      - "package.json"
+  workflow_run:
+    workflows: ["Sync design tokens from Figma export"]
+    types: [completed]
+  workflow_dispatch: # Allow manual trigger
+
+# Only one deploy at a time. If a newer commit triggers a deploy while
+# one is in progress, cancel the older run.
+concurrency:
+  group: deploy-storybook
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout (latest main)
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build tokens (Style Dictionary)
+        run: node style-dictionary.config.js
+
+      - name: Build Storybook
+        run: npx storybook build
+        env:
+          STORYBOOK_ASSET_PREFIX: /pathway-ds/storybook
+
+      - name: Deploy Storybook into /storybook/ folder on main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Remove old storybook folder and replace with fresh build
+          rm -rf storybook
+          mv storybook-static storybook
+
+          # Expose the built token CSS as a standalone file at /storybook/tokens.css
+          cp src/tokens/tokens.css storybook/tokens.css
+
+          # Stage only the storybook output — ignore derived token files and other build artifacts
+          git add storybook/
+
+          if git diff --cached --quiet; then
+            echo "No Storybook changes — skipping commit."
+          else
+            # Discard any other uncommitted changes from the build (tokens.css etc.)
+            # so that the rebase/push can proceed cleanly
+            git checkout -- .
+            git clean -fd --exclude=storybook
+
+            # Re-stage storybook (clean wiped the index)
+            git add storybook/
+            git commit -m "chore: deploy Storybook [skip ci]"
+
+            # Rebase onto latest main in case another commit landed since checkout
+            git fetch origin main
+            git rebase origin/main
+            git push origin HEAD:main
+          fi

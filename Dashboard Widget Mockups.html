@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shelby Financials — Widget Design Mockups</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/helloimjolopez-collab/pathway-ds@main/src/tokens/tokens.css">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Red+Hat+Text:wght@400;500;600;700&family=Red+Hat+Display:wght@600&display=swap" rel="stylesheet">
+<style>
+.material-symbols-rounded{font-variation-settings:'wght' 400,'GRAD' 0,'opsz' 20;}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Red Hat Text',sans-serif;background:var(--semantic-color-light-mode-surface-canvas-light,#fafafa);color:var(--semantic-color-light-mode-text-static-primary-base,#202020);}
+.tnav{background:var(--semantic-color-light-mode-fill-static-brand-base,#2d4889);height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;position:fixed;top:0;left:0;right:0;z-index:200;}
+.tnav-s,.tnav-e{display:flex;align-items:center;gap:8px;}
+.tnav-logo{display:flex;align-items:center;gap:8px;color:#fbfbfb;font-size:14px;font-weight:600;letter-spacing:.3px;}
+.tnav-logo-box{width:28px;height:28px;background:rgba(255,255,255,.15);border-radius:6px;display:flex;align-items:center;justify-content:center;}
+.tnav-mod{display:flex;align-items:center;gap:4px;color:rgba(251,251,251,.7);font-size:13px;font-weight:500;padding:4px 8px;border-radius:6px;border:1px solid rgba(160,181,230,.2);}
+.tnav-btn{width:36px;height:36px;border-radius:8px;border:none;background:transparent;cursor:pointer;color:#fbfbfb;display:flex;align-items:center;justify-content:center;}
+.tnav-btn:hover{background:rgba(10,18,35,.16);}
+.tnav-av{width:32px;height:32px;border-radius:50%;background:#dcd9ef;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#221e3f;cursor:pointer;}
+.layout{display:flex;margin-top:56px;min-height:calc(100vh - 56px);}
+.snav{width:240px;background:var(--semantic-color-light-mode-surface-nav-light,#fafafa);border-right:.5px solid var(--semantic-color-light-mode-stroke-static-neutral-light,#f6f6f6);position:fixed;top:56px;bottom:0;overflow-y:auto;z-index:100;padding:8px;}
+.snav-lbl{font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.07em;padding:8px 8px 4px;}
+.snav-item{display:flex;align-items:center;gap:10px;min-height:40px;padding:0 10px;width:100%;border:none;background:transparent;cursor:pointer;border-radius:8px;font-family:'Red Hat Text',sans-serif;font-size:13px;font-weight:400;letter-spacing:.3px;color:#484848;text-align:left;position:relative;transition:background 100ms;}
+.snav-item:hover{background:rgba(160,181,230,.1);}
+.snav-item.active{background:#eef2fb;color:#1b2d57;font-weight:500;}
+.snav-item.active::before{content:'';position:absolute;left:0;top:6px;bottom:6px;width:3px;border-radius:0 2px 2px 0;background:#2d4889;}
+.snav-num{width:19px;height:19px;border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;background:#e1e1e1;color:#888;}
+.snav-item.active .snav-num{background:#2d4889;color:white;}
+.snav-ico{font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 20;font-size:18px;flex-shrink:0;color:#484848;}
+.snav-item.active .snav-ico{color:#2d4889;}
+.snav-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-left:auto;}
+.content{margin-left:240px;flex:1;padding:16px 36px 56px;}
+.w-hdr{padding-bottom:16px;border-bottom:.5px solid #f6f6f6;margin-bottom:24px;}
+.w-bc{font-size:11px;color:#888;margin-bottom:6px;}
+.w-title{font-size:24px;font-weight:600;line-height:30px;font-family:'Red Hat Display','Red Hat Text',sans-serif;}
+.w-meta{display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap;}
+.w-desc{font-size:14px;line-height:20px;color:#484848;margin-top:8px;max-width:640px;}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:500;}
+.b-g{background:#f0faf1;color:#2e7d32;}
+.b-b{background:#eef2fb;color:#4b6ec3;}
+.b-r{background:#faefef;color:#9d2d2d;}
+.b-e{background:#e1e1e1;color:#484848;}
+.b-a{background:#fff8e1;color:#b75a00;}
+.opts{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.opt{background:#fff;border:.5px solid #d2d2d2;border-radius:8px;overflow:hidden;display:flex;flex-direction:column;}
+.opt-hd{padding:14px 16px 12px;border-bottom:.5px solid #f6f6f6;display:flex;align-items:flex-start;gap:10px;}
+.opt-n{width:24px;height:24px;border-radius:6px;background:#eef2fb;color:#4b6ec3;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:1px;}
+.opt-t{font-size:14px;font-weight:600;color:#202020;line-height:1.3;}
+.opt-s{font-size:11px;color:#888;margin-top:2px;}
+.opt-v{padding:14px 16px;flex:1;}
+.opt-ft{padding:12px 16px;border-top:.5px solid #f6f6f6;background:#fafafa;}
+.opt-imp{font-size:12px;color:#484848;line-height:1.55;margin-bottom:8px;}
+.opt-imp strong{color:#202020;}
+.opt-ins{font-size:11px;display:flex;align-items:flex-start;gap:5px;color:#888;}
+.opt-ins a{color:#345499;text-decoration:none;}
+.opt-ins a:hover{text-decoration:underline;}
+.fix-note{background:#faefef;border-left:3px solid #9d2d2d;border-radius:0 4px 4px 0;padding:8px 12px;font-size:12px;color:#484848;margin-bottom:20px;}
+.note-b{background:#eef2fb;border-left:3px solid #4b6ec3;border-radius:0 4px 4px 0;padding:8px 12px;font-size:12px;color:#484848;margin-bottom:20px;}
+.sec-hd{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#888;margin-bottom:14px;}
+/* chart util */
+.bars{display:flex;align-items:flex-end;gap:3px;height:80px;}
+.bw{display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;}
+.bar{border-radius:2px 2px 0 0;width:100%;min-height:2px;}
+.bl{font-size:8.5px;color:#aaa;}
+.bv{font-size:8.5px;font-weight:600;color:#606060;}
+.hbars{display:flex;flex-direction:column;gap:7px;}
+.hr{display:grid;grid-template-columns:85px 1fr 52px;align-items:center;gap:6px;}
+.hl{font-size:11px;color:#484848;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ht{height:7px;background:#f0f0f0;border-radius:3px;overflow:hidden;}
+.hf{height:100%;border-radius:3px;}
+.hv{font-size:11px;font-weight:500;color:#202020;text-align:right;}
+.kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;}
+.kpi{background:#eef2fb;border-radius:6px;padding:9px 11px;}
+.kl{font-size:10px;color:#606060;margin-bottom:1px;}
+.kv{font-size:17px;font-weight:600;color:#202020;}
+.kt{font-size:10px;margin-top:2px;}
+.up{color:#2e7d32;}.dn{color:#9d2d2d;}
+.tbl{width:100%;border-collapse:collapse;font-size:11.5px;}
+.tbl th{text-align:left;padding:5px 7px;font-size:9px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid #f0f0f0;}
+.tbl td{padding:5px 7px;border-bottom:1px solid #f0f0f0;color:#484848;}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl tr:hover td{background:#eef2fb;}
+.tbl .r{text-align:right;}
+.progs{display:flex;flex-direction:column;gap:8px;}
+.ph{display:flex;justify-content:space-between;margin-bottom:3px;font-size:11px;color:#484848;}
+.pt{height:6px;background:#f0f0f0;border-radius:3px;overflow:hidden;}
+.pf{height:100%;border-radius:3px;}
+.dw{display:flex;align-items:center;gap:14px;}
+.dl{flex:1;}
+.di{display:flex;align-items:center;gap:6px;font-size:11px;color:#484848;margin-bottom:4px;}
+.dd{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.acard{display:flex;align-items:center;gap:9px;padding:8px 11px;border:.5px solid #d2d2d2;border-radius:6px;background:#fff;margin-bottom:6px;}
+.aico{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+.an{font-size:12px;font-weight:500;color:#202020;}
+.as{font-size:10px;color:#aaa;margin-top:1px;}
+.aa{margin-left:auto;text-align:right;}
+.ab{font-size:13px;font-weight:600;color:#202020;}
+.ac{font-size:10px;margin-top:1px;}
+.aging{display:flex;height:11px;border-radius:3px;overflow:hidden;margin:7px 0;}
+.aleg{display:flex;flex-wrap:wrap;gap:7px;}
+.ali{display:flex;align-items:center;gap:4px;font-size:10px;color:#606060;}
+.asw{width:9px;height:9px;border-radius:2px;flex-shrink:0;}
+.kanban{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;}
+.kcol{background:#fafafa;border-radius:6px;padding:7px;}
+.kchd{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#aaa;margin-bottom:5px;display:flex;align-items:center;gap:4px;}
+.kcb{background:#e1e1e1;color:#606060;border-radius:10px;padding:1px 5px;font-size:8.5px;}
+.kcard{background:white;border:.5px solid #d2d2d2;border-radius:4px;padding:6px 8px;margin-bottom:4px;}
+.kcn{font-size:11px;font-weight:500;color:#202020;}
+.kcs{font-size:10px;color:#aaa;margin-top:2px;}
+.welcome{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;text-align:center;}
+.wi{width:60px;height:60px;border-radius:14px;background:#eef2fb;display:flex;align-items:center;justify-content:center;margin-bottom:16px;}
+.wt{font-size:18px;font-weight:600;margin-bottom:8px;}
+.ws{font-size:14px;color:#606060;max-width:380px;line-height:1.5;}
+</style>
+</head>
+<body>
+<nav class="tnav">
+  <div class="tnav-s">
+    <div class="tnav-logo">
+      <div class="tnav-logo-box"><span class="material-symbols-rounded" style="font-size:16px;color:#fbfbfb;font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 20">analytics</span></div>
+      Shelby Financials
+    </div>
+    <div class="tnav-mod"><span>Financials</span><span class="material-symbols-rounded" style="font-size:14px">expand_more</span></div>
+  </div>
+  <div class="tnav-e">
+    <button class="tnav-btn"><span class="material-symbols-rounded" style="font-size:18px">search</span></button>
+    <button class="tnav-btn"><span class="material-symbols-rounded" style="font-size:18px">notifications</span></button>
+    <div class="tnav-av">OC</div>
+  </div>
+</nav>
+<div class="layout">
+  <aside class="snav" id="snav"></aside>
+  <main class="content" id="content"></main>
+</div>
+<script>
+let cur = null;
+const W = [
+{id:1,name:"Budget Compared to Actual",status:"g",icon:"balance",mod:"Finance",
+desc:"Side-by-side bar and line chart comparing budgeted vs actual spend by period. Well understood by finance teams.",
+options:[
+{num:"A",title:"Variance Bar",sub:"Keep / Refresh",
+imp:"<strong>Adds a third variance bar per period</strong> (green = under budget, red = over) so users see the gap directly rather than mentally comparing two bars. Immediately actionable.",
+il:"Bold BI Budget vs Actual",iu:"https://samples.boldbi.com/solutions/finance/budget-vs-actual-dashboard",
+viz:`<div>
+<div style="font-size:10px;color:#888;margin-bottom:8px">Jan – Jun 2025 · Monthly</div>
+<div class="bars" style="height:90px">
+${[['J',80,85,'#4b6ec3','#4caf50'],['F',70,65,'#4b6ec3','#4caf50'],['M',90,95,'#4b6ec3','#e53935'],['A',75,72,'#4b6ec3','#4caf50'],['M',85,88,'#4b6ec3','#e53935'],['Jn',95,90,'#4b6ec3','#4caf50']].map(([l,b,a,bc,vc])=>`
+<div class="bw">
+<div style="display:flex;gap:2px;align-items:flex-end;height:70px;width:100%">
+<div class="bar" style="height:${b}%;background:#4b6ec3;flex:1"></div>
+<div class="bar" style="height:${a}%;background:rgba(75,110,195,.35);flex:1"></div>
+</div>
+<div class="bl">${l}</div>
+</div>`).join('')}
+</div>
+<div style="display:flex;gap:10px;margin-top:6px;font-size:10px;color:#606060">
+<span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#4b6ec3;margin-right:4px"></span>Budget</span>
+<span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:rgba(75,110,195,.35);margin-right:4px"></span>Actual</span>
+<span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#4caf50;margin-right:4px"></span>Under</span>
+<span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#e53935;margin-right:4px"></span>Over</span>
+</div></div>`},
+{num:"B",title:"KPI Header + Chart",sub:"Keep / Refresh",
+imp:"<strong>Three summary cards above the chart</strong> answer 'are we over or under?' in under a second. No chart-reading required for the headline question.",
+il:"Coefficient QuickBooks Budget Template",iu:"https://coefficient.io/templates/quickbooks-budget-vs-actual-report",
+viz:`<div>
+<div class="kpis" style="grid-template-columns:repeat(3,1fr);margin-bottom:12px">
+<div class="kpi"><div class="kl">Total Budget</div><div class="kv" style="font-size:15px">$620,000</div></div>
+<div class="kpi"><div class="kl">Total Actual</div><div class="kv" style="font-size:15px">$595,800</div></div>
+<div class="kpi" style="background:#f0faf1"><div class="kl">Variance</div><div class="kv" style="font-size:15px;color:#2e7d32">+$24,200</div><div class="kt up">3.9% under budget</div></div>
+</div>
+<div class="bars">
+${[['J',78,82],['F',72,68],['M',88,91],['A',76,74],['M',84,87],['Jn',92,89]].map(([l,b,a])=>`
+<div class="bw">
+<div style="display:flex;gap:2px;align-items:flex-end;height:70px;width:100%">
+<div class="bar" style="height:${b}%;background:#4b6ec3;flex:1"></div>
+<div class="bar" style="height:${a}%;background:#a0b5e6;flex:1"></div>
+</div>
+<div class="bl">${l}</div>
+</div>`).join('')}
+</div></div>`},
+{num:"C",title:"Waterfall / Bridge Chart",sub:"Improve (Higher Effort)",
+imp:"<strong>Shows where budget was gained or lost period-by-period</strong> as a bridge. More meaningful for year-end variance analysis. Higher dev effort — worth it for finance-heavy organisations.",
+il:"Waterfall Chart patterns — Google Looker",iu:"https://cloud.google.com/looker/docs/best-practices/how-to-create-waterfall-charts",
+viz:`<div>
+<div style="font-size:10px;color:#888;margin-bottom:8px">Cumulative variance Jan→Jun</div>
+<div style="display:flex;align-items:flex-end;gap:4px;height:90px;position:relative">
+<div style="position:absolute;left:0;right:0;top:50%;border-top:1px dashed #ccc;z-index:0"></div>
+${[['Start',0,40,'#e1e1e1'],['Jan',40,12,'#4caf50'],['Feb',52,-8,'#e53935'],['Mar',44,15,'#4caf50'],['Apr',59,-5,'#e53935'],['May',54,11,'#4caf50'],['Jn',65,0,'#4b6ec3']].map(([l,base,delta,c],i)=>`
+<div class="bw" style="position:relative;z-index:1">
+<div style="font-size:8px;font-weight:600;color:${delta>0?'#2e7d32':delta<0?'#9d2d2d':'#4b6ec3'}">${delta>0?'+'+delta:delta||''}</div>
+<div style="height:${Math.abs(delta)*1.5+4}px;width:100%;background:${c};border-radius:2px;margin-top:auto"></div>
+<div class="bl">${l}</div>
+</div>`).join('')}
+</div></div>`}
+]},
+{id:2,name:"Pension Plans",status:"b",icon:"savings",mod:"Payroll",
+desc:"Pie chart showing pension plan contribution breakdown by plan type, with district filter.",
+options:[
+{num:"A",title:"Stacked Bar by District",sub:"Improve",
+imp:"<strong>Each bar = a district, each segment = a plan type.</strong> Filters become visual — users compare across districts at a glance rather than selecting a dropdown.",
+il:"PayCaptain Pensions Dashboard",iu:"https://www.paycaptain.com/features/pensions-dashboard",
+viz:`<div>
+<div class="hbars">
+${[['Central',85,'#4b6ec3','#a0b5e6','#eef2fb'],['North',70,'#4b6ec3','#a0b5e6','#eef2fb'],['South',90,'#4b6ec3','#a0b5e6','#eef2fb'],['East',60,'#4b6ec3','#a0b5e6','#eef2fb']].map(([d,v1,c1,c2,c3])=>`
+<div style="margin-bottom:6px">
+<div style="font-size:11px;color:#484848;margin-bottom:3px">${d}</div>
+<div style="height:18px;border-radius:3px;overflow:hidden;display:flex">
+<div style="flex:${v1};background:${c1}"></div>
+<div style="flex:${100-v1-15};background:${c2}"></div>
+<div style="flex:15;background:${c3}"></div>
+</div>
+</div>`).join('')}
+</div>
+<div style="display:flex;gap:10px;margin-top:8px;font-size:10px;color:#606060;flex-wrap:wrap">
+<span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#4b6ec3;margin-right:4px"></span>Defined Benefit</span>
+<span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#a0b5e6;margin-right:4px"></span>Defined Contribution</span>
+<span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#eef2fb;margin-right:4px"></span>Other</span>
+</div></div>`},
+{num:"B",title:"Donut + Total KPI",sub:"Keep / Refresh",
+imp:"<strong>Places total contribution in the donut centre</strong> so users get breakdown + headline number in one view without needing to find a totals row.",
+il:"Mercer Defined Benefit Plan Dashboard",iu:"https://www.mercer.com/en-us/solutions/retirement/defined-benefit-pensions/plan-dashboard/",
+viz:`<div class="dw">
+<svg viewBox="0 0 90 90" width="90" height="90" style="flex-shrink:0">
+<circle cx="45" cy="45" r="30" fill="none" stroke="#f0f0f0" stroke-width="14"/>
+<circle cx="45" cy="45" r="30" fill="none" stroke="#4b6ec3" stroke-width="14" stroke-dasharray="113 75" stroke-dashoffset="-47" stroke-linecap="butt"/>
+<circle cx="45" cy="45" r="30" fill="none" stroke="#a0b5e6" stroke-width="14" stroke-dasharray="56 132" stroke-dashoffset="-160" stroke-linecap="butt"/>
+<circle cx="45" cy="45" r="30" fill="none" stroke="#eef2fb" stroke-width="14" stroke-dasharray="19 169" stroke-dashoffset="-216" stroke-linecap="butt"/>
+<text x="45" y="41" text-anchor="middle" font-size="9" font-weight="600" fill="#202020">$284k</text>
+<text x="45" y="52" text-anchor="middle" font-size="7" fill="#888">total</text>
+</svg>
+<div class="dl">
+<div class="di"><div class="dd" style="background:#4b6ec3"></div><span>Defined Benefit <strong>60%</strong></span></div>
+<div class="di"><div class="dd" style="background:#a0b5e6"></div><span>Defined Contrib. <strong>30%</strong></span></div>
+<div class="di"><div class="dd" style="background:#d2d2d2"></div><span>Other <strong>10%</strong></span></div>
+<div style="margin-top:8px;padding-top:8px;border-top:.5px solid #f0f0f0;font-size:10px;color:#888">42 active plans · 3 districts</div>
+</div></div>`},
+{num:"C",title:"Table + Summary Row",sub:"Keep / Refresh",
+imp:"<strong>Adds a pinned totals row</strong> and colour-coded plan status column. Low dev effort — transforms the existing table into a more scannable view.",
+il:"Pensions Admin Dashboard patterns — FCA",iu:"https://www.fca.org.uk/publication/research/financial-lives-2022-pension-data.pdf",
+viz:`<table class="tbl"><thead><tr><th>Plan</th><th>District</th><th>Members</th><th class="r">Annual ($)</th><th>Status</th></tr></thead><tbody>
+<tr><td>DB Standard</td><td>Central</td><td>142</td><td class="r">$118,400</td><td><span class="badge b-g" style="font-size:10px">Active</span></td></tr>
+<tr><td>DC Match</td><td>North</td><td>98</td><td class="r">$72,100</td><td><span class="badge b-g" style="font-size:10px">Active</span></td></tr>
+<tr><td>DB Legacy</td><td>South</td><td>34</td><td class="r">$61,500</td><td><span class="badge b-a" style="font-size:10px">Review</span></td></tr>
+<tr><td>DC Basic</td><td>East</td><td>67</td><td class="r">$32,000</td><td><span class="badge b-g" style="font-size:10px">Active</span></td></tr>
+<tr style="font-weight:600;background:#f5f5f5"><td colspan="3">Total</td><td class="r">$284,000</td><td></td></tr>
+</tbody></table>`}
+]},
+{id:3,name:"Payroll Distributions",status:"g",icon:"payments",mod:"Payroll",
+desc:"Pie chart showing payroll distribution breakdown by compensation category (gross, net, taxes, benefits).",
+options:[
+{num:"A",title:"Donut with Total in Centre",sub:"Keep / Refresh",
+imp:"<strong>Places the total payroll figure in the donut centre</strong> — users see both breakdown and total simultaneously without a separate totals row.",
+il:"Payroll Dashboard designs — Dribbble",iu:"https://dribbble.com/search/payroll-ui-design",
+viz:`<div class="dw">
+<svg viewBox="0 0 90 90" width="90" height="90" style="flex-shrink:0">
+<circle cx="45" cy="45" r="30" fill="none" stroke="#f0f0f0" stroke-width="14"/>
+<circle cx="45" cy="45" r="30" fill="none" stroke="#4b6ec3" stroke-width="14" stroke-dasharray="99 89" stroke-dashoffset="-47"/>
+<circle cx="45" cy="45" r="30" fill="none" stroke="#e53935" stroke-width="14" stroke-dasharray="42 146" stroke-dashoffset="-146"/>
+<circle cx="45" cy="45" r="30" fill="none" stroke="#ff9800" stroke-width="14" stroke-dasharray="28 160" stroke-dashoffset="-188"/>
+<circle cx="45" cy="45" r="30" fill="none" stroke="#a0b5e6" stroke-width="14" stroke-dasharray="19 169" stroke-dashoffset="-216"/>
+<text x="45" y="41" text-anchor="middle" font-size="9" font-weight="600" fill="#202020">$148k</text>
+<text x="45" y="52" text-anchor="middle" font-size="7" fill="#888">gross</text>
+</svg>
+<div class="dl">
+<div class="di"><div class="dd" style="background:#4b6ec3"></div><span>Net Pay <strong>56%</strong> · $82.9k</span></div>
+<div class="di"><div class="dd" style="background:#e53935"></div><span>Federal Tax <strong>24%</strong> · $35.5k</span></div>
+<div class="di"><div class="dd" style="background:#ff9800"></div><span>Benefits <strong>16%</strong> · $23.7k</span></div>
+<div class="di"><div class="dd" style="background:#a0b5e6"></div><span>Retirement <strong>4%</strong> · $5.9k</span></div>
+</div></div>`},
+{num:"B",title:"Horizontal Bar (Sorted)",sub:"Keep / Refresh",
+imp:"<strong>Sorted largest-to-smallest horizontal bars</strong> are easier to read than pie slices when 5+ categories exist. Avoids the thin-slice problem for small categories.",
+il:"Payroll Analytics — ADP Workforce Now",iu:"https://www.adp.com/what-we-offer/workforce-analytics.aspx",
+viz:`<div class="hbars">
+${[['Net Pay','$82,900',82,'#4b6ec3'],['Federal Tax','$35,500',36,'#6e8bd4'],['Benefits','$23,700',24,'#a0b5e6'],['State Tax','$4,000',4,'#c4d4f0'],['Retirement','$1,900',2,'#e0e8fa']].map(([l,v,p,c])=>`
+<div class="hr"><div class="hl">${l}</div><div class="ht"><div class="hf" style="width:${p}%;background:${c}"></div></div><div class="hv">${v}</div></div>`).join('')}
+</div>`},
+{num:"C",title:"Period-over-Period Bar",sub:"Improve",
+imp:"<strong>Compares this payroll run vs the prior run</strong> side-by-side. Instantly surfaces unexpected changes in any category — useful for auditors and payroll managers.",
+il:"Payroll Comparison Dashboard — Gusto",iu:"https://gusto.com/product/payroll",
+viz:`<div>
+<div style="font-size:10px;color:#888;margin-bottom:8px">Current vs Prior Period</div>
+<div class="bars">
+${[['Net','82','79'],['Fed','36','34'],['Ben','24','24'],['State','4','4'],['Ret','2','2']].map(([l,c,p])=>`
+<div class="bw">
+<div style="display:flex;gap:2px;align-items:flex-end;height:70px;width:100%">
+<div class="bar" style="height:${c}%;background:#4b6ec3;flex:1"></div>
+<div class="bar" style="height:${p}%;background:#d2d2d2;flex:1"></div>
+</div>
+<div class="bl">${l}</div>
+</div>`).join('')}
+</div>
+<div style="display:flex;gap:10px;margin-top:6px;font-size:10px;color:#606060">
+<span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#4b6ec3;margin-right:4px"></span>Current</span>
+<span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#d2d2d2;margin-right:4px"></span>Prior</span>
+</div></div>`}
+]},
+{id:4,name:"Remittance Pledges",status:"g",icon:"receipt_long",mod:"Finance",
+desc:"Table of remittance pledge progress — pledged amount vs received, with date filter.",
+options:[
+{num:"A",title:"Progress Bars in % Paid Column",sub:"Improve",
+imp:"<strong>Visual progress bars replace raw % text</strong> — red for behind pace, green for on track. Supervisors scan the table in seconds without reading individual numbers.",
+il:"Pledge Management — Salesforce NPSP",iu:"https://help.salesforce.com/s/articleView?id=sf.npsp_pledges.htm",
+viz:`<table class="tbl"><thead><tr><th>Pledge Purpose</th><th class="r">Pledged</th><th class="r">Received</th><th style="min-width:80px">Progress</th></tr></thead><tbody>
+${[['Building Fund','$12,000','$9,600',80,'#4caf50'],['Youth Ministry','$8,500','$5,100',60,'#ff9800'],['Outreach','$5,000','$4,750',95,'#4caf50'],['Missions','$3,200','$1,280',40,'#e53935']].map(([n,p,r,pct,c])=>`
+<tr><td>${n}</td><td class="r">${p}</td><td class="r">${r}</td><td><div class="pt"><div class="pf" style="width:${pct}%;background:${c}"></div></div><div style="font-size:9px;color:#888;margin-top:2px">${pct}%</div></td></tr>`).join('')}
+</tbody></table>`},
+{num:"B",title:"On-Track / Behind Indicator",sub:"Improve",
+imp:"<strong>Calculated pace column</strong> compares % paid vs % of year elapsed. Green = on track, red = behind. Answers the actionable question without any maths.",
+il:"Pledge Tracking — Blackbaud",iu:"https://www.blackbaud.com/products/blackbaud-crm",
+viz:`<table class="tbl"><thead><tr><th>Pledge Purpose</th><th class="r">% Paid</th><th class="r">Year %</th><th>Pace</th></tr></thead><tbody>
+${[['Building Fund',80,58,'on','#2e7d32'],['Youth Ministry',60,58,'on','#2e7d32'],['Outreach',95,58,'ahead','#1a6b30'],['Missions',40,58,'behind','#9d2d2d']].map(([n,pp,yp,s,c])=>`
+<tr><td>${n}</td><td class="r">${pp}%</td><td class="r">${yp}%</td><td><span class="badge" style="background:${s==='on'?'#f0faf1':s==='ahead'?'#e3f4e4':'#faefef'};color:${c};font-size:10px">${s==='on'?'✓ On track':s==='ahead'?'↑ Ahead':'↓ Behind'}</span></td></tr>`).join('')}
+</tbody></table>`},
+{num:"C",title:"Fix Default Date + Headline KPI",sub:"Low Effort, High Impact",
+imp:"<strong>Default to fiscal year start (not today)</strong> — the single most impactful change, users currently see an empty table on every open. Add a total KPI card above.",
+il:"Pledge Dashboard — Virtuous CRM",iu:"https://virtuous.org/blog/donor-pledge-tracking/",
+viz:`<div>
+<div class="kpis" style="grid-template-columns:repeat(3,1fr);margin-bottom:10px">
+<div class="kpi"><div class="kl">Total Pledged</div><div class="kv" style="font-size:14px">$28,700</div></div>
+<div class="kpi"><div class="kl">Received</div><div class="kv" style="font-size:14px;color:#2e7d32">$20,730</div></div>
+<div class="kpi"><div class="kl">Outstanding</div><div class="kv" style="font-size:14px;color:#b75a00">$7,970</div></div>
+</div>
+<div style="font-size:11px;color:#888;margin-bottom:6px">Showing: FY 2025 (Jul 2024 – Jun 2025) <span class="badge b-b" style="font-size:10px;margin-left:4px">Default fixed ✓</span></div>
+<div class="progs">
+${[['Building Fund',80,'#4caf50'],['Youth Ministry',60,'#ff9800'],['Outreach',95,'#4caf50'],['Missions',40,'#e53935']].map(([n,p,c])=>`
+<div><div class="ph"><span>${n}</span><span>${p}%</span></div><div class="pt"><div class="pf" style="width:${p}%;background:${c}"></div></div></div>`).join('')}
+</div></div>`}
+]},
+{id:5,name:"Receivable Invoices Outstanding",status:"r",icon:"account_balance_wallet",mod:"Finance",
+desc:"AR aging pie chart with five aging buckets. Significant redesign opportunity — industry standard patterns exist.",
+note:'<strong>⚠ Critical fix needed:</strong> Pie chart is the wrong visual for AR aging — horizontal stacked bar is the industry standard. DSO metric is missing.',
+options:[
+{num:"A",title:"Horizontal Aging Bar",sub:"Redesign — Recommended",
+imp:"<strong>Single horizontal stacked bar</strong> (industry standard for AR aging). Colour progresses green→red. Bar length = total outstanding. Segment sizes show aging spread at a glance.",
+il:"Coupler.io AR Aging Dashboard",iu:"https://www.coupler.io/dashboard-examples/accounts-receivable-dashboard",
+viz:`<div>
+<div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:6px">
+<div><div style="font-size:10px;color:#888">Total AR Outstanding</div><div style="font-size:18px;font-weight:600;color:#202020">$142,800</div></div>
+</div>
+<div class="aging">
+<div style="flex:45;background:#4caf50"></div>
+<div style="flex:22;background:#ff9800"></div>
+<div style="flex:18;background:#f44336"></div>
+<div style="flex:15;background:#9d2d2d"></div>
+</div>
+<div class="aleg">
+<div class="ali"><div class="asw" style="background:#4caf50"></div>Current $64,260 (45%)</div>
+<div class="ali"><div class="asw" style="background:#ff9800"></div>1–30d $31,416 (22%)</div>
+<div class="ali"><div class="asw" style="background:#f44336"></div>31–60d $25,704 (18%)</div>
+<div class="ali"><div class="asw" style="background:#9d2d2d"></div>60+d $21,420 (15%)</div>
+</div></div>`},
+{num:"B",title:"DSO KPI + Aging Table",sub:"Redesign — Recommended",
+imp:"<strong>Days Sales Outstanding (DSO)</strong> is the primary KPI every AR manager tracks. Surfacing it prominently gives instant context before the user reads any aging detail.",
+il:"AR Dashboard — VertAccount 2026",iu:"https://www.vertaccount.com/blog/best-accounts-receivable-dashboard-examples-templates-for-2026/",
+viz:`<div>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">
+<div class="kpi" style="background:#faefef"><div class="kl">Days Sales Outstanding</div><div class="kv" style="color:#9d2d2d">38 days</div><div class="kt dn">↑ 4d vs last month</div></div>
+<div class="kpi"><div class="kl">Total Outstanding</div><div class="kv">$142,800</div></div>
+<div class="kpi" style="background:#faefef"><div class="kl">60+ Days Overdue</div><div class="kv" style="color:#9d2d2d">$21,420</div><div class="kt dn">15% of AR</div></div>
+</div>
+<table class="tbl"><thead><tr><th>Aging Bucket</th><th class="r">Amount</th><th class="r">%</th><th>Risk</th></tr></thead><tbody>
+<tr><td>Current (0–30d)</td><td class="r">$95,676</td><td class="r">67%</td><td><span class="badge b-g" style="font-size:10px">Low</span></td></tr>
+<tr><td>31–60 days</td><td class="r">$25,704</td><td class="r">18%</td><td><span class="badge b-a" style="font-size:10px">Med</span></td></tr>
+<tr><td>60+ days</td><td class="r">$21,420</td><td class="r">15%</td><td><span class="badge b-r" style="font-size:10px">High</span></td></tr>
+</tbody></table></div>`},
+{num:"C",title:"Risk-Classified Customer View",sub:"Improve",
+imp:"<strong>Risk column (Low/Med/High)</strong> in the detail panel helps collections staff triage without reading individual day counts. Auto-flags accounts over 90 days as High.",
+il:"Power BI AR Dashboard — GlobalData365",iu:"https://globaldata365.com/accounts-receivable-dashboard/",
+viz:`<table class="tbl"><thead><tr><th>Customer</th><th class="r">Amount</th><th>Days</th><th>Risk</th></tr></thead><tbody>
+<tr><td>Grace Church</td><td class="r">$12,400</td><td>14d</td><td><span class="badge b-g" style="font-size:10px">Low</span></td></tr>
+<tr><td>Hope Community</td><td class="r">$8,750</td><td>42d</td><td><span class="badge b-a" style="font-size:10px">Med</span></td></tr>
+<tr><td>First Baptist</td><td class="r">$6,200</td><td>67d</td><td><span class="badge b-r" style="font-size:10px">High</span></td></tr>
+<tr><td>Cornerstone</td><td class="r">$4,100</td><td>91d</td><td><span class="badge b-r" style="font-size:10px">⚠ High</span></td></tr>
+<tr><td>Trinity Chapel</td><td class="r">$3,800</td><td>8d</td><td><span class="badge b-g" style="font-size:10px">Low</span></td></tr>
+</tbody></table>`}
+]},
+{id:6,name:"Insurance Billing Plans",status:"g",icon:"health_and_safety",mod:"HR",
+desc:"Pie chart showing enrollment distribution across insurance billing plans.",
+options:[
+{num:"A",title:"Donut with Enrollment Total",sub:"Keep / Refresh",
+imp:"<strong>Total enrolled in the donut centre</strong> — the number every HR manager needs first. Plans with zero enrollment are greyed out in the legend.",
+il:"Employee Benefits Dashboard — Zenefits",iu:"https://www.zenefits.com/workest/employee-benefits-administration/",
+viz:`<div class="dw">
+<svg viewBox="0 0 90 90" width="90" height="90" style="flex-shrink:0">
+<circle cx="45" cy="45" r="30" fill="none" stroke="#f0f0f0" stroke-width="14"/>
+<circle cx="45" cy="45" r="30" fill="none" stroke="#4b6ec3" stroke-width="14" stroke-dasharray="99 89" stroke-dashoffset="-47"/>
+<circle cx="45" cy="45" r="30" fill="none" stroke="#a0b5e6" stroke-width="14" stroke-dasharray="56 132" stroke-dashoffset="-146"/>
+<circle cx="45" cy="45" r="30" fill="none" stroke="#c4d4f0" stroke-width="14" stroke-dasharray="21 167" stroke-dashoffset="-202"/>
+<text x="45" y="41" text-anchor="middle" font-size="10" font-weight="600" fill="#202020">248</text>
+<text x="45" y="52" text-anchor="middle" font-size="7" fill="#888">enrolled</text>
+</svg>
+<div class="dl">
+<div class="di"><div class="dd" style="background:#4b6ec3"></div><span>PPO Plus <strong>56%</strong> · 139</span></div>
+<div class="di"><div class="dd" style="background:#a0b5e6"></div><span>HSA Basic <strong>32%</strong> · 79</span></div>
+<div class="di"><div class="dd" style="background:#c4d4f0"></div><span>HMO Core <strong>12%</strong> · 30</span></div>
+<div class="di" style="opacity:.4"><div class="dd" style="background:#e1e1e1"></div><span>COBRA <strong>0%</strong> · 0</span></div>
+</div></div>`},
+{num:"B",title:"Plan Cards with Enrollment",sub:"Improve",
+imp:"<strong>Individual cards per plan</strong> show enrollment count, monthly cost, and status badge. More scannable than pie — each plan is self-contained.",
+il:"Benefits Dashboard — Rippling",iu:"https://www.rippling.com/benefits",
+viz:`<div style="display:flex;flex-direction:column;gap:7px">
+${[['PPO Plus',139,56,'#eef2fb','Active'],['HSA Basic',79,32,'#eef2fb','Active'],['HMO Core',30,12,'#eef2fb','Active'],['COBRA',0,0,'#fafafa','No enroll']].map(([n,e,p,bg,s])=>`
+<div style="background:${bg};border:.5px solid #d2d2d2;border-radius:6px;padding:8px 12px;display:flex;align-items:center;gap:10px">
+<div style="flex:1">
+<div style="font-size:12px;font-weight:500;color:#202020">${n}</div>
+<div style="font-size:10px;color:#888;margin-top:1px">${e} enrolled · ${p}% of staff</div>
+</div>
+<span class="badge ${e>0?'b-g':'b-e'}" style="font-size:10px">${s}</span>
+</div>`).join('')}
+</div>`},
+{num:"C",title:"Cost vs Enrollment Matrix",sub:"Improve",
+imp:"<strong>Monthly cost alongside enrollment count</strong> lets HR see which plans are most expensive per head — critical input for benefits renewal discussions.",
+il:"Benefits Cost Analysis — ADP",iu:"https://www.adp.com/what-we-offer/benefits-administration.aspx",
+viz:`<table class="tbl"><thead><tr><th>Plan</th><th class="r">Enrolled</th><th class="r">Mo. Cost/Head</th><th class="r">Total/Mo.</th><th>Status</th></tr></thead><tbody>
+<tr><td>PPO Plus</td><td class="r">139</td><td class="r">$420</td><td class="r">$58,380</td><td><span class="badge b-g" style="font-size:10px">Active</span></td></tr>
+<tr><td>HSA Basic</td><td class="r">79</td><td class="r">$285</td><td class="r">$22,515</td><td><span class="badge b-g" style="font-size:10px">Active</span></td></tr>
+<tr><td>HMO Core</td><td class="r">30</td><td class="r">$310</td><td class="r">$9,300</td><td><span class="badge b-g" style="font-size:10px">Active</span></td></tr>
+<tr><td>COBRA</td><td class="r">0</td><td class="r">—</td><td class="r">$0</td><td><span class="badge b-e" style="font-size:10px">Inactive</span></td></tr>
+<tr style="font-weight:600;background:#f5f5f5"><td>Total</td><td class="r">248</td><td class="r">—</td><td class="r">$90,195</td><td></td></tr>
+</tbody></table>`}
+]},
+{id:7,name:"Deposit Accounts",status:"b",icon:"account_balance",mod:"Finance",
+desc:"Pie chart + table showing deposit account balances by account type, with a filter that currently only affects the table (not the chart).",
+note:'<strong>⚠ Critical fix:</strong> The account type filter only updates the table — the pie chart remains static. Fix both together. Also resolve: widget is labelled inconsistently as both "Deposit Accounts" and "Deposits On Hand".',
+options:[
+{num:"A",title:"Fix Filter → Affects Both",sub:"Critical Fix — Keep / Refresh",
+imp:"<strong>The filter must update both chart and table simultaneously.</strong> The current split creates a false impression that data is inconsistent. Same fix needed in Loans (W10) and AP by Due Date (W16).",
+il:"QuickBooks AP Dashboard — Coefficient",iu:"https://coefficient.io/dashboard-examples/qbo-accounts-payable-dashboard",
+viz:`<div>
+<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+<span class="badge b-b" style="cursor:pointer">All Accounts</span>
+<span class="badge b-e" style="cursor:pointer">Checking</span>
+<span class="badge b-e" style="cursor:pointer">Savings</span>
+<span class="badge b-e" style="cursor:pointer">Investment</span>
+</div>
+<div class="aging" style="height:14px">
+<div style="flex:55;background:#4b6ec3"></div>
+<div style="flex:30;background:#a0b5e6"></div>
+<div style="flex:15;background:#c4d4f0"></div>
+</div>
+<div class="aleg" style="margin-bottom:10px">
+<div class="ali"><div class="asw" style="background:#4b6ec3"></div>Checking $220k (55%)</div>
+<div class="ali"><div class="asw" style="background:#a0b5e6"></div>Savings $120k (30%)</div>
+<div class="ali"><div class="asw" style="background:#c4d4f0"></div>Investment $60k (15%)</div>
+</div>
+<div style="font-size:10px;color:#2e7d32;background:#f0faf1;padding:4px 8px;border-radius:4px">✓ Chart + table both update on filter change</div>
+</div>`},
+{num:"B",title:"Individual Account Cards",sub:"Redesign — Recommended",
+imp:"<strong>Xero-style per-account tiles</strong> — each account has its own card with balance, type, and status. No filter dropdown needed. Clicking a card expands to show activity.",
+il:"Xero Dashboard bank accounts — Xero Central",iu:"https://central.xero.com/s/article/Your-Xero-dashboard",
+viz:`<div>
+${[['checking','checking','Main Checking','$220,400','Reconciled','#4caf50'],['savings','savings','Savings Reserve','$120,000','Reconciled','#4caf50'],['show_chart','investment','Investment CD','$60,000','Pending','#ff9800']].map(([ico,t,n,b,s,sc])=>`
+<div class="acard">
+<div class="aico" style="background:#eef2fb"><span class="material-symbols-rounded" style="font-size:14px;color:#4b6ec3;font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 20">${ico}</span></div>
+<div><div class="an">${n}</div><div class="as">${t.charAt(0).toUpperCase()+t.slice(1)}</div></div>
+<div class="aa"><div class="ab">${b}</div><div class="ac" style="color:${sc}">${s}</div></div>
+</div>`).join('')}
+<div style="padding:8px 12px;border:.5px solid #d2d2d2;border-radius:6px;display:flex;justify-content:space-between;font-size:12px;font-weight:600;background:#f5f5f5">
+<span>Total</span><span>$400,400</span>
+</div></div>`},
+{num:"C",title:"Resolve Naming + Tabbed Layout",sub:"Improve",
+imp:"<strong>Replace dropdown with tabs</strong> — one tab per account plus an 'All' summary. Tabs communicate mode-switching clearly (dropdown implies filter, not view change). Also: standardise name to 'Deposit Accounts'.",
+il:"Bank Account Tabs — FreshBooks",iu:"https://www.freshbooks.com/features/bank-reconciliation",
+viz:`<div>
+<div style="display:flex;border-bottom:1px solid #f0f0f0;margin-bottom:12px">
+<div style="padding:8px 12px;font-size:13px;font-weight:600;color:#345499;border-bottom:2px solid #4b6ec3;cursor:pointer">All</div>
+<div style="padding:8px 12px;font-size:13px;color:#888;cursor:pointer">Main Checking</div>
+<div style="padding:8px 12px;font-size:13px;color:#888;cursor:pointer">Savings Reserve</div>
+<div style="padding:8px 12px;font-size:13px;color:#888;cursor:pointer">Investment CD</div>
+</div>
+<table class="tbl"><thead><tr><th>Account</th><th>Type</th><th class="r">Balance</th><th>Status</th></tr></thead><tbody>
+<tr><td>Main Checking</td><td>Checking</td><td class="r">$220,400</td><td><span class="badge b-g" style="font-size:10px">Reconciled</span></td></tr>
+<tr><td>Savings Reserve</td><td>Savings</td><td class="r">$120,000</td><td><span class="badge b-g" style="font-size:10px">Reconciled</span></td></tr>
+<tr><td>Investment CD</td><td>Investment</td><td class="r">$60,000</td><td><span class="badge b-a" style="font-size:10px">Pending</span></td></tr>
+<tr style="font-weight:600;background:#f5f5f5"><td colspan="2">Total</td><td class="r">$400,400</td><td></td></tr>
+</tbody></table></div>`}
+]},
+{id:8,name:"My Status",status:"r",icon:"dashboard",mod:"Overview",
+desc:"Personal command centre showing 21 configurable query counts. Currently a two-column flat table — the highest redesign potential on the dashboard.",
+options:[
+{num:"A",title:"KPI Card Grid",sub:"Redesign — Recommended",
+imp:"<strong>One card per query</strong> with icon, name, count, and colour indicator. Cards with zero count are de-emphasised. Users scan visually rather than reading a list.",
+il:"TeamHub HR Dashboard — Figma Community",iu:"https://www.figma.com/community/file/1552262349953288359/teamhub-hr-team-management-admin-dashboard-ui-design",
+viz:`<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:7px">
+${[['Invoices Due','receipt','8','#faefef','#9d2d2d'],['Timesheets','schedule','3','#faefef','#9d2d2d'],['Pending POs','shopping_cart','12','#faefef','#9d2d2d'],['Open Payroll','payments','1','#fff8e1','#b75a00'],['AP Overdue','warning','5','#faefef','#9d2d2d'],['Bank Recon','account_balance','0','#f5f5f5','#aaa']].map(([l,ico,v,bg,c])=>`
+<div style="background:${bg};border:.5px solid #d2d2d2;border-radius:6px;padding:8px 10px;display:flex;align-items:center;gap:8px">
+<span class="material-symbols-rounded" style="font-size:16px;color:${c};font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 20">${ico}</span>
+<div style="flex:1;min-width:0">
+<div style="font-size:10px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${l}</div>
+<div style="font-size:16px;font-weight:600;color:${v==='0'?'#aaa':c}">${v}</div>
+</div>
+</div>`).join('')}
+</div>`},
+{num:"B",title:"Grouped by Category",sub:"Redesign",
+imp:"<strong>Queries grouped into Finance / HR / Payroll / Purchasing</strong> with category totals. Users collapse irrelevant categories. Reduces cognitive load for role-specific users.",
+il:"Staffbase HR Widgets Overview",iu:"https://support.staffbase.com/hc/en-us/articles/27956507092114-Overview-of-HR-Widgets",
+viz:`<div style="display:flex;flex-direction:column;gap:6px">
+${[['Finance','account_balance','#eef2fb','#4b6ec3',['Invoices Due: 8','AP Overdue: 5','Bank Recon: 0']],['HR','group','#f0faf1','#2e7d32',['Leave Requests: 3','New Hires: 1']],['Payroll','payments','#fff8e1','#b75a00',['Open Payroll: 1','Timesheets: 3']]].map(([g,ico,bg,c,items])=>`
+<div style="border:.5px solid #d2d2d2;border-radius:6px;overflow:hidden">
+<div style="background:${bg};padding:8px 12px;display:flex;align-items:center;gap:8px;cursor:pointer">
+<span class="material-symbols-rounded" style="font-size:15px;color:${c};font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 20">${ico}</span>
+<div style="font-size:12px;font-weight:600;color:#202020;flex:1">${g}</div>
+<span class="badge" style="background:${c};color:white;font-size:10px">${items.reduce((a,i)=>a+(parseInt(i.split(':')[1])||0),0)}</span>
+<span class="material-symbols-rounded" style="font-size:14px;color:#888">expand_more</span>
+</div>
+<div style="padding:4px 12px 8px;font-size:11px;color:#484848">${items.map(i=>`<div style="padding:3px 0;border-bottom:.5px solid #f6f6f6">${i}</div>`).join('')}</div>
+</div>`).join('')}
+</div>`},
+{num:"C",title:"Non-zero Items First",sub:"Low Effort",
+imp:"<strong>Sort the list so non-zero counts appear first</strong>, with a divider separating them from zero items. Requires almost no dev work — users stop having to scan the full list every time.",
+il:"Dashboard sorting patterns — Nielsen Norman Group",iu:"https://www.nngroup.com/articles/dashboard-design/",
+viz:`<div>
+<div style="font-size:10px;color:#9d2d2d;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Needs Action (6)</div>
+<table class="tbl"><thead><tr><th>Query</th><th class="r">Count</th></tr></thead><tbody>
+<tr><td>Pending Purchase Orders</td><td class="r" style="font-weight:600;color:#9d2d2d">12</td></tr>
+<tr><td>Invoices Due This Week</td><td class="r" style="font-weight:600;color:#9d2d2d">8</td></tr>
+<tr><td>AP Overdue</td><td class="r" style="font-weight:600;color:#9d2d2d">5</td></tr>
+<tr><td>Pending Timesheets</td><td class="r" style="font-weight:600;color:#b75a00">3</td></tr>
+</tbody></table>
+<div style="font-size:10px;color:#888;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin:8px 0 6px;padding-top:8px;border-top:.5px solid #f0f0f0">No Action (15)</div>
+<div style="font-size:11px;color:#aaa;font-style:italic">Bank Reconciliation, Open GL Periods, Approved POs… (15 more)</div>
+</div>`}
+]},
+{id:9,name:"Payroll Scheduled Time Off",status:"r",icon:"event_available",mod:"Payroll",
+desc:"Three-level expandable table showing time-off requests with inline approval actions. Complex interaction — ripe for redesign.",
+options:[
+{num:"A",title:"Monthly Calendar View",sub:"Redesign — Recommended",
+imp:"<strong>Each approved/pending request appears as a colour-coded block on a calendar grid.</strong> Supervisors see date conflicts and coverage gaps instantly. Click a block to approve. Industry standard: BambooHR, Rippling.",
+il:"BambooHR Time Off Calendar",iu:"https://www.bamboohr.com/hr-software/time-off-management/",
+viz:`<div>
+<div style="font-size:11px;font-weight:600;color:#202020;margin-bottom:8px">July 2025</div>
+<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;font-size:9px">
+${['Mo','Tu','We','Th','Fr','Sa','Su'].map(d=>`<div style="text-align:center;color:#888;padding:2px;font-weight:600">${d}</div>`).join('')}
+${[...Array(31)].map((_,i)=>{
+const d=i+1;
+const events={8:'#4caf50',9:'#4caf50',14:'#ff9800',15:'#ff9800',21:'#ff9800',22:'#ff9800',23:'#ff9800',28:'#4b6ec3'};
+return `<div style="text-align:center;padding:2px 1px;border-radius:3px;${events[d]?'background:'+events[d]+';color:white;font-weight:600':'color:#484848'}">${d}</div>`;
+}).join('')}
+</div>
+<div style="display:flex;gap:8px;margin-top:8px;font-size:10px;color:#606060">
+<span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#4caf50;margin-right:3px"></span>Approved</span>
+<span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#ff9800;margin-right:3px"></span>Pending</span>
+<span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#4b6ec3;margin-right:3px"></span>Training</span>
+</div></div>`},
+{num:"B",title:"Kanban Approval Board",sub:"Redesign",
+imp:"<strong>Pending / Approved / Denied columns</strong> make the approval action the primary interaction. Cards can be dragged or clicked to change status. Eliminates the 3-level table.",
+il:"HR Payroll Management Dashboard — Behance",iu:"https://www.behance.net/gallery/221873503/HR-Payroll-Management-Dashboard-UI-Design",
+viz:`<div class="kanban">
+<div class="kcol">
+<div class="kchd" style="color:#b75a00">Pending <span class="kcb">3</span></div>
+${[['Sarah Mitchell','Jul 14–18 · Annual'],['Tom Hughes','Jul 21–23 · Sick'],['Amy Park','Aug 4–8 · Annual']].map(([n,d])=>`<div class="kcard"><div class="kcn">${n}</div><div class="kcs">${d}</div></div>`).join('')}
+</div>
+<div class="kcol">
+<div class="kchd" style="color:#2e7d32">Approved <span class="kcb">4</span></div>
+${[['James Lee','Jul 8–9 · Annual'],['Maria Chen','Jul 28 · Personal'],['Chris Wu','Aug 11–15'],['Pat Avery','Sep 1–5']].map(([n,d])=>`<div class="kcard"><div class="kcn">${n}</div><div class="kcs">${d}</div></div>`).join('')}
+</div>
+<div class="kcol">
+<div class="kchd" style="color:#9d2d2d">Denied <span class="kcb">1</span></div>
+${[['Dan Foster','Jul 14–18 · Conflict']].map(([n,d])=>`<div class="kcard" style="opacity:.6"><div class="kcn">${n}</div><div class="kcs">${d}</div></div>`).join('')}
+</div>
+</div>`},
+{num:"C",title:"Summary Bar + Improved Table",sub:"Low Effort",
+imp:"<strong>Summary bar at top</strong> shows X pending / X approved / X affected for the current period. Colour-coded status pills replace text. Low dev effort if full redesign is out of scope.",
+il:"Free Payroll Dashboard — Figma Community",iu:"https://www.figma.com/community/file/1356263393257478402/free-payroll-dashboard",
+viz:`<div>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">
+<div class="kpi" style="background:#fff8e1"><div class="kl">Pending Approval</div><div class="kv" style="color:#b75a00">3</div></div>
+<div class="kpi" style="background:#f0faf1"><div class="kl">Approved</div><div class="kv" style="color:#2e7d32">4</div></div>
+<div class="kpi"><div class="kl">Employees Affected</div><div class="kv">7</div></div>
+</div>
+<table class="tbl"><thead><tr><th>Employee</th><th>Type</th><th>Dates</th><th>Status</th></tr></thead><tbody>
+<tr><td>Sarah Mitchell</td><td>Annual</td><td>Jul 14–18</td><td><span class="badge b-a" style="font-size:10px">Pending</span></td></tr>
+<tr><td>James Lee</td><td>Annual</td><td>Jul 8–9</td><td><span class="badge b-g" style="font-size:10px">Approved</span></td></tr>
+<tr><td>Tom Hughes</td><td>Sick</td><td>Jul 21–23</td><td><span class="badge b-a" style="font-size:10px">Pending</span></td></tr>
+<tr><td>Dan Foster</td><td>Annual</td><td>Jul 14–18</td><td><span class="badge b-r" style="font-size:10px">Denied</span></td></tr>
+</tbody></table></div>`}
+]},
+{id:10,name:"Loans With Balance Due",status:"b",icon:"home",mod:"Finance",
+desc:"Pie chart + table showing loan portfolio with aging buckets. Two critical label/filter bugs need fixing before visual improvements.",
+note:'<strong>⚠ Two critical fixes:</strong> (1) "Over 60" label actually means 90+ days — fix label text. (2) Loan type filter only updates the table, not the chart — apply to both.',
+options:[
+{num:"A",title:"Fix Labels + Horizontal Aging Bar",sub:"Critical Fix + Improve",
+imp:"<strong>Fix aging labels</strong> (Current 0–29d / 30–59d / 60–89d / 90+d) then switch to horizontal bar. Bar length = total loan balance. Segment colour shows risk distribution at a glance.",
+il:"Loan Aging Dashboard — Tableau",iu:"https://public.tableau.com/app/profile/tableau.finance/viz/LoanPortfolioDashboard",
+viz:`<div>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">
+<div class="kpi"><div class="kl">Total Balance Due</div><div class="kv" style="font-size:14px">$1.24M</div></div>
+<div class="kpi" style="background:#faefef"><div class="kl">90+ Days (was mislabelled "60+")</div><div class="kv" style="font-size:14px;color:#9d2d2d">$62k</div></div>
+<div class="kpi"><div class="kl">Loans</div><div class="kv" style="font-size:14px">14</div></div>
+</div>
+<div class="aging">
+<div style="flex:55;background:#4caf50"></div>
+<div style="flex:22;background:#ff9800"></div>
+<div style="flex:13;background:#f44336"></div>
+<div style="flex:10;background:#9d2d2d"></div>
+</div>
+<div class="aleg">
+<div class="ali"><div class="asw" style="background:#4caf50"></div>Current 0–29d $682k</div>
+<div class="ali"><div class="asw" style="background:#ff9800"></div>30–59d $273k</div>
+<div class="ali"><div class="asw" style="background:#f44336"></div>60–89d $161k</div>
+<div class="ali"><div class="asw" style="background:#9d2d2d"></div>90+d $124k <strong style="color:#9d2d2d">(was "Over 60" ⚠)</strong></div>
+</div></div>`},
+{num:"B",title:"Loan Cards with Amortisation",sub:"Improve",
+imp:"<strong>Individual loan cards</strong> show balance, monthly payment, and a progress bar (amount repaid vs original). Finance officers see each loan at a glance without reading table rows.",
+il:"Loan Portfolio Dashboard — Power BI",iu:"https://globaldata365.com/loan-portfolio-dashboard/",
+viz:`<div style="display:flex;flex-direction:column;gap:7px">
+${[['Property Purchase','$480,000','$4,200/mo',60,'#4b6ec3'],['Vehicle Fleet','$124,000','$2,100/mo',35,'#6e8bd4'],['Equipment','$82,000','$1,400/mo',80,'#a0b5e6']].map(([n,b,p,pct,c])=>`
+<div style="border:.5px solid #d2d2d2;border-radius:6px;padding:10px 12px">
+<div style="display:flex;justify-content:space-between;margin-bottom:6px">
+<div style="font-size:12px;font-weight:500;color:#202020">${n}</div>
+<div style="font-size:12px;font-weight:600">${b}</div>
+</div>
+<div class="pt" style="margin-bottom:4px"><div class="pf" style="width:${pct}%;background:${c}"></div></div>
+<div style="display:flex;justify-content:space-between;font-size:10px;color:#888">
+<span>${pct}% repaid</span><span>${p}</span>
+</div>
+</div>`).join('')}
+</div>`},
+{num:"C",title:"KPI + Payment Timeline",sub:"Improve",
+imp:"<strong>Upcoming payment timeline</strong> shows next 6 months of required payments — essential for cash flow planning. Combines with KPI cards for total debt, monthly burden, and average rate.",
+il:"Loan Management Dashboard — LoanPro",iu:"https://loanpro.io/resources/loan-portfolio-management/",
+viz:`<div>
+<div class="kpis" style="margin-bottom:12px">
+<div class="kpi"><div class="kl">Total Outstanding</div><div class="kv" style="font-size:14px">$1.24M</div></div>
+<div class="kpi"><div class="kl">Monthly Payments</div><div class="kv" style="font-size:14px">$7,700</div></div>
+</div>
+<div style="font-size:10px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Next 6 Months</div>
+<div class="bars" style="height:70px">
+${[['Jul','7700'],['Aug','7700'],['Sep','7700'],['Oct','7700'],['Nov','7700'],['Dec','7700']].map(([l,v])=>`
+<div class="bw">
+<div class="bar" style="height:80%;background:#4b6ec3"></div>
+<div class="bl">${l}</div>
+</div>`).join('')}
+</div></div>`}
+]},
+{id:11,name:"Fixed Asset Values",status:"r",icon:"factory",mod:"Finance",
+desc:"Pie chart showing asset group breakdown with three cascaded filter dropdowns. Complex filter UX and wrong chart type for the data.",
+options:[
+{num:"A",title:"Treemap + Headline KPIs",sub:"Redesign — Recommended",
+imp:"<strong>CSS treemap replaces pie</strong> — relative sizes of asset groups are immediately visible. Add three KPI cards: Total Cost, Net Book Value, Accumulated Depreciation. These are the first three numbers any asset manager needs.",
+il:"Fixed Assets Dashboard — GlobalData365",iu:"https://globaldata365.com/fixed-assets-dashboard/",
+viz:`<div>
+<div class="kpis" style="grid-template-columns:repeat(3,1fr);margin-bottom:10px">
+<div class="kpi"><div class="kl">Total Cost</div><div class="kv" style="font-size:14px">$2.84M</div></div>
+<div class="kpi"><div class="kl">Net Book Value</div><div class="kv" style="font-size:14px">$1.92M</div></div>
+<div class="kpi" style="background:#faefef"><div class="kl">Accum. Depreciation</div><div class="kv" style="font-size:14px;color:#9d2d2d">$920k</div></div>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:3px;height:100px">
+${[['Buildings','#4b6ec3',55],['Vehicles','#6e8bd4',20],['Equipment','#a0b5e6',15],['IT','#c4d4f0',10]].map(([l,c,p])=>`
+<div style="flex:${p};background:${c};border-radius:3px;display:flex;align-items:flex-end;padding:4px;min-width:0">
+<div style="font-size:9px;font-weight:600;color:white;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l}</div>
+</div>`).join('')}
+</div></div>`},
+{num:"B",title:"Simplified Filter Panel",sub:"Improve",
+imp:"<strong>Three cascaded dropdowns → one collapsible filter panel</strong> with clear labels showing dependency. New users understand the grouping model without guessing which dropdown to use first.",
+il:"BlueTally Fixed Asset Management",iu:"https://bluetally.com/blog/best-fixed-asset-management-software",
+viz:`<div>
+<div style="background:#fafafa;border:.5px solid #d2d2d2;border-radius:6px;padding:10px 12px;margin-bottom:12px">
+<div style="font-size:11px;font-weight:600;color:#202020;margin-bottom:8px;display:flex;align-items:center;gap:6px">
+<span class="material-symbols-rounded" style="font-size:14px;color:#4b6ec3">filter_alt</span>
+Filter Assets
+</div>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+<div><div style="font-size:9px;color:#888;margin-bottom:3px">1. Group By</div><div style="padding:5px 8px;border:.5px solid #d2d2d2;border-radius:4px;font-size:11px;background:white">Asset Category ▾</div></div>
+<div><div style="font-size:9px;color:#888;margin-bottom:3px">2. Then Filter</div><div style="padding:5px 8px;border:.5px solid #4b6ec3;border-radius:4px;font-size:11px;background:white;color:#4b6ec3">Buildings ▾</div></div>
+<div><div style="font-size:9px;color:#888;margin-bottom:3px">3. Show Value</div><div style="padding:5px 8px;border:.5px solid #d2d2d2;border-radius:4px;font-size:11px;background:white">Net Book Value ▾</div></div>
+</div>
+</div>
+<div class="hbars">
+${[['Buildings','$1.56M',55,'#4b6ec3'],['Vehicles','$384k',20,'#6e8bd4'],['Equipment','$288k',15,'#a0b5e6'],['IT Assets','$192k',10,'#c4d4f0']].map(([l,v,p,c])=>`
+<div class="hr"><div class="hl">${l}</div><div class="ht"><div class="hf" style="width:${p*2}%;background:${c}"></div></div><div class="hv">${v}</div></div>`).join('')}
+</div></div>`},
+{num:"C",title:"Depreciation Timeline",sub:"Improve",
+imp:"<strong>Annual depreciation schedule chart</strong> — shows when assets are fully depreciated. Useful for budget planning and replacement scheduling.",
+il:"Asset Depreciation Schedule — Investopedia",iu:"https://www.investopedia.com/terms/d/depreciation.asp",
+viz:`<div>
+<div style="font-size:10px;color:#888;margin-bottom:8px">Net Book Value declining over time</div>
+<div class="bars" style="height:80px">
+${[['2024','100'],['2025','87'],['2026','74'],['2027','62'],['2028','51'],['2029','41'],['2030','32']].map(([y,v])=>`
+<div class="bw">
+<div class="bar" style="height:${v}%;background:linear-gradient(180deg,#4b6ec3,#a0b5e6)"></div>
+<div class="bl">${y}</div>
+</div>`).join('')}
+</div>
+<div style="font-size:10px;color:#888;margin-top:6px">Based on straight-line depreciation · Total NBV in 2030: $614k</div>
+</div>`}
+]},
+{id:12,name:"None (Empty Slot)",status:"g",icon:"block",mod:"System",
+desc:"This widget slot currently forces users to show a blank 'None' widget to fill positions. Recommended: remove this option entirely from the redesign.",
+options:[
+{num:"A",title:"Remove the 'None' Option",sub:"Recommended — Redesign",
+imp:"<strong>Empty slots should not exist</strong> in a configurable dashboard. When a user removes a widget, the layout should collapse gracefully rather than showing a blank tile.",
+il:"Dashboard widget grid patterns — Nielsen Norman",iu:"https://www.nngroup.com/articles/dashboard-design/",
+viz:`<div style="text-align:center;padding:20px">
+<div style="width:48px;height:48px;border-radius:12px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;margin:0 auto 10px">
+<span class="material-symbols-rounded" style="font-size:22px;color:#aaa">block</span>
+</div>
+<div style="font-size:13px;font-weight:600;color:#484848;margin-bottom:6px">Remove "None" from widget options</div>
+<div style="font-size:12px;color:#888;max-width:240px;margin:0 auto;line-height:1.5">The dashboard layout should reflow when a widget is removed — not show a blank placeholder.</div>
+</div>`},
+{num:"B",title:"Add Widget Prompt Instead",sub:"Redesign",
+imp:"<strong>Empty positions show an 'Add Widget' prompt</strong> instead of a blank tile. Encourages users to customise rather than leaving dead space.",
+il:"Customisable widget grid — Salesforce Lightning",iu:"https://www.salesforce.com/products/platform/overview/",
+viz:`<div style="border:1.5px dashed #d2d2d2;border-radius:8px;padding:20px;text-align:center;background:#fafafa">
+<span class="material-symbols-rounded" style="font-size:28px;color:#d2d2d2;display:block;margin-bottom:8px">add_circle</span>
+<div style="font-size:12px;font-weight:500;color:#aaa">Add a Widget</div>
+<div style="font-size:11px;color:#ccc;margin-top:4px">Choose from 16 available widgets</div>
+</div>`},
+{num:"C",title:"Auto-Collapse Empty Positions",sub:"Redesign",
+imp:"<strong>Grid reflows automatically</strong> when widgets are removed. A 3-column layout with 2 widgets simply shows 2 columns — no empty space, no placeholder needed.",
+il:"Dashboard layout patterns — Material Design",iu:"https://m3.material.io/foundations/layout/understanding-layout/overview",
+viz:`<div>
+<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">
+${['Budget vs Actual','My Status','Bank Balances','Payroll Summary'].map(n=>`
+<div style="background:#eef2fb;border:.5px solid #d2d2d2;border-radius:6px;padding:12px;text-align:center;font-size:11px;color:#4b6ec3;font-weight:500">${n}</div>`).join('')}
+</div>
+<div style="font-size:10px;color:#aaa;text-align:center;margin-top:8px">Grid reflows to 2 columns when only 4 widgets active</div>
+</div>`}
+]},
+{id:13,name:"Purchasing Management",status:"r",icon:"shopping_cart",mod:"Finance",
+desc:"Approval queue table + encumbrance chart. The approval workflow is buried in a dropdown — status cards would surface it as the primary action.",
+options:[
+{num:"A",title:"Status Summary Cards",sub:"Redesign — Recommended",
+imp:"<strong>Summary cards replace the status dropdown</strong> — clicking a card filters the table. Approvers see their queue size immediately. Mirrors how Uizard and modern procurement tools surface approval state.",
+il:"Purchase Order Management — Uizard",iu:"https://uizard.io/templates/web-app-templates/purchase-order-management-system-web-app/",
+viz:`<div>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px">
+${[['Awaiting Me','12','#faefef','#9d2d2d'],['Submitted','8','#fff8e1','#b75a00'],['All Pending','23','#eef2fb','#4b6ec3'],['Approved','145','#f0faf1','#2e7d32']].map(([l,v,bg,c])=>`
+<div style="background:${bg};border:.5px solid #d2d2d2;border-radius:6px;padding:8px 10px;cursor:pointer">
+<div style="font-size:10px;color:#888">${l}</div>
+<div style="font-size:18px;font-weight:600;color:${c}">${v}</div>
+</div>`).join('')}
+</div>
+<table class="tbl"><thead><tr><th>PO #</th><th>Vendor</th><th class="r">Amount</th><th>Days</th><th>Status</th></tr></thead><tbody>
+<tr style="background:#fff8f8"><td>PO-2847</td><td>Office Depot</td><td class="r">$4,200</td><td style="color:#9d2d2d;font-weight:600">12d</td><td><span class="badge b-r" style="font-size:10px">⚠ Urgent</span></td></tr>
+<tr><td>PO-2851</td><td>Tech Supplies</td><td class="r">$1,800</td><td>3d</td><td><span class="badge b-a" style="font-size:10px">Pending</span></td></tr>
+<tr><td>PO-2855</td><td>Catering Co.</td><td class="r">$620</td><td>1d</td><td><span class="badge b-a" style="font-size:10px">Pending</span></td></tr>
+</tbody></table></div>`},
+{num:"B",title:"Separate Approval Queue + Budget Chart",sub:"Improve",
+imp:"<strong>Split into two panels</strong> — approval queue (for approvers) and encumbrance chart (for budget managers). Serving both audiences from one widget means neither is served well.",
+il:"Customer Order Dashboard — Appsmith",iu:"https://www.appsmith.com/use-case/customer-order-dashboard",
+viz:`<div>
+<div style="display:flex;gap:8px;margin-bottom:8px">
+<div style="flex:1;background:#eef2fb;border-radius:6px;padding:10px 12px">
+<div style="font-size:10px;font-weight:600;color:#4b6ec3;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Approval Queue</div>
+<div style="font-size:22px;font-weight:600;color:#202020">12</div>
+<div style="font-size:11px;color:#888">awaiting your approval</div>
+</div>
+<div style="flex:1;background:#f0faf1;border-radius:6px;padding:10px 12px">
+<div style="font-size:10px;font-weight:600;color:#2e7d32;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Encumbered Budget</div>
+<div style="font-size:22px;font-weight:600;color:#202020">$84k</div>
+<div style="font-size:11px;color:#888">committed this quarter</div>
+</div>
+</div>
+<div class="hbars">
+${[['Q1','$28k',28,'#a0b5e6'],['Q2','$32k',32,'#6e8bd4'],['Q3 (current)','$24k',24,'#4b6ec3']].map(([l,v,p,c])=>`
+<div class="hr"><div class="hl">${l}</div><div class="ht"><div class="hf" style="width:${p*3}%;background:${c}"></div></div><div class="hv">${v}</div></div>`).join('')}
+</div></div>`},
+{num:"C",title:"Urgent Flag + Age Indicator",sub:"Improve",
+imp:"<strong>Colour-coded age indicator</strong> flags orders waiting more than 5 days. Approvers see what's most urgent without reading date columns.",
+il:"Procurement Dashboard — SAP Ariba",iu:"https://www.sap.com/products/spend-management/ariba-procurement.html",
+viz:`<table class="tbl"><thead><tr><th>PO #</th><th>Vendor</th><th class="r">Amount</th><th>Submitted</th><th>Age</th></tr></thead><tbody>
+${[['PO-2847','Office Depot','$4,200','Jun 24','12d','#9d2d2d'],['PO-2851','Tech Supplies','$1,800','Jul 2','4d','#ff9800'],['PO-2855','Catering Co.','$620','Jul 5','1d','#2e7d32'],['PO-2862','Print Works','$340','Jul 6','0d','#2e7d32']].map(([p,v,a,d,age,c])=>`
+<tr><td>${p}</td><td>${v}</td><td class="r">${a}</td><td style="font-size:10px;color:#888">${d}</td><td style="font-weight:600;color:${c}">${age}</td></tr>`).join('')}
+</tbody></table>`}
+]},
+{id:14,name:"Main Content Tasks",status:"g",icon:"grid_view",mod:"Overview",
+desc:"Icon tile grid giving shortcuts to key tasks. System-controlled with no user customisation.",
+options:[
+{num:"A",title:"User-Configurable Shortcuts",sub:"Improve — Recommended",
+imp:"<strong>Users choose which task tiles appear</strong> from a library of permitted actions (admin sets defaults). Like Xero's homepage widget customisation — users add/remove tiles to match their role.",
+il:"Xero Homepage Customisation",iu:"https://central.xero.com/s/article/Customise-your-Xero-dashboard",
+viz:`<div>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px">
+${[['New Invoice','receipt','#eef2fb','#4b6ec3'],['Run Payroll','payments','#f0faf1','#2e7d32'],['Add Expense','add_card','#fff8e1','#b75a00'],['Reconcile','account_balance','#eef2fb','#4b6ec3'],['New PO','shopping_cart','#eef2fb','#4b6ec3'],['+ Add Task','add_circle','#fafafa','#d2d2d2']].map(([l,ico,bg,c])=>`
+<div style="background:${bg};border:.5px solid #d2d2d2;border-radius:6px;padding:10px 8px;text-align:center;cursor:pointer">
+<span class="material-symbols-rounded" style="font-size:20px;color:${c};font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 20;display:block;margin-bottom:4px">${ico}</span>
+<div style="font-size:10px;color:#484848;line-height:1.2">${l}</div>
+</div>`).join('')}
+</div></div>`},
+{num:"B",title:"Tiles with Description Text",sub:"Keep / Refresh",
+imp:"<strong>One-line description under each label</strong> reduces guessing for less-experienced users (e.g. 'Add a new payroll run' under 'Run Payroll'). Zero structural change required.",
+il:"Quickbooks Task Shortcuts",iu:"https://quickbooks.intuit.com/learn-support/en-us/help-article/quick-create-transactions/quickbooks-online-quick-create-menu/L0vvVKH1c",
+viz:`<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">
+${[['New Invoice','receipt','#eef2fb','#4b6ec3','Create a new customer invoice'],['Run Payroll','payments','#f0faf1','#2e7d32','Submit the next payroll run'],['Add Expense','add_card','#fff8e1','#b75a00','Record a new expense claim'],['New PO','shopping_cart','#eef2fb','#4b6ec3','Create a purchase order']].map(([l,ico,bg,c,d])=>`
+<div style="background:${bg};border:.5px solid #d2d2d2;border-radius:6px;padding:10px 12px;display:flex;align-items:flex-start;gap:10px;cursor:pointer">
+<span class="material-symbols-rounded" style="font-size:18px;color:${c};font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 20;flex-shrink:0;margin-top:2px">${ico}</span>
+<div><div style="font-size:12px;font-weight:500;color:#202020">${l}</div><div style="font-size:10px;color:#888;margin-top:2px">${d}</div></div>
+</div>`).join('')}
+</div>`},
+{num:"C",title:"Role-Specific Defaults",sub:"Improve",
+imp:"<strong>Different default tile sets by role</strong> — Finance Officer sees AP/AR shortcuts, HR Manager sees Payroll/Leave shortcuts. Admin controls defaults; users can override.",
+il:"Role-based dashboard defaults — Workday",iu:"https://www.workday.com/en-us/products/human-capital-management/hr-management.html",
+viz:`<div>
+<div style="display:flex;gap:6px;margin-bottom:10px">
+<span class="badge b-b" style="cursor:pointer">Finance Officer</span>
+<span class="badge b-e" style="cursor:pointer">HR Manager</span>
+<span class="badge b-e" style="cursor:pointer">Payroll Admin</span>
+</div>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px">
+${[['New Invoice','receipt','#eef2fb','#4b6ec3'],['AP Review','approval','#eef2fb','#4b6ec3'],['Reconcile','account_balance','#eef2fb','#4b6ec3'],['Budget Report','bar_chart','#f0faf1','#2e7d32'],['New PO','shopping_cart','#eef2fb','#4b6ec3'],['Expense','add_card','#fff8e1','#b75a00']].map(([l,ico,bg,c])=>`
+<div style="background:${bg};border:.5px solid #d2d2d2;border-radius:6px;padding:9px 8px;text-align:center">
+<span class="material-symbols-rounded" style="font-size:18px;color:${c};font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 20;display:block;margin-bottom:3px">${ico}</span>
+<div style="font-size:10px;color:#484848">${l}</div>
+</div>`).join('')}
+</div></div>`}
+]},
+{id:15,name:"Bank Balances",status:"b",icon:"account_balance",mod:"Finance",
+desc:"A single widget whose layout completely changes when users switch accounts via a dropdown — the primary UX problem. Xero solved this better with per-account tiles.",
+options:[
+{num:"A",title:"Per-Account Cards (Xero Pattern)",sub:"Redesign — Recommended",
+imp:"<strong>Each bank account is its own tile</strong> with balance, account type, reconciliation status, and unreconciled item count. No mode-switching required. Click to expand activity.",
+il:"Xero Dashboard Bank Accounts",iu:"https://central.xero.com/s/article/Your-Xero-dashboard",
+viz:`<div>
+${[['checking','Main Checking','Checking · ••4821','$220,400',0,'#4caf50'],['savings','Savings Reserve','Savings · ••1203','$120,000',0,'#4caf50'],['show_chart','Investment CD','Investment · ••9947','$60,000',3,'#ff9800']].map(([ico,n,s,b,u,sc])=>`
+<div class="acard" style="margin-bottom:7px">
+<div class="aico" style="background:#eef2fb"><span class="material-symbols-rounded" style="font-size:14px;color:#4b6ec3;font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 20">${ico}</span></div>
+<div style="flex:1"><div class="an">${n}</div><div class="as">${s}</div></div>
+<div class="aa"><div class="ab">${b}</div><div class="ac" style="color:${sc}">${u>0?u+' unreconciled':'Reconciled'}</div></div>
+<span class="material-symbols-rounded" style="font-size:16px;color:#d2d2d2;margin-left:6px">chevron_right</span>
+</div>`).join('')}
+<div style="padding:8px 12px;border:.5px solid #d2d2d2;border-radius:6px;display:flex;justify-content:space-between;font-size:12px;font-weight:600;background:#f5f5f5">
+<span>Total Cash</span><span>$400,400</span>
+</div></div>`},
+{num:"B",title:"Tabbed Layout",sub:"Improve",
+imp:"<strong>Tabs replace the dropdown</strong> — one tab per account plus 'All Accounts'. Tabs communicate view-switching (not filtering), so users understand that the entire view changes.",
+il:"Bank Reconciliation Tabs — FreshBooks",iu:"https://www.freshbooks.com/features/bank-reconciliation",
+viz:`<div>
+<div style="display:flex;border-bottom:1px solid #f0f0f0;margin-bottom:12px;overflow-x:auto">
+<div style="padding:8px 12px;font-size:13px;font-weight:600;color:#345499;border-bottom:2px solid #4b6ec3;cursor:pointer;white-space:nowrap">All Accounts</div>
+<div style="padding:8px 12px;font-size:13px;color:#888;cursor:pointer;white-space:nowrap">Main Checking</div>
+<div style="padding:8px 12px;font-size:13px;color:#888;cursor:pointer;white-space:nowrap">Savings Reserve</div>
+<div style="padding:8px 12px;font-size:13px;color:#888;cursor:pointer;white-space:nowrap">Investment CD</div>
+</div>
+<table class="tbl"><thead><tr><th>Account</th><th>Type</th><th class="r">Balance</th><th>Recon.</th></tr></thead><tbody>
+<tr><td>Main Checking</td><td>Checking</td><td class="r">$220,400</td><td><span class="badge b-g" style="font-size:10px">✓</span></td></tr>
+<tr><td>Savings Reserve</td><td>Savings</td><td class="r">$120,000</td><td><span class="badge b-g" style="font-size:10px">✓</span></td></tr>
+<tr><td>Investment CD</td><td>Investment</td><td class="r">$60,000</td><td><span class="badge b-a" style="font-size:10px">3 pending</span></td></tr>
+<tr style="font-weight:600;background:#f5f5f5"><td colspan="2">Total</td><td class="r">$400,400</td><td></td></tr>
+</tbody></table></div>`},
+{num:"C",title:"Reconciliation Status Focus",sub:"Improve",
+imp:"<strong>Reconciliation status is the most actionable bank account metric.</strong> Surfacing unreconciled item counts per account lets finance officers triage without switching views.",
+il:"Bank Reconciliation Dashboard — Xero",iu:"https://www.xero.com/us/features-and-tools/accounting-software/bank-reconciliation/",
+viz:`<div style="display:flex;flex-direction:column;gap:7px">
+${[['Main Checking','$220,400',0],['Savings Reserve','$120,000',0],['Investment CD','$60,000',3]].map(([n,b,u])=>`
+<div style="border:.5px solid #d2d2d2;border-radius:6px;padding:10px 12px;display:flex;align-items:center;gap:10px">
+<div style="flex:1"><div class="an">${n}</div><div class="as">${b}</div></div>
+<div style="text-align:right">
+${u>0?`<div style="background:#fff8e1;border-radius:4px;padding:3px 8px;font-size:11px;font-weight:600;color:#b75a00">${u} unreconciled</div>`:
+`<div style="background:#f0faf1;border-radius:4px;padding:3px 8px;font-size:11px;font-weight:500;color:#2e7d32">✓ Reconciled</div>`}
+</div>
+</div>`).join('')}
+</div>`}
+]},
+{id:16,name:"Accounts Payable By Due Date",status:"b",icon:"calendar_today",mod:"Finance",
+desc:"AP table with a pie chart grouped by due date. Pie labels show amounts (not dates), and the filter only updates the table.",
+note:'<strong>⚠ Two fixes needed:</strong> (1) Pie labels should show due dates not amounts — fix or switch to a better chart type. (2) Due-date filter must update both chart and table simultaneously.',
+options:[
+{num:"A",title:"Timeline Grouping (Overdue / This Week / Later)",sub:"Redesign — Recommended",
+imp:"<strong>Groups AP into actionable buckets</strong> rather than exact due dates. 'Overdue', 'Due This Week', 'Due This Month', 'Due Later' — exactly how QuickBooks Online surfaces Bills to Pay.",
+il:"QuickBooks AP Dashboard — Coefficient",iu:"https://coefficient.io/dashboard-examples/qbo-accounts-payable-dashboard",
+viz:`<div>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:12px">
+${[['Overdue','$18,400','#faefef','#9d2d2d'],['Due This Week','$24,800','#fff8e1','#b75a00'],['Due This Month','$31,200','#eef2fb','#4b6ec3'],['Due Later','$42,600','#f0faf1','#2e7d32']].map(([l,v,bg,c])=>`
+<div style="background:${bg};border:.5px solid #d2d2d2;border-radius:6px;padding:8px 10px;cursor:pointer">
+<div style="font-size:10px;color:#888">${l}</div>
+<div style="font-size:15px;font-weight:600;color:${c}">${v}</div>
+</div>`).join('')}
+</div>
+<table class="tbl"><thead><tr><th>Vendor</th><th>Invoice</th><th>Due</th><th class="r">Amount</th></tr></thead><tbody>
+<tr style="background:#fff8f8"><td>Supplies Co.</td><td>INV-441</td><td style="color:#9d2d2d;font-weight:600">Overdue</td><td class="r">$8,200</td></tr>
+<tr style="background:#fff8f8"><td>Print Works</td><td>INV-438</td><td style="color:#9d2d2d;font-weight:600">Overdue</td><td class="r">$3,400</td></tr>
+<tr><td>Tech Leasing</td><td>INV-452</td><td>Jul 10</td><td class="r">$12,100</td></tr>
+<tr><td>Utilities Plus</td><td>INV-455</td><td>Jul 12</td><td class="r">$2,800</td></tr>
+</tbody></table></div>`},
+{num:"B",title:"Fix Pie → Date Labels",sub:"Critical Fix",
+imp:"<strong>Pie segment labels show the due date</strong> (e.g. '15 Jul'), not the amount. Amount is shown on hover. This is the minimal fix that makes the existing chart meaningful.",
+il:"Looker Studio AP Dashboard — Coupler.io",iu:"https://www.coupler.io/marketing-dashboards/looker-studio-quickbooks-accounts-payable-dashboard",
+viz:`<div>
+<div class="dw">
+<svg viewBox="0 0 90 90" width="90" height="90" style="flex-shrink:0">
+<circle cx="45" cy="45" r="30" fill="none" stroke="#f0f0f0" stroke-width="16"/>
+<circle cx="45" cy="45" r="30" fill="none" stroke="#9d2d2d" stroke-width="16" stroke-dasharray="44 144" stroke-dashoffset="-47"/>
+<circle cx="45" cy="45" r="30" fill="none" stroke="#ff9800" stroke-width="16" stroke-dasharray="50 138" stroke-dashoffset="-91"/>
+<circle cx="45" cy="45" r="30" fill="none" stroke="#4b6ec3" stroke-width="16" stroke-dasharray="56 132" stroke-dashoffset="-141"/>
+<circle cx="45" cy="45" r="30" fill="none" stroke="#4caf50" stroke-width="16" stroke-dasharray="38 150" stroke-dashoffset="-197"/>
+</svg>
+<div class="dl">
+<div class="di"><div class="dd" style="background:#9d2d2d"></div><span><strong>Overdue</strong> · $18,400</span></div>
+<div class="di"><div class="dd" style="background:#ff9800"></div><span><strong>Jul 10</strong> · $24,800</span></div>
+<div class="di"><div class="dd" style="background:#4b6ec3"></div><span><strong>Jul 15</strong> · $31,200</span></div>
+<div class="di"><div class="dd" style="background:#4caf50"></div><span><strong>Aug+</strong> · $42,600</span></div>
+</div>
+</div>
+<div style="font-size:10px;color:#2e7d32;background:#f0faf1;padding:4px 8px;border-radius:4px;margin-top:10px">✓ Labels now show dates · filter updates both chart and table</div>
+</div>`},
+{num:"C",title:"Vendor Heat Map",sub:"Improve",
+imp:"<strong>Heat map by vendor</strong> — vendors with highest outstanding balance are most visible. Better for cash flow planning: you see which vendors to pay first, not just when.",
+il:"AP Vendor Analysis — Power BI",iu:"https://globaldata365.com/accounts-receivable-dashboard/",
+viz:`<div>
+<div class="hbars">
+${[['Tech Leasing','$28,400',94,'#4b6ec3'],['Supplies Co.','$22,100',74,'#6e8bd4'],['Office Depot','$18,300',61,'#a0b5e6'],['Print Works','$12,600',42,'#c4d4f0'],['Utilities Plus','$4,200',14,'#eef2fb']].map(([v,a,p,c])=>`
+<div class="hr"><div class="hl">${v}</div><div class="ht"><div class="hf" style="width:${p}%;background:${c}"></div></div><div class="hv">${a}</div></div>`).join('')}
+</div></div>`}
+]},
+{id:17,name:"Gifts Pledges",status:"g",icon:"volunteer_activism",mod:"Finance",
+desc:"Table of gift pledge progress by purpose — pledged vs received. Date filter behaviour differs from the similar Remittance Pledges widget.",
+options:[
+{num:"A",title:"Progress Bars in Table",sub:"Keep / Refresh — Recommended",
+imp:"<strong>Visual progress bars replace raw % values</strong> in the Received column. Green = on track or ahead, amber = slightly behind, red = significantly behind. Supervisors scan in seconds.",
+il:"Pledge Progress Bars — DonorPerfect",iu:"https://www.donorperfect.com/giving-report-pledge-progress/",
+viz:`<table class="tbl"><thead><tr><th>Pledge Purpose</th><th class="r">Pledged</th><th class="r">Received</th><th style="min-width:90px">Progress</th><th>Pace</th></tr></thead><tbody>
+${[['Building Renewal','$45,000','$38,250',85,'#4caf50','Ahead'],['Youth Ministry','$12,000','$7,200',60,'#ff9800','On Track'],['Mission Support','$8,500','$4,675',55,'#ff9800','On Track'],['Worship Tech','$6,200','$1,860',30,'#e53935','Behind']].map(([n,p,r,pct,c,s])=>`
+<tr><td>${n}</td><td class="r">${p}</td><td class="r">${r}</td>
+<td><div class="pt"><div class="pf" style="width:${pct}%;background:${c}"></div></div></td>
+<td><span class="badge ${s==='Ahead'?'b-g':s==='On Track'?'b-a':'b-r'}" style="font-size:10px">${s}</span></td>
+</tr>`).join('')}
+</tbody></table>`},
+{num:"B",title:"Headline Total KPI Card",sub:"Keep / Refresh",
+imp:"<strong>Single KPI card above the table</strong> answers 'where are we overall?' before the user reads any rows. Total Pledged vs Total Received with an overall percentage.",
+il:"Donor Pledge Dashboard — Bloomerang",iu:"https://bloomerang.co/blog/pledge-tracking/",
+viz:`<div>
+<div style="background:#eef2fb;border-radius:8px;padding:12px 16px;margin-bottom:12px;display:flex;align-items:center;gap:16px">
+<div>
+<div style="font-size:11px;color:#888;margin-bottom:4px">Overall Pledge Progress</div>
+<div style="font-size:22px;font-weight:600;color:#202020">$52,000 <span style="font-size:14px;color:#888">of</span> $71,700</div>
+</div>
+<div style="flex:1">
+<div class="pt" style="height:10px;border-radius:5px"><div class="pf" style="width:72%;background:#4b6ec3;height:10px;border-radius:5px"></div></div>
+<div style="display:flex;justify-content:space-between;font-size:10px;color:#888;margin-top:4px"><span>72% received</span><span>$19,700 outstanding</span></div>
+</div>
+</div>
+<table class="tbl"><thead><tr><th>Purpose</th><th class="r">Pledged</th><th class="r">Received</th><th class="r">Outstanding</th></tr></thead><tbody>
+<tr><td>Building Renewal</td><td class="r">$45,000</td><td class="r">$38,250</td><td class="r">$6,750</td></tr>
+<tr><td>Youth Ministry</td><td class="r">$12,000</td><td class="r">$7,200</td><td class="r">$4,800</td></tr>
+<tr><td>Mission Support</td><td class="r">$8,500</td><td class="r">$4,675</td><td class="r">$3,825</td></tr>
+<tr><td>Worship Tech</td><td class="r">$6,200</td><td class="r">$1,860</td><td class="r">$4,340</td></tr>
+</tbody></table></div>`},
+{num:"C",title:"Fix Date Consistency + Note",sub:"Low Effort — Consistency Fix",
+imp:"<strong>Align date-filter behaviour</strong> with Remittance Pledges (Widget 4). Both widgets are conceptually similar — one resets date on refresh, one persists. Confirm correct behaviour with team and apply consistently.",
+il:"Consistent UX patterns — Nielsen Norman Group",iu:"https://www.nngroup.com/articles/consistency-and-standards/",
+viz:`<div>
+<div style="background:#fff8e1;border-left:3px solid #ff9800;border-radius:0 4px 4px 0;padding:8px 12px;margin-bottom:12px;font-size:12px;color:#484848">
+<strong>⚠ Inconsistency found:</strong> Gifts Pledges persists the date filter on refresh. Remittance Pledges resets to today on refresh. These two widgets are conceptually identical — align their behaviour.
+</div>
+<div class="kpis" style="margin-bottom:10px">
+<div class="kpi"><div class="kl">Total Pledged</div><div class="kv" style="font-size:14px">$71,700</div></div>
+<div class="kpi"><div class="kl">Total Received</div><div class="kv" style="font-size:14px;color:#2e7d32">$51,985</div></div>
+</div>
+<table class="tbl"><thead><tr><th>Purpose</th><th class="r">% Received</th><th>Status</th></tr></thead><tbody>
+<tr><td>Building Renewal</td><td class="r">85%</td><td><span class="badge b-g" style="font-size:10px">Ahead</span></td></tr>
+<tr><td>Youth Ministry</td><td class="r">60%</td><td><span class="badge b-a" style="font-size:10px">On Track</span></td></tr>
+<tr><td>Mission Support</td><td class="r">55%</td><td><span class="badge b-a" style="font-size:10px">On Track</span></td></tr>
+<tr><td>Worship Tech</td><td class="r">30%</td><td><span class="badge b-r" style="font-size:10px">Behind</span></td></tr>
+</tbody></table></div>`}
+]}
+];
+const STATUS_COLOR = {g:'#4caf50',b:'#4b6ec3',r:'#e53935'};
+const STATUS_LABEL = {g:'Needs Light Review',b:'Ready to Re-design',r:'Needs Significant Review'};
+const STATUS_BADGE = {g:'b-g',b:'b-b',r:'b-r'};
+
+function renderSidebar() {
+  const s = document.getElementById('snav');
+  let h = '<div class="snav-lbl">Widget Mockups</div>';
+  W.forEach(w => {
+    h += `<button class="snav-item${cur===w.id?' active':''}" onclick="show(${w.id})">
+      <span class="snav-ico material-symbols-rounded">${w.icon}</span>
+      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">${w.name}</span>
+      <div class="snav-dot" style="background:${STATUS_COLOR[w.status]}"></div>
+    </button>`;
+  });
+  s.innerHTML = h;
+}
+
+function show(id) {
+  cur = id;
+  renderSidebar();
+  const w = W.find(x => x.id === id);
+  if (!w) return;
+  const c = document.getElementById('content');
+  let html = `
+    <div class="w-hdr">
+      <div class="w-bc">Dashboard Widgets › ${w.mod}</div>
+      <h1 class="w-title">${w.name}</h1>
+      <div class="w-meta">
+        <span class="badge ${STATUS_BADGE[w.status]}">${w.status==='g'?'🟢':w.status==='b'?'🔵':'🔴'} ${STATUS_LABEL[w.status]}</span>
+        <span class="badge b-e">Widget ${w.id}</span>
+      </div>
+      <p class="w-desc">${w.desc}</p>
+    </div>
+    ${w.note?`<div class="fix-note">${w.note}</div>`:''}
+    <div class="sec-hd">Design Options — 3 Alternatives</div>
+    <div class="opts">
+      ${w.options.map(o=>`
+        <div class="opt">
+          <div class="opt-hd">
+            <div class="opt-n">${o.num}</div>
+            <div>
+              <div class="opt-t">${o.title}</div>
+              <div class="opt-s">${o.sub}</div>
+            </div>
+          </div>
+          <div class="opt-v">${o.viz}</div>
+          <div class="opt-ft">
+            <div class="opt-imp">${o.imp}</div>
+            <div class="opt-ins">
+              <span class="material-symbols-rounded" style="font-size:12px;color:#4b6ec3;flex-shrink:0">open_in_new</span>
+              <span>Inspiration: <a href="${o.iu}" target="_blank" rel="noopener">${o.il}</a></span>
+            </div>
+          </div>
+        </div>`).join('')}
+    </div>`;
+  c.innerHTML = html;
+  c.scrollTop = 0;
+}
+
+function renderWelcome() {
+  document.getElementById('content').innerHTML = `
+    <div class="welcome">
+      <div class="wi"><span class="material-symbols-rounded" style="font-size:28px;color:#4b6ec3;font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 20">dashboard_customize</span></div>
+      <div class="wt">Dashboard Widget Mockups</div>
+      <p class="ws">Select a widget from the sidebar to view 3 design alternatives. Each option shows a live mockup with dummy data, improvement notes, and an inspiration reference.</p>
+      <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
+        <span class="badge b-g">🟢 Needs Light Review · ${W.filter(w=>w.status==='g').length} widgets</span>
+        <span class="badge b-b">🔵 Ready to Re-design · ${W.filter(w=>w.status==='b').length} widgets</span>
+        <span class="badge b-r">🔴 Needs Significant Review · ${W.filter(w=>w.status==='r').length} widgets</span>
+      </div>
+    </div>`;
+}
+
+renderSidebar();
+renderWelcome();
+</script>
+</body>
+</html>

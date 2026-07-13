@@ -1,0 +1,37 @@
+Interview AI Summary 
+ # Dashboard redesign — user feedback (Ben Lane session)
+
+## Overview
+The meeting validated that the redesign should focus on making dashboards *action-oriented* (click-to-task), improving My Tasks/My Reports behavior, and addressing company-context behavior and reporting capabilities, with ValueLabs Development already working on parts of reporting (saved views/scheduling) as noted by Feargal.    
+Ben emphasized daily-use modules to prioritize (Bank Account Management, Purchasing Management, Payroll, Budget vs Actual, and Accounts Receivable) and called out several low-use HQ-specific widgets (Deposit Accounts, Loan Processing, Pension/Insurance) that can be deprioritized.    
+
+## Key findings & priorities
+### High-value widgets to prioritize
+- **Bank Account Management / live bank balances** is top priority because users check live balances frequently.   
+- **Purchasing Management** is highly used by clients that adopt it and helps highlight pending approvals/tasks.   
+- **Payroll (schedules, time-off, pay-group filters)** should support pay-group and date filters so admins can run payroll for weekly/biweekly/monthly groups.    
+- **Budget vs Actual (YTD first, period toggle, variance remaining)** needs better flexibility (YTD vs period toggle) and a clear remaining-budget view/percentage alert.  
+
+### Low-usage widgets and why
+- **Deposit Accounts** (investment-style accounts) and **Loan Processing** are used by a very small subset (HQs/Methodist conferences) and can be deprioritized for a general dashboard.    
+- **Accounts Payable (invoice workflow)** is underused because many small clients prefer a one-step quick-check process over a two-step invoice → pay flow; redesign must account for that process shift.    
+- **Fixed Assets, Pension/Insurance** and other HQ-only modules have limited audience and should be surfaced conditionally.  
+
+### User behaviors & must-have capabilities
+- Most dashboard users are *admins/supervisors* who glance at widgets and want direct actions (click-to-enter AP, run payroll, enter contributions) rather than report-only views.    
+- Many small clients have one person managing multiple companies; *global company context* should be the default, with optional per-widget overrides for large HQs that need cross-company visibility.     
+- Users expect saved report preferences, scheduled exports/emailing, and faster access to previously-run reports; ValueLabs is already building saved-report views and scheduling/UAT is in progress.   
+- Dashboards must support drill-through from widget lines to transaction detail (click a line → open related module or report) and quick links to approval workflows (AP, AR, PO approvals).   
+
+## Decisions & Next steps
+### Design questions to confirm
+- Confirm default behavior: *global company context* with a clear, discoverable per-widget override for HQ users who need cross-company views.    
+- Define scope for My Tasks: allow both standard system tasks and user-saved custom task shortcuts; ensure tasks identify target module (not just "enter transactions").    
+- Decide how to surface budget alerts (threshold %, period vs YTD) and whether alerts appear on widgets or as prioritized My Tasks items.  
+
+### Action items, owners, deadlines
+- Product/Analytics: validate widget usage metrics (traffic by widget) to confirm deprioritization of Deposit Accounts and Loan Processing.    
+- Design: prototype an *action-first* My Tasks widget (click-to-task) and a per-widget configuration modal that supports saved filters and pinning; test with Ben-like admin persona.    
+- Engineering/ValueLabs: continue UAT and rollout of saved-report views and scheduled emailing; ensure dashboard can surface those saved reports and attach them to widgets.   
+- UX: add drill-through interactions from widget elements to transaction/report detail and surface AP/AR/PO approval queues as actionable widgets.   
+

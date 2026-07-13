@@ -1,0 +1,72 @@
+# Pathway Design System
+
+> Pathway is the design system for Ministry Brands Amplify, a church management product. This repo ships React components, design tokens, runnable HTML demos, and an authoritative spec for each component. AI agents consuming this design system MUST use the components, tokens, and motion values documented here — do not invent equivalents.
+
+## Start here
+
+- [AGENTS.md](https://github.com/helloimjolopez-collab/pathway-ds/blob/main/AGENTS.md): Top-level AI agent instructions. Read this first.
+- [components/manifest.json](https://github.com/helloimjolopez-collab/pathway-ds/blob/main/components/manifest.json): Machine-readable registry of every component (props, exports, file paths, Figma node IDs, tokens used).
+- [Storybook](https://helloimjolopez-collab.github.io/pathway-ds/storybook/): Live visual reference with token tables and interactive playgrounds.
+
+## Implementation artifacts
+
+To implement any Pathway component correctly, use these — not HTML demos:
+
+- `.jsx` module: the React component to import (e.g. `components/sidenav/sidenav.jsx`)
+- `src/tokens/tokens.css`: all token CSS variables — import this
+- `tokens/component-token-map.json`: **which CSS variable does each component element use** (card title, nav item, etc.) — eliminates guesswork
+- `NAME-spec.md`: rules, props, states, token names
+- `NAME/agent-brief.md`: compact paste-friendly summary for AI agents
+
+HTML demos (`*.html`) are visual previews for designers. Do not copy implementation from them.
+
+## Navigation shell (always use these — do not reinvent)
+
+- [components/sidenav/agent-brief.md](https://github.com/helloimjolopez-collab/pathway-ds/blob/main/components/sidenav/agent-brief.md): Concise paste-ready SideNav contract.
+- [components/sidenav/sidenav-spec.md](https://github.com/helloimjolopez-collab/pathway-ds/blob/main/components/sidenav/sidenav-spec.md): Full SideNav spec (anatomy, tokens, states, accessibility, motion, responsive).
+- [components/sidenav/sidenav.jsx](https://github.com/helloimjolopez-collab/pathway-ds/blob/main/components/sidenav/sidenav.jsx): React module with named exports (SideNav, SideNavItem, NavSectionLabel, BulletDot, ListItem, SideNavListSection, CollapseButton, etc.).
+- [components/sidenav/sidenav.html](https://github.com/helloimjolopez-collab/pathway-ds/blob/main/components/sidenav/sidenav.html): Self-contained React+Babel runnable demo.
+- [components/top-nav/top-nav-spec.md](https://github.com/helloimjolopez-collab/pathway-ds/blob/main/components/top-nav/top-nav-spec.md): TopNav.Global spec.
+- [components/top-nav/top-nav.jsx](https://github.com/helloimjolopez-collab/pathway-ds/blob/main/components/top-nav/top-nav.jsx): TopNav React module.
+
+## Other documented components
+
+- [components/button/agent-brief.md](https://github.com/helloimjolopez-collab/pathway-ds/blob/main/components/button/agent-brief.md): Concise paste-ready Button contract — read this before writing any action trigger.
+- [components/button/button-spec.md](https://github.com/helloimjolopez-collab/pathway-ds/blob/main/components/button/button-spec.md): Full Button spec (anatomy, variants, tokens, states, accessibility).
+- [components/button/button.jsx](https://github.com/helloimjolopez-collab/pathway-ds/blob/main/components/button/button.jsx): React module. Exports: `Button`, `STYLES`, `TYPES`, `SIZES`, `FILL`, `TEXT`, `ICON`, `STROKE`.
+- [components/button/button.html](https://github.com/helloimjolopez-collab/pathway-ds/blob/main/components/button/button.html): Self-contained React+Babel runnable demo.
+- [components/spinner/spinner-spec.md](https://github.com/helloimjolopez-collab/pathway-ds/blob/main/components/spinner/spinner-spec.md): Loading indicator spec.
+- [components/checkbox/](https://github.com/helloimjolopez-collab/pathway-ds/tree/main/components/checkbox): Checkbox component (see manifest for details).
+- [components/org-switcher/](https://github.com/helloimjolopez-collab/pathway-ds/tree/main/components/org-switcher): Org switcher component (see manifest for details).
+- [components/section-label/](https://github.com/helloimjolopez-collab/pathway-ds/tree/main/components): SectionLabel component (used within SideNav and PopoverMenu).
+
+## Tokens
+
+- [tokens/pathway-design-tokens.json](https://github.com/helloimjolopez-collab/pathway-ds/blob/main/tokens/pathway-design-tokens.json): DTCG-format design tokens. Source of truth for every colour, typography style, radius, and accessibility value used in components. Do not invent new tokens.
+- [tokens/figma-export/pathwaytokens.json](https://github.com/helloimjolopez-collab/pathway-ds/blob/main/tokens/figma-export/pathwaytokens.json): Raw Figma Variables export. Pathway-design-tokens.json is derived from this via scripts/sync-tokens.js.
+- [src/tokens/tokens.css](https://github.com/helloimjolopez-collab/pathway-ds/blob/main/src/tokens/tokens.css): Style Dictionary CSS output. Import this directly to get all token CSS variables.
+
+## Overarching design system spec
+
+- [docs/design-system-spec.md](https://github.com/helloimjolopez-collab/pathway-ds/blob/main/docs/design-system-spec.md): System-wide rules for motion, accessibility, colour hierarchy, spacing, typography, and naming. Every component spec inherits from this. Read this before reasoning about anything cross-cutting.
+- [docs/storybook-authoring.md](https://github.com/helloimjolopez-collab/pathway-ds/blob/main/docs/storybook-authoring.md): How Storybook docs are structured.
+- [docs/component-pipeline.md](https://github.com/helloimjolopez-collab/pathway-ds/blob/main/docs/component-pipeline.md): How components flow from Figma to GitHub to Storybook.
+
+## Icon system
+
+Every icon in Pathway uses **Material Symbols Rounded** — a Google variable font. Rules:
+
+- CSS class: `material-symbols-rounded`. Never `material-symbols-outlined` or `material-symbols-sharp`.
+- Icon name = the Figma layer's `data-name` attribute (e.g. `search`, `filter_alt`, `expand_more`). Read it from `get_design_context` — never guess from a description.
+- **Font-size tokens are unitless numbers.** `--semantic-type-...-fontsize` resolves to e.g. `16` not `16px`. Use `calc(var(...) * 1px)` in CSS.
+- **Red Hat Display is NOT tokenized.** All type tokens resolve to Red Hat Text. A `--primitive-type-family-display` token needs to be added in Figma. Until then, use Red Hat Text.
+- `FILL` axis is **per-component**: FILL=0 = outlined, FILL=1 = filled. Check the Figma component to determine which. Each component spec documents its FILL value.
+- Markup: `<span class="material-symbols-rounded">icon_name</span>`
+- Variation settings: `font-variation-settings: 'FILL' <0or1>, 'wght' 400, 'GRAD' 0, 'opsz' 20`
+- Full rule: [AGENTS.md icon section](https://github.com/helloimjolopez-collab/pathway-ds/blob/main/AGENTS.md)
+
+## Optional
+
+- [CLAUDE.md](https://github.com/helloimjolopez-collab/pathway-ds/blob/main/CLAUDE.md): Instructions for agents modifying this repo (not consuming it). Read AGENTS.md instead if you are building a prototype.
+- [README.md](https://github.com/helloimjolopez-collab/pathway-ds/blob/main/README.md): Human-oriented overview.
+- [Figma source](https://www.figma.com/design/3sw45aVcngFAmpbP6cfrXP/): Pathway file in Figma. File key `3sw45aVcngFAmpbP6cfrXP`.
