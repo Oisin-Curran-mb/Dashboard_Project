@@ -323,9 +323,10 @@ body{font-family:'Red Hat Text',sans-serif;background:#fafafa;color:#202020;}
    FC_VERSION object in JS, not hardcoded here — bump FC_VERSION[wid] when that widget's content changes. */
 .fc-version-badge{position:absolute;top:0;right:0;font-size:11px;font-weight:600;color:#5a6472;background:#eef1f5;padding:3px 10px;border-radius:12px;letter-spacing:.2px;z-index:1;}
 /* Pairs the version badge with a review-status badge, side by side, top-right. Opt-in per widget, not a
-   general pattern for every widget — currently used by W02 Pension Plans (2026-07-09) and W03 Payroll
-   Distributions (2026-07-14). Version text is set from FC_VERSION in JS. The review badge's visibility is
-   driven by FC_READY_FOR_REVIEW[wid]. */
+   general pattern for every widget — currently used by W01 Budget Compared to Actual, W02 Pension Plans, W03
+   Payroll Distributions, and W07 Deposit Accounts, each added once its own refinement pass was called done.
+   Version text is set from FC_VERSION in JS. The review badge's visibility is driven by
+   FC_READY_FOR_REVIEW[wid]. */
 .fc-badges{position:absolute;top:0;right:0;display:flex;align-items:center;gap:6px;z-index:1;}
 .fc-badges .fc-version-badge{position:static;}
 .fc-review-badge{font-size:11px;font-weight:600;color:#2e7d32;background:#e8f5e9;padding:3px 10px;border-radius:12px;letter-spacing:.2px;white-space:nowrap;}
@@ -406,7 +407,10 @@ body{font-family:'Red Hat Text',sans-serif;background:#fafafa;color:#202020;}
   </nav>
   <div class="fc-content">
   <div class="fc-widget active" id="fc-widget-1">
-  <span class="fc-version-badge" id="fc-version-1"></span>
+  <div class="fc-badges">
+    <span class="fc-review-badge" id="fc-review-1">Ready to be reviewed by Jo</span>
+    <span class="fc-version-badge" id="fc-version-1"></span>
+  </div>
   <div class="w-hdr" style="margin-bottom:20px">
     <div class="w-bc">Final Check</div>
     <h1 class="w-title">W01 — Budget Compared to Actual <span class="badge b-g" style="margin-left:8px">Final design — locked</span></h1>
@@ -930,9 +934,9 @@ body{font-family:'Red Hat Text',sans-serif;background:#fafafa;color:#202020;}
   <div class="sec-hd" style="margin-top:20px">Logic — What This Shows, and Why We Built It This Way</div>
   <div class="fc-logic">
     <p><strong>Current design.</strong> One row per breakdown item, sized by amount — Horizontal Bars is the default because it scales cleanly regardless of category count (Donut/Pie only reads well up to ~4-5 slices). When Department = All Departments, each row is one of the four departments (staff groups) with that department's total; picking a specific department drills into its own compensation categories (salary, benefits, allowances, etc.) instead. Bar, Pie Chart and Data Table all read this exact same row set, so switching between them changes only how it's drawn, never what's being counted. Every row also shows a ▲/▼ % change against the same-length prior period (on the bar, and as a Change column on the table) — a raw total doesn't say whether costs are trending up or down, so the comparison is always visible, not tucked behind a separate view. Small shows the top 3 rows, Medium the top 5, Large all of them plus totals; the KPI headline is Total Payroll Amount for the selected period. Switch Chart Type (Bar/Pie/Table) is available at every size except KPI, including Small.</p>
-    <p><strong>Filters.</strong> Department narrows every view to one department's payroll. Pay Period is Weekly/Bi-Weekly/Monthly/Custom: the three presets anchor on a Pay Date field (the date payroll is actually issued) and count backward from it — Weekly = 7 days, Bi-Weekly = 14, Monthly = 30 (a day-count approximation, not calendar-month-aware — open question, not guessed at). Custom instead reveals its own explicit Beginning/Ending date fields and ignores Pay Date entirely. The resolved end date always shows above the card as "Payment due: <em>date</em>"; the table view additionally shows the full range as "Period shown: <em>start – end</em>" directly on the table grid, since that's where someone's most likely checking exactly what window a row covers.</p>
-    <p><strong>Compared to the current real system</strong> (<a href="../Dashboard_Research/03%20-%20Payroll%20Distributions.md" target="_blank" rel="noopener">Purpose doc</a>): today's widget is a single fixed layout — a table and a pie chart shown side by side, always grouped by compensation category, with plain Beginning/Ending date pickers (defaulting 1 Jan–today), no comparison to any other period, no drill-down, and no department filter. This redesign changes all of that: Bar is the new default (pie/donut alone doesn't hold up once an org has more than ~5 categories), Pie and Table are kept as full peers rather than dropped; a Department filter and department-level rollup were added since HR/finance review is usually department-first; the raw date pickers became named, Pay-Date-anchored periods since a payroll total only means something in the context of an actual pay run, not an arbitrary calendar range; and a current-vs-prior comparison was added everywhere because "what did we spend" is a weaker question than "is this drifting." A drill-through to the Payroll History module is specced as a genuinely new feature — the current system has no drill-down of any kind — and Department is a new filter the current system's data source doesn't clearly support yet (see Open Items below).</p>
-    <p><strong>Open items — not built, flagged rather than guessed at:</strong> (1) Department field is not confirmed to exist on the real `PRHistory`/`PRHistoryCompensation` tables — backend needs to confirm before this filter can go live. (2) Drill-through target page (the Payroll History module) isn't confirmed yet. (3) The Data Table Sort rule (fixed alphabetical, with a user toggle to Amount descending) — only the fixed alphabetical default is built; the toggle isn't. (4) Monthly's 30-day approximation vs. a true calendar-month subtraction, noted above.</p>
+    <p><strong>Filters.</strong> Department narrows every view to one department's payroll. Pay Period is Weekly/Bi-Weekly/Monthly/Custom: the three presets anchor on a Pay Date field (the date payroll is actually issued) and count backward from it — Weekly = 7 days, Bi-Weekly = 14, Monthly = 30 (a day-count approximation, not calendar-month-aware — open question, not guessed at). Custom instead reveals its own explicit Beginning/Ending date fields and ignores Pay Date entirely. A "Make this recurring" checkbox sits alongside the preset periods, and a second checkbox, "Set Pay Period separately per department," replaces the single shared Pay Date with one Start Date + Period + Make recurring block per department (Weekly/Bi-Weekly/Monthly only — Custom isn't offered per-department), each block separated by a divider line. The resolved end date shows above the card as "Payment due: <em>date</em>" (with a 🔁 if recurring); the table view additionally shows the full range as "Period shown: <em>start – end</em>" on the table grid. When Separate By Department is on and Department = All Departments, there's no single shared date to show up top, so the callout says as much and each department's own row carries its own period + recurring indicator instead — a Period column on the table, subtext under each bar, and a small per-department list under the pie.</p>
+    <p><strong>Compared to the current real system</strong> (<a href="../Dashboard_Research/03%20-%20Payroll%20Distributions.md" target="_blank" rel="noopener">Purpose doc</a>): today's widget is a single fixed layout — a table and a pie chart shown side by side, always grouped by compensation category, with plain Beginning/Ending date pickers (defaulting 1 Jan–today), no comparison to any other period, no per-department scheduling of any kind, no recurring option, no drill-down, and no department filter. This redesign changes all of that: Bar is the new default (pie/donut alone doesn't hold up once an org has more than ~5 categories), Pie and Table are kept as full peers rather than dropped; a Department filter and department-level rollup were added since HR/finance review is usually department-first, and — since different departments can genuinely run on different pay schedules — that filter now optionally splits into fully independent per-department periods rather than forcing one shared date on every department; the raw date pickers became named, Pay-Date-anchored periods, with an explicit recurring flag, since a payroll total only means something in the context of an actual pay run, not an arbitrary calendar range; and a current-vs-prior comparison was added everywhere because "what did we spend" is a weaker question than "is this drifting." A drill-through to the Payroll History module is specced as a genuinely new feature — the current system has no drill-down of any kind — and Department is a new filter the current system's data source doesn't clearly support yet (see Open Items below).</p>
+    <p><strong>Open items — not built, flagged rather than guessed at:</strong> (1) Department field is not confirmed to exist on the real `PRHistory`/`PRHistoryCompensation` tables — backend needs to confirm before this filter can go live. (2) Drill-through target page (the Payroll History module) isn't confirmed yet. (3) The Data Table Sort rule (fixed alphabetical, with a user toggle to Amount descending) — only the fixed alphabetical default is built; the toggle isn't. (4) Monthly's 30-day approximation vs. a true calendar-month subtraction, noted above. (5) "Make this recurring" is stored and displayed (including per-department) but is a flag only in this mockup — nothing here actually advances a period forward over calendar time; that's real scheduling logic for the backend, not something a static mock can demonstrate. (6) Custom isn't offered as a per-department option — only Weekly/Bi-Weekly/Monthly — flagged as a scope decision rather than an oversight, since a fully independent custom range per department starts to look like four separate widgets.</p>
   </div>
   </div><!-- /fc-widget-3 -->
   <div class="fc-widget" id="fc-widget-4">
@@ -1390,7 +1394,10 @@ body{font-family:'Red Hat Text',sans-serif;background:#fafafa;color:#202020;}
   </div><!-- /fc-widget-6 -->
 
   <div class="fc-widget" id="fc-widget-7">
-  <span class="fc-version-badge" id="fc-version-7"></span>
+  <div class="fc-badges">
+    <span class="fc-review-badge" id="fc-review-7">Ready to be reviewed by Jo</span>
+    <span class="fc-version-badge" id="fc-version-7"></span>
+  </div>
   <div class="w-hdr">
     <div class="w-bc">Final Check</div>
     <h1 class="w-title">W07 — Deposit Accounts <span class="badge b-a" style="margin-left:8px">Rebuilt 2026-07-09 (see note)</span></h1>
@@ -4163,25 +4170,44 @@ WRENDER[2]=function(opt,wid,sz){
 // approximation, not calendar-month-aware — flagged as a simplification, not a real calendar-month rule).
 // E.g. Pay Date = a Friday, Bi-Weekly = that Friday back through the Friday two weeks earlier. Custom bypasses
 // this entirely and uses its own explicit Beginning/Ending fields, ignoring Pay Date.
+// Extended 2026-07-15, per direct instruction, with two settings that were missing from the filter panel:
+// - Recurring: a plain flag on the global (non-Custom) period — doesn't change the math, just whether this
+//   keeps advancing each cycle instead of being a one-off; surfaced wherever a due date is shown.
+// - Separate By Department: when on, each department has its own Start Date + Period + Recurring instead of
+//   one shared setting. Pass `deptName` to resolve that department's own period (reads PayDate_<dept>,
+//   Period_<dept>, Recurring_<dept> — Custom isn't offered per-department, only Weekly/Bi-Weekly/Monthly).
+//   Without a deptName, Separate By Department has no single answer (each department differs) — callers
+//   handle that themselves rather than this function guessing which department to show.
 // Returns null if nothing's resolvable yet (Custom picked but dates not filled in); otherwise an object with
-// `range` (short "start – end" string, for in-table use per direct instruction 2026-07-14) and `due` (the end
-// date on its own, formatted with year, for the "Payment due" callout shown above every view).
-function w3PeriodRange(wid){
+// `range` (short "start – end" string, for in-table use), `due` (the end date alone, formatted with year, for
+// the "Payment due" callout), and `recurring` (boolean).
+function w3PeriodRange(wid,deptName){
   var fmtShort=function(dt){return dt.toLocaleDateString('en-US',{month:'short',day:'numeric'});};
   var fmtLong=function(dt){return dt.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});};
-  var period=fv(wid,'Pay Period')||'Weekly';
-  var start,end;
-  if(period==='Custom'){
-    var b=fv(wid,'Beginning Date'), e=fv(wid,'Ending Date');
-    if(!b||!e) return null;
-    start=new Date(b+'T00:00:00'); end=new Date(e+'T00:00:00');
-  } else {
-    var days={Weekly:7,'Bi-Weekly':14,Monthly:30}[period]||7;
-    var payDateStr=fv(wid,'Pay Date');
+  var start,end,recurring;
+  if(deptName){
+    var period=fv(wid,'Period_'+deptName)||'Weekly';
+    var days=({Weekly:7,'Bi-Weekly':14,Monthly:30})[period]||7;
+    var payDateStr=fv(wid,'PayDate_'+deptName);
     end=payDateStr?new Date(payDateStr+'T00:00:00'):new Date();
     start=new Date(end); start.setDate(start.getDate()-days);
+    recurring=(fv(wid,'Recurring_'+deptName)==='Yes');
+  } else {
+    var period=fv(wid,'Pay Period')||'Weekly';
+    if(period==='Custom'){
+      var b=fv(wid,'Beginning Date'), e=fv(wid,'Ending Date');
+      if(!b||!e) return null;
+      start=new Date(b+'T00:00:00'); end=new Date(e+'T00:00:00');
+      recurring=false; // Custom is inherently a one-off range; recurring isn't offered for it.
+    } else {
+      var days=({Weekly:7,'Bi-Weekly':14,Monthly:30})[period]||7;
+      var payDateStr=fv(wid,'Pay Date');
+      end=payDateStr?new Date(payDateStr+'T00:00:00'):new Date();
+      start=new Date(end); start.setDate(start.getDate()-days);
+      recurring=(fv(wid,'Recurring')==='Yes');
+    }
   }
-  return {range:fmtShort(start)+' – '+fmtShort(end),due:fmtLong(end)};
+  return {range:fmtShort(start)+' – '+fmtShort(end),due:fmtLong(end),recurring:recurring};
 }
 // W3 — Payroll Distributions
 WRENDER[3]=function(opt,wid,sz){
@@ -4197,11 +4223,19 @@ WRENDER[3]=function(opt,wid,sz){
   if(opt==='A'){
     // Added 2026-07-13, per direct instruction: shows the resolved period above the card content, so it's
     // visible that the period is being counted backward from Pay Date rather than assumed from "today."
-    // Refined 2026-07-14, per direct instruction: the callout above the card now names the actual payment date
-    // ("Payment due: ...") rather than a bare date range — the full start–end range moves to sit with the table
-    // itself, specifically in the table view (see the `view==='table'` branch below).
-    var pr=w3PeriodRange(wid);
-    var rangeTag=pr?('<div style="font-size:10px;color:#4b6ec3;font-weight:600;margin-bottom:6px">Payment due: '+pr.due+'</div>'):'';
+    // Refined 2026-07-14: the callout names the actual payment date ("Payment due: ...") rather than a bare
+    // date range — the full start–end range sits with the table instead, specifically in the table view.
+    // Refined again 2026-07-15, per direct instruction, for the new Separate By Department setting: when it's
+    // on AND Department = All Departments, there's no single payment date to show here — each department has
+    // its own (see the recurBadge/perDeptMode handling below and each row's own period). Drilled into one
+    // specific department, that department's own period is used instead of the global one.
+    var sepByDept=(fv(wid,'Separate By Department')==='Yes');
+    var perDeptMode=(sepByDept && key==='All Departments');
+    var pr=perDeptMode?null:(sepByDept?w3PeriodRange(wid,key):w3PeriodRange(wid));
+    var recurBadge=function(p){ return (p&&p.recurring)?' <span title="Recurring" style="font-size:9px">🔁</span>':''; };
+    var rangeTag=perDeptMode
+      ? '<div style="font-size:10px;color:#4b6ec3;font-weight:600;margin-bottom:6px">Payment due: set per department — see rows below</div>'
+      : (pr?('<div style="font-size:10px;color:#4b6ec3;font-weight:600;margin-bottom:6px">Payment due: '+pr.due+recurBadge(pr)+'</div>'):'');
     // KPI (1x0.5): locked design doc — "Headline: Total Payroll Amount for the selected period... No download,
     // no switch." Not previously implemented (no sz==='k' branch existed).
     if(sz==='k'||sz==='xk'){
@@ -4213,15 +4247,17 @@ WRENDER[3]=function(opt,wid,sz){
     // departments (staff groups) with their totals/prior totals; drilled into a single department, rows are
     // that department's own compensation categories — same grouping rule already applied to the table view.
     // Each row carries both `cur` and `prev` so Bar/Pie/Table can all show the current-vs-prior comparison.
+    // Added 2026-07-15: in perDeptMode each row also carries its own resolved period (`pr`), since that's
+    // exactly the case where each department can have a different Start Date/Period/Recurring setting.
     var rowsAll;
     if(key==='All Departments'){
       var deptNames=Object.keys(MOCK_DATA.series[3]).filter(function(k){return k!=='All Departments';}).sort();
       rowsAll=deptNames.map(function(dn){
         var dd=MOCK_DATA.series[3][dn];
-        return {l:dn,cur:dd.vals.reduce(function(a,b){return a+b;},0),prev:dd.prev.reduce(function(a,b){return a+b;},0)};
+        return {l:dn,cur:dd.vals.reduce(function(a,b){return a+b;},0),prev:dd.prev.reduce(function(a,b){return a+b;},0),pr:perDeptMode?w3PeriodRange(wid,dn):null};
       });
     } else {
-      rowsAll=d.cats.map(function(c,ri){return {l:c,cur:d.vals[ri],prev:d.prev[ri]};});
+      rowsAll=d.cats.map(function(c,ri){return {l:c,cur:d.vals[ri],prev:d.prev[ri],pr:null};});
     }
     var rows=capN(rowsAll,sz);
     var rowsMaxV=Math.max.apply(null,rowsAll.map(function(r){return r.cur;}))||1;
@@ -4230,38 +4266,50 @@ WRENDER[3]=function(opt,wid,sz){
       // Column header renamed "Category"→"Distribution" (2026-07-09, matches the widget's own name) and rows
       // now come from the unified rowsAll/rows above. Added 2026-07-10, per direct instruction: Prior/Current/
       // Change columns (previously Amount/Share only) — the same current-vs-prior comparison as the bar chart,
-      // now on the table too.
+      // now on the table too. Added 2026-07-15: in perDeptMode, a Period column shows each department's own
+      // resolved range (plus a 🔁 if that department is recurring), since the top-of-card callout can't show
+      // one shared date anymore.
       var trows=rows.map(function(r){
         var chg=r.cur-r.prev;
         var chgPct=pctChange(r.cur,r.prev);
         var chgTxt=(chg>=0?'+':'')+$m(chg)+(chgPct===null?'':' ('+(chgPct>=0?'+':'')+chgPct+'%)');
-        return [r.l,$m(r.prev),$m(r.cur),'<span style="color:'+(chg>=0?'#2e7d32':'#e53935')+';font-weight:600">'+chgTxt+'</span>'];
+        var row=[r.l,$m(r.prev),$m(r.cur),'<span style="color:'+(chg>=0?'#2e7d32':'#e53935')+';font-weight:600">'+chgTxt+'</span>'];
+        if(perDeptMode) row.push((r.pr?r.pr.range:'—')+recurBadge(r.pr));
+        return row;
       });
       var tcols=['Distribution',{l:'Prior',r:true},{l:'Current',r:true},{l:'Change',r:true}];
-      // Added 2026-07-14, per direct instruction: the full start–end range now sits directly with the table
-      // itself (distinct from the "Payment due" callout above, which is just the single end date) — a caption
-      // bar directly on top of the table grid, so it reads as part of the table rather than the general card
-      // header.
-      var periodCaption=pr?('<div style="font-size:10.5px;color:#484848;font-weight:600;background:#f5f7fb;padding:5px 8px;border-radius:6px 6px 0 0;border:.5px solid #e4e8f1;border-bottom:none">Period shown: '+pr.range+'</div>'):'';
+      if(perDeptMode) tcols.push('Period');
+      // Added 2026-07-14: the full start–end range sits directly with the table (distinct from the "Payment
+      // due" callout above). Suppressed in perDeptMode since each row now carries its own Period column instead
+      // of one shared range for the whole table.
+      var periodCaption=(pr&&!perDeptMode)?('<div style="font-size:10.5px;color:#484848;font-weight:600;background:#f5f7fb;padding:5px 8px;border-radius:6px 6px 0 0;border:.5px solid #e4e8f1;border-bottom:none">Period shown: '+pr.range+'</div>'):'';
       return rangeTag+ftags(wid)+periodCaption+(sz==='l'||sz==='x'?tblScroll(tcols,trows,tH(sz)):tbl(tcols,trows))+lOnly('<div style="font-size:10px;color:#888;margin-top:6px;text-align:right">Total: '+$m(total)+'</div>',sz);
     }
     if(view==='pie'){
       // New view, added 2026-07-10 per direct instruction: Pie Chart using the same rows/total as Bar/Table,
       // available at every size except KPI (Small included — see fcApplyMenuTrim's hideSwAtSmall override).
+      // Added 2026-07-15: in perDeptMode, a small list under the chart spells out each department's own period
+      // — pieChart()'s legend itself is a shared helper used by every widget, so this is a separate line rather
+      // than changing what that legend can render.
       var slices=rows.map(function(r,i){return {l:r.l,p:pct(r.cur,total),c:colors[i%colors.length]};});
       var psz=sz==='s'?80:sz==='m'?90:110;
-      return rangeTag+ftags(wid)+pieChart(slices,psz)+mUp('<div style="font-size:10px;color:#888;margin-top:8px;text-align:center">Total payroll: '+$m(total)+'</div>',sz);
+      var perDeptList=perDeptMode?('<div style="font-size:9.5px;color:#888;margin-top:8px;line-height:1.6">'+rows.map(function(r){return '<strong>'+r.l+':</strong> '+(r.pr?r.pr.range:'—')+recurBadge(r.pr);}).join('<br>')+'</div>'):'';
+      return rangeTag+ftags(wid)+pieChart(slices,psz)+perDeptList+mUp('<div style="font-size:10px;color:#888;margin-top:8px;text-align:center">Total payroll: '+$m(total)+'</div>',sz);
     }
     // Default: Horizontal Bars. Small (1x1) used to show a "biggest category" headline instead of bars — that
     // was the "'Top category by amount' as KPI headline" concept the doc's "What Got Cut" section says was
     // dropped; removed 2026-07-09 so Small falls through to the same bars every other size uses. Each bar shows
     // a % up/down badge (added 2026-07-09) comparing the current value to `prev` — the same-length prior period
-    // for whatever Pay Period is selected — reusing the existing pctChange() helper.
+    // for whatever Pay Period is selected — reusing the existing pctChange() helper. Added 2026-07-15: in
+    // perDeptMode, each row's own period shows as small subtext under its bar (hidden at Small, same as the
+    // Total caption, for space).
     return rangeTag+ftags(wid)+'<div class="hbars">'+rows.map(function(r,i){
       var chg=pctChange(r.cur,r.prev);
       var chgHtml=(chg===null)?'':(' <span style="color:'+(chg>=0?'#2e7d32':'#e53935')+';font-weight:600;font-size:10px">'+(chg>=0?'▲':'▼')+' '+Math.abs(chg)+'%</span>');
-      return hbar(r.l,$m(r.cur)+chgHtml,Math.round(r.cur/rowsMaxV*100),colors[i%colors.length]);
-    }).join('')+'</div>'+mUp('<div style="font-size:10px;color:#888;margin-top:8px;text-align:right">Total: '+$m(total)+'</div><div style="font-size:9px;color:#aaa;margin-top:2px;text-align:right">% vs. same-length prior period</div>',sz);
+      var barHtml=hbar(r.l,$m(r.cur)+chgHtml,Math.round(r.cur/rowsMaxV*100),colors[i%colors.length]);
+      if(perDeptMode && sz!=='s'){ barHtml+='<div style="font-size:9px;color:#aaa;margin:-4px 0 6px 2px">'+(r.pr?r.pr.range:'—')+recurBadge(r.pr)+'</div>'; }
+      return barHtml;
+    }).join('')+'</div>'+mUp('<div style="font-size:10px;color:#888;margin-top:8px;text-align:right">Total: '+$m(total)+'</div>'+(perDeptMode?'':'<div style="font-size:9px;color:#aaa;margin-top:2px;text-align:right">% vs. same-length prior period</div>'),sz);
   }
   if(opt==='B'){
     var slices=d.cats.map(function(c,i){return {l:c,p:pct(d.vals[i],total),c:colors[i]};});
@@ -5203,9 +5251,12 @@ function openFilter(wid,e,opt){
 function _renderFltBody(wid,fdefs){
   var state=gs(wid);
   var draft={};
-  // Reads both selects and inputs now — W03's Custom Beginning/Ending fields below are date <input>s, not
-  // <select>s, so the draft (which preserves in-progress picks across a re-render) needs to catch those too.
-  document.querySelectorAll('#flt-body select, #flt-body input').forEach(function(sel){draft[sel.getAttribute('data-filter')]=sel.value;});
+  // Reads selects, date inputs, and now checkboxes (W03's Recurring / Separate By Department toggles, added
+  // 2026-07-15) — checkboxes store 'Yes'/'No' off their `.checked` state rather than `.value`, which for a
+  // checkbox is just whatever static `value` attribute it has (or "on"), not whether it's actually checked.
+  document.querySelectorAll('#flt-body select, #flt-body input').forEach(function(sel){
+    draft[sel.getAttribute('data-filter')]=(sel.type==='checkbox')?(sel.checked?'Yes':'No'):sel.value;
+  });
   function val(label){ return draft.hasOwnProperty(label)?draft[label]:(state.filters[label]||''); }
   var body='';
   fdefs.forEach(function(f){
@@ -5228,9 +5279,13 @@ function _renderFltBody(wid,fdefs){
     (MOCK_DATA.lineDescriptions[wid]||[]).forEach(function(o){var sel=(val('Line Description')===o)?' selected':'';body+='<option'+sel+'>'+o+'</option>';});
     body+='</select></div>';
   }
+  if(wid===3){ var todayStr=new Date().toISOString().slice(0,10); }
+  var w3SepByDept=(wid===3 && val('Separate By Department')==='Yes');
   // W03 (2026-07-09, per direct instruction): Pay Period = Custom reveals two date inputs — Beginning Date and
   // Ending Date — so the user can enter a fully manual range instead of the Weekly/Bi-Weekly/Monthly presets.
-  if(wid===3 && val('Pay Period')==='Custom'){
+  // Hidden entirely when Separate By Department is on (2026-07-15) — Custom/Beginning/Ending is a single global
+  // range and doesn't make sense once each department has its own Start Date + Period below.
+  if(wid===3 && !w3SepByDept && val('Pay Period')==='Custom'){
     body+='<div style="margin-bottom:14px"><label style="display:block;font-size:11px;font-weight:600;color:#484848;margin-bottom:5px">Beginning Date</label>';
     body+='<input type="date" data-filter="Beginning Date" value="'+(val('Beginning Date')||'')+'" style="width:100%;padding:7px 10px;border:.5px solid #d2d2d2;border-radius:6px;font-family:inherit;font-size:13px;background:#fff">';
     body+='</div>';
@@ -5239,17 +5294,51 @@ function _renderFltBody(wid,fdefs){
     body+='</div>';
   }
   // W03 (2026-07-13, per direct instruction): for the three preset periods (Weekly/Bi-Weekly/Monthly), the
-  // filter now anchors on Pay Date — the date payroll is actually issued — rather than assuming "today." The
-  // period runs backward from Pay Date: Weekly = the 7 days up to and including it, Bi-Weekly = 14 days,
-  // Monthly = 30 days. E.g. Pay Date = a Friday, Bi-Weekly = that Friday back through the Friday two weeks
-  // earlier. Custom bypasses this entirely (explicit Beginning/Ending above), so Pay Date only shows for the
-  // other three. Defaults to today if nothing's been picked yet. See w3PeriodRange() in WRENDER[3] for the math.
-  if(wid===3 && val('Pay Period')!=='Custom'){
-    var todayStr=new Date().toISOString().slice(0,10);
+  // filter anchors on Pay Date — the date payroll is actually issued — rather than assuming "today." The period
+  // runs backward from Pay Date: Weekly = the 7 days up to and including it, Bi-Weekly = 14 days, Monthly = 30
+  // days. Defaults to today if nothing's been picked yet. Hidden when Separate By Department is on — same
+  // reasoning as Custom above, each department gets its own Start Date instead (see block further down).
+  if(wid===3 && !w3SepByDept && val('Pay Period')!=='Custom'){
     body+='<div style="margin-bottom:14px"><label style="display:block;font-size:11px;font-weight:600;color:#484848;margin-bottom:5px">Pay Date</label>';
     body+='<input type="date" data-filter="Pay Date" value="'+(val('Pay Date')||todayStr)+'" style="width:100%;padding:7px 10px;border:.5px solid #d2d2d2;border-radius:6px;font-family:inherit;font-size:13px;background:#fff">';
     body+='<div style="font-size:10.5px;color:#888;margin-top:4px">The date payroll is issued — the '+(val('Pay Period')||'Weekly').toLowerCase()+' period is counted backward from here.</div>';
     body+='</div>';
+  }
+  // W03 (2026-07-15, per direct instruction): two settings previously missing from this filter panel.
+  // (1) "Make this recurring" — only shown for the global, non-Custom case (a one-off Custom range or a
+  // per-department setup below have their own recurring semantics, or none). (2) "Set Pay Period separately
+  // per department" — when on, replaces the single Pay Date above with one Start Date + Period + Make
+  // recurring block per department, each separated by a divider line. Both are plain checkboxes, read via
+  // their `.checked` state (see the draft-reading and applyFilter changes that special-case type="checkbox").
+  if(wid===3){
+    if(!w3SepByDept && val('Pay Period')!=='Custom'){
+      body+='<div style="margin-bottom:14px;display:flex;align-items:center;gap:8px">';
+      body+='<input type="checkbox" data-filter="Recurring" id="w3-cb-recurring"'+(val('Recurring')==='Yes'?' checked':'')+' style="width:15px;height:15px">';
+      body+='<label for="w3-cb-recurring" style="font-size:12px;color:#484848">Make this recurring</label>';
+      body+='</div>';
+    }
+    body+='<div style="height:.5px;background:#e4e8f1;margin:6px 0 14px"></div>';
+    body+='<div style="margin-bottom:'+(w3SepByDept?'14':'0')+'px;display:flex;align-items:center;gap:8px">';
+    body+='<input type="checkbox" data-filter="Separate By Department" id="w3-cb-sepdept" onchange="_renderFltBody(3,MOCK_DATA.filters[3])"'+(w3SepByDept?' checked':'')+' style="width:15px;height:15px">';
+    body+='<label for="w3-cb-sepdept" style="font-size:12px;color:#484848">Set Pay Period separately per department</label>';
+    body+='</div>';
+    if(w3SepByDept){
+      var w3Depts=Object.keys(MOCK_DATA.series[3]).filter(function(k){return k!=='All Departments';}).sort();
+      w3Depts.forEach(function(dn,i){
+        body+='<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:700;color:#202020;margin-bottom:6px">'+dn+'</div>';
+        body+='<label style="display:block;font-size:10.5px;font-weight:600;color:#484848;margin-bottom:4px">Start Date</label>';
+        body+='<input type="date" data-filter="PayDate_'+dn+'" value="'+(val('PayDate_'+dn)||todayStr)+'" style="width:100%;padding:6px 10px;border:.5px solid #d2d2d2;border-radius:6px;font-family:inherit;font-size:12.5px;background:#fff;margin-bottom:8px">';
+        body+='<label style="display:block;font-size:10.5px;font-weight:600;color:#484848;margin-bottom:4px">Period</label>';
+        body+='<select data-filter="Period_'+dn+'" style="width:100%;padding:6px 10px;border:.5px solid #d2d2d2;border-radius:6px;font-family:inherit;font-size:12.5px;background:#fff;margin-bottom:8px">';
+        ['Weekly','Bi-Weekly','Monthly'].forEach(function(o){var sel=(val('Period_'+dn)===o)?' selected':'';body+='<option'+sel+'>'+o+'</option>';});
+        body+='</select>';
+        body+='<div style="display:flex;align-items:center;gap:8px">';
+        body+='<input type="checkbox" data-filter="Recurring_'+dn+'" id="w3-cb-rec-'+dn+'"'+(val('Recurring_'+dn)==='Yes'?' checked':'')+' style="width:15px;height:15px">';
+        body+='<label for="w3-cb-rec-'+dn+'" style="font-size:11.5px;color:#484848">Make recurring</label>';
+        body+='</div></div>';
+        if(i<w3Depts.length-1){ body+='<div style="height:.5px;background:#e4e8f1;margin:0 0 12px"></div>'; }
+      });
+    }
   }
   document.getElementById('flt-body').innerHTML=body;
 }
@@ -5257,7 +5346,9 @@ function closeFilter(){document.getElementById('flt-modal').classList.remove('op
 function applyFilter(){
   if(_filterWid===null){closeFilter();return;}
   var state=gs(_filterWid);
-  document.querySelectorAll('#flt-body select, #flt-body input').forEach(function(sel){state.filters[sel.getAttribute('data-filter')]=sel.value;});
+  document.querySelectorAll('#flt-body select, #flt-body input').forEach(function(sel){
+    state.filters[sel.getAttribute('data-filter')]=(sel.type==='checkbox')?(sel.checked?'Yes':'No'):sel.value;
+  });
   closeFilter();rerender(_filterWid);showToast('Filters applied');
 }
 (function(){var m=document.getElementById('flt-modal');if(m)m.addEventListener('click',function(e){if(e.target===this)closeFilter();});})();
@@ -5656,7 +5747,7 @@ fcInitState(17,'A');
 // All 14 widgets bump together here since the refresh-button addition (2026-07-09) touched every widget's
 // Final Check cards identically; W02 is one step ahead of the rest since it also had the pie-chart redesign.
 var FC_VERSION = {
-  1:'0.3', 2:'0.5', 3:'0.6', 4:'0.1', 5:'0.1', 6:'0.1', 7:'0.8',
+  1:'0.3', 2:'0.5', 3:'0.7', 4:'0.1', 5:'0.1', 6:'0.1', 7:'0.8',
   9:'0.1', 10:'0.1', 11:'0.1', 13:'0.1', 15:'0.1', 16:'0.1', 17:'0.1'
 };
 Object.keys(FC_VERSION).forEach(function(wid){
@@ -5665,9 +5756,10 @@ Object.keys(FC_VERSION).forEach(function(wid){
 });
 
 // "Ready to be reviewed by Jo" badge (per direct instruction 2026-07-09, started with Pension Plans; W03
-// Payroll Distributions added 2026-07-14 once its refinement pass was complete). Toggle per widget here;
-// false hides the badge for that widget.
-var FC_READY_FOR_REVIEW = { 2:true, 3:true };
+// Payroll Distributions added 2026-07-14 once its refinement pass was complete; W01 Budget Compared to Actual
+// and W07 Deposit Accounts added 2026-07-15, per direct instruction). Toggle per widget here; false hides the
+// badge for that widget.
+var FC_READY_FOR_REVIEW = { 1:true, 2:true, 3:true, 7:true };
 Object.keys(FC_READY_FOR_REVIEW).forEach(function(wid){
   var el=document.getElementById('fc-review-'+wid);
   if(el) el.style.display = FC_READY_FOR_REVIEW[wid] ? '' : 'none';
