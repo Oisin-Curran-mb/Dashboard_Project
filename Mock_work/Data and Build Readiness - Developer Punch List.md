@@ -54,14 +54,18 @@ Everything else below is either fully available or needs new query logic rather 
 | Appointee drill-down "Charge" field | 🔴 Known gap | Returns empty string in Modern API today |
 
 ## W03 — Payroll Distributions
+**Note (2026-07-16):** this widget reports payroll already *paid* within a period — an after-the-fact check, not an outstanding/owed amount. Doesn't change anything below, just context for anyone reading "Pay Date"/period rows as if they were a receivable.
+
 | Requirement | Status | Notes |
 |---|---|---|
-| Pay Period (rolling 7/30/Custom) | ✅ Available | Straightforward `CheckDate` range |
+| Pay Period (Weekly/Bi-Weekly/Monthly/Custom, anchored on Pay Date) | ✅ Available | Straightforward `CheckDate` range; updated 2026-07-13 from the original rolling-7/30-day design — still just a `CheckDate` range under the hood |
+| Recurring flag + per-department Pay Period | 🟡 UI only, no backend concept | Stored/displayed in the mockup (2026-07-15); no scheduling/recurrence logic exists behind it yet — needs real scheduling design, not just a flag |
 | Department filter | 🔴 Missing/unconfirmed | No department field confirmed on `PRHistory`/`PRHistoryCompensation` |
-| Horizontal Bars / Donut / Table views | ✅ Available | |
-| Period Comparison view (current vs. prior) | 🟡 Needs new query | Same aggregation run twice + delta calc — no new data, just doubled query logic |
+| Horizontal Bars / Donut / Table / Pie views | ✅ Available | |
+| Period Comparison (current vs. prior) | 🟡 Needs new query | Same aggregation run twice + delta calc — no new data, just doubled query logic |
 | KPI — Total Payroll Amount | ✅ Available | |
 | Drill-through to Payroll History | 🔴 Missing | New feature, no target page confirmed |
+| Pay-type breakdown when drilled into a department (Regular/Vacation/OverTime/Sick/Double Time/Personal/Holiday/Misc/Other) | 🔴 Missing/unconfirmed | Changed 2026-07-16 from the old Net Pay/Fed Tax/Benefits/State Tax/Retirement/Overtime breakdown, per direct instruction — that was a paycheck-stub view, not a pay-group breakdown. The Purpose doc's confirmed formula groups by `CompensationDistributionID/Name`, not by pay type — this likely needs a different field/table (an earnings/pay-type code) that hasn't been identified yet. Should be linkable since pay groups already tie to compensation records, but needs a developer to dig into the schema before this can be built for real. |
 
 ## W04 — Remittance Pledges
 | Requirement | Status | Notes |

@@ -920,7 +920,7 @@ body{font-family:'Red Hat Text',sans-serif;background:#fafafa;color:#202020;}
   </div>
 
   <div class="sec-hd" style="margin-top:28px">Purpose</div>
-  <div class="fc-purpose">Shows a breakdown of payroll amounts by compensation type across a chosen date range, helping users understand how total payroll spend is distributed across categories such as salary, benefits, and allowances.</div>
+  <div class="fc-purpose">Shows a breakdown of payroll <strong>already paid</strong> within a chosen date range, helping users understand how total payroll spend is distributed across pay-type categories such as regular hours, overtime, and paid leave. This is a post-payroll check of what went out, not a forward-looking view of what's owed — updated 2026-07-16, per direct instruction, to correct that framing.</div>
 
   <div class="sec-hd" style="margin-top:20px">Customer Research — What We're Working Off</div>
   <div class="fc-source">
@@ -933,10 +933,12 @@ body{font-family:'Red Hat Text',sans-serif;background:#fafafa;color:#202020;}
 
   <div class="sec-hd" style="margin-top:20px">Logic — What This Shows, and Why We Built It This Way</div>
   <div class="fc-logic">
-    <p><strong>Current design.</strong> One row per breakdown item, sized by amount — Horizontal Bars is the default because it scales cleanly regardless of category count (Donut/Pie only reads well up to ~4-5 slices). When Department = All Departments, each row is one of the four departments (staff groups) with that department's total; picking a specific department drills into its own compensation categories (salary, benefits, allowances, etc.) instead. Bar, Pie Chart and Data Table all read this exact same row set, so switching between them changes only how it's drawn, never what's being counted. Every row also shows a ▲/▼ % change against the same-length prior period (on the bar, and as a Change column on the table) — a raw total doesn't say whether costs are trending up or down, so the comparison is always visible, not tucked behind a separate view. Small shows the top 3 rows, Medium the top 5, Large all of them plus totals; the KPI headline is Total Payroll Amount for the selected period. Switch Chart Type (Bar/Pie/Table) is available at every size except KPI, including Small.</p>
-    <p><strong>Filters.</strong> Department narrows every view to one department's payroll. Pay Period is Weekly/Bi-Weekly/Monthly/Custom: the three presets anchor on a Pay Date field (the date payroll is actually issued) and count backward from it — Weekly = 7 days, Bi-Weekly = 14, Monthly = 30 (a day-count approximation, not calendar-month-aware — open question, not guessed at). Custom instead reveals its own explicit Beginning/Ending date fields and ignores Pay Date entirely. A "Make this recurring" checkbox sits alongside the preset periods, and a second checkbox, "Set Pay Period separately per department," replaces the single shared Pay Date with one Start Date + Period + Make recurring block per department (Weekly/Bi-Weekly/Monthly only — Custom isn't offered per-department), each block separated by a divider line. The resolved end date shows above the card as "Payment due: <em>date</em>" (with a 🔁 if recurring); the table view additionally shows the full range as "Period shown: <em>start – end</em>" on the table grid. When Separate By Department is on and Department = All Departments, there's no single shared date to show up top, so the callout says as much and each department's own row carries its own period + recurring indicator instead — a Period column on the table, subtext under each bar, and a small per-department list under the pie.</p>
+    <p><strong>Current design.</strong> One row per breakdown item, sized by amount — Horizontal Bars is the default because it scales cleanly regardless of category count (Donut/Pie only reads well up to ~4-5 slices). When Department = All Departments, each row is one of the four departments (staff groups) with that department's total; picking a specific department drills into its own pay-type breakdown — Regular, Vacation, OverTime, Sick, Double Time, Personal, Holiday, Misc, Other (changed 2026-07-16, per direct instruction — see the note below) — instead. Bar, Pie Chart and Data Table all read this exact same row set, so switching between them changes only how it's drawn, never what's being counted. Every row also shows a ▲/▼ % change against the same-length prior period (on the bar, and as a Change column on the table) — a raw total doesn't say whether costs are trending up or down, so the comparison is always visible, not tucked behind a separate view. Small shows the top 3 rows, Medium the top 5, Large all of them plus totals; the KPI headline is Total Payroll Amount for the selected period. Switch Chart Type (Bar/Pie/Table) is available at every size except KPI, including Small.</p>
+    <p><strong>Filters.</strong> Department narrows every view to one department's payroll. Pay Period is Weekly/Bi-Weekly/Monthly/Custom: the three presets anchor on a Pay Date field (the date payroll is actually issued) and count backward from it — Weekly = 7 days, Bi-Weekly = 14, Monthly = 30 (a day-count approximation, not calendar-month-aware — open question, not guessed at). Custom instead reveals its own explicit Beginning/Ending date fields and ignores Pay Date entirely. A "Make this recurring" checkbox sits alongside the preset periods, and a second checkbox, "Set Pay Period separately per department," replaces the single shared Pay Date with one Start Date + Period + Make recurring block per department (Weekly/Bi-Weekly/Monthly only — Custom isn't offered per-department), each block separated by a divider line. The resolved end date shows above the card as "Paid: <em>date</em>" (with a 🔁 if recurring); the table view additionally shows the full range as "Period shown: <em>start – end</em>" on the table grid. When Separate By Department is on and Department = All Departments, there's no single shared date to show up top, so the callout says as much and each department's own row carries its own period + recurring indicator instead — a Period column on the table, subtext under each bar, and a small per-department list under the pie.</p>
+    <p><strong>Note — "paid," not "owed" (2026-07-16, per direct instruction).</strong> This widget reports payroll that has already been <em>paid</em> within the selected period — it's an after-the-fact check of what went out, not a forward-looking view of an outstanding obligation. That's an important correction to how this was framed: the "Payment due" callout above every view used to name the pay date as if it were something still owed, which is backwards — the pay date shown is always in the past or present, never a future amount due. Relabelled to "Paid: <em>date</em>" everywhere it appears (the top-of-card callout, the per-department rows, and this doc). The current-vs-prior comparison isn't affected by this correction — it's still comparing two already-paid periods against each other, which is exactly the kind of after-the-fact check this widget is for.</p>
+    <p><strong>Note — pay-type categories replace the paycheck-stub breakdown (2026-07-16, per direct instruction).</strong> Drilling into a specific department used to show Net Pay/Fed Tax/Benefits/State Tax/Retirement/Overtime — a gross-to-net breakdown of one paycheck's line items, more like reading a pay stub top to bottom. That's not the right lens here. It's now Regular, Vacation, OverTime, Sick, Double Time, Personal, Holiday, Misc, Other — the pay-type/earnings codes hours are actually coded under on a pay run, which is what "breaking down a pay group" should mean. This should be linkable in the real system — pay groups already tie to compensation records — but the exact field or table isn't confirmed; the original Purpose doc's formula (`SUM(PRHistoryCompensation.Amount) GROUP BY CompensationDistributionID, Name`) groups by compensation distribution, not by pay type, so there's likely a different dimension (an earnings/pay-type code) somewhere off `PRHistoryCompensation` or a related detail table that this widget would need instead. Flagged for the developer to dig into rather than assumed — see the Developer Punch List.</p>
     <p><strong>Compared to the current real system</strong> (<a href="../Dashboard_Research/03%20-%20Payroll%20Distributions.md" target="_blank" rel="noopener">Purpose doc</a>): today's widget is a single fixed layout — a table and a pie chart shown side by side, always grouped by compensation category, with plain Beginning/Ending date pickers (defaulting 1 Jan–today), no comparison to any other period, no per-department scheduling of any kind, no recurring option, no drill-down, and no department filter. This redesign changes all of that: Bar is the new default (pie/donut alone doesn't hold up once an org has more than ~5 categories), Pie and Table are kept as full peers rather than dropped; a Department filter and department-level rollup were added since HR/finance review is usually department-first, and — since different departments can genuinely run on different pay schedules — that filter now optionally splits into fully independent per-department periods rather than forcing one shared date on every department; the raw date pickers became named, Pay-Date-anchored periods, with an explicit recurring flag, since a payroll total only means something in the context of an actual pay run, not an arbitrary calendar range; and a current-vs-prior comparison was added everywhere because "what did we spend" is a weaker question than "is this drifting." A drill-through to the Payroll History module is specced as a genuinely new feature — the current system has no drill-down of any kind — and Department is a new filter the current system's data source doesn't clearly support yet (see Open Items below).</p>
-    <p><strong>Open items — not built, flagged rather than guessed at:</strong> (1) Department field is not confirmed to exist on the real `PRHistory`/`PRHistoryCompensation` tables — backend needs to confirm before this filter can go live. (2) Drill-through target page (the Payroll History module) isn't confirmed yet. (3) The Data Table Sort rule (fixed alphabetical, with a user toggle to Amount descending) — only the fixed alphabetical default is built; the toggle isn't. (4) Monthly's 30-day approximation vs. a true calendar-month subtraction, noted above. (5) "Make this recurring" is stored and displayed (including per-department) but is a flag only in this mockup — nothing here actually advances a period forward over calendar time; that's real scheduling logic for the backend, not something a static mock can demonstrate. (6) Custom isn't offered as a per-department option — only Weekly/Bi-Weekly/Monthly — flagged as a scope decision rather than an oversight, since a fully independent custom range per department starts to look like four separate widgets.</p>
+    <p><strong>Open items — not built, flagged rather than guessed at:</strong> (1) Department field is not confirmed to exist on the real `PRHistory`/`PRHistoryCompensation` tables — backend needs to confirm before this filter can go live. (2) Drill-through target page (the Payroll History module) isn't confirmed yet. (3) The Data Table Sort rule (fixed alphabetical, with a user toggle to Amount descending) — only the fixed alphabetical default is built; the toggle isn't. (4) Monthly's 30-day approximation vs. a true calendar-month subtraction, noted above. (5) "Make this recurring" is stored and displayed (including per-department) but is a flag only in this mockup — nothing here actually advances a period forward over calendar time; that's real scheduling logic for the backend, not something a static mock can demonstrate. (6) Custom isn't offered as a per-department option — only Weekly/Bi-Weekly/Monthly — flagged as a scope decision rather than an oversight, since a fully independent custom range per department starts to look like four separate widgets. (7) The new pay-type breakdown (Regular/Vacation/OverTime/Sick/Double Time/Personal/Holiday/Misc/Other) is mock data only — it should be linkable via pay groups, but the real field/table backing it isn't confirmed; needs developer investigation before build.</p>
   </div>
   </div><!-- /fc-widget-3 -->
   <div class="fc-widget" id="fc-widget-4">
@@ -2968,12 +2970,23 @@ MOCK_DATA.series[2] = {
 };
 
 // W3 — Payroll Distributions
+// Categories changed 2026-07-16, per direct instruction: the old set — Net Pay/Fed Tax/Benefits/State Tax/
+// Retirement/Overtime — was a gross-to-net paycheck-stub breakdown (pay minus tax/deduction withholdings).
+// That's not what should show when drilling into a pay group. Replaced with pay-TYPE codes — the categories
+// hours/earnings are actually coded under on a pay run: Regular, Vacation, OverTime, Sick, Double Time,
+// Personal, Holiday, Misc, Other. This should be linkable in the real system — pay groups already tie to
+// compensation records — but the exact field/table (a pay-type or earnings-code dimension, likely somewhere
+// off `PRHistoryCompensation` or a related detail table, not the `CompensationDistributionID/Name` pairing the
+// original Purpose doc's formula relies on) isn't confirmed. Flagged for the dev to dig into — see the
+// Developer Punch List and this widget's Final Check Logic notes. Values below are illustrative mock numbers
+// only, not derived from anything real; department totals still sum to the same "All Departments" total as
+// before for internal consistency.
 MOCK_DATA.series[3] = {
-  'All Departments': {cats:['Net Pay','Fed Tax','Benefits','State Tax','Retirement','Overtime'],vals:[82900,35500,23700,4000,1900,6200],prev:[80100,34200,23100,3900,1800,5800]},
-  'Finance':         {cats:['Net Pay','Fed Tax','Benefits','State Tax','Retirement','Overtime'],vals:[24800,10700,7200,1200,580,1400],prev:[23900,10300,6900,1100,560,1200]},
-  'Admin':           {cats:['Net Pay','Fed Tax','Benefits','State Tax','Retirement','Overtime'],vals:[18200,7800,5200,880,420,800],prev:[17600,7500,5000,850,400,700]},
-  'Ministry':        {cats:['Net Pay','Fed Tax','Benefits','State Tax','Retirement','Overtime'],vals:[28400,12200,8100,1720,660,2800],prev:[27300,11700,7800,1650,630,2600]},
-  'Facilities':      {cats:['Net Pay','Fed Tax','Benefits','State Tax','Retirement','Overtime'],vals:[11500,4800,3200,200,240,1200],prev:[11100,4600,3100,200,210,1300]}
+  'All Departments': {cats:['Regular','Vacation','OverTime','Sick','Double Time','Personal','Holiday','Misc','Other'],vals:[126800,7600,6200,3200,700,2050,4900,970,1780],prev:[122600,7300,5550,3060,590,1970,4730,935,1730]},
+  'Finance':         {cats:['Regular','Vacation','OverTime','Sick','Double Time','Personal','Holiday','Misc','Other'],vals:[38000,2200,1400,900,200,600,1500,300,780],prev:[36700,2100,1200,850,150,580,1450,290,750]},
+  'Admin':           {cats:['Regular','Vacation','OverTime','Sick','Double Time','Personal','Holiday','Misc','Other'],vals:[27500,1600,800,700,100,450,1100,250,800],prev:[26600,1550,650,680,80,430,1050,240,770]},
+  'Ministry':        {cats:['Regular','Vacation','OverTime','Sick','Double Time','Personal','Holiday','Misc','Other'],vals:[44500,2600,2800,1100,300,700,1600,280,0],prev:[43000,2500,2400,1050,260,670,1550,270,0]},
+  'Facilities':      {cats:['Regular','Vacation','OverTime','Sick','Double Time','Personal','Holiday','Misc','Other'],vals:[16800,1200,1200,500,100,300,700,140,200],prev:[16300,1150,1300,480,100,290,680,135,210]}
 };
 
 // W4 — Remittance Pledges
@@ -4172,15 +4185,17 @@ WRENDER[2]=function(opt,wid,sz){
 // this entirely and uses its own explicit Beginning/Ending fields, ignoring Pay Date.
 // Extended 2026-07-15, per direct instruction, with two settings that were missing from the filter panel:
 // - Recurring: a plain flag on the global (non-Custom) period — doesn't change the math, just whether this
-//   keeps advancing each cycle instead of being a one-off; surfaced wherever a due date is shown.
+//   keeps advancing each cycle instead of being a one-off; surfaced wherever the pay date is shown.
 // - Separate By Department: when on, each department has its own Start Date + Period + Recurring instead of
 //   one shared setting. Pass `deptName` to resolve that department's own period (reads PayDate_<dept>,
 //   Period_<dept>, Recurring_<dept> — Custom isn't offered per-department, only Weekly/Bi-Weekly/Monthly).
 //   Without a deptName, Separate By Department has no single answer (each department differs) — callers
 //   handle that themselves rather than this function guessing which department to show.
 // Returns null if nothing's resolvable yet (Custom picked but dates not filled in); otherwise an object with
-// `range` (short "start – end" string, for in-table use), `due` (the end date alone, formatted with year, for
-// the "Payment due" callout), and `recurring` (boolean).
+// `range` (short "start – end" string, for in-table use), `due` (the pay date itself, formatted with year —
+// property name kept from before the 2026-07-16 "paid, not owed" correction; it's the date payroll WAS issued,
+// not an amount outstanding — callers now label it "Paid: ..." rather than "Payment due: ..."), and
+// `recurring` (boolean).
 function w3PeriodRange(wid,deptName){
   var fmtShort=function(dt){return dt.toLocaleDateString('en-US',{month:'short',day:'numeric'});};
   var fmtLong=function(dt){return dt.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});};
@@ -4215,7 +4230,10 @@ WRENDER[3]=function(opt,wid,sz){
   var view=sv(wid,opt);
   var key=fv(wid,'Department')||'All Departments';
   var d=MOCK_DATA.series[3][key]||MOCK_DATA.series[3]['All Departments'];
-  var colors=['#4b6ec3','#6e8bd4','#a0b5e6','#c4d4f0','#e0e8fa','#bcc8e8'];
+  // Extended from 6 to 9 colors on 2026-07-16, alongside the pay-type category change — the old 6-color
+  // palette would have silently repeated (via colors[i%colors.length]) once the department rollup or a
+  // drilled-in department's breakdown had more than 6 rows, which is now the normal case (9 pay types).
+  var colors=['#4b6ec3','#6e8bd4','#a0b5e6','#c4d4f0','#e0e8fa','#bcc8e8','#2f4e8f','#7c5cb0','#a986d6'];
   var total=d.vals.reduce(function(a,b){return a+b;},0)||1;
   var maxV=Math.max.apply(null,d.vals)||1;
   var barH=sz==='s'?80:sz==='m'?90:sz==='x'?220:110;
@@ -4223,19 +4241,25 @@ WRENDER[3]=function(opt,wid,sz){
   if(opt==='A'){
     // Added 2026-07-13, per direct instruction: shows the resolved period above the card content, so it's
     // visible that the period is being counted backward from Pay Date rather than assumed from "today."
-    // Refined 2026-07-14: the callout names the actual payment date ("Payment due: ...") rather than a bare
-    // date range — the full start–end range sits with the table instead, specifically in the table view.
+    // Refined 2026-07-14: the callout names the actual pay date rather than a bare date range — the full
+    // start–end range sits with the table instead, specifically in the table view.
     // Refined again 2026-07-15, per direct instruction, for the new Separate By Department setting: when it's
-    // on AND Department = All Departments, there's no single payment date to show here — each department has
-    // its own (see the recurBadge/perDeptMode handling below and each row's own period). Drilled into one
-    // specific department, that department's own period is used instead of the global one.
+    // on AND Department = All Departments, there's no single pay date to show here — each department has its
+    // own (see the recurBadge/perDeptMode handling below and each row's own period). Drilled into one specific
+    // department, that department's own period is used instead of the global one.
+    // Reframed 2026-07-16, per direct instruction — important conceptual correction: this widget reports
+    // payroll that has already been PAID within a period, not an amount owed/outstanding. "Payment due" was
+    // the wrong word for what pr.due actually is (the pay date itself, always in the past or present, never a
+    // future obligation) — it read as an AP-style "money you still owe" callout, which this isn't. Relabelled
+    // to "Paid" throughout. The current-vs-prior comparison is unaffected by this — it's still comparing two
+    // already-paid periods against each other, which is exactly the "after the fact" check this widget is for.
     var sepByDept=(fv(wid,'Separate By Department')==='Yes');
     var perDeptMode=(sepByDept && key==='All Departments');
     var pr=perDeptMode?null:(sepByDept?w3PeriodRange(wid,key):w3PeriodRange(wid));
     var recurBadge=function(p){ return (p&&p.recurring)?' <span title="Recurring" style="font-size:9px">🔁</span>':''; };
     var rangeTag=perDeptMode
-      ? '<div style="font-size:10px;color:#4b6ec3;font-weight:600;margin-bottom:6px">Payment due: set per department — see rows below</div>'
-      : (pr?('<div style="font-size:10px;color:#4b6ec3;font-weight:600;margin-bottom:6px">Payment due: '+pr.due+recurBadge(pr)+'</div>'):'');
+      ? '<div style="font-size:10px;color:#4b6ec3;font-weight:600;margin-bottom:6px">Paid: varies by department — see rows below</div>'
+      : (pr?('<div style="font-size:10px;color:#4b6ec3;font-weight:600;margin-bottom:6px">Paid: '+pr.due+recurBadge(pr)+'</div>'):'');
     // KPI (1x0.5): locked design doc — "Headline: Total Payroll Amount for the selected period... No download,
     // no switch." Not previously implemented (no sz==='k' branch existed).
     if(sz==='k'||sz==='xk'){
@@ -5747,7 +5771,7 @@ fcInitState(17,'A');
 // All 14 widgets bump together here since the refresh-button addition (2026-07-09) touched every widget's
 // Final Check cards identically; W02 is one step ahead of the rest since it also had the pie-chart redesign.
 var FC_VERSION = {
-  1:'0.3', 2:'0.5', 3:'0.7', 4:'0.1', 5:'0.1', 6:'0.1', 7:'0.8',
+  1:'0.3', 2:'0.5', 3:'0.8', 4:'0.1', 5:'0.1', 6:'0.1', 7:'0.8',
   9:'0.1', 10:'0.1', 11:'0.1', 13:'0.1', 15:'0.1', 16:'0.1', 17:'0.1'
 };
 Object.keys(FC_VERSION).forEach(function(wid){

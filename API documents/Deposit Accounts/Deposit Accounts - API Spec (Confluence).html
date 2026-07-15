@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Deposit Accounts — API Spec</title>
+<style>
+body { font-family: -apple-system, Helvetica, Arial, sans-serif; max-width: 900px; margin: 30px auto; line-height: 1.5; color: #172B4D; }
+h1 { font-size: 24px; }
+h2 { font-size: 19px; border-bottom: 1px solid #DFE1E6; padding-bottom: 6px; margin-top: 32px; }
+h3 { font-size: 16px; margin-top: 20px; }
+table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+th, td { border: 1px solid #DFE1E6; padding: 6px 10px; text-align: left; vertical-align: top; }
+th { background: #F4F5F7; }
+code { background: #F4F5F7; padding: 1px 5px; border-radius: 3px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 90%; }
+pre { background: #F4F5F7; padding: 12px; border-radius: 4px; overflow-x: auto; }
+pre code { background: none; padding: 0; }
+.status { background: #FFF0B3; display: inline-block; padding: 3px 10px; border-radius: 3px; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<h1>Deposit Accounts — API Spec</h1>
+
+<p><span class="status">Status: DRAFT — not final</span></p>
+
+<h2>Tables</h2>
+
+<table>
+<tr><th>Table</th><th>Fields used</th></tr>
+<tr><td><code>DH_Account</code></td><td>AccountId, AccountNumber, Name, InceptionDate, TypeID, Active</td></tr>
+<tr><td><code>DH_Type</code></td><td>TypeID, Name, BankAccountID</td></tr>
+<tr><td><code>DH_Transaction</code></td><td>AccountID, TransactionDate, Amount — balance at any date = <code>SUM(Amount WHERE TransactionDate&lt;=asOfDate)</code></td></tr>
+</table>
+
+<p>No new tables. Everything below is new queries against <code>DH_Transaction</code>, not a schema change.</p>
+
+<h2>Old vs. new</h2>
+
+<table>
+<tr><th></th><th>Old (live today)</th><th>New (needed)</th></tr>
+<tr><td>Endpoints</td><td><code>/filters</code>, <code>/grid?accountTypeId=</code>, <code>/chart</code> — 3 separate calls</td><td>See open question below — may collapse to fewer calls</td></tr>
+<tr><td>Balance</td><td>Today only, single point</td><td>Balance <strong>+ comparison balance</strong> (e.g. same time last year)</td></tr>
+<tr><td>Type breakdown</td><td>Always all types — ignores the type filter (confirmed in current code)</td><td>Must respect the account type filter</td></tr>
+<tr><td>History</td><td>None — no endpoint returns more than one point in time</td><td><code>history[]</code> — per account, per type, and for the total. New capability, doesn't exist today in any form.</td></tr>
+<tr><td>Pagination</td><td>None — <code>/grid</code> returns all accounts, unpaginated</td><td>Needed — real orgs may have up to ~50 accounts</td></tr>
+<tr><td>Diff / % change</td><td>None</td><td>Computed server-side (<code>diffAmount</code>, <code>diffPct</code>) at every level</td></tr>
+</table>
+
+<h2>Open question 1 — one endpoint, or split by time need?</h2>
+
+<p>The new tree (Total → Type → Account) needs both a point-in-time balance and a <code>history</code> series at every level. Two ways to deliver it:</p>
+
+<p><strong>Option A — one endpoint.</strong> Single call returns the whole tree, <code>history</code> included at every level. Simplest for the frontend — one response, nothing can drift between views. Downside: every request pays for <code>history</code> on every account, even for a view that only needs the totals.</p>
+
+<p><strong>Option B — split.</strong> One endpoint returns just <code>balance</code> + <code>comparisonBalance</code> (no <code>history</code>) for the totals/table view. A second endpoint returns <code>history</code> only, scoped to whatever's asked for (total / one type / one account). Downside: two calls, two things to keep consistent. Upside: each UI interaction (switching a filter, opening a chart) can fire its own small, fast request instead of one call always paying for everything — likely faster to respond to individual clicks, at the cost of more round trips overall.</p>
+
+<h2>Open question 2 — how do we generate the daily figures, for how many accounts?</h2>
+
+<p>If <code>history</code> needs to exist per individual account (not just per type or total), that's up to ~50 accounts × however many points in the range, every time the data is requested. Needs an answer from backend:</p>
+
+<ul>
+<li>Pre-computed/cached on a schedule (e.g. nightly), or computed live per request?</li>
+<li>Live per-request <code>SUM(DH_Transaction...)</code> at daily grain, for every account, every time — is that fast enough at ~50 accounts?</li>
+<li>Does the answer change depending on which option above (1A/1B) is picked — e.g. is live-per-request only feasible if <code>history</code> is its own smaller, separately-fetched call?</li>
+</ul>
+
+<h2>Request params</h2>
+
+<table>
+<tr><th>Param</th><th>Type</th><th>Notes</th></tr>
+<tr><td><code>accountType</code></td><td>enum</td><td><code>All Accounts</code> (default), <code>Checking</code>, <code>Savings</code>, <code>Certificate of Deposit</code>, <code>Restricted Funds</code>, <code>Grant Funds</code></td></tr>
+<tr><td><code>accountId</code></td><td>guid, optional</td><td>Scope to a single account</td></tr>
+<tr><td><code>compareTo</code></td><td>enum</td><td><code>Last Month</code>, <code>Last Year</code></td></tr>
+<tr><td><code>range</code></td><td>enum</td><td>Window for <code>history</code> — e.g. <code>1M</code> (daily points). Not hardcoded — reserve for <code>1W</code>/<code>3M</code>/<code>1Y</code> later.</td></tr>
+<tr><td><code>limit</code> / <code>offset</code></td><td>int</td><td>Paginates <code>accounts[]</code> only — <code>total</code>/type sums always reflect the full filtered set, never just the current page</td></tr>
+</table>
+
+<p><code>diffAmount</code> = <code>balance - comparisonBalance</code> (dollars). <code>diffPct</code> = that difference as a rounded percent of <code>comparisonBalance</code> (e.g. <code>5</code> means balance is 5% higher than the comparison point). Both pre-signed — negative for a decline — so the frontend just formats them, no math or sign-checking needed.</p>
+
+<h3>Example requests — Option A (one endpoint)</h3>
+
+<pre><code>GET /api/dashboard/deposit-accounts?accountType=Checking&amp;compareTo=Last Year&amp;range=1M
+GET /api/dashboard/deposit-accounts?accountType=All Accounts&amp;range=1M&amp;limit=10&amp;offset=0</code></pre>
+
+<h3>Example requests — Option B (split)</h3>
+
+<pre><code>GET /api/dashboard/deposit-accounts/totals?accountType=Checking&amp;compareTo=Last Year&amp;limit=10&amp;offset=0
+GET /api/dashboard/deposit-accounts/history?accountId={guid}&amp;range=1M&amp;compareTo=Last Month
+GET /api/dashboard/deposit-accounts/history?accountType=All Accounts&amp;range=1M&amp;compareTo=Last Month</code></pre>
+
+<h2>Response shape — Option A (one endpoint)</h2>
+
+<p>One call, <code>history</code> included at every level:</p>
+
+<pre><code>{
+  "total": {
+    "balance": 7451630,
+    "comparisonBalance": 7102340,
+    "diffAmount": 349290,
+    "diffPct": 5,
+    "history": [
+      { "period": "2025-08", "amount": 6820000 },
+      { "period": "2026-07", "amount": 7451630 }
+    ]
+  },
+  "types": [
+    {
+      "type": "Checking",
+      "balance": 1496103,
+      "comparisonBalance": 1420000,
+      "diffAmount": 76103,
+      "diffPct": 5,
+      "history": [
+        { "period": "2025-08", "amount": 1390000 },
+        { "period": "2026-07", "amount": 1496103 }
+      ],
+      "accounts": [
+        {
+          "name": "Main Checking",
+          "type": "Checking",
+          "inceptionDate": "2014-03-12",
+          "accountNumber": "••4821",
+          "balance": 936355,
+          "comparisonBalance": 891767,
+          "diffAmount": 44588,
+          "diffPct": 5,
+          "history": [
+            { "period": "2025-08", "amount": 850200 },
+            { "period": "2026-07", "amount": 936355 }
+          ]
+        }
+      ]
+    }
+  ]
+}</code></pre>
+
+<h2>Response shape — Option B (split)</h2>
+
+<p><strong>Call 1 — totals (no <code>history</code>):</strong></p>
+
+<pre><code>{
+  "total": { "balance": 7451630, "comparisonBalance": 7102340, "diffAmount": 349290, "diffPct": 5 },
+  "types": [
+    {
+      "type": "Checking",
+      "balance": 1496103,
+      "comparisonBalance": 1420000,
+      "diffAmount": 76103,
+      "diffPct": 5,
+      "accounts": [
+        {
+          "name": "Main Checking",
+          "type": "Checking",
+          "inceptionDate": "2014-03-12",
+          "accountNumber": "••4821",
+          "balance": 936355,
+          "comparisonBalance": 891767,
+          "diffAmount": 44588,
+          "diffPct": 5
+        }
+      ]
+    }
+  ]
+}</code></pre>
+
+<p><strong>Call 2 — history (scoped to whatever's asked for — one account, one type, or the total):</strong></p>
+
+<pre><code>{
+  "scope": "Main Checking",
+  "history": [
+    { "period": "2025-08", "amount": 850200 },
+    { "period": "2026-07", "amount": 936355 }
+  ]
+}</code></pre>
+
+<p>Notes for both options:</p>
+<ul>
+<li>Same shape at every level — <code>balance</code>, <code>comparisonBalance</code>, <code>diffAmount</code>, <code>diffPct</code>. Accounts additionally carry <code>name</code>, <code>type</code>, <code>inceptionDate</code>, <code>accountNumber</code>.</li>
+<li><code>diffAmount</code>/<code>diffPct</code> are pre-computed server-side, everywhere — never raw history for the client to subtract.</li>
+<li><code>history[]</code> granularity/window matches whatever <code>range</code> was requested; same points at total, type, and account level for a given request.</li>
+</ul>
+
+<h2>Edge cases to confirm</h2>
+
+<ol>
+<li><strong>Empty type</strong> — a type with zero active accounts (e.g. all Grant Funds accounts closed). Dropped from <code>types[]</code> entirely, or kept with <code>balance: 0</code> and <code>accounts: []</code>?</li>
+<li><strong>Empty total</strong> — a filter combination that returns zero accounts overall. Does <code>total</code> come back zeroed out, or is the response empty/absent?</li>
+<li><strong>Account doesn't cover the full range</strong> — e.g. <code>range=1Y</code> requested but the account is 3 months old. <code>history[]</code> starts at inception (shorter than requested), gets zero-padded before inception, or something else?</li>
+<li><strong><code>comparisonBalance</code> unavailable</strong> — account (or the whole org) didn't exist yet at the comparison point. <code>comparisonBalance</code>/<code>diffAmount</code>/<code>diffPct</code> come back as <code>null</code>, as <code>0</code>, or omitted?</li>
+<li><strong>Division by zero in <code>diffPct</code></strong> — <code>comparisonBalance</code> is <code>0</code> (new account, or a $0 balance a year ago). Needs an explicit rule (e.g. <code>null</code> instead of a percent).</li>
+<li><strong>Account closes mid-range</strong> — active earlier in the <code>history</code> window, inactive today. Does its balance still count in the Type/Total <code>history</code> for the periods it was open, or does history exclude it retroactively?</li>
+<li><strong><code>accountId</code> + <code>accountType</code> conflict</strong> — an <code>accountId</code> that belongs to a different type than the <code>accountType</code> filter. Error, or does one param win?</li>
+<li><strong>Pagination past the end</strong> — <code>offset</code> beyond the last account. Empty <code>accounts[]</code> page, but <code>total</code>/type sums should still be correct.</li>
+</ol>
+
+<h2>Sort</h2>
+
+<p>Fixed — Name, then Inception Date.</p>
+
+<h2>Not in scope</h2>
+
+<p>No transaction-level detail endpoint — nothing here exposes which individual <code>DH_Transaction</code> rows make up a balance or a <code>history</code> point.</p>
+
+<h2>Still needs sign-off</h2>
+
+<ul>
+<li>Declining-account flag (3+ consecutive periods down) — threshold not yet approved.</li>
+<li>Keep both <code>Last Month</code> and <code>Last Year</code> as <code>compareTo</code> options, or launch with just one?</li>
+</ul>
+
+</body>
+</html>
