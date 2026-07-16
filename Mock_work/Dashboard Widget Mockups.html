@@ -933,7 +933,7 @@ body{font-family:'Red Hat Text',sans-serif;background:#fafafa;color:#202020;}
 
   <div class="sec-hd" style="margin-top:20px">Logic — What This Shows, and Why We Built It This Way</div>
   <div class="fc-logic">
-    <p><strong>Current design.</strong> One row per breakdown item, sized by amount — Horizontal Bars is the default because it scales cleanly regardless of category count (Donut/Pie only reads well up to ~4-5 slices). When Department = All Departments, each row is one of the four departments (staff groups) with that department's total; picking a specific department drills into its own pay-type breakdown — Regular, Vacation, OverTime, Sick, Double Time, Personal, Holiday, Misc, Other (changed 2026-07-16, per direct instruction — see the note below) — instead. Bar, Pie Chart and Data Table all read this exact same row set, so switching between them changes only how it's drawn, never what's being counted. Every row also shows a ▲/▼ % change against the same-length prior period (on the bar, and as a Change column on the table) — a raw total doesn't say whether costs are trending up or down, so the comparison is always visible, not tucked behind a separate view. Small shows the top 3 rows, Medium the top 5, Large all of them plus totals; the KPI headline is Total Payroll Amount for the selected period. Switch Chart Type (Bar/Pie/Table) is available at every size except KPI, including Small.</p>
+    <p><strong>Current design.</strong> One row per breakdown item, sized by amount — Horizontal Bars is the default because it scales cleanly regardless of category count (Donut/Pie only reads well up to ~4-5 slices). When Department = All Departments, each row is one of the four departments (staff groups) with that department's total; picking a specific department drills into its own pay-type breakdown — Regular, Vacation, OverTime, Sick, Double Time, Personal, Holiday, Misc, Other (changed 2026-07-16, per direct instruction — see the note below) — instead. In the All-Departments Bar view, each department's bar is now a stack of its own pay-type segments rather than one flat colour (added 2026-07-16, per direct instruction) — so the composition behind each department's total is visible at a glance, with a shared legend below; drilled into one department, bars are already that breakdown, so they stay plain single-colour. Bar, Pie Chart and Data Table all read this exact same row set, so switching between them changes only how it's drawn, never what's being counted. Every row also shows a ▲/▼ % change against the same-length prior period (on the bar, and as a Change column on the table) — a raw total doesn't say whether costs are trending up or down, so the comparison is always visible, not tucked behind a separate view. Small shows the top 3 rows, Medium the top 5, Large all of them plus totals; the KPI headline is Total Payroll Amount for the selected period. Switch Chart Type (Bar/Pie/Table) is available at every size except KPI, including Small.</p>
     <p><strong>Filters.</strong> Department narrows every view to one department's payroll. Pay Period is Weekly/Bi-Weekly/Monthly/Custom: the three presets anchor on a Pay Date field (the date payroll is actually issued) and count backward from it — Weekly = 7 days, Bi-Weekly = 14, Monthly = 30 (a day-count approximation, not calendar-month-aware — open question, not guessed at). Custom instead reveals its own explicit Beginning/Ending date fields and ignores Pay Date entirely. A "Make this recurring" checkbox sits alongside the preset periods, and a second checkbox, "Set Pay Period separately per department," replaces the single shared Pay Date with one Start Date + Period + Make recurring block per department (Weekly/Bi-Weekly/Monthly only — Custom isn't offered per-department), each block separated by a divider line. The resolved end date shows above the card as "Paid: <em>date</em>" (with a 🔁 if recurring); the table view additionally shows the full range as "Period shown: <em>start – end</em>" on the table grid. When Separate By Department is on and Department = All Departments, there's no single shared date to show up top, so the callout says as much and each department's own row carries its own period + recurring indicator instead — a Period column on the table, subtext under each bar, and a small per-department list under the pie.</p>
     <p><strong>Note — "paid," not "owed" (2026-07-16, per direct instruction).</strong> This widget reports payroll that has already been <em>paid</em> within the selected period — it's an after-the-fact check of what went out, not a forward-looking view of an outstanding obligation. That's an important correction to how this was framed: the "Payment due" callout above every view used to name the pay date as if it were something still owed, which is backwards — the pay date shown is always in the past or present, never a future amount due. Relabelled to "Paid: <em>date</em>" everywhere it appears (the top-of-card callout, the per-department rows, and this doc). The current-vs-prior comparison isn't affected by this correction — it's still comparing two already-paid periods against each other, which is exactly the kind of after-the-fact check this widget is for.</p>
     <p><strong>Note — pay-type categories replace the paycheck-stub breakdown (2026-07-16, per direct instruction).</strong> Drilling into a specific department used to show Net Pay/Fed Tax/Benefits/State Tax/Retirement/Overtime — a gross-to-net breakdown of one paycheck's line items, more like reading a pay stub top to bottom. That's not the right lens here. It's now Regular, Vacation, OverTime, Sick, Double Time, Personal, Holiday, Misc, Other — the pay-type/earnings codes hours are actually coded under on a pay run, which is what "breaking down a pay group" should mean. This should be linkable in the real system — pay groups already tie to compensation records — but the exact field or table isn't confirmed; the original Purpose doc's formula (`SUM(PRHistoryCompensation.Amount) GROUP BY CompensationDistributionID, Name`) groups by compensation distribution, not by pay type, so there's likely a different dimension (an earnings/pay-type code) somewhere off `PRHistoryCompensation` or a related detail table that this widget would need instead. Flagged for the developer to dig into rather than assumed — see the Developer Punch List.</p>
@@ -3549,6 +3549,18 @@ function hbarGrid(label,val,pctW,color){
   var grid='<div class="ht-grid"><span style="left:25%"></span><span style="left:50%"></span><span style="left:75%"></span></div>';
   return '<div class="hr"><div class="hl">'+label+'</div><div class="ht" style="position:relative">'+grid+'<div class="hf" style="width:'+pctW+'%;background:'+color+'"></div></div><div class="hv">'+val+'</div></div>';
 }
+// Same row shape as hbar(), but the fill is split into multiple coloured segments instead of one solid colour —
+// added 2026-07-16, per direct instruction, for W03's "show the breakdown when the grouped view is showing"
+// request: when Department = All Departments, each department's bar now shows its own pay-type composition
+// (Regular/Vacation/OverTime/etc.) as stacked segments, instead of one flat-coloured bar that only encodes the
+// department's total. `segments` is [{p:percentOfThisRowsOwnTotal, c:color}] — segment widths sum to ~100% of
+// pctW (this row's share of the widest row), same overall scale hbar() uses. Reuses the existing .hr/.hl/.ht/.hv
+// classes untouched — only the .hf single-colour fill is replaced with a flex row of segment divs, so this
+// doesn't affect any other widget's plain hbar() rows.
+function hbarStacked(label,val,pctW,segments){
+  var segHtml=segments.map(function(s){return '<div style="width:'+s.p+'%;height:100%;background:'+s.c+'"></div>';}).join('');
+  return '<div class="hr"><div class="hl">'+label+'</div><div class="ht"><div style="display:flex;height:100%;width:'+pctW+'%">'+segHtml+'</div></div><div class="hv">'+val+'</div></div>';
+}
 function vbars(items,h){
   h=h||70; var w=Math.floor(100/items.length);
   var b=items.map(function(it,i){
@@ -4278,10 +4290,13 @@ WRENDER[3]=function(opt,wid,sz){
       var deptNames=Object.keys(MOCK_DATA.series[3]).filter(function(k){return k!=='All Departments';}).sort();
       rowsAll=deptNames.map(function(dn){
         var dd=MOCK_DATA.series[3][dn];
-        return {l:dn,cur:dd.vals.reduce(function(a,b){return a+b;},0),prev:dd.prev.reduce(function(a,b){return a+b;},0),pr:perDeptMode?w3PeriodRange(wid,dn):null};
+        // catBreakdown added 2026-07-16, per direct instruction: each department row now also carries its own
+        // pay-type composition, so the Bar view can show each department's bar as a stack of its own
+        // Regular/Vacation/OverTime/etc. segments instead of one flat colour — see hbarStacked() below.
+        return {l:dn,cur:dd.vals.reduce(function(a,b){return a+b;},0),prev:dd.prev.reduce(function(a,b){return a+b;},0),pr:perDeptMode?w3PeriodRange(wid,dn):null,catBreakdown:dd.cats.map(function(c,ci){return {l:c,v:dd.vals[ci]};})};
       });
     } else {
-      rowsAll=d.cats.map(function(c,ri){return {l:c,cur:d.vals[ri],prev:d.prev[ri],pr:null};});
+      rowsAll=d.cats.map(function(c,ri){return {l:c,cur:d.vals[ri],prev:d.prev[ri],pr:null,catBreakdown:null};});
     }
     var rows=capN(rowsAll,sz);
     var rowsMaxV=Math.max.apply(null,rowsAll.map(function(r){return r.cur;}))||1;
@@ -4327,13 +4342,31 @@ WRENDER[3]=function(opt,wid,sz){
     // for whatever Pay Period is selected — reusing the existing pctChange() helper. Added 2026-07-15: in
     // perDeptMode, each row's own period shows as small subtext under its bar (hidden at Small, same as the
     // Total caption, for space).
+    // Added 2026-07-16, per direct instruction ("can the bar chart show the breakdown when the grouped view is
+    // showing"): when Department = All Departments, each department's bar is now a stack of its own pay-type
+    // segments (Regular/Vacation/OverTime/etc.) via hbarStacked(), instead of one flat-coloured bar that only
+    // encoded the department's total. Segment colours match the same colors[] index a category gets when
+    // you're drilled into a single department, so the legend stays meaningful across both views. Drilled into
+    // one department, bars are already the pay-type breakdown itself, so they stay plain single-colour bars —
+    // there's nothing further to stack.
+    var barLegend='';
+    if(key==='All Departments'){
+      var legendCats=rowsAll[0]&&rowsAll[0].catBreakdown?rowsAll[0].catBreakdown:[];
+      barLegend=mUp('<div class="aleg" style="margin-top:10px">'+legendCats.map(function(cb,ci){return '<div class="ali"><div class="asw" style="background:'+colors[ci%colors.length]+'"></div>'+cb.l+'</div>';}).join('')+'</div>',sz);
+    }
     return rangeTag+ftags(wid)+'<div class="hbars">'+rows.map(function(r,i){
       var chg=pctChange(r.cur,r.prev);
       var chgHtml=(chg===null)?'':(' <span style="color:'+(chg>=0?'#2e7d32':'#e53935')+';font-weight:600;font-size:10px">'+(chg>=0?'▲':'▼')+' '+Math.abs(chg)+'%</span>');
-      var barHtml=hbar(r.l,$m(r.cur)+chgHtml,Math.round(r.cur/rowsMaxV*100),colors[i%colors.length]);
+      var barHtml;
+      if(key==='All Departments' && r.catBreakdown){
+        var segs=r.catBreakdown.map(function(cb,ci){return {p:pct(cb.v,r.cur),c:colors[ci%colors.length]};});
+        barHtml=hbarStacked(r.l,$m(r.cur)+chgHtml,Math.round(r.cur/rowsMaxV*100),segs);
+      } else {
+        barHtml=hbar(r.l,$m(r.cur)+chgHtml,Math.round(r.cur/rowsMaxV*100),colors[i%colors.length]);
+      }
       if(perDeptMode && sz!=='s'){ barHtml+='<div style="font-size:9px;color:#aaa;margin:-4px 0 6px 2px">'+(r.pr?r.pr.range:'—')+recurBadge(r.pr)+'</div>'; }
       return barHtml;
-    }).join('')+'</div>'+mUp('<div style="font-size:10px;color:#888;margin-top:8px;text-align:right">Total: '+$m(total)+'</div>'+(perDeptMode?'':'<div style="font-size:9px;color:#aaa;margin-top:2px;text-align:right">% vs. same-length prior period</div>'),sz);
+    }).join('')+'</div>'+barLegend+mUp('<div style="font-size:10px;color:#888;margin-top:8px;text-align:right">Total: '+$m(total)+'</div>'+(perDeptMode?'':'<div style="font-size:9px;color:#aaa;margin-top:2px;text-align:right">% vs. same-length prior period</div>'),sz);
   }
   if(opt==='B'){
     var slices=d.cats.map(function(c,i){return {l:c,p:pct(d.vals[i],total),c:colors[i]};});
@@ -5771,7 +5804,7 @@ fcInitState(17,'A');
 // All 14 widgets bump together here since the refresh-button addition (2026-07-09) touched every widget's
 // Final Check cards identically; W02 is one step ahead of the rest since it also had the pie-chart redesign.
 var FC_VERSION = {
-  1:'0.3', 2:'0.5', 3:'0.8', 4:'0.1', 5:'0.1', 6:'0.1', 7:'0.8',
+  1:'0.3', 2:'0.5', 3:'0.9', 4:'0.1', 5:'0.1', 6:'0.1', 7:'0.8',
   9:'0.1', 10:'0.1', 11:'0.1', 13:'0.1', 15:'0.1', 16:'0.1', 17:'0.1'
 };
 Object.keys(FC_VERSION).forEach(function(wid){
