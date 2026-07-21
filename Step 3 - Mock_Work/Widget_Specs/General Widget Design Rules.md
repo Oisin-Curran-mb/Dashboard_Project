@@ -42,8 +42,14 @@ A KPI-sized card shows only the information card itself (number, label, trend) a
 
 **Default:** "filter by time" on the KPI card means **Fiscal Year** by default, overridable per widget where Fiscal Year isn't the right time dimension for that widget's KPI.
 
-### Rule 2 — Nothing scrolls except the full-screen pop-up (tables are the one exception)
-Small, Medium, Large, and KPI cards must never scroll internally — content is capped/fit to a fixed height at that size (the `capN`-style capping pattern: e.g. Small shows 4 periods, Medium 6). Only the Expanded pop-up may scroll if content overflows. **Tables are the one exception at any size:** the table itself never causes the surrounding widget to scroll, but rows scroll in their own fixed-height region with the header staying in place (sticky header + fixed-height internally-scrolling body — the `tblScroll` pattern).
+### Rule 2 — Nothing scrolls except the full-screen pop-up (tables are the one exception, approved card-body scroll is a rare second)
+Small, Medium, Large, and KPI cards must never scroll internally — content is capped/fit to a fixed height at that size (the `capN`-style capping pattern: e.g. Small shows 4 periods, Medium 6). Only the Expanded pop-up may scroll if content overflows. **Tables are the first exception at any size:** the table itself never causes the surrounding widget to scroll, but rows scroll in their own fixed-height region with the header staying in place (sticky header + fixed-height internally-scrolling body — the `tblScroll` pattern).
+
+**A card-body scroll is a second, much rarer exception — governance, then technique:**
+
+- **Governance.** Internal card-body scrolling is never a default choice, never something to reach for because it's convenient, and never applied speculatively "in case it's useful." It only happens when the project owner explicitly asks for it, by name, for that specific card — the same way this was tested on W14's Medium card (2026-07-21). Before even considering it, the whitespace escalation ladder (Rule T8) and `capN`-style capping must already have been tried and genuinely not be enough — scrolling is the last resort, not a shortcut past the ladder. Don't propose it unprompted; if a card seems like a candidate, flag the option and wait for a direct instruction rather than building it.
+- **Technique, once approved.** Match the W14 Medium implementation exactly: the card's chrome bar (title, refresh, eye, 3-dot menu) stays outside the scrolling region and never moves — it already lives outside `.opt-v` structurally, so nothing needs to change there. Only `.opt-v` becomes the scrolling region, switched from the universal `overflow:hidden` to `overflow-y:auto`, via a selector scoped to exactly that one card's id (e.g. `#fc-opt-14-m .opt-v` — never the bare `.opt-v` class, per Rule T4). Pair it with a slim custom scrollbar (`::-webkit-scrollbar` at ~6px, subtle grey thumb, transparent track) rather than leaving the default OS scrollbar, so it reads as a deliberate, tidy affordance and not an accident.
+- **Current instances:** W14 (Main Content Tasks) Medium card, 2026-07-21 — vertical card-body scroll, exactly as described above. W14's KPI card, same day, carries a narrower variant: a single non-wrapping icon row (`.w14-hscroll`) that scrolls horizontally, not the whole card body — still governed by the same principle (explicit, by name, rare) even though it's not literally "the card body" the way Medium's is. Neither is a precedent to copy onto another widget without its own explicit sign-off.
 
 ### Rule 3 — Card footer text is removed; the Eye's header becomes the widget name
 The explanatory rationale text at the bottom of a card is removed from the visible card. The Info Eye (👁) popover's body text stays exactly the same (the widget's purpose text, unchanged) — the only change allowed is its header, which changes from a generic label to the actual widget's name. The removed footer text is not relocated into the Eye; it's dropped from the live product and exists only in design documentation.
@@ -116,6 +122,11 @@ A gridline represents one proportional value for the entire chart — drawn once
 ### Rule T10 — Charts are built with Recharts (React), not hand-rolled CSS/SVG
 Chosen because it's what the real site is built with, so the mockup's chart code matches production. React 18 / ReactDOM 18 / prop-types / Recharts 2.15 load via CDN `<script>` tags (no bundler). `var h = React.createElement;` is used instead of JSX. A WRENDER branch wanting a chart calls `chartCanvas(key, buildFn, fillMode, fixedH)`; `fillMode:true` fills a Medium/Large card (Rule T2), `fillMode:false` + `fixedH` fixes a Small card. Any `el.innerHTML = WRENDER[wid](...)` call must go through `setVizHtml(el, html)` instead of a bare assignment, or chart mounting is silently skipped. Recharts has no native floating-bar type — a waterfall uses a transparent `base` bar plus a visible `delta` bar sharing a `stackId`, colored per-bar via `<Cell>`. Frozen paths (Expanded, KPI) deliberately keep their original custom renderers, per Rule T3.
 
+### Rule T11 — Custom hover-info bubbles must escape the card, not nest inside it
+Every card's content area (`.opt-v`) has `overflow:hidden` — required for Rule 2 (nothing scrolls/spills). A hover bubble built as a nested `position:absolute` child of the hovered element, shown via a plain CSS `:hover` selector, gets silently clipped the moment it needs to render outside the card's own box — near an edge, at Small/KPI, or anywhere the card is short on room. This already happened once (W14's Module Task Shortcut tiles, first pass, 2026-07-21) before being fixed; W01's `kpiLabelTip`/`.kpi-tt-bubble` still uses the old nested pattern and is a known open item exposed to the same bug, not yet retrofitted.
+
+**Fix:** build every custom hover-info bubble the same way `togglePurpose()`'s click popover already does — append one reusable element to `document.body` (never nested inside a card), position it with `position:fixed` computed from the trigger's `getBoundingClientRect()`, and toggle it on `mouseenter`/`mouseleave` (plus `focus`/`blur` for keyboard access) instead of a CSS `:hover` selector. The mockup's own `showHoverTip(e, title, desc)` / `hideHoverTip()` pair (defined near `togglePurpose`, first used by W14) is the one to call — don't write a second nested-bubble version for a new widget.
+
 ### Definition of "Done" — run after every template/version/size round
 - [ ] All 5 sizes rendered and looked at — not just the size that was this round's focus.
 - [ ] Expanded and KPI output diffed against before this round's edit — identical unless explicitly changed this round.
@@ -124,12 +135,13 @@ Chosen because it's what the real site is built with, so the mockup's chart code
 - [ ] Every plotted value's label matches the scale/axis it's drawn against (Rule T5).
 - [ ] Gridlines/axis text pass the contrast bar (Rule T6).
 - [ ] Any new/changed CSS selector is scoped to exactly the size + widget it's meant for (Rule T4).
-- [ ] Nothing scrolls except Expanded and table row-bodies (Rule 2).
+- [ ] Nothing scrolls except Expanded, table row-bodies, or a card explicitly approved for card-body scroll by name (Rule 2) — never added on your own judgment, and only after the whitespace ladder (Rule T8) genuinely wasn't enough.
 - [ ] Filter/size/view state changes stay scoped to one widget instance (Rule 5).
 - [ ] File integrity confirmed via the Read tool (Rule T7).
 - [ ] Whitespace ladder followed in order, not skipped, on the way in and in reverse on the way out (Rule T8).
 - [ ] Every gridline spans the full chart once, behind all bars (Rule T9).
 - [ ] New chart work uses Recharts via `chartCanvas()`/`h()`, and any new `innerHTML=WRENDER[...]` call is routed through `setVizHtml()` (Rule T10).
+- [ ] Any new custom hover-info bubble uses `showHoverTip()`/`.hover-tip-bubble`, not a nested `position:absolute` + CSS `:hover` bubble inside `.opt-v` (Rule T11).
 - [ ] Actually opened the file in a real browser and checked the console — a static read-through is not sufficient sign-off for chart-rendering changes.
 
 `check-rules.py` (in `Step 3 - Mock_Work/`) automates what's reliably regex-detectable — T1 (SVG stretching/missing height), T4 (unscoped shared-class overrides), T6 (low-contrast axis/gridline colors) — and prints reminders for T2/T3/T5, which need a human look. Run it after any round that touches charts/tables:

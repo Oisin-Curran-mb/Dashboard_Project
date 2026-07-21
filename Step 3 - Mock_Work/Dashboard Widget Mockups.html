@@ -296,6 +296,17 @@ body{font-family:'Red Hat Text',sans-serif;background:#fafafa;color:#202020;}
 .kpi-tt.kpi-tt-left .kpi-tt-bubble{left:0;transform:none;}
 .kpi-tt.kpi-tt-right .kpi-tt-bubble{left:auto;right:0;transform:none;}
 .kpi-tt:hover .kpi-tt-bubble,.kpi-tt:focus .kpi-tt-bubble{display:block;}
+/* Known open item (2026-07-21): .kpi-tt-bubble above is nested + position:absolute inside .opt-v, so it's
+   still exposed to the same overflow:hidden clipping Rule T11 (General Widget Design Rules.md) now exists to
+   prevent — it just hasn't visibly hit that bug yet on W01's KPI header strip. Not retrofitted here; new
+   hover-info bubbles should use .hover-tip-bubble/showHoverTip() below instead, not this pattern. */
+
+/* Reusable hover-info bubble, take two (2026-07-21, Rule T11) — fixed-position, appended to document.body via
+   showHoverTip()/hideHoverTip() (defined near togglePurpose), so it can never be clipped by a card's own
+   overflow:hidden the way .kpi-tt-bubble above can be. First used by W14's Module Task Shortcut tiles. */
+.hover-tip-bubble{display:none;background:#fff;border:.5px solid #d2d2d2;border-radius:8px;padding:8px 10px;max-width:220px;box-shadow:0 4px 16px rgba(0,0,0,.14);pointer-events:none;}
+.hover-tip-l{font-size:12px;font-weight:600;color:#202020;margin-bottom:3px;}
+.hover-tip-d{font-size:11px;color:#666;line-height:15px;}
 
 /* Buttons */
 .pds-btn{border:.5px solid #d2d2d2;background:#fff;border-radius:6px;padding:6px 14px;font-size:13px;cursor:pointer;font-family:inherit;}
@@ -354,13 +365,54 @@ body{font-family:'Red Hat Text',sans-serif;background:#fafafa;color:#202020;}
 /* W14 — Main Content Tasks (2026-07-21). Scoped to this widget only — not shared with any other widget's
    tiles/cards/rows, per Technical Build Rule T4 (tight CSS scoping). */
 .w14-sec-hd{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#aaa;margin:10px 0 6px;}
+/* Half 1, KPI/Small — compact icon-only list (2026-07-21, per direct instruction: "small and compact," kept
+   as-is at these two sizes per the 2026-07-21 follow-up instruction). Hover info uses showHoverTip()/
+   .hover-tip-bubble (Rule T11, near togglePurpose) — NOT a nested :hover bubble — because .opt-v's
+   overflow:hidden clipped the first pass's nested version the moment the card ran out of room. */
+.w14-ico-list{display:flex;flex-wrap:wrap;gap:6px;}
+.w14-ico-tile{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:8px;border:.5px solid #d2d2d2;background:#fff;color:#4b6ec3;text-decoration:none;cursor:pointer;flex-shrink:0;}
+.w14-ico-tile:hover,.w14-ico-tile:focus{border-color:#4b6ec3;background:#f7f9fd;outline:none;}
+/* Half 1, Medium/Large — restored 2026-07-21, per direct instruction ("use the big Cards for the link like
+   you had before the KPI card was added"): the original icon+label tile, not the compact icon-only one above.
+   Still uses showHoverTip() for its hover info (Rule T11), not a plain title attribute or nested bubble. */
 .w14-tile{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 6px;border:.5px solid #d2d2d2;border-radius:8px;background:#fff;text-decoration:none;text-align:center;}
-.w14-tile:hover{border-color:#4b6ec3;background:#f7f9fd;}
+.w14-tile:hover,.w14-tile:focus{border-color:#4b6ec3;background:#f7f9fd;outline:none;}
 .w14-tile-l{font-size:11px;font-weight:500;color:#202020;line-height:1.3;}
+/* Half 2, Small only (2026-07-21): a thin divider below Half 1's icon row, then My Tasks/My Reports placed
+   side by side (each its own small label + compact icon row) — replaces the prior stacked pass, per direct
+   instruction ("put My Tasks and My Reports side by side"). Confirmed to fit: side by side uses one row's
+   height total instead of two, comfortably inside Small's fixed 240px card. */
+.w14-mini-div{border-top:.5px solid #eee;margin:8px 0 6px;padding-top:6px;}
+.w14-mini-row{display:flex;gap:10px;align-items:stretch;}
+.w14-mini-col{flex:1;min-width:0;}
+.w14-mini-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:#bbb;margin-bottom:4px;}
+/* Vertical divider — a real element (stretches to the height of whatever flex row it's in) instead of a CSS
+   border trick, so it works the same way whether it's separating two side-by-side columns (Small) or two
+   groups inside a single scrolling icon strip (KPI). Added 2026-07-21, per direct instruction. */
+.w14-vline{width:1px;background:#e0e0e0;flex-shrink:0;align-self:stretch;}
+/* KPI icon strip — experiment (2026-07-21, per direct instruction, "last experiment"): Main Content Tasks +
+   My Tasks + My Reports icons in one continuous non-wrapping row, separated by .w14-vline. Only this row
+   scrolls left/right; the card's chrome bar above it (outside .opt-v) is unaffected. Slim horizontal
+   scrollbar to match the vertical one used by the Medium scroll test. */
+.w14-hscroll{display:flex;flex-wrap:nowrap;align-items:center;gap:6px;overflow-x:auto;overflow-y:hidden;padding-bottom:4px;}
+.w14-hscroll::-webkit-scrollbar{height:6px;}
+.w14-hscroll::-webkit-scrollbar-track{background:transparent;}
+.w14-hscroll::-webkit-scrollbar-thumb{background:#d2d2d2;border-radius:3px;}
+.w14-hscroll::-webkit-scrollbar-thumb:hover{background:#b0b0b0;}
 .w14-saved-panel{border:.5px solid #d2d2d2;border-radius:8px;padding:10px 12px;background:#fff;flex:1;min-width:180px;}
 .w14-saved-hd{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:13px;font-weight:600;color:#202020;}
 .w14-saved-row{display:flex;align-items:center;gap:8px;padding:5px 0;color:#345499;text-decoration:none;font-size:12px;}
 .w14-saved-row:hover{text-decoration:underline;}
+/* SCROLL TEST (2026-07-21, per direct instruction — explicit one-off experiment, not a new standard; see
+   General Widget Design Rules.md's note on Hard Rule 2). Scoped to exactly this card (#fc-opt-14-m, Final
+   Check's W14 Medium slot only, Rule T4) — every other widget/size keeps the universal .opt-v{overflow:hidden}
+   untouched. The card's own chrome bar (title/refresh/eye/3-dot menu) lives outside .opt-v and is unaffected —
+   it never scrolled and still doesn't; only the body below it (Half 1 tiles + Half 2 panels) now can. */
+#fc-opt-14-m .opt-v{overflow-y:auto;overflow-x:hidden;}
+#fc-opt-14-m .opt-v::-webkit-scrollbar{width:6px;}
+#fc-opt-14-m .opt-v::-webkit-scrollbar-track{background:transparent;}
+#fc-opt-14-m .opt-v::-webkit-scrollbar-thumb{background:#d2d2d2;border-radius:3px;}
+#fc-opt-14-m .opt-v::-webkit-scrollbar-thumb:hover{background:#b0b0b0;}
 
 </style>
 </head>
@@ -2140,14 +2192,47 @@ body{font-family:'Red Hat Text',sans-serif;background:#fafafa;color:#202020;}
   </div><!-- /fc-widget-13 -->
 
   <div class="fc-widget" id="fc-widget-14">
-  <span class="fc-version-badge" id="fc-version-14"></span>
+  <div class="fc-badges">
+    <span class="fc-review-badge" id="fc-review-14">Ready to be reviewed by Jo</span>
+    <span class="fc-version-badge" id="fc-version-14"></span>
+  </div>
   <div class="w-hdr">
     <div class="w-bc">Final Check</div>
     <h1 class="w-title">W14 — Main Content Tasks <span class="badge b-b" style="margin-left:8px">In progress — being worked on</span></h1>
-    <p class="w-desc">First build of the confirmed 2026-07-21 design — Large size only for this pass, per direct instruction. Two halves in one card: a module-driven task-shortcut grid (Half 1), and the existing "My Tasks"/"My Reports" saved-shortcut feature surfaced inside this widget (Half 2). No KPI size — see Logic below. Small/Medium shown as a provisional reduced version, not yet fully designed.</p>
+    <p class="w-desc">Two halves in one card: a module-driven task-shortcut grid (Half 1), and the existing "My Tasks"/"My Reports" saved-shortcut feature surfaced inside this widget (Half 2). Every size now has both halves. KPI and Small use compact icon-only tiles (hover shows the full name + description); Medium and Large use the bigger icon+label tile. Medium also carries an explicit, deliberate scroll experiment — see Logic below for the full size-by-size breakdown.</p>
   </div>
 
-  <div class="sec-hd">Small &middot; Medium &middot; Large — side by side <span style="font-weight:400;color:#888">(no KPI size — no headline metric for a navigation panel)</span></div>
+  <div class="sec-hd">KPI Card — shown as a header bar</div>
+  <div class="opt sz-k" id="fc-opt-14-k">
+    <div class="opt-chrome">
+      <div class="opt-chrome-left">
+        <div class="opt-title-wrap"><div class="opt-t">Main Content Tasks</div></div>
+      </div>
+      <div class="opt-chrome-right">
+        <button class="wc-btn wc-refresh" onclick="fcRefreshCard(event)" title="Refresh"><span class="material-symbols-rounded">refresh</span></button>
+        <button class="wc-btn" onclick="openExpand(14,'A')" title="Fullscreen"><span class="material-symbols-rounded">open_in_full</span></button>
+        <div class="wc-menu-wrap">
+          <button class="wc-btn" onclick="fcToggleMenu(14,'k',event)"><span class="material-symbols-rounded">more_vert</span></button>
+          <div class="wc-dropdown" id="fc-dd-14-k">
+            <button class="wc-dd-item" onclick="openFilter(14,event,'A')"><span class="material-symbols-rounded">tune</span>Change filters</button>
+            <div class="wc-dd-div"></div>
+            <button class="wc-dd-item" onclick="w14ToggleFix(14,event)"><span class="material-symbols-rounded w14-fix-ico">check_box_outline_blank</span>Fix this list</button>
+            <div class="wc-dd-div"></div>
+            <div class="wc-dd-lbl">Widget size</div>
+            <div class="wc-dd-size">
+              <button class="wc-sz-btn" data-fc-sz="s" onclick="fcSetSize(14,'k','s',event)"><span class="material-symbols-rounded">crop_square</span><span class="wc-sz-label">Small</span></button>
+              <button class="wc-sz-btn" data-fc-sz="m" onclick="fcSetSize(14,'k','m',event)"><span class="material-symbols-rounded">crop_landscape</span><span class="wc-sz-label">Medium</span></button>
+              <button class="wc-sz-btn" data-fc-sz="l" onclick="fcSetSize(14,'k','l',event)"><span class="material-symbols-rounded">crop_free</span><span class="wc-sz-label">Large</span></button>
+              <button class="wc-sz-btn" data-fc-sz="k" onclick="fcSetSize(14,'k','k',event)"><span class="material-symbols-rounded">crop_7_5</span><span class="wc-sz-label">KPI</span></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="opt-v" id="fc-body-14-k"></div>
+  </div>
+
+  <div class="sec-hd" style="margin-top:20px">Small &middot; Medium &middot; Large — side by side</div>
   <div class="opts">
     <div class="opt sz-s" id="fc-opt-14-s">
       <div class="opt-chrome">
@@ -2170,6 +2255,7 @@ body{font-family:'Red Hat Text',sans-serif;background:#fafafa;color:#202020;}
                 <button class="wc-sz-btn" data-fc-sz="s" onclick="fcSetSize(14,'s','s',event)"><span class="material-symbols-rounded">crop_square</span><span class="wc-sz-label">Small</span></button>
                 <button class="wc-sz-btn" data-fc-sz="m" onclick="fcSetSize(14,'s','m',event)"><span class="material-symbols-rounded">crop_landscape</span><span class="wc-sz-label">Medium</span></button>
                 <button class="wc-sz-btn" data-fc-sz="l" onclick="fcSetSize(14,'s','l',event)"><span class="material-symbols-rounded">crop_free</span><span class="wc-sz-label">Large</span></button>
+                <button class="wc-sz-btn" data-fc-sz="k" onclick="fcSetSize(14,'s','k',event)"><span class="material-symbols-rounded">crop_7_5</span><span class="wc-sz-label">KPI</span></button>
               </div>
             </div>
           </div>
@@ -2198,6 +2284,7 @@ body{font-family:'Red Hat Text',sans-serif;background:#fafafa;color:#202020;}
                 <button class="wc-sz-btn" data-fc-sz="s" onclick="fcSetSize(14,'m','s',event)"><span class="material-symbols-rounded">crop_square</span><span class="wc-sz-label">Small</span></button>
                 <button class="wc-sz-btn" data-fc-sz="m" onclick="fcSetSize(14,'m','m',event)"><span class="material-symbols-rounded">crop_landscape</span><span class="wc-sz-label">Medium</span></button>
                 <button class="wc-sz-btn" data-fc-sz="l" onclick="fcSetSize(14,'m','l',event)"><span class="material-symbols-rounded">crop_free</span><span class="wc-sz-label">Large</span></button>
+                <button class="wc-sz-btn" data-fc-sz="k" onclick="fcSetSize(14,'m','k',event)"><span class="material-symbols-rounded">crop_7_5</span><span class="wc-sz-label">KPI</span></button>
               </div>
             </div>
           </div>
@@ -2226,6 +2313,7 @@ body{font-family:'Red Hat Text',sans-serif;background:#fafafa;color:#202020;}
                 <button class="wc-sz-btn" data-fc-sz="s" onclick="fcSetSize(14,'l','s',event)"><span class="material-symbols-rounded">crop_square</span><span class="wc-sz-label">Small</span></button>
                 <button class="wc-sz-btn" data-fc-sz="m" onclick="fcSetSize(14,'l','m',event)"><span class="material-symbols-rounded">crop_landscape</span><span class="wc-sz-label">Medium</span></button>
                 <button class="wc-sz-btn" data-fc-sz="l" onclick="fcSetSize(14,'l','l',event)"><span class="material-symbols-rounded">crop_free</span><span class="wc-sz-label">Large</span></button>
+                <button class="wc-sz-btn" data-fc-sz="k" onclick="fcSetSize(14,'l','k',event)"><span class="material-symbols-rounded">crop_7_5</span><span class="wc-sz-label">KPI</span></button>
               </div>
             </div>
           </div>
@@ -2252,8 +2340,10 @@ body{font-family:'Red Hat Text',sans-serif;background:#fafafa;color:#202020;}
     <p><strong>Half 1 — Module Task Shortcuts.</strong> The Module dropdown (Large only, via the same generic inline-filter mechanism every other widget uses) picks which module's real task list renders, sourced from Step 1 Section 8's confirmed <code>Label — URL</code> data per module (<code>MOCK_DATA.moduleTasks</code>) — not invented. Each tile's icon is matched to the task's subject (journal, transaction, vendor, employee, invoice, etc.) per the icon-mapping table in Widget_Specs/W14-Main-Content-Tasks.md, so two different actions on the same kind of record share an icon.</p>
     <p><strong>"Fix this list."</strong> Unchecked (Auto, default) means the list follows whatever module the user is actually in elsewhere in the app, matching legacy's page-context behaviour. Checked (Fixed) pins the list to whichever module is currently selected, and stops following page context until unchecked again. Both states render identically in this static mock — there's no real page-navigation context here to auto-follow — so the visible difference is only the checkbox icon (synced via <code>fcMarkActive</code>) and a small "(Fixed)" label next to Half 1's heading when checked. Per the confirmed design, this needs no new backend capability: the task list is already looked up per-module, Auto vs. Fixed only changes which module name gets requested.</p>
     <p><strong>Half 2 — My Tasks &amp; My Reports.</strong> This is the existing legacy saved-shortcut feature (see reference screenshots, 2026-07-21) surfaced inside this widget instead of wherever it lives today — not new save/pin functionality. Saving still happens via the existing "Add To My Tasks" action elsewhere in the app; this panel only displays what's already saved. Both the existing side-panel instance and this widget instance are confirmed to work off the same underlying save mechanism simultaneously.</p>
-    <p><strong>KPI size — not offered.</strong> Unlike every other widget, there's no natural headline number for a purely navigational shortcuts panel, so no KPI card was built (same kind of confirmed size exception as W09/W13 skipping Small).</p>
-    <p><strong>Small/Medium — provisional, not yet designed.</strong> Per direct instruction ("focus is large and check to see at other sizes after"), Small shows the first 4 tasks with no controls at all, and Medium shows up to 6 tasks with the Module changeable only via the 3-dot "Change filters" modal. Neither includes Half 2 yet — that needs Large's room to read as two distinct named panels rather than squeezed tiles. Both will need a real design pass before this widget is considered done at those sizes.</p>
+    <p><strong>KPI size — added, frozen, then reopened for one more experiment, all 2026-07-21.</strong> There's still no natural headline number for a purely navigational shortcuts panel. Latest pass: Main Content Tasks, My Tasks, and My Reports icons all sit in one continuous, non-wrapping row (<code>.w14-hscroll</code>), separated by a vertical line (<code>.w14-vline</code>) between each group, scrollable left/right — the only way to fit three icon groups into a 300&times;110 card without shrinking or wrapping them. Only that one row scrolls; the card's chrome bar above it is untouched, exactly as it's always been. Change Module still works via the 3-dot "Change filters" modal.</p>
+    <p><strong>Small — icon-only tiles kept, title and a vertical line added 2026-07-21.</strong> Half 1 is unchanged: the same compact icon-only row as KPI (first 4 tasks), per direct instruction ("keep the small icons") — now with a small label above it showing the active module's name, matching My Tasks/My Reports' own label style below (per direct instruction, to use the free space the card had left over). My Tasks and My Reports sit side by side below a thin divider, now separated from each other by a real vertical-line element (<code>.w14-vline</code>) rather than just a gap. Module is only changeable via the 3-dot "Change filters" modal.</p>
+    <p><strong>Medium — reverted to the bigger tile, Half 2 added, then a scroll test 2026-07-21.</strong> Half 1 goes back to the original icon+label tile (<code>w14BigTileGrid</code>, same one Large uses) instead of the compact icon-only row, per direct instruction ("use the big Cards for the link like you had before the KPI card was added"). Half 2 uses the same two full labelled panels Large uses — <strong>deliberately not capped</strong>, so combined with an uncapped Half 1 there's more content than the card's fixed 240px height can hold. <strong>Explicit one-off experiment, per direct instruction, not a new standard:</strong> the card's chrome bar (title, refresh, eye, 3-dot menu) stays fixed and never scrolls, exactly as before; everything below it now scrolls internally with a slim custom scrollbar, via a selector scoped to only this one card (<code>#fc-opt-14-m .opt-v</code>). This deliberately deviates from Hard Rule 2 ("nothing scrolls except Expanded and table rows") — flagged in `General Widget Design Rules.md` and Widget_Specs/W14-Main-Content-Tasks.md as a test result, not something other widgets should copy without the same explicit sign-off.</p>
+    <p><strong>Large — reverted to the bigger tile.</strong> Same change as Medium: Half 1 is back to <code>w14BigTileGrid</code> (icon+label, 4 per row, no cap) instead of the compact icon-only row it briefly used. Half 2 is unchanged — the full My Tasks/My Reports lists, as originally built.</p>
   </div>
   </div><!-- /fc-widget-14 -->
 
@@ -2900,7 +2990,9 @@ MOCK_DATA.filters = {
     // Task Type filter removed 2026-07-21, per direct instruction — belonged to the old deferred to-do-list
     // draft, which real feedback never asked for. Replaced with Module — the actual mechanism from Widget_Specs
     // (choose a module, get that module's real task list from Step 1 Section 8's confirmed data).
-    {label:"Module",opts:["Main","Accounts Payable","Accounts Receivable","Bank Account Management","Fixed Assets","General Ledger","Payroll Distributions","Purchasing Management","Donors And Gifts","Deposits On Hand","Loans With Balance Due","Insurance Billing Plans","Pension Plans","Remittance Pledges","Records"]}
+    // "Main" renamed to "Home" (2026-07-21, per direct instruction — "more correct naming"), matching
+    // MOCK_DATA.moduleTasks[14]'s "Home" key and WRENDER[14]'s default below.
+    {label:"Module",opts:["Home","Accounts Payable","Accounts Receivable","Bank Account Management","Fixed Assets","General Ledger","Payroll Distributions","Purchasing Management","Donors And Gifts","Deposits On Hand","Loans With Balance Due","Insurance Billing Plans","Pension Plans","Remittance Pledges","Records"]}
   ],
   15: [
     // "Show" filter removed — doc: "Invented 'Show' filter (Balance+Reconciliation/Balance Only/
@@ -2950,7 +3042,10 @@ MOCK_DATA.moduleTasks = {
     // on Half 1's Module Task Shortcut tiles (not My Tasks/My Reports, per direct instruction). None of these
     // are confirmed against real screens; every 'd' is a best guess from the task's label + URL path, for
     // illustration only — flag any that are wrong once someone with real screens can check them.
-    'Main': [
+    // Renamed from 'Main' to 'Home' (2026-07-21, per direct instruction — "more correct naming"), matching
+    // MOCK_DATA.filters[14]'s dropdown option and WRENDER[14]'s default. Same going-forward-only caveat as
+    // Fixed Assets' "Selections and Listings (Records)" rename earlier — not a claim about legacy naming.
+    'Home': [
       {l:'Enter Manual Journal',u:'https://beta1.accounting.myamplify.io/GeneralLedger/UnpostedJournals/Update',i:'note_add',d:'Create a new general ledger journal entry.'},
       {l:'Manage Unposted Journals',u:'https://beta1.accounting.myamplify.io/GeneralLedger/UnpostedJournals',i:'menu_book',d:'Review and post journal entries waiting in the queue.'},
       {l:'Manage Bank Statements',u:'https://beta1.accounting.myamplify.io/BankAccountManagement/ReconcileBankStatement',i:'account_balance',d:'Reconcile a bank statement against recorded transactions.'},
@@ -5290,17 +5385,37 @@ WRENDER[13]=function(opt,wid,sz){
 // the old deferred to-do-list draft entirely (Task Type filter, status/due-date framing) — none of that was
 // ever asked for by real feedback. Large size only for this pass, per direct instruction ("focus is large and
 // check to see at other sizes after"); Small/Medium below are a provisional reduced version, not yet designed.
-// Hover shows where the link goes, not just the label — Half 1 (Module Task Shortcuts) only, per direct
-// instruction. 'd' is a best guess per task (see the comment above MOCK_DATA.moduleTasks[14]), not confirmed
-// against real screens; falls back to the label if a task somehow has no description.
+// Compact icon-only tiles (2026-07-21, per direct instruction: "small and compact" — a plain list of icons
+// instead of icon+label tiles). Hover replaces the old single-line title-attribute tooltip with a richer
+// custom bubble showing the full task name plus its description — more room than a native browser tooltip
+// can hold. 'd' is a best guess per task (see the comment above MOCK_DATA.moduleTasks[14]), not confirmed
+// against real screens. Half 1 (Module Task Shortcuts) only, per direct instruction — Half 2 (My Tasks/My
+// Reports, w14SavedPanel below) keeps its plain icon+label rows untouched.
 function w14Tile(t){
-  return '<a href="'+t.u+'" target="_blank" rel="noopener" title="'+(t.d||t.l)+'" class="w14-tile">'
+  var l=escAttr(t.l),d=escAttr(t.d||'');
+  return '<a href="'+t.u+'" target="_blank" rel="noopener" class="w14-ico-tile" tabindex="0" data-tip-l="'+l+'" data-tip-d="'+d+'" '
+    +'onmouseenter="showHoverTip(event,this.dataset.tipL,this.dataset.tipD)" onmouseleave="hideHoverTip()" '
+    +'onfocus="showHoverTip(event,this.dataset.tipL,this.dataset.tipD)" onblur="hideHoverTip()">'
+    +'<span class="material-symbols-rounded" style="font-size:18px">'+t.i+'</span></a>';
+}
+function w14TileGrid(tasks){
+  if(!tasks.length) return '<div style="font-size:12px;color:#888;padding:8px 0">No tasks configured for this module.</div>';
+  return '<div class="w14-ico-list">'+tasks.map(w14Tile).join('')+'</div>';
+}
+// Restored 2026-07-21, per direct instruction ("use the big Cards for the link like you had before the KPI
+// card was added") — Medium/Large only. Same hover mechanism as w14Tile above (showHoverTip/Rule T11), just
+// the original bigger icon+label card instead of an icon-only tile.
+function w14BigTile(t){
+  var l=escAttr(t.l),d=escAttr(t.d||'');
+  return '<a href="'+t.u+'" target="_blank" rel="noopener" class="w14-tile" tabindex="0" data-tip-l="'+l+'" data-tip-d="'+d+'" '
+    +'onmouseenter="showHoverTip(event,this.dataset.tipL,this.dataset.tipD)" onmouseleave="hideHoverTip()" '
+    +'onfocus="showHoverTip(event,this.dataset.tipL,this.dataset.tipD)" onblur="hideHoverTip()">'
     +'<span class="material-symbols-rounded" style="font-size:18px;color:#4b6ec3">'+t.i+'</span>'
     +'<span class="w14-tile-l">'+t.l+'</span></a>';
 }
-function w14TileGrid(tasks,cols){
+function w14BigTileGrid(tasks,cols){
   if(!tasks.length) return '<div style="font-size:12px;color:#888;padding:8px 0">No tasks configured for this module.</div>';
-  return '<div style="display:grid;grid-template-columns:repeat('+cols+',1fr);gap:8px">'+tasks.map(w14Tile).join('')+'</div>';
+  return '<div style="display:grid;grid-template-columns:repeat('+cols+',1fr);gap:8px">'+tasks.map(w14BigTile).join('')+'</div>';
 }
 // Half 2 panel — mirrors the reference "My Tasks"/"My Reports" side-panel screenshots (2026-07-21): a small
 // header (icon + title) and a plain link list. Saving/removing items happens via the existing "Add To My
@@ -5327,28 +5442,64 @@ function w14ToggleFix(wid,e){
 WRENDER[14]=function(opt,wid,sz){
   sz=sz||getSz(wid,opt);
   if(opt!=='A') opt='A'; // single confirmed design (2026-07-21) — no competing options left to choose between
-  var mod=fv(wid,'Module')||'Main';
+  var mod=fv(wid,'Module')||'Home'; // renamed from 'Main' (2026-07-21, per direct instruction)
   var tasks=(MOCK_DATA.moduleTasks[14]||{})[mod]||[];
-
-  // KPI size not offered — no headline metric exists for a purely navigational widget (same confirmed
-  // no-every-size exception as W09/W13's no-Small precedent; see Widget_Specs/00 - Index.md's Sizes note).
-  if(sz==='k'||sz==='xk'){
-    return '<div style="font-size:11px;color:#888;padding:8px">KPI size not offered for this widget — no headline metric exists for a navigation-shortcut panel.</div>';
-  }
-  if(sz==='s'){
-    // Provisional (2026-07-21) — first 4 tasks only, no dropdown/tags (no room); revisit per "check other sizes after."
-    return w14TileGrid(tasks.slice(0,4),2);
-  }
-  if(sz==='m'){
-    // Provisional (2026-07-21) — Module changeable via the 3-dot "Change filters" modal (generic, already wired
-    // via MOCK_DATA.filters[14]); up to 6 tasks; still no My Tasks/My Reports — Half 2 needs Large's room to read
-    // as two named panels, not squeezed tiles.
-    return ftags(wid)+w14TileGrid(tasks.slice(0,6),3);
-  }
-  // Large — the confirmed two-half design.
   var fixed=!!gs(wid).w14Fixed;
   var myTasks=MOCK_DATA.myTasks[14]||[], myReports=MOCK_DATA.myReports[14]||[];
-  var half1='<div class="w14-sec-hd">'+mod+' — Module Task Shortcuts'+(fixed?' <span style="font-weight:400;color:#aaa;text-transform:none">(Fixed)</span>':'')+'</div>'+w14TileGrid(tasks,4);
+  var fixedTag=fixed?' <span style="font-weight:400;color:#aaa;text-transform:none">(Fixed)</span>':'';
+
+  // KPI (1x0.5): added 2026-07-21, briefly frozen the same day, then reopened for one more explicit experiment
+  // (2026-07-21, "last experiment"): one continuous, non-wrapping, horizontally-scrollable icon strip — Main
+  // Content Tasks icons, a vertical line, My Tasks icons, another vertical line, My Reports icons, all in a
+  // single row. Only this row scrolls left/right (overflow-x on .w14-hscroll); the card chrome above it is
+  // outside .opt-v and untouched, same as it's always been. Rare-scroll governance note (General Widget
+  // Design Rules.md, Rule 2): explicit, by name, documented here — this is a horizontal one-row icon strip,
+  // not the vertical card-body scroll that rule mainly targets, but flagged under the same principle anyway.
+  if(sz==='k'||sz==='xk'){
+    var stripTasks=tasks.slice(0,5).map(w14Tile).join('');
+    var stripMyTasks=myTasks.map(w14Tile).join('');
+    var stripMyReports=myReports.map(w14Tile).join('');
+    return '<div class="w14-hscroll">'+stripTasks+'<div class="w14-vline"></div>'+stripMyTasks+'<div class="w14-vline"></div>'+stripMyReports+'</div>';
+  }
+  if(sz==='s'){
+    // Half 1 unchanged (2026-07-21, "keep the small icons") — compact icon-only row, no dropdown/tags, no room.
+    // Title added 2026-07-21, per direct instruction ("add title like in my tasks and my reports for Main
+    // Content Tasks... use up more of the free space") — same .w14-mini-lbl style as My Tasks/My Reports below,
+    // showing the active module's name rather than a static "Main Content Tasks" (more useful at a glance —
+    // the widget's own name is already the card's title bar).
+    // Half 2 added 2026-07-21, put side by side, then given a vertical line between the two columns the same
+    // day per direct instruction — a real .w14-vline div (stretches full row height) instead of a CSS border
+    // trick, reusing the same divider used in the KPI strip above.
+    return '<div class="w14-mini-lbl">'+mod+'</div>'+w14TileGrid(tasks.slice(0,4))
+      +'<div class="w14-mini-div"></div>'
+      +'<div class="w14-mini-row">'
+        +'<div class="w14-mini-col"><div class="w14-mini-lbl">My Tasks</div>'+w14TileGrid(myTasks.slice(0,3))+'</div>'
+        +'<div class="w14-vline"></div>'
+        +'<div class="w14-mini-col"><div class="w14-mini-lbl">My Reports</div>'+w14TileGrid(myReports.slice(0,2))+'</div>'
+      +'</div>';
+  }
+  if(sz==='m'){
+    // Half 1 switched back to the bigger icon+label card (2026-07-21, "use the big Cards for the link like you
+    // had before the KPI card was added") — w14BigTileGrid instead of the compact w14TileGrid Small/KPI keep.
+    // Module still changeable only via the 3-dot "Change filters" modal (no room for the inline dropdown).
+    // Half 2 added 2026-07-21, using the full lists (not capped) — deliberately uncapped, together with Half 1
+    // no longer being capped either, per the scroll test below: content is allowed to exceed the card's fixed
+    // 240px height on purpose, so there's something to actually scroll.
+    //
+    // SCROLL TEST (2026-07-21, per direct instruction) — explicit one-off experiment, not a new standard: this
+    // card's own .opt-v (#fc-opt-14-m .opt-v, scoped, Rule T4) is overridden from the universal overflow:hidden
+    // to overflow-y:auto, with a slim custom scrollbar. The card's chrome bar (title/refresh/eye/3-dot menu)
+    // is untouched and still never scrolls — only the body below it does. This deliberately deviates from
+    // Hard Rule 2 ("nothing scrolls except Expanded and table rows") — see General Widget Design Rules.md's
+    // Fine-Tuning/exceptions note and Widget_Specs/W14-Main-Content-Tasks.md for the same flag.
+    var half1m='<div class="w14-sec-hd">'+mod+' — Module Task Shortcuts'+fixedTag+'</div>'+w14BigTileGrid(tasks,3);
+    var half2m='<div class="w14-sec-hd" style="margin-top:10px">My Tasks &amp; My Reports</div>'
+      +'<div style="display:flex;gap:8px;flex-wrap:wrap">'+w14SavedPanel('list_alt','My Tasks',myTasks)+w14SavedPanel('description','My Reports',myReports)+'</div>';
+    return ftags(wid)+half1m+half2m;
+  }
+  // Large — Half 1 switched back to the bigger icon+label card, same reason/instruction as Medium above.
+  // Half 2 unchanged — full My Tasks/My Reports lists, as originally built.
+  var half1='<div class="w14-sec-hd">'+mod+' — Module Task Shortcuts'+fixedTag+'</div>'+w14BigTileGrid(tasks,4);
   var half2='<div class="w14-sec-hd" style="margin-top:14px">My Tasks &amp; My Reports</div>'
     +'<div style="display:flex;gap:10px;flex-wrap:wrap">'+w14SavedPanel('list_alt','My Tasks',myTasks)+w14SavedPanel('description','My Reports',myReports)+'</div>';
   return inlineFilters(wid,opt)+half1+half2;
@@ -5876,6 +6027,38 @@ function togglePurpose(wid,opt,btn,e){
   },50);
 }
 
+// ── REUSABLE: hover-info bubble that escapes card clipping (General Widget Design Rules.md, Rule T11,
+// added 2026-07-21) ─────────────────────────────────────────────────────────────────────────────────────
+// Every card's content area (.opt-v) has overflow:hidden (required for Rule 2 — nothing scrolls/spills). A
+// hover bubble nested inside the card as a position:absolute child of the hovered element gets silently
+// clipped the moment it needs to render outside the card's box — exactly what happened to W14's Module Task
+// Shortcut tiles' first pass. Fix: same technique togglePurpose()'s click popover already uses — append one
+// reusable element to document.body (never nested inside a card), position it with position:fixed computed
+// from the trigger's getBoundingClientRect(), and toggle on mouseenter/mouseleave (+ focus/blur for keyboard
+// access) instead of a CSS :hover selector. Every widget's custom hover-info bubble should call this pair,
+// not write a second nested-bubble version.
+var _hoverTipEl=null;
+function showHoverTip(e,title,desc){
+  var el=e.currentTarget||e.target;
+  if(!_hoverTipEl){
+    _hoverTipEl=document.createElement('div');
+    _hoverTipEl.className='hover-tip-bubble';
+    document.body.appendChild(_hoverTipEl);
+  }
+  _hoverTipEl.innerHTML=(title?'<div class="hover-tip-l">'+title+'</div>':'')+(desc?'<div class="hover-tip-d">'+desc+'</div>':'');
+  _hoverTipEl.style.cssText='position:fixed;z-index:9999;display:block;top:0;left:0;';
+  var rect=el.getBoundingClientRect();
+  var bw=_hoverTipEl.offsetWidth,bh=_hoverTipEl.offsetHeight;
+  var above=(rect.top-8-bh)>=4;
+  var top=above?(rect.top-8-bh):(rect.bottom+8);
+  var left=Math.max(8,Math.min(rect.left+rect.width/2-bw/2,window.innerWidth-8-bw));
+  _hoverTipEl.style.top=top+'px'; _hoverTipEl.style.left=left+'px';
+}
+function hideHoverTip(){ if(_hoverTipEl) _hoverTipEl.style.display='none'; }
+// Minimal HTML-attribute escaper — used when interpolating real task labels/descriptions (which may contain
+// apostrophes, quotes, or "&") into data-* attributes read back by showHoverTip above.
+function escAttr(s){ return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+
 // Inject eye buttons into each card chrome after DOM is ready
 function _injectEyes(){
   MOCK_DATA.meta.forEach(function(w){
@@ -6187,9 +6370,10 @@ Object.keys(FC_VERSION).forEach(function(wid){
 
 // "Ready to be reviewed by Jo" badge (per direct instruction 2026-07-09, started with Pension Plans; W03
 // Payroll Distributions added 2026-07-14 once its refinement pass was complete; W01 Budget Compared to Actual
-// and W07 Deposit Accounts added 2026-07-15, per direct instruction). Toggle per widget here; false hides the
-// badge for that widget.
-var FC_READY_FOR_REVIEW = { 1:true, 2:true, 3:true, 7:true };
+// and W07 Deposit Accounts added 2026-07-15, per direct instruction; W14 Main Content Tasks added 2026-07-21
+// once its Step 3 mock-work pass was declared done, per direct instruction). Toggle per widget here; false
+// hides the badge for that widget.
+var FC_READY_FOR_REVIEW = { 1:true, 2:true, 3:true, 7:true, 14:true };
 Object.keys(FC_READY_FOR_REVIEW).forEach(function(wid){
   var el=document.getElementById('fc-review-'+wid);
   if(el) el.style.display = FC_READY_FOR_REVIEW[wid] ? '' : 'none';

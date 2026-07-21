@@ -53,7 +53,7 @@ None — there is no way to configure or filter this widget. The content is dete
 
 The actual task set shown per module, as it exists today — direct confirmation of Section 1/3's "content changes by module and page" and "these are add/input-data shortcuts" claims. Kept in plain `Label — URL` form per module so it can be used directly as real mock data in `Step 3 - Mock_Work` later, without re-transcribing.
 
-**Main**
+**Home** *(renamed from "Main," 2026-07-21, per direct instruction — "more correct naming." Going-forward naming only, same caveat as the Fixed Assets "Selections and Listings (Records)" rename below — not a claim that the legacy system itself already calls this module "Home.")*
 - Enter Manual Journal — https://beta1.accounting.myamplify.io/GeneralLedger/UnpostedJournals/Update
 - Manage Unposted Journals — https://beta1.accounting.myamplify.io/GeneralLedger/UnpostedJournals
 - Manage Bank Statements — https://beta1.accounting.myamplify.io/BankAccountManagement/ReconcileBankStatement
