@@ -1,0 +1,2100 @@
+Date: Tue, 21 Jul 2026 12:28:06 +0000 (UTC)
+Message-ID: <1788091654.41.1784636886423@8df030114731>
+Subject: Exported From Confluence
+MIME-Version: 1.0
+Content-Type: multipart/related; 
+	boundary="----=_Part_40_1577590880.1784636886422"
+
+------=_Part_40_1577590880.1784636886422
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+Content-Location: file:///C:/exported.html
+
+<html xmlns:o=3D'urn:schemas-microsoft-com:office:office'
+      xmlns:w=3D'urn:schemas-microsoft-com:office:word'
+      xmlns:v=3D'urn:schemas-microsoft-com:vml'
+      xmlns=3D'urn:w3-org-ns:HTML'>
+<head>
+    <meta http-equiv=3D"Content-Type" content=3D"text/html; charset=3Dutf-8=
+">
+    <title>Deposits On Hand</title>
+    <!--[if gte mso 9]>
+    <xml>
+        <o:OfficeDocumentSettings>
+            <o:TargetScreenSize>1024x640</o:TargetScreenSize>
+            <o:PixelsPerInch>72</o:PixelsPerInch>
+            <o:AllowPNG/>
+        </o:OfficeDocumentSettings>
+        <w:WordDocument>
+            <w:View>Print</w:View>
+            <w:Zoom>90</w:Zoom>
+            <w:DoNotOptimizeForBrowser/>
+        </w:WordDocument>
+    </xml>
+    <![endif]-->
+    <style>
+                <!--
+        @page Section1 {
+            size: 8.5in 11.0in;
+            margin: 1.0in;
+            mso-header-margin: .5in;
+            mso-footer-margin: .5in;
+            mso-paper-source: 0;
+        }
+
+        table {
+            border: solid 1px;
+            border-collapse: collapse;
+        }
+
+        table td, table th {
+            border: solid 1px;
+            padding: 5px;
+        }
+
+        td {
+            page-break-inside: avoid;
+        }
+
+        tr {
+            page-break-after: avoid;
+        }
+
+        div.Section1 {
+            page: Section1;
+        }
+
+        /* Confluence print stylesheet. Common to all themes for print medi=
+a */
+/* Full of !important until we improve batching for print CSS */
+
+@media print {
+    #main {
+        padding-bottom: 1em !important; /* The default padding of 6em is to=
+o much for printouts */
+    }
+
+    body {
+        font: var(--ds-font-body-small, Arial, Helvetica, FreeSans, sans-se=
+rif);
+    }
+
+    body, #full-height-container, #main, #page, #content, .has-personal-sid=
+ebar #content {
+        background: var(--ds-surface, #fff) !important;
+        color: var(--ds-text, #000) !important;
+        border: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        display: block !important;
+    }
+
+    a, a:link, a:visited, a:focus, a:hover, a:active {
+        color: var(--ds-text, #000);
+    }
+
+    #content h1,
+    #content h2,
+    #content h3,
+    #content h4,
+    #content h5,
+    #content h6 {
+        page-break-after: avoid;
+    }
+
+    pre {
+        font: var(--ds-font-code, Monaco, "Courier New", monospace);
+    }
+
+    #header,
+    .aui-header-inner,
+    #navigation,
+    #sidebar,
+    .sidebar,
+    #personal-info-sidebar,
+    .ia-fixed-sidebar,
+    .page-actions,
+    .navmenu,
+    .ajs-menu-bar,
+    .noprint,
+    .inline-control-link,
+    .inline-control-link a,
+    a.show-labels-editor,
+    .global-comment-actions,
+    .comment-actions,
+    .quick-comment-container,
+    #addcomment {
+        display: none !important;
+    }
+
+    /* CONF-28544 cannot print multiple pages in IE */
+    #splitter-content {
+        position: relative !important;
+    }
+
+    .comment .date::before {
+        content: none !important; /* remove middot for print view */
+    }
+
+    h1.pagetitle img {
+        height: auto;
+        width: auto;
+    }
+
+    .print-only {
+        display: block;
+    }
+
+    #footer {
+        position: relative !important; /* CONF-17506 Place the footer at en=
+d of the content */
+        margin: 0;
+        padding: 0;
+        background: none;
+        clear: both;
+    }
+
+    #poweredby {
+        border-top: none;
+        background: none;
+    }
+
+    #poweredby li.print-only {
+        display: list-item;
+        font-style: italic;
+    }
+
+    #poweredby li.noprint {
+        display: none;
+    }
+
+    /* no width controls in print */
+    .wiki-content .table-wrap,
+    .wiki-content p,
+    .panel .codeContent,
+    .panel .codeContent pre,
+    .image-wrap {
+        overflow: visible !important;
+    }
+
+    /* TODO - should this work? */
+    #children-section,
+    #comments-section .comment,
+    #comments-section .comment .comment-body,
+    #comments-section .comment .comment-content,
+    #comments-section .comment p {
+        page-break-inside: avoid;
+    }
+
+    #page-children a {
+        text-decoration: none;
+    }
+
+    /**
+     hide twixies
+
+     the specificity here is a hack because print styles
+     are getting loaded before the base styles. */
+    #comments-section.pageSection .section-header,
+    #comments-section.pageSection .section-title,
+    #children-section.pageSection .section-header,
+    #children-section.pageSection .section-title,
+    .children-show-hide {
+        padding-left: 0;
+        margin-left: 0;
+    }
+
+    .children-show-hide.icon {
+        display: none;
+    }
+
+    /* personal sidebar */
+    .has-personal-sidebar #content {
+        margin-right: 0px;
+    }
+
+    .has-personal-sidebar #content .pageSection {
+        margin-right: 0px;
+    }
+
+    .no-print, .no-print * {
+        display: none !important;
+    }
+}
+-->
+    </style>
+</head>
+<body>
+    <h1>Deposits On Hand</h1>
+    <div class=3D"Section1">
+        <span class=3D"confluence-embedded-file-wrapper image-center-wrappe=
+r confluence-embedded-manual-size"><img class=3D"confluence-embedded-image =
+image-center" width=3D"468" loading=3D"lazy" src=3D"ac3da55d45198c4e93ace73=
+6b2a30adf96b4f5b121c34fb7a593d148ac1a809a" data-image-src=3D"https://minist=
+rybrands.atlassian.net/wiki/download/attachments/7369818146/image-20260706-=
+221334.png?version=3D1&amp;modificationDate=3D1783376015927&amp;cacheVersio=
+n=3D1&amp;api=3Dv2" data-height=3D"421" data-width=3D"1807" data-unresolved=
+-comment-count=3D"0" data-linked-resource-id=3D"7370571855" data-linked-res=
+ource-version=3D"1" data-linked-resource-type=3D"attachment" data-linked-re=
+source-default-alias=3D"image-20260706-221334.png" data-base-url=3D"https:/=
+/ministrybrands.atlassian.net/wiki" data-linked-resource-content-type=3D"im=
+age/png" data-linked-resource-container-id=3D"7369818146" data-linked-resou=
+rce-container-version=3D"16" data-media-id=3D"5d90f7a3-ca74-46fd-81ef-e5783=
+19962f2" data-media-type=3D"file" height=3D"109"></span>
+<div class=3D"confluence-information-macro confluence-information-macro-inf=
+ormation">
+<span class=3D"aui-icon aui-icon-small aui-iconfont-info confluence-informa=
+tion-macro-icon"></span>
+<div class=3D"confluence-information-macro-body">
+<p><strong>How to read this page.</strong> Everything here is specific to D=
+eposits On Hand and its dashboard widget. Sections 1 to 3 are what exists t=
+oday, validated in a live audit on asmdev (13 Jul 2026). Section 5 is the d=
+esigner brief: jobs, scenarios, states, and constraints in one place. Statu=
+s marks: <span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh=
+ aui-lozenge-success">VERIFIED LIVE</span> checked in the product, <span cl=
+ass=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-lozenge-comp=
+lete">DESKTOP RESEARCH</span> sourced from public material, <span class=3D"=
+status-macro aui-lozenge aui-lozenge-visual-refresh aui-lozenge-current">TO=
+ CONFIRM</span> open. General dashboard design principles live in a separat=
+e reference document, not on this page. Sources at the bottom.</p>
+</div>
+</div>
+<h2 id=3D"DepositsOnHand-1.WhatDepositsOnHandis">1. What Deposits On Hand i=
+s</h2>
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-success">VERIFIED LIVE</span> Deposits On Hand is the module behind =
+the widget. A deposit account is money the organization holds on behalf of =
+a <strong>depositor</strong> (a person or organization from Records). The s=
+tructure is a three-level hierarchy:</p>
+<div class=3D"table-wrap">
+<table data-table-width=3D"1162" data-layout=3D"default" class=3D"confluenc=
+eTable">
+<tbody>
+<tr>
+<th class=3D"confluenceTh">
+<p>Level</p></th>
+<th class=3D"confluenceTh">
+<p>What it is</p></th>
+<th class=3D"confluenceTh">
+<p>Example from asmdev</p></th>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Group</p></td>
+<td class=3D"confluenceTd">
+<p>Top-level grouping of account types</p></td>
+<td class=3D"confluenceTd">
+<p>NW Group</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Account Type</p></td>
+<td class=3D"confluenceTd">
+<p>Category with its own interest settings; populates the widget filter</p>=
+</td>
+<td class=3D"confluenceTd">
+<p>NW Group/Jo's Account Type 1</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Account</p></td>
+<td class=3D"confluenceTd">
+<p>One depositor's account: name, number, inception date, balance, active s=
+tatus</p></td>
+<td class=3D"confluenceTd">
+<p>Nicole whatnot, #123456</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-success">VERIFIED LIVE</span> An account's lifecycle: created and ed=
+ited in Modify &gt; Account Information; money moves via Enter &gt; Transac=
+tion (deposit, withdrawal, adjustment); withdrawals generate a check in Acc=
+ounts Payable; interest is calculated and posted in batch by Utilities &gt;=
+ Post Interest Deposits; closing happens through a Close Account dialog tha=
+t posts final interest through a chosen date; depositor statements are conf=
+igured in Modify &gt; Statement Design.</p>
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-complete">DESKTOP RESEARCH</span> Who runs this in the real world: d=
+enominational headquarters and church extension funds, where congregations =
+and individuals deposit money that the body pays interest on and lends to a=
+ffiliated churches. These are regulated securities programs, not FDIC-insur=
+ed bank accounts. This makes the widget a small portfolio view over deposit=
+or money, a different thing from the Bank Balances widget (operational cash=
+).</p>
+<p><strong>The role of account type.</strong> <span class=3D"status-macro a=
+ui-lozenge aui-lozenge-visual-refresh aui-lozenge-complete">DESKTOP RESEARC=
+H</span> Type is the product line of a deposit program: interest settings l=
+ive at type level, Post Interest runs off type-driven accrual settings, and=
+ real extension funds structure offerings this way (demand investments, fix=
+ed-rate term certificates, IRA-type accounts at LCEF and Disciples CEF). Fo=
+r the HQ administrator, <strong>type is the portfolio dimension</strong> (h=
+ow much sits in each product, where interest liability concentrates) and <s=
+trong>account is the depositor dimension</strong> (who called, what is thei=
+r balance).</p>
+<blockquote>
+<p><strong>Naming:</strong> the widget says "Deposit Accounts", the module =
+says "Deposits On Hand". Same thing, two names, on the same screen. <span c=
+lass=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-lozenge-suc=
+cess">VERIFIED LIVE</span> Decision on the table: rename the widget to matc=
+h the module (Section 8, Gap 9).</p>
+</blockquote>
+<h2 id=3D"DepositsOnHand-2.Thewidgettoday">2. The widget today</h2>
+<p>Original documentation from the first version of this page, validated in=
+ the live audit. Data source: active accounts from the Deposits On Hand mod=
+ule (tables DHAccount for accounts, DHTypeRepository for the type filter), =
+balances calculated as of today, ordered by name then inception date.</p>
+<div class=3D"table-wrap">
+<table data-table-width=3D"1162" data-layout=3D"default" class=3D"confluenc=
+eTable">
+<tbody>
+<tr>
+<th class=3D"confluenceTh">
+<p>Behavior</p></th>
+<th class=3D"confluenceTh">
+<p>Status</p></th>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Left: table of active accounts with Name, Inception Date, Account#, Endi=
+ng Balance, and a totals row (# accounts, combined balance). The table is a=
+ <strong>flat list of individual accounts at every volume</strong>: with Sh=
+ow All it mixes accounts across every type, and with a type selected it lis=
+ts that type's accounts. There is no Type column. Account types never appea=
+r as table rows; type totals exist only as pie segments read by hover</p></=
+td>
+<td class=3D"confluenceTd">
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-success">VERIFIED LIVE</span>, flat account-level listing confirmed =
+by product owner (13 Jul 2026)</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Right: pie chart "By Account Type", one segment per type, value shown on=
+ly on hover</p></td>
+<td class=3D"confluenceTd">
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-success">VERIFIED LIVE</span></p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Account type dropdown filters the table only; the pie always shows all t=
+ypes. Reproduced: filter to an empty type and the table says "No records to=
+ display" while the pie still shows the other type</p></td>
+<td class=3D"confluenceTd">
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-success">VERIFIED LIVE</span></p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Refresh is a link labeled "Last refreshed &lt;date time&gt;": the timest=
+amp is the button. It does not update when the filter re-renders the data, =
+only on explicit refresh</p></td>
+<td class=3D"confluenceTd">
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-success">VERIFIED LIVE</span></p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>No drill-down: rows and pie segments are not clickable. The widget title=
+ is a link, but it opens the widget chooser (17 panel options), not the mod=
+ule</p></td>
+<td class=3D"confluenceTd">
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-success">VERIFIED LIVE</span></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<h2 id=3D"DepositsOnHand-3.Themoduletoday:noreadlayer">3. The module today:=
+ no read layer</h2>
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-success">VERIFIED LIVE</span> Walked the full module to test where a=
+ widget drill-down could land. Finding: <strong>there is nowhere to land.</=
+strong> Unlike Accounts Payable (View &gt; Transaction Inquiry), Deposits O=
+n Hand has no View menu, no live activity table, no interest history, no li=
+st of closed accounts. Everything is entry, edit, action, or report:</p>
+<div class=3D"table-wrap">
+<table data-table-width=3D"1162" data-layout=3D"default" class=3D"confluenc=
+eTable">
+<tbody>
+<tr>
+<th class=3D"confluenceTh">
+<p>Menu</p></th>
+<th class=3D"confluenceTh">
+<p>Pages</p></th>
+<th class=3D"confluenceTh">
+<p>Nature</p></th>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Enter</p></td>
+<td class=3D"confluenceTd">
+<p>Transaction</p></td>
+<td class=3D"confluenceTd">
+<p>Data entry per depositor</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Manage</p></td>
+<td class=3D"confluenceTd">
+<p>Unposted Transactions</p></td>
+<td class=3D"confluenceTd">
+<p>Queue of entries awaiting posting, not history</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Reports</p></td>
+<td class=3D"confluenceTd">
+<p>Links out of Financials to a separate reporting application</p></td>
+<td class=3D"confluenceTd">
+<p>Criteria form, then a document. The only place Interest, Unposted Intere=
+st, and movement columns exist</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Modify</p></td>
+<td class=3D"confluenceTd">
+<p>Group Information, Account Type Information, Account Information, Statem=
+ent Design</p></td>
+<td class=3D"confluenceTd">
+<p>Setup and edit. Account Information is a search (group, type, depositor,=
+ name, number, active/inactive) that opens one account at a time; closing l=
+ives here</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Utilities</p></td>
+<td class=3D"confluenceTd">
+<p>Post Interest Deposits, Inactivate or Renew an Account, Change Interest =
+Rates</p></td>
+<td class=3D"confluenceTd">
+<p>Batch action wizards, no status view of what is due</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>In practice:</strong> "which accounts have unposted interest" =
+=3D run a Columnar or Detail report in the separate reports app. "Which acc=
+ounts closed recently" =3D search Account Information with Show Only Inacti=
+ve, one account at a time. "Did the payout go through" =3D leave the module=
+ and find the check in Accounts Payable.</p>
+<h2 id=3D"DepositsOnHand-4.Personas">4. Personas</h2>
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-complete">DESKTOP RESEARCH</span> Deposits On Hand is a headquarters=
+ feature, which inverts our usual persona hierarchy: the part-time church a=
+dmin is secondary here.</p>
+<div class=3D"table-wrap">
+<table data-table-width=3D"1162" data-layout=3D"default" class=3D"confluenc=
+eTable">
+<tbody>
+<tr>
+<th class=3D"confluenceTh">
+<p>Persona</p></th>
+<th class=3D"confluenceTh">
+<p>Relationship to this widget</p></th>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p><strong>P1. HQ finance administrator (primary)</strong></p></td>
+<td class=3D"confluenceTd">
+<p>Staff accountant at a denominational HQ, district office, or extension f=
+und. Manages depositor accounts, posts interest, processes withdrawals via =
+AP, answers depositor questions, reports to leadership and regulators.</p><=
+/td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p><strong>P2. Part-time church admin or bookkeeper (secondary)</strong></p=
+></td>
+<td class=3D"confluenceTd">
+<p>Often part time (a real posting: 20 hrs/week at $20/hr) or volunteer, no=
+ formal accounting training. Touches this widget only if the org runs depos=
+it accounts, or misreads it as bank balances.</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p><strong>P3. Treasurer / finance committee (oversight)</strong></p></td>
+<td class=3D"confluenceTd">
+<p>High-capacity volunteer doing review, not data entry. Needs totals and t=
+rend for board reporting and anomaly spotting.</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p><strong>P4. Depositor-facing service staff (contextual)</strong></p></td=
+>
+<td class=3D"confluenceTd">
+<p>At extension funds, staff field depositor calls about balances, rates, m=
+aturities. The account grid is their fastest lookup.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<h2 id=3D"DepositsOnHand-5.Designerbrief">5. Designer brief</h2>
+<div class=3D"panel" style=3D"background-color: #EAE6FF;border-color: #998D=
+D9;border-width: 1px;">
+<div class=3D"panelContent" style=3D"background-color: #EAE6FF;">
+<p>Everything a designer needs to start: the jobs, the scenarios they play =
+out in, every widget state, and the constraints that bound the solution. Re=
+ad with Section 7 (design direction) and Section 8 (gaps).</p>
+</div>
+</div>
+<h3 id=3D"DepositsOnHand-5.1Jobstobedone">5.1 Jobs to be done</h3>
+<div class=3D"table-wrap">
+<table data-table-width=3D"1162" data-layout=3D"default" class=3D"confluenc=
+eTable">
+<tbody>
+<tr>
+<th class=3D"confluenceTh">
+<p>Job</p></th>
+<th class=3D"confluenceTh">
+<p>When / so that</p></th>
+<th class=3D"confluenceTh">
+<p>Possible today?</p></th>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p><strong>1. Portfolio pulse check</strong></p></td>
+<td class=3D"confluenceTd">
+<p>Opening Financials, see total on deposit and mix by type, confirm nothin=
+g unexpected</p></td>
+<td class=3D"confluenceTd">
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-current">PARTLY</span> Total and count yes; type mix only via hover =
+on the pie, no type totals in text</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p><strong>2. Single account lookup</strong></p></td>
+<td class=3D"confluenceTd">
+<p>Depositor calls, find their account and balance in seconds</p></td>
+<td class=3D"confluenceTd">
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-current">PARTLY</span> Widget grid works only at small volumes (no s=
+earch); otherwise Account Information search, one account at a time</p></td=
+>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p><strong>3. Interest cycle assurance</strong></p></td>
+<td class=3D"confluenceTd">
+<p>Posting date approaches, see which accounts have accrued or unposted int=
+erest, run Post Interest on time</p></td>
+<td class=3D"confluenceTd">
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-error">NO</span> Only via reports in the separate reports app</p></t=
+d>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p><strong>4. Liquidity oversight</strong></p></td>
+<td class=3D"confluenceTd">
+<p>Leadership asks about position, show balance in context (trend, movement=
+)</p></td>
+<td class=3D"confluenceTd">
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-error">NO</span> No trend, delta, or history anywhere except reports=
+</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p><strong>5. Anomaly detection</strong></p></td>
+<td class=3D"confluenceTd">
+<p>A balance moved unexpectedly, surface the change before month end</p></t=
+d>
+<td class=3D"confluenceTd">
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-error">NO</span> Static balances only</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p><strong>6. Drill to action</strong></p></td>
+<td class=3D"confluenceTd">
+<p>Widget shows something needing work, click through and handle it</p></td=
+>
+<td class=3D"confluenceTd">
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-error">NO</span> No drill-down, and no destination exists (Section 3=
+)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Non-jobs:</strong> transaction entry, bank reconciliation (Bank =
+Account Management), donation batch posting (giving side).</p>
+<h3 id=3D"DepositsOnHand-5.2Contextscenarios">5.2 Context scenarios</h3>
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-complete">DESKTOP RESEARCH</span>, grounded in the verified module m=
+ap. Each ends with how it plays out today.</p>
+<p><strong>A. Monday morning at a district office.</strong> The HQ administ=
+rator opens the dashboard, sees the total and type mix. One type looks lowe=
+r than last week. Today: no comparison exists, so "lower" depends on memory=
+; investigating means a report in the separate reports app.</p>
+<p><strong>B. Depositor phone call.</strong> A congregation treasurer asks =
+their balance and when interest last posted. Today: staff can scan the grid=
+ for the balance if the list is short; the interest question requires a Det=
+ail report. No search, no click-through.</p>
+<p><strong>C. Quarter-end interest run.</strong> The administrator wants to=
+ know which accounts accrue this quarter and whether anything is unposted b=
+efore running Post Interest. Today: nothing signals this; the Columnar repo=
+rt is the only pre-check.</p>
+<p><strong>D. Board packet week.</strong> The treasurer needs deposits by t=
+ype, trend vs last quarter, and totals readable by non-accountants. Today: =
+type totals exist only in the pie (hover to read); trend does not exist; th=
+e packet gets built from reports.</p>
+<p><strong>E. Small church edge case.</strong> A part-time admin at a churc=
+h that does not use Deposits On Hand selects the widget expecting bank bala=
+nces and gets an empty grid. Today: "No records to display" with blank tota=
+ls, no explanation, no way forward.</p>
+<h3 id=3D"DepositsOnHand-5.3Widgetstates">5.3 Widget states</h3>
+<p>Every state the widget can be in, with its rule. States 1 to 4 and the t=
+ooltip are agreed spec; loading and error are proposed defaults.</p>
+<div class=3D"table-wrap">
+<table data-table-width=3D"1162" data-layout=3D"default" class=3D"confluenc=
+eTable">
+<tbody>
+<tr>
+<th class=3D"confluenceTh">
+<p>State</p></th>
+<th class=3D"confluenceTh">
+<p>Rule</p></th>
+<th class=3D"confluenceTh">
+<p>Status</p></th>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p><strong>1. Org does not have the module</strong></p></td>
+<td class=3D"confluenceTd">
+<p>The widget does not appear in the widget chooser and cannot be selected.=
+ No teaser, no locked state.</p></td>
+<td class=3D"confluenceTd">
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-current">TO CONFIRM</span> how module entitlement is detected (licen=
+se flag vs security rights); today the chooser appears to list all 17 panel=
+s regardless</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p><strong>2. Module present, user has no rights</strong></p></td>
+<td class=3D"confluenceTd">
+<p>The widget is hidden for that user, consistent with the Bank Balances pr=
+ecedent of per-user rights.</p></td>
+<td class=3D"confluenceTd">
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-current">TO CONFIRM</span> whether widget visibility respects module=
+ rights today</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p><strong>3. Module present, zero accounts</strong></p></td>
+<td class=3D"confluenceTd">
+<p>Purposeful empty state: names the module, one line on what the widget sh=
+ows, and a <strong>+ Add Account</strong> action opening Deposits On Hand (=
+Modify &gt; Account Information, new account). Action visible only to users=
+ with rights to create accounts; everyone else gets the explanation without=
+ the button.</p></td>
+<td class=3D"confluenceTd">
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-success">SPEC AGREED</span> (13 Jul 2026)</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p><strong>4. Accounts exist, filter matches none</strong></p></td>
+<td class=3D"confluenceTd">
+<p>Explicit zeros (# Accounts: 0, balance 0.00 in the org's currency), caus=
+e stated ("No accounts of this type"), <strong>Show all</strong> action cle=
+ars the filter. No chart for zero data; a short text line takes its place.<=
+/p></td>
+<td class=3D"confluenceTd">
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-success">SPEC AGREED</span> (13 Jul 2026)</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p><strong>5. Loading</strong></p></td>
+<td class=3D"confluenceTd">
+<p>Skeleton in the widget's final layout, no layout shift, no spinners over=
+ stale numbers.</p></td>
+<td class=3D"confluenceTd">
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-current">PROPOSED</span></p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p><strong>6. Data error</strong></p></td>
+<td class=3D"confluenceTd">
+<p>If balances cannot be loaded, show a clear message and a Retry action. N=
+ever render stale figures without their "data as of" stamp; a wrong balance=
+ is worse than no balance for regulated figures.</p></td>
+<td class=3D"confluenceTd">
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-current">PROPOSED</span></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Info tooltip copy.</strong> <span class=3D"status-macro aui-loze=
+nge aui-lozenge-visual-refresh aui-lozenge-success">SPEC AGREED</span> (13 =
+Jul 2026) Shown from the widget's info icon on hover and on keyboard focus,=
+ dismissible (WCAG 1.4.13). The same copy serves as the widget's descriptio=
+n in the widget chooser:</p>
+<blockquote>
+<p>Balances of the deposit accounts your organization holds for depositors,=
+ such as congregations or individuals whose funds you manage and pay intere=
+st on.</p>
+</blockquote>
+<h3 id=3D"DepositsOnHand-5.4Constraints">5.4 Constraints</h3>
+<div class=3D"table-wrap">
+<table data-table-width=3D"1162" data-layout=3D"default" class=3D"confluenc=
+eTable">
+<tbody>
+<tr>
+<th class=3D"confluenceTh">
+<p>Constraint</p></th>
+<th class=3D"confluenceTh">
+<p>What it means for the design</p></th>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Rights and PII</p></td>
+<td class=3D"confluenceTd">
+<p>Accounts carry depositor names and balances. Per-account visibility foll=
+ows user rights (Bank Balances precedent). No account data in states visibl=
+e to unauthorized users.</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Segregation of duties</p></td>
+<td class=3D"confluenceTd">
+<p>Custody, recording, and review are separate roles in church finance. The=
+ widget stays read-and-navigate; create and edit actions appear only behind=
+ rights (see state 3).</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Regulatory accuracy</p></td>
+<td class=3D"confluenceTd">
+<p>Balances feed depositor statements and extension-fund investor reporting=
+ (NASAA-regulated). Every figure needs a visible "data as of" stamp and mus=
+t reconcile to the module.</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Account identity</p></td>
+<td class=3D"confluenceTd">
+<p>Two accounts can share the same <strong>name</strong> and be different a=
+ccounts, distinguished only by account number (verified with the product ow=
+ner). Any list, drill, or comparison must keep same-named accounts unambigu=
+ous (see Gap 14).</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Org-driven formatting</p></td>
+<td class=3D"confluenceTd">
+<p>Currency and dates come from the organization's locale, never the client=
+'s or server's. The live audit rendered =C2=A3 and dd/mm/yyyy on a US produ=
+ct (Gap 12).</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Plain language</p></td>
+<td class=3D"confluenceTd">
+<p>Volunteers and part-timers run this market. Labels like "Total on deposi=
+t" and "Interest not yet posted", never module jargon.</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Accessibility</p></td>
+<td class=3D"confluenceTd">
+<p>WCAG 2.1 AA per the Pathway Accessibility Gate. All values available as =
+text (no hover-only data), one semantic table with header association, labe=
+led controls, keyboard-reachable tooltip.</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Framework reality</p></td>
+<td class=3D"confluenceTd">
+<p>The dashboard is ASP.NET Web Forms: two widget slots, full postbacks, pa=
+nels swapped via the title link. Interactive patterns cost more here; a ful=
+l-width view may be framework work.</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Reports live in a separate application</p></td>
+<td class=3D"confluenceTd">
+<p>Any "open report" link leaves Financials. Label such links honestly ("Op=
+ens in Reports") and treat the transition as a designed moment.</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Legacy continuity</p></td>
+<td class=3D"confluenceTd">
+<p>Long-tenured users report navigation confusion after past changes. Renam=
+es and layout changes need continuity cues (subtitle, tooltip, unchanged da=
+ta meaning).</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<h2 id=3D"DepositsOnHand-6.Competitorandanalogbenchmark">6. Competitor and =
+analog benchmark</h2>
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-complete">DESKTOP RESEARCH</span> No competitor has a "deposits on h=
+and" widget by that name; the closest analogs are account-balance widgets. =
+The bar they set: <strong>balance + status + one-click action into a live s=
+creen.</strong> Their drill-downs work because a live screen already sits b=
+ehind the card; Section 3 shows we lack that screen. Scale also differs: Xe=
+ro and QBO list 3 to 10 bank accounts per org, while a deposit program hold=
+s hundreds to thousands of depositor accounts (Disciples CEF alone: 2,000+ =
+individual and 800+ congregation investors), which is why the account grain=
+ does not fit our dashboard the way it fits theirs.</p>
+<div id=3D"expander-760721780" class=3D"expand-container">
+<div id=3D"expander-control-760721780" class=3D"expand-control">
+<span class=3D"expand-control-icon"><img style=3D"vertical-align:middle;" c=
+lass=3D"expand-control-image" src=3D"9b45ae8c85c16a66aad904c0270f58d8cbd79c=
+476bc8d003bcec7b51f05e1f85" width=3D"16" height=3D"16"></span><span class=
+=3D"expand-control-text">Benchmark detail (7 products)</span>
+</div>
+<div id=3D"expander-content-760721780" class=3D"expand-content">
+<div class=3D"table-wrap">
+<table data-table-width=3D"960" data-layout=3D"default" class=3D"confluence=
+Table">
+<tbody>
+<tr>
+<th class=3D"confluenceTh">
+<p>Product</p></th>
+<th class=3D"confluenceTh">
+<p>Pattern</p></th>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Xero</p></td>
+<td class=3D"confluenceTd">
+<p>One widget per bank account: balance, count of unreconciled lines, last =
+import date; the count deep-links into the reconcile flow. Plus an Account =
+Watchlist for any GL account (this month + YTD).</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>QuickBooks Online</p></td>
+<td class=3D"confluenceTd">
+<p>Bank Accounts card plus Cash Flow tab; dashboard flags items needing att=
+ention; widgets addable/removable.</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Aplos</p></td>
+<td class=3D"confluenceTd">
+<p>Cash position as the headline value; instant clarity over dense grids.</=
+p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Sage Intacct (nonprofit)</p></td>
+<td class=3D"confluenceTd">
+<p>Role-based dashboards; Cash Analysis shows months of operating reserves =
+in real time.</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>AccuFund (nonprofit)</p></td>
+<td class=3D"confluenceTd">
+<p>Computes days cash on hand, current ratio, LUNA on the dashboard; market=
+s it as a differentiator.</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Realm / ACS</p></td>
+<td class=3D"confluenceTd">
+<p>Flow integration (giving batches post as deposits); no deposit-account w=
+idget.</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Grain Ledger</p></td>
+<td class=3D"confluenceTd">
+<p>Exception-first: mismatches surfaced explicitly, reports readable by non=
+-accountants.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<h2 id=3D"DepositsOnHand-7.Designdirection:threedepthlevels">7. Design dire=
+ction: three depth levels</h2>
+<p><strong>Grain decision.</strong> The widget's dashboard grain is the <st=
+rong>account type</strong> (one row per type: name, # accounts, total balan=
+ce, share), not the individual account. An org has a handful of types but h=
+undreds to thousands of accounts, so only the type grain fits a glance; typ=
+e is where interest settings and portfolio thinking live (Section 1); and a=
+ text type-summary replaces both the flat account list and the hover-only p=
+ie, resolving Gaps 1 and 5 in one component. Individual accounts move to L3=
+ behind a click, with a Type column and search. Note the account grid must =
+keep accounts distinguishable when two share a name: the current widget rel=
+ies on its Account# column for this, so the L3 grid must retain the account=
+ number (see Gap 14).</p>
+<div class=3D"table-wrap">
+<table data-table-width=3D"1162" data-layout=3D"default" class=3D"confluenc=
+eTable">
+<tbody>
+<tr>
+<th class=3D"confluenceTh">
+<p>Level</p></th>
+<th class=3D"confluenceTh">
+<p>Size</p></th>
+<th class=3D"confluenceTh">
+<p>Content</p></th>
+<th class=3D"confluenceTh">
+<p>Question answered</p></th>
+<th class=3D"confluenceTh">
+<p>Scope</p></th>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p><strong>L1. KPI tile</strong></p></td>
+<td class=3D"confluenceTd">
+<p>Single card</p></td>
+<td class=3D"confluenceTd">
+<p>Total on deposit, # accounts, delta vs prior period, one status badge (i=
+nterest run due / unposted interest)</p></td>
+<td class=3D"confluenceTd">
+<p>Is everything okay, what is the total?</p></td>
+<td class=3D"confluenceTd">
+<p>Widget</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p><strong>L2. Standard widget</strong></p></td>
+<td class=3D"confluenceTd">
+<p>Half width</p></td>
+<td class=3D"confluenceTd">
+<p>L1 + <strong>type summary</strong>: one row per account type with # acco=
+unts, total balance, share (labeled bar), each row clickable. Replaces the =
+flat account list and the pie</p></td>
+<td class=3D"confluenceTd">
+<p>What is the mix, what changed?</p></td>
+<td class=3D"confluenceTd">
+<p>Widget</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p><strong>L3. Inquiry surface</strong></p></td>
+<td class=3D"confluenceTd">
+<p>Full width</p></td>
+<td class=3D"confluenceTd">
+<p>Account-level grid, searchable, with <strong>Type column</strong>, accou=
+nt number, balance, last activity, interest status, active/inactive; 12-mon=
+th trend, movement, export, links to reports and Post Interest. Opens filte=
+red to a type when reached from an L2 row</p></td>
+<td class=3D"confluenceTd">
+<p>Which account, what happened, what next?</p></td>
+<td class=3D"confluenceTd">
+<p><strong>Module + data layer.</strong> This is the read layer the module =
+never had (Section 3), not a bigger widget</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<h3 id=3D"DepositsOnHand-7.1Timerangeandchartaxes">7.1 Time range and chart=
+ axes</h3>
+<p>Deposits On Hand shows a <strong>balance</strong>, not a flow. A balance=
+ has a meaningful value on any given day (money sitting on deposit right no=
+w), unlike Payroll Distributions where the headline is a sum of what moved =
+over a span. That one difference decides how time works here and what the a=
+xes are, and it makes this widget behave in the opposite way to the Payroll=
+ one.</p>
+<p><strong>The Y axis is always the balance amount</strong> (total on depos=
+it, in the organization's currency). It does not change with the time range=
+ or the view. Whatever span or granularity is chosen, the vertical axis is =
+money on deposit.</p>
+<p><strong>The X axis, and what "time range" means, depends on which of two=
+ views the widget is in.</strong></p>
+<div class=3D"table-wrap">
+<table data-table-width=3D"1162" data-layout=3D"default" class=3D"confluenc=
+eTable">
+<tbody>
+<tr>
+<th class=3D"confluenceTh">
+<p>View</p></th>
+<th class=3D"confluenceTh">
+<p>What the time range does</p></th>
+<th class=3D"confluenceTh">
+<p>X axis</p></th>
+<th class=3D"confluenceTh">
+<p>Y axis</p></th>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p><strong>Snapshot (composition)</strong>, the L1 total and L2 by-type mix=
+</p></td>
+<td class=3D"confluenceTd">
+<p>Sets the <strong>as-of date</strong> (default today). A single point in =
+time, no trend</p></td>
+<td class=3D"confluenceTd">
+<p>Account type (the bars or segments of the mix)</p></td>
+<td class=3D"confluenceTd">
+<p>Balance as of that date</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p><strong>Trend (over time)</strong>, the L3 balance history</p></td>
+<td class=3D"confluenceTd">
+<p>Sets the <strong>window</strong> shown</p></td>
+<td class=3D"confluenceTd">
+<p>Time, plotted as end-of-period points</p></td>
+<td class=3D"confluenceTd">
+<p>Balance as of each period end (not a sum of activity in the period)</p><=
+/td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Because a balance only steps when money moves (deposits, withdrawals, an=
+d above all the batch interest posting), the natural X granularity for the =
+trend is the <strong>fiscal period</strong> (or month), not days. A daily b=
+alance line for a deposit fund would be mostly flat with occasional steps; =
+period-end points carry the signal without the noise.</p>
+<p><strong>Proposed time spans (recommendation, to confirm).</strong></p>
+<div class=3D"table-wrap">
+<table data-table-width=3D"1162" data-layout=3D"default" class=3D"confluenc=
+eTable">
+<tbody>
+<tr>
+<th class=3D"confluenceTh">
+<p>Span</p></th>
+<th class=3D"confluenceTh">
+<p>Use</p></th>
+<th class=3D"confluenceTh">
+<p>Default granularity</p></th>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p><strong>As of today</strong> (snapshot, default)</p></td>
+<td class=3D"confluenceTd">
+<p>The everyday pulse check: today's total and mix. Always the default</p><=
+/td>
+<td class=3D"confluenceTd">
+<p>Single point</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p><strong>Trailing 12 months</strong> (trend)</p></td>
+<td class=3D"confluenceTd">
+<p>The core liquidity-oversight view (JTBD 4): rolling, always meaningful r=
+egardless of fiscal boundaries. This is the "12-month trend" already named =
+at L3</p></td>
+<td class=3D"confluenceTd">
+<p>Month or period end, about 12 points</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p><strong>This fiscal year to date</strong> (trend)</p></td>
+<td class=3D"confluenceTd">
+<p>Running position within the current reporting year; aligns to board and =
+annual reporting</p></td>
+<td class=3D"confluenceTd">
+<p>Fiscal period</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p><strong>Last fiscal year</strong> (trend or snapshot)</p></td>
+<td class=3D"confluenceTd">
+<p>The closed year for year-end reporting and comparison; a period-end line=
+, or an as-of-year-end figure for a board packet</p></td>
+<td class=3D"confluenceTd">
+<p>Fiscal period</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p><strong>Custom range</strong> (trend)</p></td>
+<td class=3D"confluenceTd">
+<p>Always available (a hard requirement carried from the Payroll work). Cov=
+ers any reporting window a user needs</p></td>
+<td class=3D"confluenceTd">
+<p>Steps from period to quarter as the range lengthens</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Quarter (this or last)</strong> is a reasonable secondary span f=
+or the board cadence, but a quarter holds only about three period points, a=
+ thin trend, so I would treat it as optional rather than core.</p>
+<p><strong>On fiscal period specifically.</strong> For a balance widget, fi=
+scal period never goes on the Y axis; Y is always the balance. Fiscal perio=
+d belongs on the <strong>X axis</strong> as the tick interval for the trend=
+ (one point per period end) and as the anchor for an as-of snapshot ("balan=
+ce as of end of Period 6"). It fits this widget well because it is already =
+first-class product context (the top-right switcher runs on fiscal year and=
+ period) and because interest posts on that cadence, so period ends are exa=
+ctly where balances step. So fiscal-aligned spans belong in the list, and f=
+iscal period is the natural granularity, not a quantity on the Y axis.</p>
+<p><strong>Compare-to options for MVP.</strong> Under the trend, the "compa=
+re to" selector (the baseline the current balance is measured against to pr=
+oduce the change figure, delta, or trend line) ships for MVP with these ite=
+ms: <strong>previous week, previous month, previous quarter, previous fisca=
+l year, and previous calendar year</strong>. These are deliberately simple =
+and standard. This is new functionality, the data layer is still unclear, a=
+nd there is not yet enough research to justify anything more elaborate, so =
+MVP keeps the baseline set small and conventional; feedback over time will =
+guide what to adjust or add to make it more usable in future.</p>
+<p><strong>The gate (same shape as the pay-group question on the Payroll wi=
+dget).</strong> Every trend span assumes we can obtain historical period-en=
+d balances. The live audit (Section 3) found the module has no history surf=
+ace: balances are computed as of today, and movement and interest history l=
+ive only in the separate reports application. So a balance-over-time trend =
+depends on the data layer being able to reconstruct period-end balances fro=
+m the deposit transaction history (DHAccount), or it is a data-layer build.=
+ The snapshot spans (as of a date) are cheap: the existing calculation alre=
+ady produces an as-of-today balance and could likely produce an as-of-any-d=
+ate one. The trend spans are the ones that need the data-model check, worth=
+ confirming with engineering before committing the trend to a near-term rel=
+ease.</p>
+<p><strong>Trend and comparison are wanted here</strong>, unlike on Payroll=
+ Distributions. A balance drifts continuously and leadership asks which way=
+ it is going, so a trend and a delta against the prior period earn their pl=
+ace (Gap 4, JTBD 4 and 5). On Payroll the number is a periodic flow where p=
+eriod-over-period math misleads, which is why it was rejected there. The tw=
+o widgets differ because a balance and a flow differ.</p>
+<h2 id=3D"DepositsOnHand-8.Gapsfoundintheliveaudit(13Jul2026)">8. Gaps foun=
+d in the live audit (13 Jul 2026)</h2>
+<p>Environment: asmdev, dev user, one test account, two account types. Meth=
+od: DOM and accessibility-tree inspection, interaction testing, full module=
+ walk. Visual layer (contrast, spacing, reflow) and high-volume behavior no=
+t assessable in this pass; flagged in Section 10.</p>
+<div class=3D"table-wrap">
+<table data-table-width=3D"1162" data-layout=3D"default" class=3D"confluenc=
+eTable">
+<tbody>
+<tr>
+<th class=3D"confluenceTh">
+<p>#</p></th>
+<th class=3D"confluenceTh">
+<p>Gap</p></th>
+<th class=3D"confluenceTh">
+<p>Why it matters</p></th>
+<th class=3D"confluenceTh">
+<p>Fix direction</p></th>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>1</p></td>
+<td class=3D"confluenceTd">
+<p>Filter changes the table, not the pie; panels visibly disagree</p></td>
+<td class=3D"confluenceTd">
+<p>Consistency violation, erodes trust in the numbers</p></td>
+<td class=3D"confluenceTd">
+<p>One filter state for both panels</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>2</p></td>
+<td class=3D"confluenceTd">
+<p>No drill-down, and no destination exists in the module</p></td>
+<td class=3D"confluenceTd">
+<p>Below market baseline; fix requires building the destination, not wiring=
+ a link</p></td>
+<td class=3D"confluenceTd">
+<p>Interim: link rows to Account Information, badges to pre-filtered report=
+s labeled "Opens in Reports". Real fix: the L3 inquiry surface (Section 7)<=
+/p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>3</p></td>
+<td class=3D"confluenceTd">
+<p>No status signal (interest due, unposted interest); data lives only in r=
+eports</p></td>
+<td class=3D"confluenceTd">
+<p>The module's operational heartbeat is invisible; misses surface at month=
+ end</p></td>
+<td class=3D"confluenceTd">
+<p>Status badge fed by the data layer</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>4</p></td>
+<td class=3D"confluenceTd">
+<p>Balances have no comparison (delta, trend)</p></td>
+<td class=3D"confluenceTd">
+<p>"Is that good?" goes unanswered; boards engage with direction</p></td>
+<td class=3D"confluenceTd">
+<p>Delta vs prior period; trend at L3</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>5</p></td>
+<td class=3D"confluenceTd">
+<p>Pie values are hover-only; not in the DOM as text. The pie is also the o=
+nly place type totals exist at all</p></td>
+<td class=3D"confluenceTd">
+<p>Fails keyboard, screen reader, touch; fails Pathway gate; the portfolio =
+grain is effectively invisible</p></td>
+<td class=3D"confluenceTd">
+<p>Type summary with amounts in text (Section 7 grain decision)</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>6</p></td>
+<td class=3D"confluenceTd">
+<p>The "Last refreshed" timestamp is the refresh button, and it lags filter=
+ re-renders</p></td>
+<td class=3D"confluenceTd">
+<p>Freshness unreadable; a lagging stamp is worse than none for regulated f=
+igures</p></td>
+<td class=3D"confluenceTd">
+<p>Separate Refresh action from a "Data as of" stamp that updates on every =
+render</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>7</p></td>
+<td class=3D"confluenceTd">
+<p>No search in the grid</p></td>
+<td class=3D"confluenceTd">
+<p>Kills the depositor-call job at real volumes</p></td>
+<td class=3D"confluenceTd">
+<p>Type-ahead by name or number</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>8</p></td>
+<td class=3D"confluenceTd">
+<p>No Type column: the Show All list mixes accounts across types with nothi=
+ng identifying each row's type. Inception Date holds a prime column instead=
+</p></td>
+<td class=3D"confluenceTd">
+<p>The mixed list is unreadable as a portfolio; low-frequency data outranks=
+ type, activity, interest status</p></td>
+<td class=3D"confluenceTd">
+<p>Add Type column; re-rank columns by job frequency (type, balance, last a=
+ctivity, interest status first; inception to detail)</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>9</p></td>
+<td class=3D"confluenceTd">
+<p>Widget says "Deposit Accounts", module says "Deposits On Hand", sibling =
+says "Bank Balances"</p></td>
+<td class=3D"confluenceTd">
+<p>Secondary personas misread it as bank balances</p></td>
+<td class=3D"confluenceTd">
+<p>Rename the widget "Deposits On Hand" to match the module (verify "Deposi=
+t Accounts" is not used in reports, statements, or training first). "Deposi=
+ts on hand" can read as undeposited funds to bookkeepers, so pair the renam=
+e with the info tooltip and empty state (Section 5.3)</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>10</p></td>
+<td class=3D"confluenceTd">
+<p>Grid is three separate HTML tables with cells exposed as generic text; n=
+o header association</p></td>
+<td class=3D"confluenceTd">
+<p>WCAG 1.3.1 failure; screen readers hear numbers with no column context</=
+p></td>
+<td class=3D"confluenceTd">
+<p>One semantic table, proper th scope, totals as tfoot</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>11</p></td>
+<td class=3D"confluenceTd">
+<p>Filter dropdown has no accessible or visible label (Account Information =
+labels its filters correctly, so the pattern exists)</p></td>
+<td class=3D"confluenceTd">
+<p>WCAG 4.1.2 and 3.3.2; sighted users also get no hint what it filters</p>=
+</td>
+<td class=3D"confluenceTd">
+<p>Visible "Account type" label tied to the control</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>12</p></td>
+<td class=3D"confluenceTd">
+<p>Currency and dates follow client or server culture: rendered =C2=A30.00 =
+and 13/07/2026 on a US product</p></td>
+<td class=3D"confluenceTd">
+<p>Wrong currency symbol on financial figures destroys trust; root cause to=
+ confirm with engineering</p></td>
+<td class=3D"confluenceTd">
+<p>Format from the organization's locale, never the client's</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>13</p></td>
+<td class=3D"confluenceTd">
+<p>Weak empty states: filtered-empty totals show "# Accounts:" with no valu=
+e; no recovery offered; a 0.00 balance still draws a full pie</p></td>
+<td class=3D"confluenceTd">
+<p>Blank totals read as a bug; empty states are where P2 decides the widget=
+ is broken</p></td>
+<td class=3D"confluenceTd">
+<p>Apply the widget states spec (Section 5.3)</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>14</p></td>
+<td class=3D"confluenceTd">
+<p><strong>Two accounts can have the same name and be different accounts</s=
+trong>, distinguished only by account number (verified with the product own=
+er). The current widget carries an Account# column that keeps them apart; a=
+ redesign that drops the number to simplify the row would make same-named a=
+ccounts indistinguishable</p></td>
+<td class=3D"confluenceTd">
+<p>On regulated figures, an ambiguous row is a real error risk: staff could=
+ read, cite, or act on the wrong depositor's account. Removing the account =
+number is not a neutral simplification, it removes the only disambiguator</=
+p></td>
+<td class=3D"confluenceTd">
+<p>Keep every account unambiguously identifiable when names collide. Option=
+s for design to weigh: show the account number (as a column, or as secondar=
+y text under the name), or another stable distinguisher if one exists. Hove=
+r-only disambiguation is not acceptable (accessibility constraint). The nee=
+d is unambiguous identification; the mechanism is design's call</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<h2 id=3D"DepositsOnHand-9.Top10insights">9. Top 10 insights</h2>
+<ol start=3D"1">
+<li>
+<p><strong>Design for the HQ administrator first.</strong> Headquarters mod=
+ule, so P1 leads and the part-time church admin is secondary. Inverted from=
+ our usual hierarchy.</p></li>
+<li>
+<p><strong>The widget's job is portfolio oversight plus fast lookup.</stron=
+g> Glance-and-drill, which fits KPI-plus-grid.</p></li>
+<li>
+<p><strong>The dashboard grain is the account type, not the account.</stron=
+g> A handful of types fits a glance; hundreds of depositor accounts do not.=
+ Type summary at L2, account grid at L3.</p></li>
+<li>
+<p><strong>Status beats data.</strong> An interest-cycle badge turns the wi=
+dget into an early-warning system; today that signal exists only inside rep=
+orts.</p></li>
+<li>
+<p><strong>Drill-down needs a destination, and it does not exist.</strong> =
+Matching the market means building the L3 inquiry surface, not adding links=
+. Interim links labeled honestly ("Opens in Reports").</p></li>
+<li>
+<p><strong>Every number needs a comparison.</strong> Delta and trend, or th=
+e balance answers nothing.</p></li>
+<li>
+<p><strong>Trust markers are a feature.</strong> Data-as-of stamp, org-driv=
+en currency and dates, interest-posted state. The live audit found failures=
+ in all three.</p></li>
+<li>
+<p><strong>Plain language everywhere.</strong> Volunteers and part-timers r=
+un this market; no module jargon in labels.</p></li>
+<li>
+<p><strong>Rights and duties in the widget.</strong> Account visibility per=
+ user rights; read-and-navigate only.</p></li>
+<li>
+<p><strong>Fix the chart and the grid semantics.</strong> Keep the type mix=
+, lose the hover-only pie, rebuild the split tables into one semantic table=
+.</p></li>
+</ol>
+<h2 id=3D"DepositsOnHand-10.Openquestionsandnextsteps">10. Open questions a=
+nd next steps</h2>
+<ul>
+<li>
+<p>Module entitlement detection (state 1): how does the platform know an or=
+g has Deposits On Hand, and can the widget chooser filter on it? Engineerin=
+g to confirm.</p></li>
+<li>
+<p>Widget rights behavior (state 2): does widget visibility respect module =
+security rights today?</p></li>
+<li>
+<p>Rename check (Gap 9): audit where "Deposit Accounts" appears customer-fa=
+cing (reports app, statements, training) before renaming.</p></li>
+<li>
+<p>Localization root cause (Gap 12): org setting, server culture, or browse=
+r culture? US customers must always see $ and US dates.</p></li>
+<li>
+<p><strong>Historical balances for the trend (7.1):</strong> can the data l=
+ayer reconstruct period-end balances from the deposit transaction history (=
+DHAccount), or is a balance-over-time trend a data-layer build? This gates =
+the trend time-spans; the snapshot (as-of-date) spans do not depend on it.<=
+/p></li>
+<li>
+<p>L3 scope decision: build the inquiry surface, or ship interim deep links=
+ to Account Information and pre-filtered reports?</p></li>
+<li>
+<p>Can the reports app accept pre-filled criteria via URL, so links land on=
+ a ready-to-run report instead of a blank form?</p></li>
+<li>
+<p>Interest status (due, unposted): is the data model ready to expose it ou=
+tside reports?</p></li>
+<li>
+<p>Does the dashboard framework support a full-width widget, or is that fra=
+mework work?</p></li>
+<li>
+<p>Pendo pull: what share of customers use Deposits On Hand, and how often =
+is this widget selected?</p></li>
+<li>
+<p>Interviews: 3 to 5 headquarters customers; do they field depositor calls=
+ from this screen or from reports?</p></li>
+<li>
+<p>Follow-up audit pass: visual layer (contrast, spacing, focus indicators,=
+ reflow) and realistic data volumes (pagination, performance).</p></li>
+<li>
+<p>Validation: 5-user task test on an L1/L2/L3 prototype covering lookup, s=
+tatus check, and drill.</p></li>
+</ul>
+<h2 id=3D"DepositsOnHand-11.Sources">11. Sources</h2>
+<div id=3D"expander-1969742270" class=3D"expand-container">
+<div id=3D"expander-control-1969742270" class=3D"expand-control">
+<span class=3D"expand-control-icon"><img style=3D"vertical-align:middle;" c=
+lass=3D"expand-control-image" src=3D"9b45ae8c85c16a66aad904c0270f58d8cbd79c=
+476bc8d003bcec7b51f05e1f85" width=3D"16" height=3D"16"></span><span class=
+=3D"expand-control-text">Full source list</span>
+</div>
+<div id=3D"expander-content-1969742270" class=3D"expand-content">
+<p><strong>Live audit:</strong> asmdev.myshelby.org, 13 July 2026: dashboar=
+d widget (DOM and accessibility-tree inspection, interaction testing) and f=
+ull Deposits On Hand module walk. Dev environment, one test account, two ac=
+count types, three groups. Flat account-level listing confirmed by the prod=
+uct owner, 13 July 2026.</p>
+<p><strong>Shelby / Ministry Brands:</strong> <a href=3D"https://shelbysyst=
+ems.zendesk.com/hc/en-us/articles/9033953621019-Dashboard" class=3D"externa=
+l-link" rel=3D"nofollow">Dashboard widgets reference</a> | <a href=3D"https=
+://myapplication.help/Financials/topics/idh-topic8120.htm" class=3D"externa=
+l-link" rel=3D"nofollow">Deposits on Hand transactions</a> | <a href=3D"htt=
+ps://shelbysystems.zendesk.com/hc/en-us/articles/30875856846235-Post-Intere=
+st-Deposits" class=3D"external-link" rel=3D"nofollow">Post Interest Deposit=
+s</a> | <a href=3D"https://shelbysystems.zendesk.com/hc/en-us/articles/9033=
+948144923-Year-End-Checklists" class=3D"external-link" rel=3D"nofollow">Yea=
+r-End Checklists (headquarters users, 1099 interest)</a> | <a href=3D"http:=
+//help.shelbyinc.com/Financials/topics/idh-topic383.htm" class=3D"external-=
+link" rel=3D"nofollow">Deposits on Hand report options</a> | <a href=3D"htt=
+ps://www.shelbysystems.com/wp-content/uploads/2017/07/SNFBankAccountManagem=
+entN32.pdf" class=3D"external-link" rel=3D"nofollow">Bank Account Managemen=
+t guide</a> | <a href=3D"https://www.softwareadvice.com/nonprofit/shelby-fi=
+nancials-profile/" class=3D"external-link" rel=3D"nofollow">ShelbyNext Fina=
+ncials reviews</a></p>
+<p><strong>Market, personas, controls:</strong> <a href=3D"https://www.chur=
+chtrac.com/blog/the-role-of-a-church-treasurer-duties-and-responsibilities"=
+ class=3D"external-link" rel=3D"nofollow">ChurchTrac treasurer guide</a> | =
+<a href=3D"https://moneyminder.com/blog/church-treasurer-duties-explained/"=
+ class=3D"external-link" rel=3D"nofollow">MoneyMinder</a> | <a href=3D"http=
+s://grainledger.com/blog/roles-in-church" class=3D"external-link" rel=3D"no=
+follow">Grain church roles</a> | <a href=3D"https://www.vancopayments.com/e=
+giving/blog/church-treasurer" class=3D"external-link" rel=3D"nofollow">Vanc=
+o</a> | <a href=3D"https://www.flumc.org/files/websites/433541/Church+Accou=
+ntant+Job+Des+10-20.pdf" class=3D"external-link" rel=3D"nofollow">Part-time=
+ bookkeeper job description (20 hrs/week, $20/hr)</a> | <a href=3D"https://=
+www.clergyfinancial.com/should-my-church-outsource-the-bookkeeping/" class=
+=3D"external-link" rel=3D"nofollow">Clergy Financial Resources</a> | <a hre=
+f=3D"https://www.guidestone.org/Resources/Education/Articles/Property-and-C=
+asualty/Segregation-of-Duties-Checklist-to-Protect-Church-Finances" class=
+=3D"external-link" rel=3D"nofollow">GuideStone segregation of duties</a> | =
+<a href=3D"https://cpadonovan.com/church-internal-controls/" class=3D"exter=
+nal-link" rel=3D"nofollow">Donovan CPAs internal controls</a></p>
+<p><strong>Church extension funds:</strong> <a href=3D"https://soundmindinv=
+esting.com/articles/banking-with-your-church" class=3D"external-link" rel=
+=3D"nofollow">Sound Mind Investing</a> | <a href=3D"https://churchlend.com/=
+church-extension-funds" class=3D"external-link" rel=3D"nofollow">ChurchLend=
+ CEF guide</a> | <a href=3D"https://disciplescef.org/invest/" class=3D"exte=
+rnal-link" rel=3D"nofollow">Disciples CEF (2,000+ individual, 800+ congrega=
+tion investors)</a> | <a href=3D"https://texascef.org/investments/for-congr=
+egations/" class=3D"external-link" rel=3D"nofollow">Texas District CEF</a> =
+| <a href=3D"https://lcef.org/" class=3D"external-link" rel=3D"nofollow">LC=
+EF</a> | <a href=3D"https://www.nasaa.org/wp-content/uploads/2011/07/39-Chu=
+rch_Extension_Fund_Securities.pdf" class=3D"external-link" rel=3D"nofollow"=
+>NASAA CEF securities policy</a></p>
+<p><strong>Competitors and analogs:</strong> <a href=3D"https://central.xer=
+o.com/s/article/Your-Xero-dashboard" class=3D"external-link" rel=3D"nofollo=
+w">Xero homepage widgets</a> | <a href=3D"https://beanninjas.com/blog/5-les=
+ser-known-xero-features/" class=3D"external-link" rel=3D"nofollow">Xero Acc=
+ount Watchlist</a> | <a href=3D"https://blog.coupler.io/quickbooks-dashboar=
+d/" class=3D"external-link" rel=3D"nofollow">QuickBooks dashboard</a> | <a =
+href=3D"https://www.aplos.com/" class=3D"external-link" rel=3D"nofollow">Ap=
+los</a> | <a href=3D"https://oneabacusadvisory.com/feeds/blog/sage-intacct-=
+nonprofit-dashboard" class=3D"external-link" rel=3D"nofollow">Sage Intacct =
+nonprofit dashboards</a> | <a href=3D"https://accufund.com/learn/accufund-r=
+esources/blog/48-how-to-build-a-nonprofit-dashboard" class=3D"external-link=
+" rel=3D"nofollow">AccuFund</a> | <a href=3D"https://www.acstechnologies.co=
+m/realm/tools/accounting/" class=3D"external-link" rel=3D"nofollow">Realm a=
+ccounting</a> | <a href=3D"https://grainledger.com/blog/bank-reconciliation=
+-software" class=3D"external-link" rel=3D"nofollow">Grain Ledger</a></p>
+<p><strong>General dashboard design principles</strong> (progressive disclo=
+sure, KPI limits, comparison rules) were moved to the separate reference do=
+cument "Dashboard widget design principles" and are no longer cited on this=
+ page.</p>
+</div>
+</div>
+    </div>
+</body>
+</html>
+------=_Part_40_1577590880.1784636886422
+Content-Type: application/octet-stream
+Content-Transfer-Encoding: base64
+Content-Location: file:///C:/ac3da55d45198c4e93ace736b2a30adf96b4f5b121c34fb7a593d148ac1a809a
+
+iVBORw0KGgoAAAANSUhEUgAABDEAAAD6CAIAAAA3CEu+AAB6ZElEQVR4Ae3AA6AkWZbG8f937o3I
+zKdyS2Oubdu2bdu2bdu2bWmMnpZKr54yMyLu+Xa3anqmhztr1a/a5qqrrrrqqquuuuqqq6666r8B
+QOWqq6666qqrrrrqqquuuuq/B0Dlqquuuuqqq6666qqrrrrqvwdA5X7O5Kqrrrrqqquuuuqqq666
+6j+fIgAAqADw27/92xcuXur6nquuuuqqq6666qqrrrrqqv80kg4PDx/76Ee+xEu8BABUAFit1q/0
+Wq+/ublpc9VVV1111VVXXXXVVVf9rybRV4r4n2NsjA2gFO64/Y5L994OAEAFAEXYsrG56qqrrrrq
+qquuuuqqq/73CrEc2s/93blbz+7zP4Chlni5B518pQcdt7HBkgQAQOWqq6666qqrrrrqqquu+r9C
+Ymj+4t94xt/tddeePBPiv51gPeQv/u65D3jp4W1f6prkgQAqL1QU5j0CYJpYj/x7KJjPWC9xoYpx
+4lmisugYBsbGfzDRVaYRc9VVV1111VVXXXXVVf/HdcHj797/7bty88abH7/mf4gQ/YmtH/m7p77l
+i5+JIp4NoPKClY67H/cHP/R9P38xs7X2im/3YW/7ag8Z10Rl1pGN9YAKs4pFwHpNGhXmPZj1mmZq
+R1/BDBO7d/399//o37zhh7/bzp1PfuLZ8WVe7rFtAKiVO/7uV7/rJ/7yjd7no1/plvnYAPo5VQwD
+40QUZjNk1msyiUrfI7NekWLW00Ya9D3DitoTEIVsjBNenfuz33vCi732q89N3wMMa1py1VVXXXXV
+VVddddVV//dILNfj2XWticzzNQ7j2BqXRe1mXRHPYRyncWqlq7Na+JcMw2jFrCu8YDZLunsORqcp
+4tkAKi9Yqdz9xN/5+i//6ge99qvvHN31gz/5y+e+7ec/5I0efN+T/uQ3/+jWax75kq/+So85ePrf
+//adl7oLly6xePU3eO0TvYbzT/7x3/wLjj3odV73VU5U7nrSn/3eXz6t237I673hK8puZv/2v/+y
+93rbf3jIW33Vl3/JY0/FlJQy/vzXf9aXf9cfPylvfqkvfLcuKWX5Jz/3609bdq/yWq/3kDPd8tI9
+v/Tjv7O38+A3ep1X2lpwdOfTfvn3/iS3Hvp6b/5Ks/0Lv/v7f3nti732DXnXH//dPS/5Wq941x/+
+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
+W5JqLTa1qxGl1upspatP++Mf+/yv/6mnP+6Pf//JR6/4so+ZFdVuVlb3fcdXfsZtW6/00g/aUZQS
+qNSulKg1sKJ0NRCKqLWUWnDaAJK6ruOqq676z6XZ5qlXff03eelbTvI/hTZP3vKGb/GGt2z1wOL4
+Q9/4DV/lzPYixFVXXXXV/v7+3t7eTTfdBACVF43EtD7Yv3TvL/z4Tz7s7R67t3uwe8fjfvAPf+eu
+C/X13umNn/rzP/P0wxwO26mb+t3d/m3f773Hv/+lX//TJ8+vf8zbv80bHastzVVXvSjkcXd39/CO
+v/6qn/yNtQvHH/m+7/JGT//97/+lv95/2Vd9ne3dv/zzp56/7pGv9cjub3/pLy8uYnr4y77W+T/9
+7T976uJRN8zOn9s92nva93zXT96u7hVe7+0epSf80M/8ZdfniUe/7ru85StFDnsX7r35VT/qk153
+43M+5fN+/VHXbt/713/7lLtveYlXHv7hd//kr9Z//BqvcuqO3/q9J92zc9MrvdNbvUqfzTwPlVif
++8O/flK3mP70dx//uo98ud//0R//4yff8xJv+NbX3P2Xv/G4ZzzyNd76kcPf/MwfPmVj55Fv9Q4v
+9ss/8udv+Oav8oe//rPXPeoVHv+nv71i1p9+zMueuvsP/uSPeNRv33Hfn/7x39ymSa928yu9ysNO
+0Ph3E+PR7tH0hm/zZq/88NlvfttX/P2lcVqWN3yv99Df//yv/u1dT//zp7/OKwwXz5/tF4/7lp/7
+9Ytt4cWN7/H2r/N7P/kDT7twdKjtd3zPD3iZm7rVwcXx2ENe4ZHjrz757D23/cWv/dIf7uXiTd/k
+dfYvnZ/v3v1zP/pLT7j1vke81pttP+l3//Seg7bya7zTuz90+Xff84t/86BHv/Krvnj3y7/wp0O3
++Sbv8O4POxEtzVVXXfVfIa695aH8z9Lf8qhHc7/Sb153zSZXXXXVVc8NIHiRubVrXu6NXmHj9u/+
+uT+MUnZuePQrvPiNT/vbP/q13/6Lx/3NU04/+hXmB3+zeMSrbR7c9oe/+cvf80M/vztMf/4LP/m3
+9+yVCK666kVjFKXj4N4/fcrZV3j119z949/+k7/49R/+xce9xQd92EvNnvKDP/4Hw3ThF3/lV/76
+L/78nvnD3+bVH/77v/l7Nz7qMY94yVd61In13/35X/7Cj/zg43nke775i//yD/7I3z3lyU+/a/EG
+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
+fwOAygtl2zZXXfWfSZJt/qeSZJv/wSTZ5n8qSVx11VVXXXXVVVc9fwCVF8z2H//xHx8dHUniqqv+
+c9hurdVa+Z9qmqZSiiT+R8rMzKy18j9SZm5vb7/2a782V1111VVXXXXVVc8HQOUFk/S6r/u6XHXV
+f6ZxHC9dunT69Gn+pzp79uyJEydqrfyPtFwuV6vViRMnuOqqq6666qqrrvrfB6By1VVX/W8miauu
+uuqqq6666qr/rQAqV1111VVXXXXVVVddddVV/z0AKlddddVVV1111VVXXXXVVf89AIJ/Dbc2juOU
+5l/Lbi15HjlN4zg2c9VVz1drbRybzf1sM47j1Mxl9jSOY5rLbGfmNE6TAXBO45QAuE3j1BqXZZvG
+cUqb/zhubRwnm2cyz8s5Ta3xP9ve7c+4e3cXaNM4jmPLtA3kNI3jZMhpGsfGA7Rpapk8k7nqqquu
+uuqqq656UQGUz/7szwae9rSn3XLLLV3X8YId3fO4r/+iL/2tv/ibP/3zp1730Ief3Op5kQ27t/7+
+n9x27Y07ly7sLTY3BMD5W//k2771B377D/7oSXesHv6oB8+LeE5/9nPfdvexl75hK/iXPOFXf+bJ
+eeLmU1tc9b9NZq7X642NDe539ql/+f3f8X1H17/Yg3bGn//Bb/zRn/idi/NTj7nlDNPZn/vJ3/Z4
+5/d87w/88Z/fev1LvMSJ9b0/8wPf9ot/+A+nHvGyZzZ075N+/zf/7J5b//Snf/Dnfue8Tz3mBn7i
+O77lJ3/u14frX/L69uTv+Prv+NW/fMKZh7zkxsU//oIv+a4/f9Lt1zzoMae3Kv+So6OjxWIREVw2
+HZ7/vV/4kV/407te8qUfWaFd+Msv++offfBLv/zf/MJ3fv+P/dLdw/ZjH3797X/zm9/1vT+6+ehX
+v3YDWP3Ut33Z4/WYx5y88D3f9M0//ot/tv2QR914YoP/INM0TdO0WCz4j7A894Rv+aIv+/nH3fHw
+h7/YX//sN/7Yr/zxL/7kj148/lIP3zz7A9/5Pb/1t+df7CWu/a0f+r4f+ZmfOdc99LG3nAB2n/SH
+3/Ad3/Urf/z0F3+Zl+biU370e77z745ufMkHH+eqq6666qqrrrrqBdjf39/b27vpppsAIHiRDQdH
+17/U63zyp3zyB77hjb/4a79xaFYX7nzarbftj56G4WD33K233ro/TuBLu3c/9Sm37i8H8Pk7brv1
+9nu8fdOrvcZLnv3L3/r+H/75e44M5OHtP/0Tv/+67//xn/apn/wqJ5/xE3/0JE/L3Qtnn3H7PavG
+Fcv9c2fvu+/uu+8bzXL37NOe+rR7Lq1xLld7991xx53nD4D18uJtd91x773nlsM07Z9/2tOevrts
+XPW/2ehYiGlcwcbrvvWHfPanve2T/vzvD+HC3/3D8vQNtzz0FT/xUz7jtV+6/6u/eOqf/OFvra5/
+9fd6l3d7zKmA9oS/uP2Wl3/Eq731R3zOh73d7h1/+Fu/9Ic84k0+9WPf6Rm/+8v7xx72fp/6Ge/9
+Ult//rgn7Z+7a/tl3vBD3/2dHnXdnH+9zJZl0Y8HE8Dw57/zt+cO7j0c6yu+0bt95ud80N6f/eU9
+05TDfHO2v5wA9p72D49/6tOOatz113/Fg177E9/l4b/zZ0/kf6qn/tmv+yFv/OHv+XYPuXbn9d/j
+4z/1k9735V/2FV/pMSd/72d++uQrvNn7vPsbHOs2X+c9PvCTPuY9zv3Z718Ccv83/vCv3vC9P/19
+X6n7+T96Wrgttrrdo4mrrrrqqquuuuqqFwlA5UUnCSWcePGXO/5nv33b4//27/74N289t7zhMa/z
+Esdv/7HfvO2mU6vp1Ou8+2vMvutHfqOb92Xrxd7q9Rbf8W2///CXfdVXf+mN3/yj1aP6W5/wxNue
+8IyL1z/m5KXzd7L10i9+ugMe9XIv8Vu/euGPf/wnfum2Y/3y4su84Xu92avcArTD/T/51Z/6070L
+r/WOH/RiPP4XfuX39uLhH/EBb/QjX/WZ+ycfff4+fehHvu0f/vB3Pr2eXj/16a/6kue+9zt/9Whx
+zWu/xTscX2xw1f9aNzz8pV/iwX+7m0kpW9uL2/7sqcdvunmT9se33fvYl3r5jZ1N8uLttx499LV3
+nvxrf//kS3t3/Plvvcy7ftjr7dz61Hrde5w+1Yk7/+pp/faNUwzXn7m2267Hu7sPvXUtR39/z+rh
+L3/91nx18k//5Ou/9o/e+AM+5GWv3+Rfqd++5pVf8WXv/aW/Fuw+9S+fFte8+mMv0TPf2jz/xD/l
+QQ8+XevsFV71EU/4XRva+d//27tf5bVf46K57hGPWP/+L37P7bNXfdPX4H+qmx758vu/+H2/+Q8P
+euTNtwD3/N3f+rrH3nLs6Kf+7t4cf+1vf5N3+IAPPn3+937sd5/28Fd5rWPA0WrwcOpU3XrQQ9vv
+nV283iu/4ov9/c+fTa666qqrrrrqqqteJADBv4YCgOVhLureE//yz550fmM+Ozi479Iwf8lXf/MP
+/vBPvvngD3/jz/7uMW/yIR/+YR/9KP/N3z0jr33IdQ95yM2LyLGVR7zMa7zRG7zeqz/mJFC72TRc
+WAKQzVtbG1L/Sm/+Xh/5tq98731PSQDoNl7zbT/gw9/iJe6444m7w6T55v5df/7k89PmqZve8f0+
+9G1fvP3Jn/7+3kPe8BM/6APe4BUfrvTxM9fc8ohHndnquOp/OZNGwJP+4ld+9xkb7/E2r7I+9+R7
+DrYf9uAtju78iR/+pRtf7c1f5iHzs8vjb/ue7/+e7/zyz/irJ/39025/yEMf0Ynb/uwXfuMZs3d6
+yzfezNU0jhjnLIb1H/70j5cXe6NXfuSprVte/v0+6MPe8jUe8qQ/fxL/JiYpXR7e+W3f9fPj2B7/
+D09+yjPO3fWkP/31v1q+7Tu+9gyARF1tv/8D3/VXz7h0z9Of/A9//zd/+Zf/cN3LvMGbv86jn/DH
+f9f4H+r4w175fd7uTZ7xRz/6W399L3Db3Xc99FEvoWk/tm96xw/4iHd8Mf3N0+8+9ZCXfsNXfcxt
+T/iTewaoImpr5LicagEwV1111VVXXXXVVS8ygOBFJvLi3Xc89dbbf/oHfnJ+7UNuefANNzz0xd/s
+rd7xXd7yjU5o7+7bnvrkf/iTc77pIddsP/HPf+cpT/nrZ+xtP/ixL/cmL/eoP/nF7/vzO5dklprn
+77nrnv0Etq956On6xJ/69b+89cn/8GM/9NsPeskHhVq3tVmiNTeuCHebXSnOw9t//Nf+7hVf8/Vu
+2umGYYp5rT2hFRun263/8Lhbn/APj3/KgU6+3uu/9vC4n//hP3gKV/0vl9NkxXjP4371d299yZd5
+yMX7zj7xL/721Eu97AL++Kd+4eDUQ67rl7tH8RIPuf6Jf/fXf/VXTz9z3ez2py0f/dI354W///Hf
+v/NlXuwh9959/qYbdv7hb//or/7gt/eOv+T+P/zk3463PPL4dNe5g9XuvU97yhOecPv5a265gX8b
+5zSspzj+Bm/2erccq2Pm+uwzfu3X/vQhL/2Yw3vuOpoA2jQMgx/+yq/5ai9zS1sPttYX77nncJ/1
+sLd/MPE/1D1P+ftbz+7ffN2169WI73ni4/Oht3TU6x/xiP4f/ugv/u6ect1ieMrt90wa26C92570
+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
+bv9pP/Vdv3X3O7/He530HV//Zd947eu90xs8/NSv/9g3/ebeS7zjo89+5Vd914e+xS0/9YN//qDX
+eeRv/9AP3/zeH3j+N3/o1mvf7qV3f+5b7lm9w03XHz9+4ZrZXV/5hd/14Dd+x1e76dSf/dRf3Pfg
+h77Wi904TtMNj32V13v53/z935v4D+ZxjFd+y3d9yhO/4fu/5XtmZz7mVR56/V1/8+u/f/baz3j5
+h5/9g5+adq65abH6gW/8ysWnfcH4Z9/2q3969+u8wbtuFkfE4d56c741n9V+kbsH/Ru/wZs84tf+
+cJ3JVVdd9b+AiE4bZ7RxhhtevnBZTuREjs6JnMiGguhUKlGJSlQQV1111VX/YQCCq6666kWlEnnb
+05881+y2swfzjTI1d4XH/cUf3DNc/9CbbnrEjas//Ou/edITnr55/Su+5ss87Hje+7cX5q/+6q/x
+sAeduPVpT7zlJV75FV/tZWb33XNhoJ/Xruu6flYiar+46ZEv9pKPvv7C3uGxkycW841Hvszrvv+7
+vf7tv/+j3/9bj3/dd/m4d3n1h43TBGRrY0sQ/9HspvlNb/ce7/1qD17/+A//wh7xtL/+y2MPeuS1
+J2s/m19z48Ne4RVeZjadv/vC9Cpv84Ef+A4v/TPf8aN37O5fvLC7cWLz4Ojo8GC5XPanjxWGMdNc
+ddVV/3tFpc7ptzU/oY0z2rpOm9docYJ+m7ogOhBXXXXVVf+RAIKrrrrqReXM8qhXeqO3ebu3fqt3
+fLs3e62XnavluP9nv/Pbp1/pDd/iDd7ozd7g1W7//T+97uVfpT3l57/mO37qKdP1b/iI8n3f8vU/
+9VtPevXXeZOn/tb3f8u3/dypV3/NV3qJxx5b3Pvj3/ljT7i4LCHjzGlq6eTMLQ/Zigu/8qu/c1bH
+HnT9mf377vnhr/qor/z5v++7jitsYxD/kdT1/MMf/tz3ft9PPuX88oaHPWrH5//yyZce9JDHbqrd
+8LJv8LDx6d/+XT9x7Uu8+cOGv/rW7/n2H/7Zv3j4K7/i+nG//Bmf9AXxYm908/TUb/muHz75su/0
+SrfMM20bc9VVV1111VVXXfWiAZBt4Nd+7dde7dVebWNjg+e0XC5tc9VVV90vSg2MorXRBtrF++7T
+5qkT2/O2Oriwe3j82muX995x9mA8df1NO93qjtvvzcWJh163c8/dd+6t4/obbjq24PzZ+y5cWvWL
++fETx6ejPc+PL3J/d12vPbV18b5796f0esgyv+H6a9b7Z8fu+KntuW1J64OLF1c6c/JYiP9Akoaj
+3Sf/7d/dtZ6/ymu80o6Gcxcu1sXxnY0qxfLS2bvOHpy5+UFb3r/9rrOT5tfdeEPfDi5cWp245prp
+0t13707X3XjjRic87Z6/6Nn28e05NgBIWiwWXHXVVVddddVVV93vzjvvvP3221/5lV8ZAGQb+LVf
++7VXe7VX29jY4Dktl0vbXHXVVS+QSil2y7QUEcqWUYpEtmZUSpA5pUstgmwt7Sg1BDhbEoHTRMit
+uZQCRhJka0TI2dJcpoiQWmv8R5Oi1CJo05R2lEJm2kBEiVBms1VKANmaUYSyNZUSUraWNhClyNnS
+3E/SYrHgqquu+t+mtXb27Nljx44tFguuuuqqq/5D3Xnnnbfffvsrv/IrA0Dlqquu+ndxaxMA2Nka
+QGsTz+RpSi5r08T9sk3J/VoDoDUAWpt4oNZ4AGc2/lPYOY3J/bI17pfZMrnM05Q8k1sDcGvJs2Vr
+XHXVVf8nLJfL3/zN33zVV33VBz/4wVx11VVX/WcBqFx11VVXXXXVVVc9P5K46qqrrvrPBVC56qqr
+rrrqqquuuuqqq6767wFQueqqq6666qqrrrrqqquu+u8BULnqqquuuuqqq6666qqrrvrvAVB5obqu
+s81VV1111b+VJK666qqrrrrqqqueP4DKC/WHf/iHR0dHkrjqqquu+tfLzK2trdd4jdfgqquuuuqq
+q6666vkAqLxQL/MyL5OZXHXVVVf9W0UEV1111VX/Ofb391erVa3V2dKcOHGilMJVV131vwlA5YXa
+3t7mqquuuuqqq6666j/TeOmOP/6bp9R+I4fD7tSDXuaxD+3Ec5ruve2e7Rtv2ih+xt/+1VPO7t34
+4Mc++mHX3HvPPfeevffCnXd1p244voiXeumXWSwWXHXVVf+bAARXXXXVVVddddVV/63a0fknP/7v
+vvjjPuibfvT37jh79nD34t33nZuAHM7fe8c9u0tPd37lJ33yn9979Ne/9g2f/FU/8qR/+Ouv++yP
++unH3Tubb3YHT/yKL/+K3/rTW7vFTBJXXXXV/zIAlauuuuqqq6666qr/VvPrX+p9P+gl9h7/B6fe
++aPe9iFP/LRP+dS96cLD3/4zXy/+4lt+5g/GuPFd3valnvD3f3fm937z3G/+2Qd85re+7kNmd/3u
+N3/sN37/oz/j3Z/0Z094xTd6/fO3P/7i0aPFVVdd9b8OQOWqq6666qqrrrrq+RnH8Y//+I//4R/+
+wTb/cTLz4Q9/+GMf+1ie09Tcz4bf/KHve/Lmy77/S539lh/9gZOvfPq6l3i913rpR77ky1776q/+
+Bq/+Stf+6C9t3XT9DLjhJV5m83t/7sLq4p897knx8Fccb/3Tx933hq8T4qqrrvpfBqBy1VVXXXXV
+VVdd9Txms9lLv/RLHxwcSOI/VGZubm7y/OVkzcf7zuua13/TV3qj13j43/z5H/zmT/7g/vZ7UHKx
+cfNmvfCMu9Y3zO553J/+UXfDw2Z3Pu5Jd+692MPasRtnf/I7f/OBb/Uahauuuup/F4DKVVddddVV
+V1111fPouu4lX/Il+S/k5nHVv+obv+mvfP1v3Pq0ew9uuvkvfvOn/uiJS1icPraji8/4o787947v
+9QZf/Hmf/Gv16T/8C09/l4//uL/63d859grv8n7v/tp7t/7hZ37uTzzl3Ae9+JkZV1111f8mALIN
+/Nqv/dqrvdqrbWxscNVVV1111VVXXfXf4fzdd9Rj1x3bqPc+6e+evu9HvsRLnpgu/cM//MN0+iEv
++ZDrd5/xlIvl2MNuOnPXE/7htsPxutMnPY53nzu7dzSe3Oyd7b6773nV13+jUzubXHXVVf/j3Xnn
+nbfffvsrv/IrA0Dlqquuuuqqq6666n+AU9ffBADXPvIlruWy/tiLv8KrctnJBz38JAA3PPrFbuCZ
+6rw/d999KIBbHv7w7Vnlqquu+l8GoHLVVVddddVVV131v9NNN9500403cT9JXHXVVf/LAFSuuuqq
+q6666qqr/neSxFVXXfW/G0Dlqquuuuqqq6666qqrrrrqvwdA5aqrrrrqqquuuuqqq6666r8HQOWq
+q6666qqrrrrqqquuuuq/B0Dlqquuuuqqq6666qqrrrrqvwdA5aqrrrrqqquuuuqqq6666r8HQOWq
+q6666qqrrrrqqquuuuq/B0Dlqquuuuqqq6666qqrrrrqvwdA5aqrrrrqqquuuuqqq6666r8HQOWq
+q6666qqrrrrqqquuuuq/B0Dlqquuuuqqq6666qqrrrrqvwdA5aqrrrrqqquuuuqqq6666r8HQOWq
+q6666qqrrrrqqquuuuq/B0Dlqquuuuqqq6666qqrrrrqvwdA5aqrrrrqqquuuuqqq6666r8HQOWq
+q6666qqrrrrqqquuuuq/B0Dlqquuuuqqq6666qqrrrrqvwdA5aqrrrrqqquuuuqqq6666r8HQOWq
+q6666qqrrrrqqquuuuq/B0Dlqquuuuqqq6666qqrrrrqvwdA5aqrrrrqqquuuuqqq6666r8HQOWq
+q6666qqrrrrqqquuuuq/B0Dlqquuuuqqq6666qqrrrrqvwdA5aqrrrrqqquuuuqqq6666r8HQAWA
+1towDKUU21x11VVXXXXVVVddddVVV/3nKKWsVqvMBACgAsB8Pv/Zn/3Z06dPl1K46qqrrrrqqquu
+uuqqq676TzMMw2Me8xgAACoAPOhBD5rNZi/90i+9WCy46qqrrrrqqquuuuqqq676rwBQASAzbXPV
+VVddddVVV1111VVXXfVfB6By1VVXXXXVVVddddVVV1313wOgctVVV1111VVXXXXVVVdd9d8DoHLV
+VVddddVVV1111VVXXfXfA+AfAXkKSBWT4ePPAAAAAElFTkSuQmCC
+------=_Part_40_1577590880.1784636886422
+Content-Type: application/octet-stream
+Content-Transfer-Encoding: base64
+Content-Location: file:///C:/9b45ae8c85c16a66aad904c0270f58d8cbd79c476bc8d003bcec7b51f05e1f85
+
+iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAA3NCSVQICAjb4U/gAAAAFVBMVEX/
+//9wcHBwcHBwcHBwcHBwcHBwcHA3RenHAAAAB3RSTlMAZoiZzN3/SzZomQAAAAlwSFlzAAALEgAA
+CxIB0t1+/AAAABx0RVh0U29mdHdhcmUAQWRvYmUgRmlyZXdvcmtzIENTNui8sowAAAAUdEVYdENy
+ZWF0aW9uIFRpbWUANi8xLzEzOKlF0AAAACFJREFUCJljYCATsCgwqIAZTMnMyRAhsTABCIMxkVxT
+GQCLcwHyUKXpLgAAAABJRU5ErkJggg==
+------=_Part_40_1577590880.1784636886422--

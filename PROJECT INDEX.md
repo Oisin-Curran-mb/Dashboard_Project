@@ -41,12 +41,15 @@ This "Step 4 design status" column is pulled directly from `Dashboard Tracker.xl
 | 3 | [`Step 3 - Mock_Work/`](Step%203%20-%20Mock_Work/00%20-%20INDEX.md) | The actual coded prototype (`Dashboard Widget Mockups.html`, the one real build) plus `Widget_Specs/` (the living per-widget idea file — options considered, including rejected ones) and `Desgin/pathway-ds-main/` (the Pathway design system components/tokens — read `pathway-for-claude.md` before editing any markup here). Expected to be the messiest folder; that's fine. |
 | 4 | [`Step 4 - Widget Final Design/`](Step%204%20-%20Widget%20Final%20Design/00%20-%20INDEX.md) | The ONE living doc per widget that's reached design lock — must always match what's actually built in Step 3's HTML. A widget only leaves "in progress" once it's been checked against the real build (via the `widget-final-check-audit` skill), not just because its own header says "locked." |
 | 5 | [`Step 5 - API documents/`](Step%205%20-%20API%20documents/00%20-%20INDEX.md) | The backend-facing spec per widget (tables, request params, response shapes, edge cases) — for developers and Confluence. A widget only becomes eligible here once it's ✅ Done in Step 4, not before. `Widget_Comparison_Classic.html`/`Widget_Comparison_New_Widgets.html` here are a fixed, read-only historical baseline — never edited. |
+| 6 | [`Step 6 - Sign off document/`](Step%206%20-%20Sign%20off%20document/00%20-%20INDEX.md) | **New, 2026-07-21.** Management's own sign-off documents, exported from Confluence — **never edited by anyone working in this project.** Corresponds to `Dashboard Tracker.xlsx`'s Step 6 — Design Sign Off column (the tracker's actual last step). Contains management's own independent research and findings, which can and do diverge from what Steps 3–4 assumed. Mainly affects Step 5, since that's where backend assumptions get written down concretely — see that folder's own index for two live examples already found. |
 
-**Where to add a new document:** if it's about what exists in the live system today, it goes in Step 1. If it's a question, interview, or piece of outside feedback, it goes in Step 2. If it's prototyping/coded-build work or an evolving per-widget idea file, it goes in Step 3. If it's the single current statement of a widget's locked design, it goes in Step 4 — there should only ever be one such file per widget. If it's backend/API-facing and the widget is already Done in Step 4, it goes in Step 5. If you're not sure which, it's almost always Step 2 (raw input) or Step 3 (still-evolving work) — Step 1 and Step 4 are the two folders meant to stay settled once correct.
+**Where to add a new document:** if it's about what exists in the live system today, it goes in Step 1. If it's a question, interview, or piece of outside feedback, it goes in Step 2. If it's prototyping/coded-build work or an evolving per-widget idea file, it goes in Step 3. If it's the single current statement of a widget's locked design, it goes in Step 4 — there should only ever be one such file per widget. If it's backend/API-facing and the widget is already Done in Step 4, it goes in Step 5. If it's a management-authored sign-off export, it goes in Step 6 and is never edited — this project doesn't originate those documents, it only reads them. If you're not sure which, it's almost always Step 2 (raw input) or Step 3 (still-evolving work) — Step 1 and Step 4 are the two folders meant to stay settled once correct, and Step 6 is never anyone's to edit at all.
 
 **Resolved naming collision:** an earlier version of this file called `Design Improvement Options.md` "Step 2." That file now lives in `Step 3 - Mock_Work/` (it feeds `Widget_Specs/` from Step 1's research), and the folder actually named `Step 2 - Feedback/` is the real Step 2. This file defers entirely to the real current folder names — there is no other "Step 2" anywhere in this project.
 
-**`Dashboard Tracker.xlsx`** (project root) tracks per-widget progress separately from this doc set. Its "Step 3 / Step 4 / Step 5" columns are named to match this table's Step 3 - Mock_Work, Step 4 - Widget Final Design, and Step 5 - API documents (Step 1 - Purpose and Step 2 - Feedback already matched and were left as-is). Its Step 6 - Test & Doc column has no corresponding folder here — it covers post-spec build/test work that happens outside this documentation pipeline. The tracker enforces a hard gate in its legend: a widget's Step 3 must be Complete before Step 4 starts, and Step 4 must be Complete before Step 5 starts — matching Step 5's own index rule that a widget only becomes eligible there once ✅ Done in Step 4.
+**New, 2026-07-21 — `Step 2 - Feedback/Market Research/`:** a dedicated folder, one file per widget (`WNN - Name.md`), for competitor/market research — how other companies present this kind of information, visuals and information included. This was added per direct instruction after a check for W15 Bank Balances confirmed its competitor research (a Hiline nonprofit-dashboard "runway" framing citation) already existed, but only inside `Step 3 - Mock_Work/Widget_Specs/W15-Bank-Balances.md` and `Step 4 - Widget Final Design/W15 - Bank Balances.md`'s `## How Other Companies Fulfil This Purpose` sections — split across two folders with no single home, and easy to lose track of in a future restructure. **As of 2026-07-21 this folder is structure only** — the 16 files (widget 12 excluded) are empty placeholders with a naming/cross-reference skeleton, not yet populated with real research. Populating them — and deciding whether to move, copy, or just link back to the existing Step 3/4 sections — is an explicit next step, not done in this pass. See `Step 2 - Feedback/Market Research/00 - INDEX.md` for per-widget status.
+
+**`Dashboard Tracker.xlsx`** (project root) tracks per-widget progress separately from this doc set. Its "Step 3 / Step 4 / Step 5 / Step 6" columns are named to match this table's Step 3 - Mock_Work, Step 4 - Widget Final Design, Step 5 - API documents, and (as of 2026-07-21) Step 6 - Sign off document (Step 1 - Purpose and Step 2 - Feedback already matched and were left as-is). **Correction, 2026-07-21: an earlier version of this file called the tracker's Step 6 column "Test & Doc" with no corresponding folder — that was checked directly against the live spreadsheet and was wrong. The real header is "Step 6 Design Sign Off," and it now has a corresponding folder.** The tracker enforces a hard gate in its legend: a widget's Step 3 must be Complete before Step 4 starts, and Step 4 must be Complete before Step 5 starts — matching Step 5's own index rule that a widget only becomes eligible there once ✅ Done in Step 4. No equivalent gate is defined yet for Step 6 — it's new enough that the process for reconciling it against Steps 3–5 hasn't been built, per direct instruction that this is coming as a skill update next.
 
 Its Step 4 and Step 5 columns were synced on 2026-07-20 to match `Step 4 - Widget Final Design/00 - INDEX.md` and `Step 5 - API documents/00 - INDEX.md` exactly (Pension Plans/Payroll Distributions/Deposit Accounts Complete in Step 4, Payroll Distributions Complete in Step 5, Deposit Accounts In Progress in Step 5, the empty widget-12 slot marked N/A in both). Its Step 2 and Step 3 columns were **not** touched — no per-widget status table exists anywhere in the project for Feedback or Mock_Work completion, so setting those columns to anything would be a guess rather than a synced fact; they're left at their prior values until such a source exists.
 
@@ -74,8 +77,11 @@ For Dashboard/
 │   ├── Widget Usage Ranking and Default Dashboard Shortlist.docx
 │   ├── Given to all menbers of the team..xlsx                      (⚠️ stale, last synced 2026-07-13)
 │   ├── W03 Payroll Distributions - DR Comparison.md
-│   └── Interviews Transcripts/
-│       └── 2026-07-13 - Ben Lane SME Interview - Widget Usage (Most vs Least Used).docx
+│   ├── Interviews Transcripts/
+│   │   └── 2026-07-13 - Ben Lane SME Interview - Widget Usage (Most vs Least Used).docx
+│   └── Market Research/                      ← NEW, 2026-07-21 — structure only, no content yet (see below)
+│       ├── 00 - INDEX.md
+│       └── W01 - Budget Compared to Actual.md … W17 - Gifts Pledges.md   (16 files, W12 excluded)
 ├── Step 3 - Mock_Work/
 │   ├── 00 - INDEX.md
 │   ├── Dashboard Widget Mockups.html         ← the one real build (★ MASTER ★)
@@ -93,13 +99,18 @@ For Dashboard/
 ├── Step 4 - Widget Final Design/
 │   ├── 00 - INDEX.md
 │   └── W01 - Budget Compared to Actual.md … W17 - Gifts Pledges.md   (14 files — W08, W12, W14 don't exist yet)
-└── Step 5 - API documents/
+├── Step 5 - API documents/
+│   ├── 00 - INDEX.md
+│   ├── How to Write a Widget API Spec.md
+│   ├── Widget_Comparison_Classic.html          ← read-only historical baseline
+│   ├── Widget_Comparison_New_Widgets.html      ← read-only historical baseline
+│   ├── Budget Compared to Actual/Budget Compared to Actual - API Spec.md + ...(Confluence).html   (🟡 draft, needs review)
+│   ├── Payroll Distributions/Payroll Distributions - API Spec.md + ...(Confluence).html   (🟡 draft, needs review — reopened 2026-07-21)
+│   └── Deposit Accounts/Deposit Accounts - API Spec.md + ...(Confluence).html   (🟡 draft, needs review)
+└── Step 6 - Sign off document/                 ← NEW, 2026-07-21 — management's own exports, never edited
     ├── 00 - INDEX.md
-    ├── How to Write a Widget API Spec.md
-    ├── Widget_Comparison_Classic.html          ← read-only historical baseline
-    ├── Widget_Comparison_New_Widgets.html      ← read-only historical baseline
-    ├── Payroll Distributions/Payroll Distributions - API Spec.md            (✅ approved)
-    └── Deposit Accounts/Deposit Accounts - API Spec.md + ...(Confluence).html   (🟡 draft, needs review)
+    ├── Payroll Distrubution/Payroll+Distributions.doc          (sic — filename/folder kept exactly as exported)
+    └── Deposit On Hand (Deposit Accounts)/Deposits+On+Hand.doc
 ```
 
 ## Widget pipeline position
@@ -110,7 +121,7 @@ For Dashboard/
 |---|---|---|---|---|---|---|---|---|
 | 01 | Budget Compared to Actual | Finance | ✅ | ✅ Backend SME | [spec](Step%203%20-%20Mock_Work/Widget_Specs/W01-Budget-Compared-to-Actual.md) | ✅ Complete | ✅ [Complete](Step%204%20-%20Widget%20Final%20Design/W01%20-%20Budget%20Compared%20to%20Actual.md) | 🔵 [In progress](Step%205%20-%20API%20documents/Budget%20Compared%20to%20Actual/Budget%20Compared%20to%20Actual%20-%20API%20Spec.md) |
 | 02 | Pension Plans | Finance | ✅ | ✅ Backend SME | [spec](Step%203%20-%20Mock_Work/Widget_Specs/W02-Pension-Plans.md) | ✅ Complete | ✅ [Complete](Step%204%20-%20Widget%20Final%20Design/W02%20-%20Pension%20Plans.md) | ⚪ Not started |
-| 03 | Payroll Distributions | Payroll | ✅ | ✅ Backend SME, Ben Lane, DR Comparison | [spec](Step%203%20-%20Mock_Work/Widget_Specs/W03-Payroll-Distributions.md) | ✅ Complete | ✅ [Complete](Step%204%20-%20Widget%20Final%20Design/W03%20-%20Payroll%20Distributions.md) | ✅ [Complete](Step%205%20-%20API%20documents/Payroll%20Distributions/Payroll%20Distributions%20-%20API%20Spec.md) |
+| 03 | Payroll Distributions | Payroll | ✅ | ✅ Backend SME, Ben Lane, DR Comparison | [spec](Step%203%20-%20Mock_Work/Widget_Specs/W03-Payroll-Distributions.md) | ✅ Complete | ✅ [Complete](Step%204%20-%20Widget%20Final%20Design/W03%20-%20Payroll%20Distributions.md) | 🟡 [Draft — reopened](Step%205%20-%20API%20documents/Payroll%20Distributions/Payroll%20Distributions%20-%20API%20Spec.md) |
 | 04 | Remittance Pledges | Finance | ✅ | ✅ UX tracker | [spec](Step%203%20-%20Mock_Work/Widget_Specs/W04-Remittance-Pledges.md) | ⚪ Not started | ⚪ [Not started](Step%204%20-%20Widget%20Final%20Design/W04%20-%20Remittance%20Pledges.md) | ⚪ Not started |
 | 05 | Receivable Invoices Outstanding | Finance | ✅ | ✅ UX tracker | [spec](Step%203%20-%20Mock_Work/Widget_Specs/W05-Receivable-Invoices-Outstanding.md) | ⚪ Not started | ⚪ [Not started](Step%204%20-%20Widget%20Final%20Design/W05%20-%20Receivable%20Invoices%20Outstanding.md) | ⚪ Not started |
 | 06 | Insurance Billing Plans | HR | ✅ | ✅ UX tracker | [spec](Step%203%20-%20Mock_Work/Widget_Specs/W06-Insurance-Billing-Plans.md) | ⚪ Not started | ⚪ [Not started](Step%204%20-%20Widget%20Final%20Design/W06%20-%20Insurance%20Billing%20Plans.md) | ⚪ Not started |
@@ -127,6 +138,8 @@ For Dashboard/
 | 17 | Gifts & Pledges | Finance | ✅ | ✅ UX tracker | [spec](Step%203%20-%20Mock_Work/Widget_Specs/W17-Gifts-Pledges.md) | ⚪ Not started | ⚪ [Not started](Step%204%20-%20Widget%20Final%20Design/W17%20-%20Gifts%20Pledges.md) | ⚪ Not started |
 
 **Status keys** — Step 1 and Step 2 are ✅ for all 17 widgets (both Complete in the tracker). Step 3/4/5 emoji: ✅ Complete, 🔵 In progress, ⚪ Not started, ➖ N/A (empty slot, no widget to track) — all three columns pulled directly from `Dashboard Tracker.xlsx`'s Step 3/4/5 columns. "⏸️ deferred" on the Step 3 spec link means the spec file itself says not to build against it yet — that's separate from the tracker status. "Step 2 feedback?" only reflects the three cross-widget tracker docs (Backend SME Questions, UX Specialist Tracker, Ben Lane Interview) — a widget can still have relevant Step 2 content even if unchecked here (e.g. W03 has its own dedicated `DR Comparison.md`).
+
+**Step 6 isn't a column in this table yet** (added too recently to restructure this table in the same pass) — but two widgets already have a real Step 6 document: **W03 Payroll Distributions** and **W07 Deposit Accounts** (renamed by management to "Deposits On Hand," rename not yet executed across this project), both in [`Step 6 - Sign off document/`](Step%206%20-%20Sign%20off%20document/00%20-%20INDEX.md). W03 now also has a `Reconciliation - Payroll Distributions.md` there, naming four real contradictions between management's review and Steps 3–5 (including why W03's Step 5 spec was just reopened to draft) — found but not yet fixed in Steps 1–5's actual content.
 
 ## Unresolved questions per widget
 

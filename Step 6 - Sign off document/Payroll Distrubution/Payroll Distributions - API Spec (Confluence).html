@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Payroll Distributions — API Spec (Sign-Off Aligned)</title>
+<style>
+body { font-family: -apple-system, Helvetica, Arial, sans-serif; max-width: 900px; margin: 30px auto; line-height: 1.5; color: #172B4D; }
+h1 { font-size: 24px; }
+h2 { font-size: 19px; border-bottom: 1px solid #DFE1E6; padding-bottom: 6px; margin-top: 32px; }
+h3 { font-size: 16px; margin-top: 20px; }
+table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+th, td { border: 1px solid #DFE1E6; padding: 6px 10px; text-align: left; vertical-align: top; }
+th { background: #F4F5F7; }
+code { background: #F4F5F7; padding: 1px 5px; border-radius: 3px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 90%; }
+pre { background: #F4F5F7; padding: 12px; border-radius: 4px; overflow-x: auto; }
+pre code { background: none; padding: 0; }
+.status { background: #FFF0B3; display: inline-block; padding: 3px 10px; border-radius: 3px; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<h1>Payroll Distributions — API Spec (Sign-Off Aligned)</h1>
+<p><span class="status">Status: DRAFT — not final</span></p>
+<blockquote>
+<p>This spec is built from <code>Payroll+Distributions.doc</code> (management's sign-off document, this same folder) and <code>Reconciliation - Payroll Distributions.md</code> (also this folder), on top of the structure already established in <code>Step 5 - API documents/Payroll Distributions/Payroll Distributions - API Spec.md</code>. It states what's needed to satisfy management's sign-off directly — every section below describes a current requirement, not a change from an earlier draft.</p>
+</blockquote>
+<h2>Tables</h2>
+<table>
+<thead>
+<tr>
+<th>Table</th>
+<th>Fields used</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PR_History</code></td>
+<td>(via <code>PREmployee</code>) CompanyID, CheckDate, CheckType, VoidJournalID</td>
+</tr>
+<tr>
+<td><code>PR_HistoryCompensation</code></td>
+<td>CompensationDistributionID, Name, Amount</td>
+</tr>
+</tbody>
+</table>
+<p>No new tables. Everything below is served from these same two tables.</p>
+<p><strong>The one real grouping dimension is <code>PR_HistoryCompensation.Name</code>.</strong> Confirmed live (Beta1, company "Saint Michael Church"): values are org-defined free text — examples seen include "AA Aid" and "Administration Staff." Whatever an org calls its distributions is exactly what this endpoint returns; there is no fixed category list and no separate department field confirmed anywhere in this data. Treat every <code>label</code> in the response below as opaque, org-supplied text.</p>
+<h2>Old vs. new</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Legacy (live today)</th>
+<th>Needed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Endpoint</td>
+<td><code>GET /api/dashboard/payroll-distributions/data?startDate&amp;endDate</code> — one call, fixed date range</td>
+<td>Same shape, <code>startDate</code>+<code>period</code> (Weekly, Bi-Weekly, Monthly, Custom)</td>
+</tr>
+<tr>
+<td>Rows</td>
+<td>Flat list, one row per Distribution Name, current period only</td>
+<td>Same — one row per Distribution Name, org-defined text, current period</td>
+</tr>
+<tr>
+<td>Comparison</td>
+<td>None</td>
+<td>None — this endpoint reports current-period figures only</td>
+</tr>
+<tr>
+<td>Filter</td>
+<td>None</td>
+<td><code>distribution</code>, sourced from a real per-org list (see the new lookup endpoint below) — not a fixed set of labels</td>
+</tr>
+<tr>
+<td>Sort</td>
+<td>Fixed alphabetical by Name</td>
+<td>Alphabetical by default; amount-descending whenever the caller requests a limited row count (see <code>limit</code> below)</td>
+</tr>
+<tr>
+<td>Drill-through</td>
+<td>None</td>
+<td>A detail endpoint (see below), to support showing the lines behind a distribution's total inside the widget itself</td>
+</tr>
+</tbody>
+</table>
+<h2>Request params</h2>
+<p><strong>Main data endpoint:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Param</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>startDate</code></td>
+<td>date</td>
+<td>yes</td>
+<td>—</td>
+<td></td>
+</tr>
+<tr>
+<td><code>period</code></td>
+<td>enum</td>
+<td>yes</td>
+<td><code>Weekly</code></td>
+<td><code>Weekly</code>, <code>Bi-Weekly</code>, <code>Monthly</code>, <code>Custom</code> — end date derived from <code>startDate</code> + period length, except <code>Custom</code></td>
+</tr>
+<tr>
+<td><code>endDate</code></td>
+<td>date</td>
+<td>only if <code>period=Custom</code></td>
+<td>—</td>
+<td></td>
+</tr>
+<tr>
+<td><code>distribution</code></td>
+<td>string</td>
+<td>no</td>
+<td><em>(all)</em></td>
+<td>One value from the org's real distribution names — see the lookup endpoint below for how to populate this as a filter</td>
+</tr>
+<tr>
+<td><code>limit</code></td>
+<td>integer</td>
+<td>no</td>
+<td><em>(none)</em></td>
+<td>Caps the row count to the top N by amount. Supplying this switches the default sort to amount-descending (see Sort, below)</td>
+</tr>
+<tr>
+<td><code>sort</code></td>
+<td>enum</td>
+<td>no</td>
+<td>see Sort</td>
+<td><code>alphabetical</code>, <code>amount</code> — explicit value always wins over the <code>limit</code>-driven default</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Distribution list endpoint</strong> (new — populates the filter dynamically instead of a fixed label set):</p>
+<pre><code>GET /api/dashboard/payroll-distributions/distributions
+</code></pre>
+<p>Returns every distribution name the organization actually has on file, so the filter always matches real data rather than a guessed or hardcoded list.</p>
+<p><strong>Detail endpoint</strong> (new — feeds an in-widget overlay, see Drill-through below):</p>
+<pre><code>GET /api/dashboard/payroll-distributions/detail?distribution={name}&amp;startDate={date}&amp;period={period}
+</code></pre>
+<p>Example requests:</p>
+<pre><code>GET /api/dashboard/payroll-distributions/data?startDate=2026-07-14&amp;period=Weekly
+GET /api/dashboard/payroll-distributions/data?startDate=2026-07-14&amp;period=Weekly&amp;distribution=Finance&amp;limit=5
+GET /api/dashboard/payroll-distributions/distributions
+GET /api/dashboard/payroll-distributions/detail?distribution=Finance&amp;startDate=2026-07-14&amp;period=Weekly
+</code></pre>
+<h2>Response shape</h2>
+<p><strong>Main data endpoint:</strong></p>
+<pre><code>{
+  &quot;period&quot;: { &quot;range&quot;: &quot;Jul 14–20, 2026&quot; },
+  &quot;generatedAt&quot;: &quot;2026-07-21T13:40:00Z&quot;,
+  &quot;total&quot;: { &quot;current&quot;: 154200 },
+  &quot;rows&quot;: [
+    { &quot;label&quot;: &quot;Finance&quot;, &quot;current&quot;: 44680 },
+    { &quot;label&quot;: &quot;Administration Staff&quot;, &quot;current&quot;: 38950 },
+    { &quot;label&quot;: &quot;AA Aid&quot;, &quot;current&quot;: 12100 },
+    { &quot;label&quot;: &quot;Facilities&quot;, &quot;current&quot;: 21300 }
+  ]
+}
+</code></pre>
+<p><code>generatedAt</code> supports a visible "data as of" freshness indicator on the widget. Amounts are always raw numeric values — currency and date formatting is the frontend's job, using the organization's own locale, never the client device's or server's.</p>
+<p><strong>Distribution list endpoint:</strong></p>
+<pre><code>{ &quot;distributions&quot;: [&quot;Finance&quot;, &quot;Administration Staff&quot;, &quot;AA Aid&quot;, &quot;Facilities&quot;] }
+</code></pre>
+<p><strong>Detail endpoint</strong> (working shape — see "Still needs sign-off" for what's unresolved about it):</p>
+<pre><code>{
+  &quot;distribution&quot;: &quot;Finance&quot;,
+  &quot;period&quot;: { &quot;range&quot;: &quot;Jul 14–20, 2026&quot; },
+  &quot;total&quot;: 44680,
+  &quot;lines&quot;: [
+    { &quot;checkDate&quot;: &quot;2026-07-15&quot;, &quot;amount&quot;: 22340 },
+    { &quot;checkDate&quot;: &quot;2026-07-08&quot;, &quot;amount&quot;: 22340 }
+  ]
+}
+</code></pre>
+<h2>Sort</h2>
+<p>Default alphabetical by <code>label</code>. If <code>limit</code> is supplied, the default becomes amount-descending, so a trimmed view always surfaces the largest distributions rather than an arbitrary alphabetical slice. An explicit <code>sort</code> param always takes precedence over either default.</p>
+<h2>Drill-through</h2>
+<p>A focus overlay inside the widget itself, fed by the new detail endpoint above — the destination shows the lines behind a distribution's total for the selected period, without navigating to another module. The existing Earnings Inquiry screen is per-employee, not per-distribution, so it doesn't serve this use case.</p>
+<h2>Edge cases to confirm</h2>
+<ol>
+<li><strong>No payroll runs in range</strong> — empty <code>rows[]</code> and a zeroed <code>total</code>, or an explicit empty/error response?</li>
+<li><strong><code>distribution</code> value that doesn't match any name from the lookup endpoint</strong> — empty result, or an error?</li>
+<li><strong><code>endDate</code> before <code>startDate</code></strong> (Custom period only) — reject with an error, or silently swap?</li>
+<li><strong><code>limit</code> of 0 or a negative number</strong> — treat as "no limit," or reject as invalid?</li>
+<li><strong>Detail endpoint requested for a distribution with no activity in the period</strong> — empty <code>lines[]</code> and <code>total: 0</code>?</li>
+<li><strong>Org with only one distribution name in the lookup endpoint</strong> — does the filter still render, or hide itself when there's nothing to filter?</li>
+</ol>
+<h2>Not in scope</h2>
+<ul>
+<li>No write/edit operations of any kind — this is a read endpoint set.</li>
+<li>No aggregation across organizations or companies — scoped to the requesting org only, same as every other widget in this project.</li>
+<li>Pay-group scoping is not part of this endpoint. Whether pay group is a real, separate concept from distribution — and how it would relate to this data — depends on a payroll data-model investigation that hasn't happened yet; nothing here should be built assuming that investigation's outcome.</li>
+</ul>
+<h2>Still needs sign-off</h2>
+<ul>
+<li><strong>Does a real Department field exist</strong>, separate from Distribution Name — for example, a Home Department field on the employee record that reaches into payroll history? If confirmed, it may become a second, complementary filter dimension alongside <code>distribution</code> later. Nothing in this spec currently depends on that being true.</li>
+<li><strong>What the detail endpoint's line-item shape should actually contain.</strong> The working example above shows check date and amount only; whether it should include any employee-level identifier is a product decision, not an engineering one, given this is regulated payroll data.</li>
+<li><strong>Entitlement/rights detection</strong> for the widget's loading/empty/error states — not yet answered.</li>
+<li><strong>Localization root cause</strong> — confirming whether currency/date formatting should key off the organization's own locale setting via a specific field, once engineering identifies where the current mismatch actually comes from.</li>
+</ul>
+
+</body>
+</html>

@@ -66,7 +66,7 @@ The intent: build a reusable pattern library (`Templates/`) — one template per
 
 ## Step 3 tracker status
 
-`Dashboard Tracker.xlsx`'s "Step 3 - Mock_Work" column, synced 2026-07-20 (project owner's own edit, treated as source of truth for this column). This folder didn't have a per-widget status table before — adding one here, since every widget already has a `Widget_Specs/WNN-Name.md` file regardless of this status, so "Not started" below means the tracker doesn't consider Mock_Work done for that widget, not that no file exists:
+`Dashboard Tracker.xlsx`'s "Step 3 - Mock_Work" column, synced 2026-07-20 (project owner's own edit, treated as source of truth for this column). This folder didn't have a per-widget status table before — adding one here, since every widget already has a `Widget_Specs/WNN-Name.md` file regardless of this status, so "Not started" below means the tracker doesn't consider Mock_Work done for that widget, not that no file exists. **W14 flipped from "In progress" to "Complete" on 2026-07-21**, per direct instruction, once the project owner confirmed W14's mock-work pass was done and the "Ready to be reviewed by Jo" badge was added in `Dashboard Widget Mockups.html` — Step 4 remains Not Started pending that review:
 
 | # | Widget | Step 3 (tracker) |
 |---|---|---|
@@ -83,7 +83,7 @@ The intent: build a reusable pattern library (`Templates/`) — one template per
 | 11 | Fixed Asset Values | ⚪ Not started |
 | 12 | *(Empty Slot)* | ⚪ Not started |
 | 13 | Purchasing Management | ⚪ Not started |
-| 14 | Main Content Tasks | 🔵 In progress |
+| 14 | Main Content Tasks | ✅ Complete |
 | 15 | Bank Balances | ⚪ Not started |
 | 16 | Accounts Payable By Due Date | ⚪ Not started |
 | 17 | Gifts Pledges | ⚪ Not started |

@@ -1,0 +1,2769 @@
+Date: Tue, 21 Jul 2026 12:23:31 +0000 (UTC)
+Message-ID: <1347760235.97.1784636611342@3e47387bc0d5>
+Subject: Exported From Confluence
+MIME-Version: 1.0
+Content-Type: multipart/related; 
+	boundary="----=_Part_96_129671720.1784636611342"
+
+------=_Part_96_129671720.1784636611342
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+Content-Location: file:///C:/exported.html
+
+<html xmlns:o=3D'urn:schemas-microsoft-com:office:office'
+      xmlns:w=3D'urn:schemas-microsoft-com:office:word'
+      xmlns:v=3D'urn:schemas-microsoft-com:vml'
+      xmlns=3D'urn:w3-org-ns:HTML'>
+<head>
+    <meta http-equiv=3D"Content-Type" content=3D"text/html; charset=3Dutf-8=
+">
+    <title>Payroll Distributions</title>
+    <!--[if gte mso 9]>
+    <xml>
+        <o:OfficeDocumentSettings>
+            <o:TargetScreenSize>1024x640</o:TargetScreenSize>
+            <o:PixelsPerInch>72</o:PixelsPerInch>
+            <o:AllowPNG/>
+        </o:OfficeDocumentSettings>
+        <w:WordDocument>
+            <w:View>Print</w:View>
+            <w:Zoom>90</w:Zoom>
+            <w:DoNotOptimizeForBrowser/>
+        </w:WordDocument>
+    </xml>
+    <![endif]-->
+    <style>
+                <!--
+        @page Section1 {
+            size: 8.5in 11.0in;
+            margin: 1.0in;
+            mso-header-margin: .5in;
+            mso-footer-margin: .5in;
+            mso-paper-source: 0;
+        }
+
+        table {
+            border: solid 1px;
+            border-collapse: collapse;
+        }
+
+        table td, table th {
+            border: solid 1px;
+            padding: 5px;
+        }
+
+        td {
+            page-break-inside: avoid;
+        }
+
+        tr {
+            page-break-after: avoid;
+        }
+
+        div.Section1 {
+            page: Section1;
+        }
+
+        /* Confluence print stylesheet. Common to all themes for print medi=
+a */
+/* Full of !important until we improve batching for print CSS */
+
+@media print {
+    #main {
+        padding-bottom: 1em !important; /* The default padding of 6em is to=
+o much for printouts */
+    }
+
+    body {
+        font: var(--ds-font-body-small, Arial, Helvetica, FreeSans, sans-se=
+rif);
+    }
+
+    body, #full-height-container, #main, #page, #content, .has-personal-sid=
+ebar #content {
+        background: var(--ds-surface, #fff) !important;
+        color: var(--ds-text, #000) !important;
+        border: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        display: block !important;
+    }
+
+    a, a:link, a:visited, a:focus, a:hover, a:active {
+        color: var(--ds-text, #000);
+    }
+
+    #content h1,
+    #content h2,
+    #content h3,
+    #content h4,
+    #content h5,
+    #content h6 {
+        page-break-after: avoid;
+    }
+
+    pre {
+        font: var(--ds-font-code, Monaco, "Courier New", monospace);
+    }
+
+    #header,
+    .aui-header-inner,
+    #navigation,
+    #sidebar,
+    .sidebar,
+    #personal-info-sidebar,
+    .ia-fixed-sidebar,
+    .page-actions,
+    .navmenu,
+    .ajs-menu-bar,
+    .noprint,
+    .inline-control-link,
+    .inline-control-link a,
+    a.show-labels-editor,
+    .global-comment-actions,
+    .comment-actions,
+    .quick-comment-container,
+    #addcomment {
+        display: none !important;
+    }
+
+    /* CONF-28544 cannot print multiple pages in IE */
+    #splitter-content {
+        position: relative !important;
+    }
+
+    .comment .date::before {
+        content: none !important; /* remove middot for print view */
+    }
+
+    h1.pagetitle img {
+        height: auto;
+        width: auto;
+    }
+
+    .print-only {
+        display: block;
+    }
+
+    #footer {
+        position: relative !important; /* CONF-17506 Place the footer at en=
+d of the content */
+        margin: 0;
+        padding: 0;
+        background: none;
+        clear: both;
+    }
+
+    #poweredby {
+        border-top: none;
+        background: none;
+    }
+
+    #poweredby li.print-only {
+        display: list-item;
+        font-style: italic;
+    }
+
+    #poweredby li.noprint {
+        display: none;
+    }
+
+    /* no width controls in print */
+    .wiki-content .table-wrap,
+    .wiki-content p,
+    .panel .codeContent,
+    .panel .codeContent pre,
+    .image-wrap {
+        overflow: visible !important;
+    }
+
+    /* TODO - should this work? */
+    #children-section,
+    #comments-section .comment,
+    #comments-section .comment .comment-body,
+    #comments-section .comment .comment-content,
+    #comments-section .comment p {
+        page-break-inside: avoid;
+    }
+
+    #page-children a {
+        text-decoration: none;
+    }
+
+    /**
+     hide twixies
+
+     the specificity here is a hack because print styles
+     are getting loaded before the base styles. */
+    #comments-section.pageSection .section-header,
+    #comments-section.pageSection .section-title,
+    #children-section.pageSection .section-header,
+    #children-section.pageSection .section-title,
+    .children-show-hide {
+        padding-left: 0;
+        margin-left: 0;
+    }
+
+    .children-show-hide.icon {
+        display: none;
+    }
+
+    /* personal sidebar */
+    .has-personal-sidebar #content {
+        margin-right: 0px;
+    }
+
+    .has-personal-sidebar #content .pageSection {
+        margin-right: 0px;
+    }
+
+    .no-print, .no-print * {
+        display: none !important;
+    }
+}
+-->
+    </style>
+</head>
+<body>
+    <h1>Payroll Distributions</h1>
+    <div class=3D"Section1">
+        <span class=3D"confluence-embedded-file-wrapper image-center-wrappe=
+r confluence-embedded-manual-size">
+<style>[data-colorid=3Dssrxh0ft6y]{color:#fedec8} html[data-color-mode=3Dda=
+rk] [data-colorid=3Dssrxh0ft6y]{color:#371701}[data-colorid=3Dl87mkj6d97]{c=
+olor:#dfd8fd} html[data-color-mode=3Ddark] [data-colorid=3Dl87mkj6d97]{colo=
+r:#090227}[data-colorid=3Dyc4ssfk90n]{color:#dfd8fd} html[data-color-mode=
+=3Ddark] [data-colorid=3Dyc4ssfk90n]{color:#090227}</style><img class=3D"co=
+nfluence-embedded-image image-center" width=3D"468" loading=3D"lazy" src=3D=
+"2f71c7ab1d1d3068feb0c062209a44142e3d29a4243a813349bc791248f31b6a" data-ima=
+ge-src=3D"https://ministrybrands.atlassian.net/wiki/download/attachments/73=
+71980835/image-20260706-192608.png?version=3D1&amp;modificationDate=3D17833=
+65969908&amp;cacheVersion=3D1&amp;api=3Dv2" data-height=3D"482" data-width=
+=3D"1835" data-unresolved-comment-count=3D"0" data-linked-resource-id=3D"73=
+71194393" data-linked-resource-version=3D"1" data-linked-resource-type=3D"a=
+ttachment" data-linked-resource-default-alias=3D"image-20260706-192608.png"=
+ data-base-url=3D"https://ministrybrands.atlassian.net/wiki" data-linked-re=
+source-content-type=3D"image/png" data-linked-resource-container-id=3D"7371=
+980835" data-linked-resource-container-version=3D"22" data-media-id=3D"4f31=
+3348-a342-434e-bc44-f90440b3a45f" data-media-type=3D"file" height=3D"122"><=
+/span>
+<div class=3D"confluence-information-macro confluence-information-macro-inf=
+ormation">
+<span class=3D"aui-icon aui-icon-small aui-iconfont-info confluence-informa=
+tion-macro-icon"></span>
+<div class=3D"confluence-information-macro-body">
+<p><strong>How to read this page.</strong> Preliminary research on the Payr=
+oll Distributions widget, with insights and a recommended design direction.=
+ Part A is what the widget is and does today (checked live). Part B is who =
+uses it and what the market and the SME tell us. Part C is the brief: jobs =
+to be done, scenarios, constraints, the significant design decisions and th=
+eir rationale, a review of the current redesign attempt, and prioritized ne=
+eds. Status marks: <span class=3D"status-macro aui-lozenge aui-lozenge-visu=
+al-refresh aui-lozenge-success">VERIFIED LIVE</span>, <span class=3D"status=
+-macro aui-lozenge aui-lozenge-visual-refresh aui-lozenge-complete">DESKTOP=
+ RESEARCH</span>, <span class=3D"status-macro aui-lozenge aui-lozenge-visua=
+l-refresh aui-lozenge-progress">SME INTERVIEW</span>, <span class=3D"status=
+-macro aui-lozenge aui-lozenge-visual-refresh aui-lozenge-current">TO CONFI=
+RM</span>. Sources at the bottom.</p>
+</div>
+</div>
+<h1 id=3D"PayrollDistributions-PartA.Whatexiststoday">Part A. What exists t=
+oday</h1>
+<h2 id=3D"PayrollDistributions-1.WhatPayrollDistributionsis">1. What Payrol=
+l Distributions is</h2>
+<p>The widget shows a breakdown of payroll spend by <strong>compensation ty=
+pe</strong> across a chosen date range: how the total paid splits across ca=
+tegories like salary, hourly, housing allowance, and benefits, for any peri=
+od the user picks. Its grain is the category summary (one row per compensat=
+ion type), not a raw list of individual checks. Confirmed live on beta1: re=
+al categories render as org-defined labels, such as "AA Aid" and "Administr=
+ation Staff". These labels ( =E2=80=9CCompensation Types=E2=80=9D) are mana=
+ged under Payroll&gt;Modify&gt;CompensationInformation</p>
+<p><strong>What the grand total means.</strong> The total is the sum of eve=
+ry distribution paid within the selected date range, for the current compan=
+y, across all compensation categories. It is not a single category, and it =
+is not an "as of today" balance: it is money that flowed out over a span of=
+ time. With the default range (1 January to today) it reads as total payrol=
+l paid year to date; narrow the range to a month and it reads as total paid=
+ that month. The category rows are the breakdown; the grand total is their =
+sum. This flow-not-balance nature is the root of the most important design =
+decision on this page (Section 10).</p>
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-complete">DESKTOP RESEARCH</span> <strong>Why compensation type is t=
+he right lens.</strong> The category split is what makes this widget meanin=
+gful rather than a bare total, because in church payroll the compensation c=
+ategories carry the tax treatment. Ordained ministers have a dual tax statu=
+s (employee for income tax, self-employed for Social Security and Medicare)=
+, a designated housing allowance is income-tax-excluded but SECA-liable and=
+ lands in W-2 Box 14, and categories differ in what they are subject to. So=
+ a category is not just a label, it signals how that pay is taxed and repor=
+ted, which is why an administrator reasons about payroll by category. This =
+is context for why the grain is right; it is not a task the user performs h=
+ere (there are no tax jobs in Section 6). Sources: <a href=3D"https://www.i=
+rs.gov/taxtopics/tc417" class=3D"external-link" rel=3D"nofollow">IRS Topic =
+417</a>, <a href=3D"https://www.irs.gov/faqs/interest-dividends-other-types=
+-of-income/ministers-compensation-housing-allowance/ministers-compensation-=
+housing-allowance" class=3D"external-link" rel=3D"nofollow">IRS housing all=
+owance</a>, <a href=3D"https://churchshield.com/blog/how-do-churches-pay-th=
+eir-employees/" class=3D"external-link" rel=3D"nofollow">ChurchShield</a>, =
+<a href=3D"https://auxilio.partners/insights/understanding-the-dual-tax-sta=
+tus-of-clergy" class=3D"external-link" rel=3D"nofollow">Auxilio</a>.</p>
+<h2 id=3D"PayrollDistributions-2.Wherethedatacomesfrom">2. Where the data c=
+omes from</h2>
+<p>Original documentation, validated against Shelby's own dashboard referen=
+ce. The widget totals the amount per compensation type for checks issued wi=
+thin the selected date range. Voided checks and certain internal check type=
+s are excluded, so figures reflect only real, valid payments. There is no c=
+ache: every load or refresh queries live payroll records. Note for later de=
+cisions: because PRHistory stores the actual check date of every processed =
+payroll, the real pay dates an org has already run are available in the dat=
+a.</p>
+<div class=3D"table-wrap">
+<table data-table-width=3D"1296" data-layout=3D"default" class=3D"confluenc=
+eTable">
+<colgroup>
+<col style=3D"width: 317.0px;">
+<col style=3D"width: 979.0px;">
+</colgroup>
+<tbody>
+<tr>
+<th class=3D"confluenceTh">
+<p>Table</p></th>
+<th class=3D"confluenceTh">
+<p>What it holds</p></th>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>PRHistory</p></td>
+<td class=3D"confluenceTd">
+<p>Payroll run records, each processed payroll including check date and che=
+ck type</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>PRHistoryCompensation</p></td>
+<td class=3D"confluenceTd">
+<p>The compensation line items within each run, including category and amou=
+nt</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<h2 id=3D"PayrollDistributions-3.Thewidgettoday">3. The widget today</h2>
+<div class=3D"table-wrap">
+<table data-table-width=3D"1296" data-layout=3D"default" class=3D"confluenc=
+eTable">
+<tbody>
+<tr>
+<th class=3D"confluenceTh">
+<p>Behavior</p></th>
+<th class=3D"confluenceTh">
+<p>Status</p></th>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Left: a table listing each compensation category with its total amount f=
+or the period, and a totals row (count of categories, overall sum). Seen li=
+ve: two rows plus "Total 2 Distributions =C2=A35,090.63"</p></td>
+<td class=3D"confluenceTd">
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-success">VERIFIED LIVE</span> (beta1)</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Right: a pie chart "By Distributions", one segment per compensation cate=
+gory, amount shown on hover only</p></td>
+<td class=3D"confluenceTd">
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-success">VERIFIED LIVE</span> (beta1)</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Beginning and Ending date pickers. Beginning defaults to 1 January of th=
+e current year, Ending to today. Both panels are intended to cover the same=
+ range</p></td>
+<td class=3D"confluenceTd">
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-success">VERIFIED LIVE</span> (controls), both-panels-update <span c=
+lass=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-lozenge-cur=
+rent">TO CONFIRM</span></p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Refresh reruns the query for the current range. No drill-down: clicking =
+a row or segment opens nothing</p></td>
+<td class=3D"confluenceTd">
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-success">VERIFIED LIVE</span></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<h2 id=3D"PayrollDistributions-4.Liveaudit(15Jul2026)">4. Live audit (15 Ju=
+l 2026)</h2>
+<p>Two environments. Passes 1 and 2 on asmdev (company 101, empty of payrol=
+l) covered structure, states, date persistence, and the Payroll module walk=
+. Pass 3 on beta1.accounting.myamplify.io (company "1 Saint Michael Church"=
+, populated) covered the widget with real data. Method throughout: DOM and =
+accessibility-tree inspection plus interaction testing. The populated pass =
+confirmed the accessibility findings on real data and settled the category-=
+grain question; only both-panels-update-on-date-change remains genuinely op=
+en.</p>
+<p><strong>Populated data seen (beta1):</strong> two categories, "AA Aid" =
+=C2=A3560.00 and "Administration Staff" =C2=A34,530.63, Total 2 Distributio=
+ns =C2=A35,090.63, with a matching two-segment pie.</p>
+<div class=3D"table-wrap">
+<table data-table-width=3D"1296" data-layout=3D"default" class=3D"confluenc=
+eTable">
+<tbody>
+<tr>
+<th class=3D"confluenceTh">
+<p>Finding</p></th>
+<th class=3D"confluenceTh">
+<p>Status</p></th>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Beginning and Ending date inputs are properly labeled, each with a "pick=
+ date" button. Better than the Deposits On Hand widget's unlabeled filter</=
+p></td>
+<td class=3D"confluenceTd">
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-success">VERIFIED LIVE</span></p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Refresh is a plain link with <strong>no freshness timestamp</strong>. Co=
+nsistent with the live-query design, but the user gets no "data as of" sign=
+al</p></td>
+<td class=3D"confluenceTd">
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-success">VERIFIED LIVE</span></p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p><strong>The grid is three separate HTML tables</strong> (header, body, t=
+otals), cells exposed as generic nodes not th/td, confirmed on populated da=
+ta. A screen reader gets a flat text stream with no column association betw=
+een a category and its amount. WCAG 1.3.1 failure, same as Deposits On Hand=
+</p></td>
+<td class=3D"confluenceTd">
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-success">VERIFIED LIVE</span> (beta1, populated)</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p><strong>Pie values are hover-only.</strong> On populated data the segmen=
+t amounts live only in a hidden textbox feeding the JS renderer, absent fro=
+m the accessibility tree. The table is the only accessible source of amount=
+s, and it lacks column semantics. So a non-visual user has no reliable way =
+to read the breakdown</p></td>
+<td class=3D"confluenceTd">
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-success">VERIFIED LIVE</span> (beta1, populated)</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Empty state is "No records to display." with a blank Total Distributions=
+ row: no explicit zero, no explanation, no recovery. A fresh org or an empt=
+y range hits this immediately, so it is the widget's de facto first impress=
+ion</p></td>
+<td class=3D"confluenceTd">
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-success">VERIFIED LIVE</span></p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Category names are <strong>org-defined and unpredictable</strong> ("AA A=
+id", "Administration Staff" on beta1), not a standard pay-type taxonomy</p>=
+</td>
+<td class=3D"confluenceTd">
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-success">VERIFIED LIVE</span> (beta1)</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Currency renders from client or server culture, not the org: =C2=A3 show=
+n on a US product, on <strong>real data</strong> not just the empty state. =
+Date inputs likewise render dd/mm/yyyy. Same localization root-cause questi=
+on as the Deposits On Hand audit</p></td>
+<td class=3D"confluenceTd">
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-success">VERIFIED LIVE</span> (beta1)</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>The widget title links to the widget chooser (17 panels), not the Payrol=
+l module</p></td>
+<td class=3D"confluenceTd">
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-success">VERIFIED LIVE</span></p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p><strong>The date range persists across a page reload</strong> (asmdev, p=
+ass 2). No reset on load. Logout/login persistence untested</p></td>
+<td class=3D"confluenceTd">
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-success">VERIFIED LIVE</span></p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p><strong>The Payroll module has a read layer:</strong> View &gt; Earnings=
+ Inquiry. Its filter is a single Employee picker plus check-date presets an=
+d Regular/Manual/Voided toggles, so it is a <strong>per-employee earnings l=
+ookup, not a distribution-level view</strong>. Relevant to drill-through (f=
+lag F8)</p></td>
+<td class=3D"confluenceTd">
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-success">VERIFIED LIVE</span></p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Company context is remembered per module (asmdev): opening Payroll switc=
+hed to company 100 while the dashboard ran 101, which is why the widget was=
+ empty there. The widget reads the dashboard's active company</p></td>
+<td class=3D"confluenceTd">
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-success">VERIFIED LIVE</span></p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p><strong>Still open: both-panels-update-on-date-change.</strong> On beta1=
+ the totals did not change across date edits, but the ASP.NET date control =
+may not have committed the programmatically set value before the postback, =
+so this is inconclusive, not a negative result</p></td>
+<td class=3D"confluenceTd">
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-current">TO CONFIRM</span> Needs a clean manual date pick or a datas=
+et spanning multiple periods</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<h1 id=3D"PayrollDistributions-PartB.Usersandmarket">Part B. Users and mark=
+et</h1>
+<h2 id=3D"PayrollDistributions-5.Personas">5. Personas</h2>
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-complete">DESKTOP RESEARCH</span> and <span class=3D"status-macro au=
+i-lozenge aui-lozenge-visual-refresh aui-lozenge-progress">SME INTERVIEW</s=
+pan>. The primary persona is Ministry Brands Accounting's primary persona; =
+payroll is run at the individual church, not at a headquarters.</p>
+<div class=3D"table-wrap">
+<table data-table-width=3D"1077" data-layout=3D"default" class=3D"confluenc=
+eTable">
+<tbody>
+<tr>
+<th class=3D"confluenceTh">
+<p>Persona</p></th>
+<th class=3D"confluenceTh">
+<p>Relationship to this widget</p></th>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p><strong>P1. Church bookkeeper or business administrator (primary)</stron=
+g></p></td>
+<td class=3D"confluenceTd">
+<p>Runs payroll, often part time or wearing several hats. Needs to see what=
+ was paid, in what categories, and whether it looks right. Frequently not a=
+ payroll specialist, so clergy tax complexity is a burden they carry, not a=
+n expertise they hold (<a href=3D"https://churchshield.com/blog/how-do-chur=
+ches-pay-their-employees/" class=3D"external-link" rel=3D"nofollow">ChurchS=
+hield</a>). This is Ministry Brands Accounting's primary persona.</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p><strong>P2. Senior/lead pastor or executive pastor (oversight)</strong><=
+/p></td>
+<td class=3D"confluenceTd">
+<p>Reviews total comp cost and its distribution for budgeting and board rep=
+orting. Wants the "where did payroll go" answer without reading a register.=
+ Thinks in calendar and fiscal terms (year to date, this year), not pay run=
+s.</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p><strong>P3. Treasurer / finance committee (governance)</strong></p></td>
+<td class=3D"confluenceTd">
+<p>Volunteer oversight. Uses category totals to sanity-check budget vs actu=
+al and to answer board questions. Often relies on reports rather than loggi=
+ng in, so access for this persona is partly a licensing question.</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p><strong>P4. External bookkeeper or payroll service (contextual)</strong>=
+</p></td>
+<td class=3D"confluenceTd">
+<p>Some churches outsource. When they do, this widget is a quick internal c=
+heck against what the service reports.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><span data-colorid=3D"ssrxh0ft6y">Note the split that matters for design=
+: P1 thinks operationally (by pay run, "did the last payroll look right"), =
+while P2 and P3 think in calendar and fiscal periods ("what have we spent t=
+his year"). The period control has to serve both mindsets. </span>This is c=
+entral to Section 10.</p>
+<h2 id=3D"PayrollDistributions-6.Jobstobedone,andwhethertheproductsupportst=
+hemtoday">6. Jobs to be done, and whether the product supports them today</=
+h2>
+<div class=3D"table-wrap">
+<table data-table-width=3D"1077" data-layout=3D"default" class=3D"confluenc=
+eTable">
+<tbody>
+<tr>
+<th class=3D"confluenceTh">
+<p>Job</p></th>
+<th class=3D"confluenceTh">
+<p>When / so that</p></th>
+<th class=3D"confluenceTh">
+<p>Possible today?</p></th>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p><strong>1. Payroll spend pulse check</strong></p></td>
+<td class=3D"confluenceTd">
+<p>After a pay run, see total paid and the split by category, confirm it ma=
+tches expectation</p></td>
+<td class=3D"confluenceTd">
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-success">YES</span> This is the widget's core and it does it</p></td=
+>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p><strong>2. Category composition</strong></p></td>
+<td class=3D"confluenceTd">
+<p>See how much went to salary vs housing vs benefits, for tax and budget r=
+easoning</p></td>
+<td class=3D"confluenceTd">
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-current">PARTLY</span> Totals exist, but only as hover values on the=
+ pie plus a table; no share shown</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p><strong>3. Period comparison (rejected, see 10.3)</strong></p></td>
+<td class=3D"confluenceTd">
+<p>Compare this period's payroll to a previous one, to catch an unexpected =
+jump</p></td>
+<td class=3D"confluenceTd">
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-error">REJECTED</span> Trend and comparison are out of scope for thi=
+s widget (10.3): not worth the complexity, and would need dedicated researc=
+h and a business case</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p><strong>4. Scope to a pay group (deferred, see 10.4)</strong></p></td>
+<td class=3D"confluenceTd">
+<p>An org running a church plus a school or daycare wants one pay group's d=
+istributions, not all combined</p></td>
+<td class=3D"confluenceTd">
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-error">NO, DEFERRED</span> Real need (SME, 8b), but the pay-group da=
+ta model is not understood well enough to design against; deferred this pas=
+s (8c, 10.4)</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p><strong>5. Reconcile a category to detail</strong></p></td>
+<td class=3D"confluenceTd">
+<p>A category looks off, see the checks or employees behind it</p></td>
+<td class=3D"confluenceTd">
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-error">NO</span> No drill-down; Earnings Inquiry is per-employee, no=
+t per-distribution (Section 4)</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p><strong>6. Board / budget reporting</strong></p></td>
+<td class=3D"confluenceTd">
+<p>Produce a clean by-category payroll figure for a meeting</p></td>
+<td class=3D"confluenceTd">
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-current">PARTLY</span> Numbers are here but not export- or presentat=
+ion-ready</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Non-jobs:</strong> running or editing payroll, tax filing, emplo=
+yee record management, per-employee pay stubs. Those live in the Payroll mo=
+dule proper.</p>
+<h2 id=3D"PayrollDistributions-7.Contextscenarios">7. Context scenarios</h2=
+>
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-complete">DESKTOP RESEARCH</span> and <span class=3D"status-macro au=
+i-lozenge aui-lozenge-visual-refresh aui-lozenge-progress">SME INTERVIEW</s=
+pan>, grounded in the domain and verified behavior. Each ends with how it p=
+lays out today.</p>
+<p><strong>A. Just after a pay run.</strong> The bookkeeper runs the monthl=
+y payroll and opens the dashboard to confirm the total and that housing all=
+owance landed in its own category. Today: the widget shows the categories i=
+f the dashboard is on the right company and the range covers the run; there=
+ is no quick period control, so they adjust dates by hand.</p>
+<p><strong>B. Budget season.</strong> The executive pastor wants salary vs =
+benefits vs housing, year to date. Today: this year's split is available on=
+ce the range is set to year to date.</p>
+<p><strong>C. A number looks wrong.</strong> Benefits look high. The bookke=
+eper wants to see which employees or checks drove it. Today: no drill from =
+the widget, and Earnings Inquiry only answers per named employee, so they g=
+o employee by employee or run a report.</p>
+<p><strong>D. Multi-entity org.</strong> A church that also runs a school a=
+nd a daycare wants payroll for just the school's pay group. Today: all pay =
+groups are combined; no way to isolate one. (SME interview, 8b; pay group d=
+eferred per 8c and 10.4.)</p>
+<p><strong>E. Board meeting prep.</strong> The treasurer needs a defensible=
+ by-category payroll total. Today: they read the widget and retype the figu=
+res into their board doc; no export.</p>
+<p><strong>F. New or payroll-free church.</strong> A church that does not r=
+un payroll here, or a brand-new setup, selects the widget and sees "No reco=
+rds to display" with a blank total. Today: no explanation of what the widge=
+t is or how to populate it.</p>
+<h2 id=3D"PayrollDistributions-8.Competitorandanalogbenchmark">8. Competito=
+r and analog benchmark</h2>
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-complete">DESKTOP RESEARCH</span> Church payroll tools compete on cl=
+ergy-specific handling (dual status, housing allowance) and increasingly on=
+ clear dashboards. None expose exactly a "distributions by compensation typ=
+e" dashboard widget, but the category-of-pay breakdown is a common report, =
+and the market baseline for a dashboard figure is one-click drill to detail=
+.</p>
+<div id=3D"expander-2143723693" class=3D"expand-container">
+<div id=3D"expander-control-2143723693" class=3D"expand-control">
+<span class=3D"expand-control-icon"><img style=3D"vertical-align:middle;" c=
+lass=3D"expand-control-image" src=3D"9b45ae8c85c16a66aad904c0270f58d8cbd79c=
+476bc8d003bcec7b51f05e1f85" width=3D"16" height=3D"16"></span><span class=
+=3D"expand-control-text">Benchmark detail</span>
+</div>
+<div id=3D"expander-content-2143723693" class=3D"expand-content">
+<div class=3D"table-wrap">
+<table data-table-width=3D"960" data-layout=3D"default" class=3D"confluence=
+Table">
+<tbody>
+<tr>
+<th class=3D"confluenceTh">
+<p>Product</p></th>
+<th class=3D"confluenceTh">
+<p>Relevant pattern</p></th>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>MinistryWorks (Brotherhood Mutual)</p></td>
+<td class=3D"confluenceTd">
+<p>Built for ministry and clergy tax law; dedicated payroll specialists; ha=
+ndles clergy housing allowance natively. Sets the domain bar for category c=
+orrectness (<a href=3D"https://www.techrepublic.com/article/top-church-payr=
+oll-services/" class=3D"external-link" rel=3D"nofollow">TechRepublic</a>).<=
+/p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>QuickBooks Payroll</p></td>
+<td class=3D"confluenceTd">
+<p>Multiple pay types including clergy housing allowance; powerful payroll =
+reports to see who was paid what and when; drillable report layer (<a href=
+=3D"https://quickbooks.intuit.com/payroll/church/" class=3D"external-link" =
+rel=3D"nofollow">QuickBooks</a>).</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Gusto</p></td>
+<td class=3D"confluenceTd">
+<p>Polished dashboard; handles FICA exemption for ministers and housing all=
+owance payouts; automatic breakdowns marketed as a feature (<a href=3D"http=
+s://theleadpastor.com/tools/best-church-payroll-software/" class=3D"externa=
+l-link" rel=3D"nofollow">The Lead Pastor</a>).</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Rippling / Paycor / Dayforce</p></td>
+<td class=3D"confluenceTd">
+<p>Configurable pay categories and real-time dashboards with audit trails; =
+enterprise-grade drill into any figure. Multi-entity payroll platforms trea=
+t legal entity, location, and <strong>pay group</strong> as first-class sco=
+ping units, with consolidated reporting that can be filtered down to one un=
+it.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<p>Takeaway: the market leaders make the by-category view <strong>drillable=
+</strong> and treat clergy categories as first-class. This widget already h=
+as the right grain; where it trails is drill and status. (Market tools also=
+ lean on period comparison, but that is out of scope here, see 10.3.)</p>
+<h2 id=3D"PayrollDistributions-8b.SMEinterview:BenLane(13Jul2026)">8b. SME =
+interview: Ben Lane (13 Jul 2026)</h2>
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-progress">SME INTERVIEW</span> From "Accounting Dashboards: SME Inte=
+rview &amp; Hallway Testing" (<a href=3D"https://app.heymarvin.com/projects=
+/63398/media/41887339/" class=3D"external-link" rel=3D"nofollow">Marvin</a>=
+). The SME is a long-tenured Shelby trainer and onboarding specialist.</p>
+<div class=3D"table-wrap">
+<table data-table-width=3D"1077" data-layout=3D"default" class=3D"confluenc=
+eTable">
+<tbody>
+<tr>
+<th class=3D"confluenceTh">
+<p>What the SME said</p></th>
+<th class=3D"confluenceTh">
+<p>Consequence</p></th>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p><strong>Usage signal.</strong> Named payroll distributions among the wid=
+gets clients "like really well", and Payroll is a core module.</p></td>
+<td class=3D"confluenceTd">
+<p>Reach is high. Raises the payoff of every improvement here</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p><strong>Date range is for pay periods, mostly by month.</strong> "They'r=
+e doing it by pay period and want to do it by a month"; finding the pay cyc=
+le is the more common reason to change dates</p></td>
+<td class=3D"confluenceTd">
+<p>The period control is the primary control of this widget. Month is the m=
+ost common window</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p><strong>Keep a custom / specific date option always.</strong> Auto perio=
+d presets "would work" as a convenience, "just as long as they still do hav=
+e an option to do specific"</p></td>
+<td class=3D"confluenceTd">
+<p>Any presets are additive, never a replacement. Custom range must always =
+be present</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p><strong>Filter by pay group.</strong> Orgs may run "a daycare, or a scho=
+ol, and a church"; they may all pay on the same frequency but "want to be a=
+ble to limit it by pay group". Pay group is already a payroll function. "If=
+ you could do it by pay group and by date, I think that would solve it"</p>=
+</td>
+<td class=3D"confluenceTd">
+<p>A real, specific need for multi-entity orgs. But see 8c: the pay-group d=
+ata model is not understood well enough to design a filter against yet</p><=
+/td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p><strong>Drill to detail is loved elsewhere.</strong> Clicking a line on =
+a report to see its detail is "a feature that is loved by our clients"; the=
+ SME would welcome the same on the dashboard</p></td>
+<td class=3D"confluenceTd">
+<p>Supports serving JTBD 5. Users expect it to feel like the report drill t=
+hey already know</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p><strong>Company switch should be global.</strong> When someone changes c=
+ompany, most want every widget to follow; per-widget company benefits only =
+a few large multi-entity HQs</p></td>
+<td class=3D"confluenceTd">
+<p>Confirms the company-scoping constraint (9.3)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<h2 id=3D"PayrollDistributions-8c.Paygroups:whatwefound,andwhythepictureisn=
+otyetclearenoughtodesignagainst">8c. Pay groups: what we found, and why the=
+ picture is not yet clear enough to design against</h2>
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-success">VERIFIED LIVE</span> (95301 and beta1) and <span class=3D"s=
+tatus-macro aui-lozenge aui-lozenge-visual-refresh aui-lozenge-progress">CO=
+NFIRMED BY OISIN CURRAN</span> (page comments, 16 Jul). This section docume=
+nts what we could and could not establish about pay groups, because it dete=
+rmines whether a pay-group filter (JTBD 4, 10.4) can responsibly be designe=
+d this pass.</p>
+<p><strong>What we established:</strong></p>
+<ul>
+<li>
+<p>Pay groups exist and are set up under Payroll &gt; Modify &gt; <strong>E=
+mployer Information</strong>, as a named list (the defaults "Group A" throu=
+gh "Group E" on the test company). On that screen a pay group is just a nam=
+e among other employer settings; it does not visibly carry its own pay freq=
+uency or schedule. <span class=3D"status-macro aui-lozenge aui-lozenge-visu=
+al-refresh aui-lozenge-success">VERIFIED LIVE</span></p></li>
+<li>
+<p>The multi-entity need is real and specific: an org running, say, a dayca=
+re, a school, and a church would use pay groups to separate them, and wants=
+ to read one entity's distributions without the others mixed in (SME, 8b). =
+For a single-entity church (everyone in one group, or the A=E2=80=93E defau=
+lts untouched) a pay-group filter adds nothing.</p></li>
+</ul>
+<p><strong>What we could not resolve, and this is the problem:</strong> the=
+ relationship between the several overlapping payroll concepts is unclear, =
+and they are easy to conflate. There is <strong>compensation type</strong> =
+(the widget's existing category grain, set up under CompensationInformation=
+, and one employee can have several), there is <strong>pay group</strong> (=
+set up under Employer Information), and there is also a <strong>pay type</s=
+trong> concept encountered in the product. On the individual employee recor=
+d there is no field plainly labelled "pay group", so how an employee actual=
+ly maps to a pay group, and how pay group relates to pay type and to compen=
+sation type, is not something we could pin down from the UI in this pass. W=
+e also could not confirm whether an employee can belong to more than one gr=
+oup, or, critically, whether a historical distribution record (PRHistory / =
+PRHistoryCompensation) even carries a pay-group key at all. Oisin flagged t=
+his last point as one for Value Labs, noting the pay/hours breakdown is sto=
+red but not whether the pay-group link sits on the distribution table or el=
+sewhere.</p>
+<p><strong>Why this matters for design:</strong> a filter is only as sound =
+as the data model under it. We cannot design a pay-group filter, decide whe=
+ther it is one selector or several, whether it composes with the date range=
+, what it should return when an employee has moved groups mid-year, without=
+ first understanding what a pay group is in the data and how it attaches to=
+ a distribution. Getting that understanding is not a quick lookup; it is a =
+proper investigation into the payroll data model (pay group vs pay type vs =
+compensation type, and their mapping to history), and it needs someone who =
+can see the schema, i.e. Value Labs. That is significant effort, disproport=
+ionate to bolting one optional filter onto one widget unless the multi-enti=
+ty need is prioritised in its own right.</p>
+<h1 id=3D"PayrollDistributions-PartC.Designerbrief">Part C. Designer brief<=
+/h1>
+<h2 id=3D"PayrollDistributions-9.Thebrief">9. The brief</h2>
+<div class=3D"panel" style=3D"background-color: #EAE6FF;border-color: #998D=
+D9;border-width: 1px;">
+<div class=3D"panelContent" style=3D"background-color: #EAE6FF;">
+<p>Jobs, states, and constraints in one place. This is the problem the desi=
+gn must solve. Read with Section 10 (the significant decisions and trade-of=
+fs) and Section 11 (the review of the current redesign attempt). Design ide=
+as appear as options with their reasoning, for the designer to weigh, not a=
+s instructions.</p>
+</div>
+</div>
+<h3 id=3D"PayrollDistributions-9.1Whattopreserve">9.1 What to preserve</h3>
+<p>The compensation-type grain is correct and hard-won; do not revert it to=
+ a per-check list. The live-query freshness (no stale cache) is a strength.=
+ Labeled date inputs are already better than the sibling widget.</p>
+<h3 id=3D"PayrollDistributions-9.2Widgetstates">9.2 Widget states</h3>
+<div class=3D"table-wrap">
+<table data-table-width=3D"1077" data-layout=3D"default" class=3D"confluenc=
+eTable">
+<tbody>
+<tr>
+<th class=3D"confluenceTh">
+<p>State</p></th>
+<th class=3D"confluenceTh">
+<p>What the user should get</p></th>
+<th class=3D"confluenceTh">
+<p>Status</p></th>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Org does not run Payroll (no module)</p></td>
+<td class=3D"confluenceTd">
+<p>Widget absent from the chooser, no teaser</p></td>
+<td class=3D"confluenceTd">
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-current">TO CONFIRM</span> entitlement detection <a class=3D"conflue=
+nce-userlink user-mention current-user-mention" data-account-id=3D"712020:c=
+9d98ec9-c34d-4652-978c-957d632b2a23" href=3D"https://ministrybrands.atlassi=
+an.net/wiki/people/712020:c9d98ec9-c34d-4652-978c-957d632b2a23?ref=3Dconflu=
+ence" target=3D"_blank" data-linked-resource-id=3D"6600884232" data-linked-=
+resource-version=3D"1" data-linked-resource-type=3D"userinfo" data-base-url=
+=3D"https://ministrybrands.atlassian.net/wiki">Oisin Curran</a> <a class=3D=
+"confluence-userlink user-mention" data-account-id=3D"712020:1d721d4a-5dc6-=
+4a11-81b7-e415de2e5d78" href=3D"https://ministrybrands.atlassian.net/wiki/p=
+eople/712020:1d721d4a-5dc6-4a11-81b7-e415de2e5d78?ref=3Dconfluence" target=
+=3D"_blank" data-linked-resource-id=3D"5556502538" data-linked-resource-ver=
+sion=3D"1" data-linked-resource-type=3D"userinfo" data-base-url=3D"https://=
+ministrybrands.atlassian.net/wiki">Feargal Phelan</a> - Please confirm - or=
+gs with no payroll application should not see this widget on their dashboar=
+d or =E2=80=9Cadd widget=E2=80=9D</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Module present, no rights</p></td>
+<td class=3D"confluenceTd">
+<p>Widget hidden for that user</p></td>
+<td class=3D"confluenceTd">
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-current">TO CONFIRM</span> <a class=3D"confluence-userlink user-ment=
+ion" data-account-id=3D"712020:1d721d4a-5dc6-4a11-81b7-e415de2e5d78" href=
+=3D"https://ministrybrands.atlassian.net/wiki/people/712020:1d721d4a-5dc6-4=
+a11-81b7-e415de2e5d78?ref=3Dconfluence" target=3D"_blank" data-linked-resou=
+rce-id=3D"5556502538" data-linked-resource-version=3D"1" data-linked-resour=
+ce-type=3D"userinfo" data-base-url=3D"https://ministrybrands.atlassian.net/=
+wiki">Feargal Phelan</a> <a class=3D"confluence-userlink user-mention curre=
+nt-user-mention" data-account-id=3D"712020:c9d98ec9-c34d-4652-978c-957d632b=
+2a23" href=3D"https://ministrybrands.atlassian.net/wiki/people/712020:c9d98=
+ec9-c34d-4652-978c-957d632b2a23?ref=3Dconfluence" target=3D"_blank" data-li=
+nked-resource-id=3D"6600884232" data-linked-resource-version=3D"1" data-lin=
+ked-resource-type=3D"userinfo" data-base-url=3D"https://ministrybrands.atla=
+ssian.net/wiki">Oisin Curran</a> is there specific permissions tied to this=
+ - how do we read them, can we read them and can we hide the widget from us=
+ers with no permissions if that is the case - or do we want to have a =E2=
+=80=9Cno access=E2=80=9D (contact your org administrator )?</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>No payroll yet in range</p></td>
+<td class=3D"confluenceTd">
+<p>A purposeful empty state: explains what the widget is in one line, shows=
+ an explicit zero total (not a blank), and offers a way to change the perio=
+d. A link to run payroll only if the user has the right</p></td>
+<td class=3D"confluenceTd">
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-success">APPROVED AND DESIGNED</span></p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Loading / error</p></td>
+<td class=3D"confluenceTd">
+<p>A loading state in the final layout; on error, a message and a way to re=
+try, never a blank total that reads as zero pay</p></td>
+<td class=3D"confluenceTd">
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-complete">PROPOSED</span> <span class=3D"status-macro aui-lozenge au=
+i-lozenge-visual-refresh aui-lozenge-complete">TO BE DESIGNED</span></p></t=
+d>
+</tr>
+</tbody>
+</table>
+</div>
+<h3 id=3D"PayrollDistributions-9.3Constraints">9.3 Constraints</h3>
+<div class=3D"table-wrap">
+<table data-table-width=3D"1077" data-layout=3D"default" class=3D"confluenc=
+eTable">
+<tbody>
+<tr>
+<th class=3D"confluenceTh">
+<p>Constraint</p></th>
+<th class=3D"confluenceTh">
+<p>What it means</p></th>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Widget views (established shell)</p></td>
+<td class=3D"confluenceTd">
+<p>The widget lives in the platform's existing set of <strong>views</strong=
+> =E2=80=94 a content-depth vector, not a size vector: <strong>glance, deta=
+il, explore</strong>. Any view may span 3, 4, 6, or 12 columns of the 12-co=
+lumn grid depending on screen width, breakpoint, and the view itself, so "v=
+iew" describes content depth, not a fixed footprint. There is also a <stron=
+g>focus</strong> state: an isolate-and-focus overlay (the widget expanded i=
+n place over the dashboard), not a fourth view and not navigation to anothe=
+r page. This is a made and built decision, not a question; it is the materi=
+al to design within. The source of truth for the views is the widget shell =
+component in the Pathway master file: <a href=3D"https://www.figma.com/desi=
+gn/3sw45aVcngFAmpbP6cfrXP/%E2%9D%87%EF%B8%8F--Pathway-Design-System--Master=
+-File--MB-2.0-?node-id=3D40009622-39702" class=3D"external-link" rel=3D"nof=
+ollow">widget shell (Figma)</a>. See 10.8 for a suggested content mapping a=
+cross the views.</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Clergy tax categories are first-class</p></td>
+<td class=3D"confluenceTd">
+<p>Housing allowance, SECA allowance, and the clergy/lay split are meaningf=
+ul groupings, not arbitrary line items. Category labels must be the org's o=
+wn, shown faithfully.</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Categories are org-defined and variable</p></td>
+<td class=3D"confluenceTd">
+<p>Compensation categories come from the org's own setup. Names and counts =
+differ per church; never assume a fixed category list. Confirmed live: "AA =
+Aid", "Administration Staff".</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Regulated figures</p></td>
+<td class=3D"confluenceTd">
+<p>Payroll totals feed W-2s, tax filings, and board reporting. The widget s=
+hould signal how current its data is.</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Rights and PII</p></td>
+<td class=3D"confluenceTd">
+<p>Pay data is sensitive. Visibility follows user rights; any drill to per-=
+employee detail must respect payroll-view permissions.</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Company scoping</p></td>
+<td class=3D"confluenceTd">
+<p>Company (with fiscal year, period, bank account) is <strong>global produ=
+ct context</strong>, set in the top-right switcher for the whole Accounting=
+ product, not a per-widget control. The widget reads whatever company is ac=
+tive there (verified). Company switch is global for the majority (SME, 8b).=
+ A widget-level scope (such as pay group) would be a genuinely new kind of =
+control, not an extension of company scoping.</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Accessibility (Pathway AA)</p></td>
+<td class=3D"confluenceTd">
+<p>Amounts must be readable as text, not hover-only. The breakdown must be =
+programmatically associated with its labels. Controls and any icon-only but=
+tons must be named and keyboard-reachable. The current widget fails this on=
+ real data.</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Plain language</p></td>
+<td class=3D"confluenceTd">
+<p>Part-time non-specialist users. "Total paid", "Housing allowance", not c=
+odes or jargon.</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Works within the widget, not new pages</p></td>
+<td class=3D"confluenceTd">
+<p>For now, everything the widget offers (including any detail view) should=
+ live in the widget and its focus overlay, not spawn new module pages or re=
+ports.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<h2 id=3D"PayrollDistributions-10.Significantdesigndecisionsandtrade-offs">=
+10. Significant design decisions and trade-offs</h2>
+<p>This section records the decisions that shape the widget and, above all,=
+ <em>why</em>, so the reasoning is not lost. It names user needs and the ev=
+idence behind them. Where it mentions a possible solution, that is offered =
+as an option with its rationale for the designer to decide, not as a spec.<=
+/p>
+<h3 id=3D"PayrollDistributions-10.1Theperiodcontrolistheprimarycontrol,andi=
+tmustservetwomindsets">10.1 The period control is the primary control, and =
+it must serve two mindsets</h3>
+<p><strong>Decision:</strong> the single most important control is how the =
+user sets the period the total covers. As a user, I need to easily control =
+the period I am looking at, or set my own custom range.</p>
+<p><strong>Why it is not the same as Deposits On Hand:</strong> Deposits On=
+ Hand shows a <em>balance</em>, which has a meaningful "as of today" value,=
+ so it can lead with today's number. Payroll Distributions shows a <em>flow=
+</em>: money paid over a span. There is no single-day value (most days nobo=
+dy is paid), so the total only means something across a window. The control=
+ therefore has to define a span, and the headline number is the <strong>sum=
+ across that span</strong>, not a latest value.</p>
+<p><strong>Two mindsets to serve (Section 5):</strong> operational users (P=
+1) think by pay run ("did the last payroll look right"); reporting users (P=
+2, P3) think in calendar and fiscal periods ("what have we spent this year"=
+), which is also how boards, budgets, and tax filings are framed. The SME c=
+onfirms both: pay-period thinking, "mostly by month", and a strong year-to-=
+date orientation elsewhere in the same session. The period control needs to=
+ answer both without forcing either group into the other's vocabulary. Cust=
+om range must always be available (SME, hard requirement).</p>
+<h3 id=3D"PayrollDistributions-10.2Thehardtrade-off:whatunitshouldtheperiod=
+comein?">10.2 The hard trade-off: what unit should the period come in?</h3>
+<p>This is the crux, and it was worked through carefully because the obviou=
+s answer is wrong in a way that matters for a regulated figure. Three candi=
+date units were considered.</p>
+<div class=3D"table-wrap">
+<table data-table-width=3D"1200" data-layout=3D"default" class=3D"confluenc=
+eTable">
+<tbody>
+<tr>
+<th class=3D"confluenceTh">
+<p>Option</p></th>
+<th class=3D"confluenceTh">
+<p>The idea</p></th>
+<th class=3D"confluenceTh">
+<p>Why it falls short</p></th>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p><strong>A. Calendar spans</strong> (this month, this quarter, YTD, this =
+year, custom)</p></td>
+<td class=3D"confluenceTd">
+<p>Familiar units that match how boards, budgets, and tax filings are frame=
+d. Always well-defined regardless of how an org is structured</p></td>
+<td class=3D"confluenceTd">
+<p>A calendar month does not always contain the same number of pay runs. Bi=
+weekly pay produces 26 periods a year, so two months each year carry a thir=
+d paycheck (the documented "three-paycheck month"). This makes calendar win=
+dows unreliable for any period-over-period math, though that is now moot si=
+nce comparison is out of scope (10.3). For simply displaying a chosen span'=
+s total, calendar spans are fine</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p><strong>B. Declared pay cycle</strong> (know the org is biweekly, count =
+back)</p></td>
+<td class=3D"confluenceTd">
+<p>Would be the most "native" framing, aligned to how payroll actually runs=
+</p></td>
+<td class=3D"confluenceTd">
+<p>Rejected. We cannot know an org's schedule in advance, and different pay=
+ groups within one org can run on different cadences, so there is no single=
+ "the pay cycle" at the company level</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p><strong>C. Retrospective pay dates</strong> (most recent pay date, last =
+3, last 6, read from history)</p></td>
+<td class=3D"confluenceTd">
+<p>Needs no schedule prediction: the real check dates already sit in PRHist=
+ory (Section 2)</p></td>
+<td class=3D"confluenceTd">
+<p>"The most recent pay date" is only well-defined if there is one. An org =
+running a monthly church and a weekly daycare has no single last pay date, =
+and "last 3 pay dates" could silently return three weekly daycare runs and =
+omit the church entirely. Making it safe would require detecting the org's =
+cadence structure, which we have no reliable way to do</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Where this lands.</strong> The recommended direction is <strong>=
+calendar-based spans (A) as the period unit</strong>, because they are well=
+-defined for every org regardless of pay-group or cadence structure, they m=
+atch the reporting mindset, and the always-available custom range covers th=
+e operational "exact pay run" case. The pay-date unit (C) was seriously con=
+sidered but depends on cadence detection we cannot perform, and its main ad=
+vantage (equal-event-count comparison) is no longer relevant now that compa=
+rison is out of scope (10.3).</p>
+<h3 id=3D"PayrollDistributions-10.3Trendandcomparison:rejected">10.3 Trend =
+and comparison: rejected</h3>
+<p><strong>Status: rejected for this widget.</strong> "Trend and comparison=
+" means any element whose job is to express this period <em>relative to ano=
+ther period</em>: a trend line or mini-chart-over-time, a trend or delta ba=
+dge ("+12% vs last month"), an up/down change arrow, or any "vs last period=
+" figure, at any view including glance. None of these belong on this widget=
+.</p>
+<p><strong>This is distinct from proportion, which is kept.</strong> Showin=
+g each category's share of the selected period's total (percent-of-total, r=
+elative bar length) is <em>within-period</em> and stays in scope; it is par=
+t of reading the breakdown, not trending it.</p>
+<p><strong>Why rejected:</strong></p>
+<ul>
+<li>
+<p><strong>Not worth the complexity.</strong> Doing period-over-period math=
+ correctly on payroll is hard: because of the three-paycheck-month effect (=
+10.2), two calendar periods can contain different numbers of pay runs, so a=
+ naive comparison misleads on a regulated figure. Getting it right is dispr=
+oportionate to the value.</p></li>
+<li>
+<p><strong>Out of scope for this pass.</strong> No SME asked for comparison=
+ on this widget (the SME raised it for Budget-vs-Actual, not here); demand =
+is inferred from general dashboard practice, not observed. It would need de=
+dicated research and a solid use and business case before it is worth build=
+ing.</p></li>
+</ul>
+<p>The widget shows the selected period's own numbers, the grand total and =
+the category breakdown, and does not editorialize them against any other pe=
+riod. A concrete example of the kind of need that <em>would</em> reopen thi=
+s: comparing one category (say PTO) for one pay group across two periods. T=
+hat is a legitimate question, but it is exactly the period-over-period math=
+ this decision defers until there is a validated use and business case.</p>
+<h3 id=3D"PayrollDistributions-10.4Paygroup:deferred,notbeingbroughtinthisp=
+ass">10.4 Pay group: deferred, not being brought in this pass</h3>
+<p><strong>Decision:</strong> do not add a pay-group filter in this pass. T=
+he need is real, a multi-entity org (daycare / school / church) wanting to =
+read one entity's distributions is a genuine, specific job raised by the SM=
+E (8b), but we cannot responsibly design the filter yet, because we do not =
+understand the underlying model well enough (8c).</p>
+<p><strong>Why deferred:</strong> the payroll model has several overlapping=
+ concepts, compensation type, pay group, and pay type, whose relationships =
+we could not pin down from the product, and there is no clearly-labelled pa=
+y-group field on the employee record. More decisively, we do not know wheth=
+er a historical distribution record even carries a pay-group key. Without t=
+hat, every design question (one selector or several, how it composes with t=
+he date range, what it returns when an employee has changed groups) is unan=
+swerable, and any filter risks producing wrong figures on regulated data. E=
+stablishing the model properly is a significant investigation into the payr=
+oll data model, needing Value Labs and schema access, not a quick check.</p=
+>
+<p><strong>So:</strong> pay group is parked. It becomes worth doing when th=
+e multi-entity need is prioritised in its own right and the data-model inve=
+stigation (8c) is funded. It is not a small add-on to this widget. If and w=
+hen it is picked up, this page (8b, 8c) holds the need and the open questio=
+ns to start from.</p>
+<p><a class=3D"confluence-userlink user-mention current-user-mention" data-=
+account-id=3D"712020:c9d98ec9-c34d-4652-978c-957d632b2a23" href=3D"https://=
+ministrybrands.atlassian.net/wiki/people/712020:c9d98ec9-c34d-4652-978c-957=
+d632b2a23?ref=3Dconfluence" target=3D"_blank" data-linked-resource-id=3D"66=
+00884232" data-linked-resource-version=3D"1" data-linked-resource-type=3D"u=
+serinfo" data-base-url=3D"https://ministrybrands.atlassian.net/wiki">Oisin =
+Curran</a> <a class=3D"confluence-userlink user-mention" data-account-id=3D=
+"712020:1d721d4a-5dc6-4a11-81b7-e415de2e5d78" href=3D"https://ministrybrand=
+s.atlassian.net/wiki/people/712020:1d721d4a-5dc6-4a11-81b7-e415de2e5d78?ref=
+=3Dconfluence" target=3D"_blank" data-linked-resource-id=3D"5556502538" dat=
+a-linked-resource-version=3D"1" data-linked-resource-type=3D"userinfo" data=
+-base-url=3D"https://ministrybrands.atlassian.net/wiki">Feargal Phelan</a> =
+<span data-colorid=3D"yc4ssfk90n">NEED TO GROOM THIS AND MAKE DECISION</spa=
+n></p>
+<h3 id=3D"PayrollDistributions-10.5Adedicatedtrendchart:notapplicable(see10=
+.3)">10.5 A dedicated trend chart: not applicable (see 10.3)</h3>
+<p>A trend-over-time chart is a comparison element and is therefore covered=
+ by the rejection in 10.3. Recorded separately only because the W03 mockup =
+and earlier drafts raised it: it is out of scope for the same two reasons.<=
+/p>
+<h3 id=3D"PayrollDistributions-10.6Detail-on-demandshouldstayinsidethewidge=
+t">10.6 Detail-on-demand should stay inside the widget</h3>
+<p><strong>Decision:</strong> serve JTBD 5 (see the detail behind a categor=
+y) within the widget's own focus overlay, not by linking out. Earnings Inqu=
+iry cannot be the destination: it is per-employee, not per-distribution (Se=
+ction 4, flag F8). The user need is to see what is behind a category total;=
+ the constraint is no new pages. How that view looks is for design. <a clas=
+s=3D"confluence-userlink user-mention current-user-mention" data-account-id=
+=3D"712020:c9d98ec9-c34d-4652-978c-957d632b2a23" href=3D"https://ministrybr=
+ands.atlassian.net/wiki/people/712020:c9d98ec9-c34d-4652-978c-957d632b2a23?=
+ref=3Dconfluence" target=3D"_blank" data-linked-resource-id=3D"6600884232" =
+data-linked-resource-version=3D"1" data-linked-resource-type=3D"userinfo" d=
+ata-base-url=3D"https://ministrybrands.atlassian.net/wiki">Oisin Curran</a>=
+ <a class=3D"confluence-userlink user-mention" data-account-id=3D"712020:1d=
+721d4a-5dc6-4a11-81b7-e415de2e5d78" href=3D"https://ministrybrands.atlassia=
+n.net/wiki/people/712020:1d721d4a-5dc6-4a11-81b7-e415de2e5d78?ref=3Dconflue=
+nce" target=3D"_blank" data-linked-resource-id=3D"5556502538" data-linked-r=
+esource-version=3D"1" data-linked-resource-type=3D"userinfo" data-base-url=
+=3D"https://ministrybrands.atlassian.net/wiki">Feargal Phelan</a> <span dat=
+a-colorid=3D"l87mkj6d97">My take is this one would be a nice to have for fo=
+llow-up improvement - not in scope for this first iteration - let me know. =
+Jo</span></p>
+<h3 id=3D"PayrollDistributions-10.7Shelldependencytoraise">10.7 Shell depen=
+dency to raise</h3>
+<p>The canonical widget shell documents its period vocabulary as a fixed ca=
+lendar list (Week / Month / Quarter / Fiscal year / Calendar year). Calenda=
+r spans (10.2) fit that vocabulary, so the recommended direction stays with=
+in the shell. Worth noting for the Figma / shell session: any future flow-t=
+ype widget wanting a non-calendar cadence unit would need a shell change.</=
+p>
+<h3 id=3D"PayrollDistributions-10.8Howthecontentcouldmapontothewidgetviews(=
+suggestion)">10.8 How the content could map onto the widget views (suggesti=
+on)</h3>
+<p>The views (glance, detail, explore) and the focus overlay are a settled =
+platform decision (see 9.3; source of truth is the <a href=3D"https://www.f=
+igma.com/design/3sw45aVcngFAmpbP6cfrXP/%E2%9D%87%EF%B8%8F--Pathway-Design-S=
+ystem--Master-File--MB-2.0-?node-id=3D40009622-39702" class=3D"external-lin=
+k" rel=3D"nofollow">widget shell in Figma</a>). The views are a content-dep=
+th vector, not sizes: each can span different column counts by breakpoint. =
+What content sits at each view is a design call, but here is a mapping sugg=
+estion, offered because it follows from the jobs and the flow nature, for t=
+he designer to accept or rework:</p>
+<div class=3D"table-wrap">
+<table data-table-width=3D"1200" data-layout=3D"default" class=3D"confluenc=
+eTable">
+<tbody>
+<tr>
+<th class=3D"confluenceTh">
+<p>View (established)</p></th>
+<th class=3D"confluenceTh">
+<p>User goal at this view</p></th>
+<th class=3D"confluenceTh">
+<p>What could carry it, and why (suggestion)</p></th>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p><strong>Glance</strong> (KPI tile)</p></td>
+<td class=3D"confluenceTd">
+<p>"What did we pay this period?"</p></td>
+<td class=3D"confluenceTd">
+<p>A headline number (the grand total for the selected period), minimal con=
+trol (the period control), and optionally a small interactive mini chart. T=
+his serves the pulse-check job (JTBD 1). No trend or comparison element (10=
+.3), so any mini chart shows within-period composition, not movement over t=
+ime</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p><strong>Detail</strong> (more controls, more data views)</p></td>
+<td class=3D"confluenceTd">
+<p>"How did it split?"</p></td>
+<td class=3D"confluenceTd">
+<p>More controls and more than one way to view the data (for example a tabl=
+e and a distribution view), plus the period control. This is where category=
+ composition (JTBD 2) is served, with amounts and share as text per the acc=
+essibility constraint</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p><strong>Explore</strong> (full screen width, same controls as detail)</p=
+></td>
+<td class=3D"confluenceTd">
+<p>"Let me see it clearly, or two ways at once"</p></td>
+<td class=3D"confluenceTd">
+<p>Same controls as detail, but full width gives room for complex charts to=
+ render with more clarity and for two data views side by side, for example =
+the table and a donut together. Useful here because exact amounts (table) a=
+nd proportion (donut) are both wanted, and seeing them together supports a =
+board- or budget-prep read</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p><strong>Focus</strong> (isolate-and-focus overlay, not a view)</p></td>
+<td class=3D"confluenceTd">
+<p>"What is behind this category?"</p></td>
+<td class=3D"confluenceTd">
+<p>The widget isolated in place to give a category room to expand to the ch=
+ecks or employees behind it (JTBD 5), staying inside the widget per 10.6. N=
+ot navigation to another page <span class=3D"status-macro aui-lozenge aui-l=
+ozenge-visual-refresh aui-lozenge-error">NOT IN SCOPE</span> <a class=3D"co=
+nfluence-userlink user-mention current-user-mention" data-account-id=3D"712=
+020:c9d98ec9-c34d-4652-978c-957d632b2a23" href=3D"https://ministrybrands.at=
+lassian.net/wiki/people/712020:c9d98ec9-c34d-4652-978c-957d632b2a23?ref=3Dc=
+onfluence" target=3D"_blank" data-linked-resource-id=3D"6600884232" data-li=
+nked-resource-version=3D"1" data-linked-resource-type=3D"userinfo" data-bas=
+e-url=3D"https://ministrybrands.atlassian.net/wiki">Oisin Curran</a> <a cla=
+ss=3D"confluence-userlink user-mention" data-account-id=3D"712020:1d721d4a-=
+5dc6-4a11-81b7-e415de2e5d78" href=3D"https://ministrybrands.atlassian.net/w=
+iki/people/712020:1d721d4a-5dc6-4a11-81b7-e415de2e5d78?ref=3Dconfluence" ta=
+rget=3D"_blank" data-linked-resource-id=3D"5556502538" data-linked-resource=
+-version=3D"1" data-linked-resource-type=3D"userinfo" data-base-url=3D"http=
+s://ministrybrands.atlassian.net/wiki">Feargal Phelan</a> let=E2=80=99s con=
+firm on this one</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>This mapping is a starting point tied to the jobs, not a specification.<=
+/p>
+<h2 id=3D"PayrollDistributions-11.Reviewoftheproposedredesign(WidgetMockups=
+v3,W03)">11. Review of the proposed redesign (Widget Mockups v3, W03)</h2>
+<p>Source: <a href=3D"https://oisin-curran-mb.github.io/Dashboard_Project/M=
+ock_work/Dashboard%20Widget%20Mockups.html" class=3D"external-link" rel=3D"=
+nofollow">Dashboard Widget Mockups v3, W03</a>, reviewed 15 Jul 2026. <stro=
+ng>What holds up:</strong> bars with visible values retire the hover-only p=
+ie; the view ladder trims rows sensibly; the "Paid, not owed" framing is ri=
+ght; the open-items discipline is exactly right for a locked doc. <strong>F=
+lags before it locks:</strong></p>
+<div class=3D"table-wrap">
+<table data-table-width=3D"1077" data-layout=3D"default" class=3D"confluenc=
+eTable">
+<tbody>
+<tr>
+<th class=3D"confluenceTh">
+<p>#</p></th>
+<th class=3D"confluenceTh">
+<p>Flag</p></th>
+<th class=3D"confluenceTh">
+<p>What to do</p></th>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>F1</p></td>
+<td class=3D"confluenceTd">
+<p>Default view is built on an unconfirmed Department dimension (their own =
+open item)</p></td>
+<td class=3D"confluenceTd">
+<p>Whether history compensation lines carry a department is unconfirmed. Se=
+t the fallback now: if department cannot be derived, default to compensatio=
+n-category rows (today's grain). Do not lock a view that may be unbuildable=
+</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>F2</p></td>
+<td class=3D"confluenceTd">
+<p>The Pay Period model is a scheduling feature in a filter's clothes (back=
+ward-count presets, a recurring flag, per-department blocks)</p></td>
+<td class=3D"confluenceTd">
+<p>Section 10 supersedes this. The period need is calendar spans plus alway=
+s-available custom (10.2). Cut the recurring flag and per-department schedu=
+ling; they belong to payroll processing, not a read widget. Pay-group scopi=
+ng is deferred (10.4)</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>F3</p></td>
+<td class=3D"confluenceTd">
+<p>The mockup proposes a prior-period comparison</p></td>
+<td class=3D"confluenceTd">
+<p>Comparison is rejected for this widget (10.3): trend and delta elements =
+are out of scope. Drop the comparison from the lock. If it is ever revisite=
+d, the three-paycheck-month effect makes equal-basis alignment mandatory</p=
+></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>F4</p></td>
+<td class=3D"confluenceTd">
+<p><strong>Confirmed live.</strong> The fixed pay-type list is invented; ca=
+tegories are org-defined. Beta1 showed "AA Aid", "Administration Staff"</p>=
+</td>
+<td class=3D"confluenceTd">
+<p>Design for variable category names and counts. If a drill ever changes w=
+hat a row means, signpost the change</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>F5</p></td>
+<td class=3D"confluenceTd">
+<p>Widget states absent from the writeup</p></td>
+<td class=3D"confluenceTd">
+<p>Apply the Section 9.2 states: entitlement, rights, empty, loading, error=
+</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>F6</p></td>
+<td class=3D"confluenceTd">
+<p>"Top 3 / top 5" trimming contradicts the fixed-alphabetical sort spec</p=
+></td>
+<td class=3D"confluenceTd">
+<p>If a small view shows top rows, the sort must be amount-descending. Alph=
+abetical top-3 is meaningless</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>F7</p></td>
+<td class=3D"confluenceTd">
+<p>Accessibility unaddressed; the current widget already fails table semant=
+ics and hover-only values on real data</p></td>
+<td class=3D"confluenceTd">
+<p>The redesign must actively fix this, not inherit it. See the accessibili=
+ty constraint (9.3)</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>F8</p></td>
+<td class=3D"confluenceTd">
+<p>Drill destination: Earnings Inquiry exists but is per-employee, not per-=
+distribution (verified live). The SME confirms clients love report-style dr=
+ill</p></td>
+<td class=3D"confluenceTd">
+<p>Keep detail inside the widget's focus overlay (10.6), not a link out to =
+Earnings Inquiry</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Minor: several W03 entries are dated 2026-07-16 (tomorrow at review); wo=
+rth correcting.</p>
+<h2 id=3D"PayrollDistributions-12.Gapsandprioritizedimprovements">12. Gaps =
+and prioritized improvements</h2>
+<p>Impact =3D severity times reach. Reach is supported by the SME signal th=
+at Payroll is a core, well-liked module (8b). Effort: S =3D copy/label/stat=
+e text, M =3D rework in the existing surface, L =3D new data exposure or fr=
+amework work. The last two columns record evidence: whether the item has be=
+en usability-tested, and what user research supports it. Everything here is=
+ framed as a need to meet, not a solution to build.</p>
+<div class=3D"table-wrap">
+<table data-table-width=3D"1200" data-layout=3D"default" class=3D"confluenc=
+eTable">
+<tbody>
+<tr>
+<th class=3D"confluenceTh">
+<p>Need to address</p></th>
+<th class=3D"confluenceTh">
+<p>Serves</p></th>
+<th class=3D"confluenceTh">
+<p>Effort</p></th>
+<th class=3D"confluenceTh">
+<p>Impact</p></th>
+<th class=3D"confluenceTh">
+<p>Worth it?</p></th>
+<th class=3D"confluenceTh">
+<p>Usability testing</p></th>
+<th class=3D"confluenceTh">
+<p>User research</p></th>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Amounts readable as text, not hover-only</p></td>
+<td class=3D"confluenceTd">
+<p>Accessibility, JTBD 2</p></td>
+<td class=3D"confluenceTd">
+<p>M</p></td>
+<td class=3D"confluenceTd">
+<p>High</p></td>
+<td class=3D"confluenceTd">
+<p><strong>Do now</strong></p></td>
+<td class=3D"confluenceTd">
+<p>Not yet tested</p></td>
+<td class=3D"confluenceTd">
+<p>Accessibility failure verified live</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Breakdown programmatically associated with its labels (fix the split-tab=
+le markup)</p></td>
+<td class=3D"confluenceTd">
+<p>WCAG 1.3.1</p></td>
+<td class=3D"confluenceTd">
+<p>M</p></td>
+<td class=3D"confluenceTd">
+<p>High</p></td>
+<td class=3D"confluenceTd">
+<p><strong>Do now</strong></p></td>
+<td class=3D"confluenceTd">
+<p>Not yet tested</p></td>
+<td class=3D"confluenceTd">
+<p>Verified live failure, not a preference</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Purposeful empty state (explains, explicit zero, way to change period)</=
+p></td>
+<td class=3D"confluenceTd">
+<p>Empty-state gap, scenario F</p></td>
+<td class=3D"confluenceTd">
+<p>S</p></td>
+<td class=3D"confluenceTd">
+<p>Medium</p></td>
+<td class=3D"confluenceTd">
+<p><strong>Do now</strong></p></td>
+<td class=3D"confluenceTd">
+<p>Not yet tested</p></td>
+<td class=3D"confluenceTd">
+<p>Empty state verified live as the de facto first impression</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Easy period control serving both mindsets, custom always available (10.1=
+, 10.2)</p></td>
+<td class=3D"confluenceTd">
+<p>JTBD 1, scenarios A and B</p></td>
+<td class=3D"confluenceTd">
+<p>S/M</p></td>
+<td class=3D"confluenceTd">
+<p>High</p></td>
+<td class=3D"confluenceTd">
+<p><strong>Do now</strong></p></td>
+<td class=3D"confluenceTd">
+<p>Not yet tested</p></td>
+<td class=3D"confluenceTd">
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-progress">SME</span> pay-period, mostly monthly; keep custom always =
+(8b)</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Pay-group scoping filter</p></td>
+<td class=3D"confluenceTd">
+<p>JTBD 4, scenario D</p></td>
+<td class=3D"confluenceTd">
+<p>L</p></td>
+<td class=3D"confluenceTd">
+<p>Medium (multi-entity orgs only)</p></td>
+<td class=3D"confluenceTd">
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-error">DEFERRED</span> Real need (8b) but the data model is not unde=
+rstood; needs a Value Labs investigation before it can be designed (8c, 10.=
+4). Revisit if the multi-entity need is prioritised</p></td>
+<td class=3D"confluenceTd">
+<p>Not yet tested</p></td>
+<td class=3D"confluenceTd">
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-progress">SME</span> requested directly (8b)</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>A clear "data as of" signal</p></td>
+<td class=3D"confluenceTd">
+<p>Trust, regulated figures</p></td>
+<td class=3D"confluenceTd">
+<p>S</p></td>
+<td class=3D"confluenceTd">
+<p>Medium</p></td>
+<td class=3D"confluenceTd">
+<p><strong>Do now</strong></p></td>
+<td class=3D"confluenceTd">
+<p>Not yet tested</p></td>
+<td class=3D"confluenceTd">
+<p>Regulated-figures constraint</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Correct currency and date formatting for the org, not the client</p></td=
+>
+<td class=3D"confluenceTd">
+<p>Correctness</p></td>
+<td class=3D"confluenceTd">
+<p>M</p></td>
+<td class=3D"confluenceTd">
+<p>High</p></td>
+<td class=3D"confluenceTd">
+<p><strong>Do now</strong>; confirm root cause with engineering</p></td>
+<td class=3D"confluenceTd">
+<p>Not applicable</p></td>
+<td class=3D"confluenceTd">
+<p>Verified live on real data (=C2=A3 on US product)</p></td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>See the detail behind a category, inside the widget</p></td>
+<td class=3D"confluenceTd">
+<p>JTBD 5, scenario C</p></td>
+<td class=3D"confluenceTd">
+<p>L</p></td>
+<td class=3D"confluenceTd">
+<p>Medium</p></td>
+<td class=3D"confluenceTd">
+<p><strong>Bundle</strong> into the redesign (10.6)</p></td>
+<td class=3D"confluenceTd">
+<p>Not yet tested</p></td>
+<td class=3D"confluenceTd">
+<p><span class=3D"status-macro aui-lozenge aui-lozenge-visual-refresh aui-l=
+ozenge-progress">SME</span> report-style drill is loved by clients (8b)</p>=
+</td>
+</tr>
+<tr>
+<td class=3D"confluenceTd">
+<p>Get a by-category figure out for a board or budget</p></td>
+<td class=3D"confluenceTd">
+<p>JTBD 6, scenario E</p></td>
+<td class=3D"confluenceTd">
+<p>M</p></td>
+<td class=3D"confluenceTd">
+<p>Low/Medium</p></td>
+<td class=3D"confluenceTd">
+<p><strong>Needs usage data</strong></p></td>
+<td class=3D"confluenceTd">
+<p>Not yet tested</p></td>
+<td class=3D"confluenceTd">
+<p>Inferred from the board-reporting persona; not raised by SME</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<h2 id=3D"PayrollDistributions-13.Openquestionsandnextsteps">13. Open quest=
+ions and next steps</h2>
+<ul>
+<li>
+<p><strong>Pay group is deferred (10.4).</strong> Before it can be designed=
+, a Value Labs investigation needs to establish the payroll data model: wha=
+t a pay group is, how it relates to pay type and compensation type, how an =
+employee maps to a pay group, and whether a historical distribution record =
+(PRHistory / PRHistoryCompensation) carries a pay-group key at all (8c). Th=
+is is a prerequisite, not a quick check.</p></li>
+<li>
+<p>Both-panels-update-on-date-change: confirm with a clean manual date pick=
+ or a multi-period dataset that changing the range updates table and pie to=
+gether.</p></li>
+<li>
+<p>Does a Department dimension exist on or via PRHistory / PRHistoryCompens=
+ation? Blocks flag F1. (Home Department is a field on the employee record, =
+seen live; whether it reaches the distribution history is the open part.)</=
+p></li>
+<li>
+<p>Localization root cause (org vs server vs browser culture), shared with =
+the Deposits On Hand audit.</p></li>
+<li>
+<p>Entitlement and rights detection for the widget states (see the two ques=
+tions to Oisin and Feargal in 9.2).</p></li>
+<li>
+<p>Raise the period-vocabulary point with the Figma / shell session (10.7).=
+</p></li>
+</ul>
+<h2 id=3D"PayrollDistributions-14.Sources">14. Sources</h2>
+<div id=3D"expander-1395215904" class=3D"expand-container">
+<div id=3D"expander-control-1395215904" class=3D"expand-control">
+<span class=3D"expand-control-icon"><img style=3D"vertical-align:middle;" c=
+lass=3D"expand-control-image" src=3D"9b45ae8c85c16a66aad904c0270f58d8cbd79c=
+476bc8d003bcec7b51f05e1f85" width=3D"16" height=3D"16"></span><span class=
+=3D"expand-control-text">Full source list</span>
+</div>
+<div id=3D"expander-content-1395215904" class=3D"expand-content">
+<p><strong>Live audit:</strong> asmdev.myshelby.org (passes 1 to 2, structu=
+re/states/module walk, company 101 empty) and beta1.accounting.myamplify.io=
+ (pass 3, populated, company 1 Saint Michael Church), 15 July 2026; plus 95=
+301.accounting.test1.myamplify.io (company 1 Test Company 92) and beta1 (co=
+mpany 1 Saint Michael Church) for the pay-group walk, 16 and 20 July 2026. =
+DOM and accessibility-tree inspection plus interaction testing.</p>
+<p><strong>Pay-group product detail:</strong> Employer Information and Empl=
+oyee Information screens (Payroll &gt; Modify), verified live and confirmed=
+ in page comments by Oisin Curran, 16 July 2026.</p>
+<p><strong>Widget shell (source of truth for widget views):</strong> <a hre=
+f=3D"https://www.figma.com/design/3sw45aVcngFAmpbP6cfrXP/%E2%9D%87%EF%B8%8F=
+--Pathway-Design-System--Master-File--MB-2.0-?node-id=3D40009622-39702" cla=
+ss=3D"external-link" rel=3D"nofollow">Pathway Design System master file, wi=
+dget shell component</a></p>
+<p><strong>SME interview:</strong> <a href=3D"https://app.heymarvin.com/pro=
+jects/63398/media/41887339/" class=3D"external-link" rel=3D"nofollow">Accou=
+nting Dashboards: SME Interview &amp; Hallway Testing, 13 July 2026 (Marvin=
+)</a></p>
+<p><strong>Clergy payroll and tax:</strong> <a href=3D"https://www.irs.gov/=
+taxtopics/tc417" class=3D"external-link" rel=3D"nofollow">IRS Topic 417 Ear=
+nings for Clergy</a> | <a href=3D"https://www.irs.gov/faqs/interest-dividen=
+ds-other-types-of-income/ministers-compensation-housing-allowance/ministers=
+-compensation-housing-allowance" class=3D"external-link" rel=3D"nofollow">I=
+RS Ministers' Compensation &amp; Housing Allowance</a> | <a href=3D"https:/=
+/www.churchlawandtax.com/understand-taxes/housing-allowance/designating-a-h=
+ousing-allowance-for-2026/" class=3D"external-link" rel=3D"nofollow">Church=
+ Law &amp; Tax</a> | <a href=3D"https://churchshield.com/blog/how-do-church=
+es-pay-their-employees/" class=3D"external-link" rel=3D"nofollow">ChurchShi=
+eld, how churches pay employees</a> | <a href=3D"https://auxilio.partners/i=
+nsights/understanding-the-dual-tax-status-of-clergy" class=3D"external-link=
+" rel=3D"nofollow">Auxilio, dual tax status</a> | <a href=3D"https://legalc=
+larity.org/do-pastors-pay-taxes-a-guide-to-clergy-tax-rules/" class=3D"exte=
+rnal-link" rel=3D"nofollow">LegalClarity, clergy tax rules</a> | <a href=3D=
+"https://www.bgav.org/blog/minister-housing-allowance-faqs" class=3D"extern=
+al-link" rel=3D"nofollow">BGAV housing allowance FAQ</a></p>
+<p><strong>Payroll cadence and the three-paycheck month:</strong> <a href=
+=3D"https://www.littler.com/publication-press/publication/employers-pay-biw=
+eekly-may-have-27-paydays-2020" class=3D"external-link" rel=3D"nofollow">Li=
+ttler, biweekly pay periods</a> | <a href=3D"https://www.paychex.com/articl=
+es/payroll-taxes/what-are-pay-periods" class=3D"external-link" rel=3D"nofol=
+low">Paychex, pay periods</a> | <a href=3D"https://www.bankrate.com/banking=
+/checking/extra-paycheck-this-month/" class=3D"external-link" rel=3D"nofoll=
+ow">Bankrate, three-paycheck month</a></p>
+<p><strong>Church payroll market:</strong> <a href=3D"https://www.techrepub=
+lic.com/article/top-church-payroll-services/" class=3D"external-link" rel=
+=3D"nofollow">TechRepublic</a> | <a href=3D"https://fitsmallbusiness.com/to=
+p-church-payroll-services/" class=3D"external-link" rel=3D"nofollow">Fit Sm=
+all Business</a> | <a href=3D"https://theleadpastor.com/tools/best-church-p=
+ayroll-software/" class=3D"external-link" rel=3D"nofollow">The Lead Pastor<=
+/a> | <a href=3D"https://quickbooks.intuit.com/payroll/church/" class=3D"ex=
+ternal-link" rel=3D"nofollow">QuickBooks church payroll</a> | <a href=3D"ht=
+tps://gusto.com/product/solutions/industry/church" class=3D"external-link" =
+rel=3D"nofollow">Gusto church payroll</a> | <a href=3D"https://www.zintego.=
+com/blog/top-payroll-tools-for-churches-in-2025-simplify-compensation-and-t=
+ax-compliance/" class=3D"external-link" rel=3D"nofollow">Zintego</a> | <a h=
+ref=3D"https://churchshield.com/blog/top-3-payroll-software-for-churches-fi=
+nd-your-perfect-fit-in-2026/" class=3D"external-link" rel=3D"nofollow">Chur=
+chShield top 3</a></p>
+<p><strong>Proposed redesign:</strong> <a href=3D"https://oisin-curran-mb.g=
+ithub.io/Dashboard_Project/Mock_work/Dashboard%20Widget%20Mockups.html" cla=
+ss=3D"external-link" rel=3D"nofollow">Dashboard Widget Mockups v3, W03</a><=
+/p>
+<p>General dashboard design principles are in the separate reference "Dashb=
+oard widget design principles", not repeated here.</p>
+</div>
+</div>
+    </div>
+</body>
+</html>
+------=_Part_96_129671720.1784636611342
+Content-Type: application/octet-stream
+Content-Transfer-Encoding: base64
+Content-Location: file:///C:/2f71c7ab1d1d3068feb0c062209a44142e3d29a4243a813349bc791248f31b6a
+
+iVBORw0KGgoAAAANSUhEUgAAA7gAAAD6CAIAAAAEI3z2AADN1ElEQVR4Ae3AA6AkWZbG8f937o3I
+zKdyS2Oubdu2bdu2bdu2bWmMnpZKr54yMyLu+Xa3anqmhztr1a9evHiR+9nmqquuuuqqq6666qqr
+roLK/TIzMzOTq6666qqrrrrqqquu+v+OCgCZOY7jarUahiEzueqqq6666qqrrrrqqv/XqIDtzFyv
+1xcvXtzb25umiauuuuqqq6666qqrrvp/jQoAttfr9d7e3iMf+citra3M5Kqrrrrqqquuuuqqq/7/
+ogKAbdvTNM3n862tLa666qqrrrrqqquuuur/NSpXXXXVVVddddVVV1111XOjctVVV1111VVXXXXV
+VVc9NypXXXXVVVddddVVV1111XOjctVVV1111VVXXXXVVVc9NypXXXXVVVddddVVV1111XMjeNE8
+9Um7P/H3e1z2V4+/72eeMvAf568ef9/H//idX/CLd3/mL939V2dH/k0u3XfwG08/Olwe/eET93kB
+/vqvz37mz9/1eT9/1+/fO/J8efyhP7j3SfsAXk8/8Fv33jeaf8m5O3a/+6/3zFVXXXXVVVddddVV
+/2cQvGjuvv3gj59+xGVPvm339+8agfN7w1PPDctmZx6s2x3n13cftcOj6ennh2UCHC3Hp5xd703m
+mXJvd3cyz+VxT7/YTux8/Bte+16PrV/5s3fctgJ8dnd968UxYZzy4Gh6xrn1+WUCOO+6uL51dxoB
+OLs/POXccDh68/j8Za6f/dEfnP/Wv7g0wMH+8JRz6/3J3O/3/+jO73/y8IGvf90Hv9zm9//qbb91
+55RTu3g4PvX8cNjMFTn95j9cvGMJ4LH9zl9fuDSZMW89u37GpanBMLRLR+NTz633JgNTa7fvjs+4
+fe83n3porrrqqquuuuqq/zb/8Hfnf+eOFfd76lMvPmWvAeA/f8LFu1ZmHL//d+/5jJ++87N/5d4n
+XBx5gCc9+cLPP+4AAP/Cn5592l7j2fLP/v7c5/zMnZ/2M3f94lOOeCCPv//3u4dc9X8VlRdNqToY
+2r0HU3Hurr25E09/8r2f9cfLh2/KG4v3fRk+7PsvvPpjjv3uky6+2EN2No7G4frjn/ZS8y/4hbs3
+T8/uOdInvPF1N28EtCf9xe/91dPPv/grvfZLP+KGxbznslJ0bKPOajzsQWdeZ7H7K7cevsry6Nue
+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
+eO0b+wsH0/U3bF4/49wRL/Pgza0C8oXDfMzN22dmkNx3NL36y53Oc4c/+PcHO9uLR103e9Dp/sTJ
+xYO34tx+vtyLnX6lE+1b/2h3FfHoh+y84g0zrrrqqquuuuqq/wbx8AdvPeJ4d+ZU/2I3bb38Q7aP
+z+trvsTJF7928eibFscWszd7mZM3b9UiIB50w+a1x/uXvnFjsdW/3mOOH+8FnL5m84bj3WMfevxl
+znQ3X7t1y7H6+Kdf2r7h+Etf23PZ8ROLh18zf5kHb57cWbzRi+1sF268eft1H7LzYg/afsUHb5/Z
+LPNFfZmHHX/l63tx1f8Z6OLFi7bHcdzd3b3jjjte9mVf9vjx4/xP8ru/cccvD/0Xvsk1XHXVVVdd
+ddVVV/3nu+fe3R/66/V7v/61JwpX/T9G5X+8l33Fax+W4qqrrrrqqquuuuq/xHXXHv+YN+Kq//eo
+/I+3td1tcdVVV1111VVXXXXVVf+VqFx11VVXXXXVVVddddVVz43KVVddddVVV1111VVXXfXcqFx1
+1VVXXXXVVVddddVVz43KVVddddVVV1111VVXXfXcqFx11VVXXXXVVVddddVVz43KVVddddVVV111
+1VVXXfXcqFx11VVXXXXVVVddddVVz43KVVddddVVV1111VVXXfXcqFx11VVXXXXVVVddddVVz43K
+i6a1KTO56qqrrrrqqquuuuqq/1sk1drx3Ki8CA4PD3/lV3995/gJ21x11VVXXXXVVVddddX/FZIu
+Xdp9pZd7mZtuvpnnQOVFMI7DyWuufflXeeVp4qqrrrrqqquuuuqqq/6dBDWYEpv/FhEUMSa18qQn
+PGm1WvHcqLwIhLCykY2rrrrqqquuuuqqq6769xA0+wf/+t4/vm0Pm/9yhnlX3v4lzrzyg49lA0sS
+z43Kv0PtKAGQjXHiX0d0HW2kdLSRNEDtKAGQE2NDhU4MEw8UBZI0V3Qd2VCBZGo8H6IGU9J1tJE0
+V1111VVXXXXVVVf9N+oqv/L4C9/1+On4tY8oIf47LNfDl//h7d9wan7DiRnPH5V/q4j2tL/7+7vO
+XWqZpx/6Ei/24FNpasHJ1KiVaUSFgIQaGKaR0hGiTYzr/b//6ztufPTN9/zNM8488lHHFxWmp/7t
+3991fi8zb3rMSz7yppMX7nja03bLiz3yQbOKxDQSxZcunIvFqe1FKCieHvc3T9i87kHT7l3aueGh
+N22PAy3pOqYJBYLi5R3nxmu34m//9kk3PPJlTyyoFSfjRBRKIJGNqRGFWnAyTlx11VVXXXXVVVdd
+9Z+kBn9/995uvWa9ks1zsRnTXBahKh6oJc0uoSJeiCkBavCC1NLvLfv79pY3nZzx/FH5t+q6/a/6
+0Hf5+dtWNx4r5xYP/fYf/NmX3rj3H55259b1D3vEme5xd+w96mEPOrj3GefW22f6vTvOH2brHvuS
+D7/zCf9w516+xMu+VOz93ce846d82q9+yde880e/38/+3Fs+5oy19+Uf9E6/cPvq2q08PP5i3/x9
+P/mooyf+6RP7F3vUg57+t399z9H0sBd72Xrbr737x3zl+3zSN77uo+OeC0s7/+Gv/vKRr7j44S/4
+mOkR7/Geb/8SNz74sSe65eP//t4bH/rg1bmnt8Xpv/qxz/rK393+7i9+v7/5099fPPhlT5cLf/an
+T+rP3PKSj7zh/B13n7+4f7DeP37dox96w+bePU//h6fes3Xtwx77kGsyueqqq6666qqrrrrqP4nN
+mGwJ8xwMJfcfsrq9I0Ps+vh9GzcSakkI4ePjPTewf6G76R42BEU0I1EDmykBSnBtu3uGbtd1Iap4
+voaUzAtG5d/Obdh6t0/6og9+jZ33/7BPeOITn/74X/2Ub/z5v1htPuxbvv2zvuT9Pvezfv4nfu/T
+3u7e1/3a17j7S97ji37/Dd/hEz/lnU+834d99sFUXvLNPuUbPvnlikJEICFA5Lg+8Wnf+Z2f8KaP
+/Zx3f4Vv+9Gf+7iH/82P/sb2K2894wM++BPbyZvf+aO/+JG7P/r7v/Wrxx72C/d0P/l53/+EN3qX
+D+ru/Iv9Y4/enk/f+12f8Yvffu6x7/6V3/XRL/kB7/IpX/PzP/s3X//+T7rpve/8qR//0z+Z//Ib
+PfJXfvy7H/wG7/trn/vOX/Lj/9Dv3PhZ3/ADZx73zR/+2d/fbeTWS7/7r333p37S+73pbzyhPfyV
+3/zrvuYrHnZCU3LVVVddddVVV1111X+lqXHTzYsff5VHndvTVOQL59/3947OrQ4fXs5e4NgF73z2
+G514yLnpix9/ruwvZ129h50z7byju727pWtHt4x3d6Gnxg3v/brXvtjhPZ/4e4/P/viFjesLz4fA
+4gWj8m8X/ezwOz/rA39qs774W3zom73Go8uLfeHJx/zEl37Z193WHvnGr9n90q/+zN/cft0nvc7L
+3vYdR6/0nl/8c9/yPh/xhq/31p/yk5/zjqfe5c3f7jee8pV9Ec9DGHiFl3vYLz710vTgaZzabNbf
+8NgXP3Hty7zyK73Uq270D/vhZ3zKp3/kH3/W97zmh3/dT33hm77z679Fy1y3eIdP+55Pes27X/td
+f/T2d39YqbVWqQ1x+iXe753f7NZHvMx7v+FL/ux3jrc/7td/4jfLrz3pzv0f/bjP+9HvfMeH6GGv
++f7f/QWv87Yf9pW3HUwnTj/ixV589mpv+AbXbCrNVVddddVVV1111VX/9SJieWn/837kGbfPT37H
+21//0t3qVV9h85VOLS7sLb//Kbz6DfPV7Jq3OMWbnylPvzD9zd7wCqeuL1N+/p/du/OQM59+y033
+7I/f/DgdTrz4zcd/6F2vvXTX+Q/80/Fi3wX/WgT/dm212vrEb/2Fv3/6nT/8DZ+2ce733+ON3/Xo
++pe+ri8523n913ujn/60j13e9OIv9fD5NE5b15ys1GuP1XvuePpTnvr0vYN+q4+0wcbGgAFN5+65
++9a7bvupX7z1ZR/zqK60aVyeedm3+5xP/ugz419+8Ed86p171HZ07uz5KXXqzHEgDcC0vuvpT37q
+0+9Y913p+zy88MQn/8Xv//4zVErQVpfOX9xbYeabJ7a5+NSn3PW0Z5yd101JO5snT53Z7GfdwKmP
+/qwvfNNXffAPfNbH/MCvPq6fcdVVV1111VVXXXXVf73MnO9sf+F7Pvbn3+3Mbzzu4Ck3LF73lvL4
+u44edMPJx0b+2bnxl/5ifNxBd9eF4SP/pL7ETRvnzh8cxuZ7P/jYMbpnHAx/dut9f3fvbh885V5/
+3B9w6uT2Dbjxb0Dwbxfbx09uLeZdhydm26euObn88s/6cj3osYf3nH/J13+9rTq+2Gu/1Rmomye2
+F90a3vtTPvapP/upr/MWH/jI9/jC13n48Y1jx7vodk6e7EvYQD19Tf3WT3r3V3mZl/v7M6/14e/2
+WqXMTp08fu4Jv/fZH/PxP/8nz3j113uj6x70qBfv7v3SL/mio81rd+Zdop1jx2ez7sSZ657w81/5
+zh/0RW/47u/26Ie/1Bu8XPeJ7/Ohz4jtYxv9jY94pf3f+vpv/eW/OHHq1PWPeLX3f7+X/rA3fInP
+/bW9D/3wDzu90W1uLtLd8eMnZnnpB77yY7/ym364f9ArvMrLPLiNXHXVVVddddVVV131Xy9Cy/3V
+x/2u/2Tsz2h3Wq0Mh6vDn/6L2/9i3RcpbeBgnM5ZiVtb/8ETb/+t8/lLf3Hv1/zZhUfecOPnv+LO
+xpQXxulCc6b5N0IXL160PY7j7u7uHXfc8bIv+7LHjx/nOV3a3f2rv3/iy77SK00TD+DV0bL0s64W
+IMR6fbge62KmMevR03/hbd79y7/kJ37uNR+2c3hwNNEtZl2tLA8OjkafOLHtqR0drPuN2bBc94tF
+CYHXR0fDNKXZ2Nlc1LperdcTW1v9cm9/1dja2e5Cw+HByqUPO/p5X5ZHy9LPPI22h2nc3Nnu0DQt
+94+8mCnVzzuO9g/Vz2hTt9icl+nC7mGZz49tzpaHqyljPivL5TDfXGhaXjpY9/OtrY3aGlddddVV
+V1111VVX/WfY6PniX3v699x9zYmdTZsHmhoPeVB+0yPbh/1q9DeWb3rZ1Zf/fnvkIzbe6Mz6wnk+
+60+6D3ld3fbX0103d2++MbzLn/Rv9RJ85I3rYcmX/1Xdvt4fcktb1O4n/l5cp4eth69+RvcNL90+
++bfiH0qpPAcF5++64wffdOtlH3z88Y9/8rGZHvbwh/Mc0MWLF22P47i7u3vHHXe87Mu+7PHjx3lO
+l3Z3/+rvn/iyr/RK08QDKcDYXKFAANCOfuFbv/6uky//Pu/6umUEIUgDKBA4MSggISAxAAoEgI0N
+IiCNAoGNjQIZC4yNxBUSgI2NhARgYxOBjUQmiBCYNIiANBFkgggBZHLVVVddddVVV1111X+SjZ4v
+/tWnf8+915zY3rR5LlHYCg5HBnN8RkuOJk7MaROXRrZ62oQLnTgYaOLkDJm9NRkc75G5tKbvKWbZ
+2KwcjTSem4Lzd93+g2+y/bIPOf74xz/52EwPe/jDeQ5U/h2cPJATA4A23uojP7HAao0BY57JiXkm
+JwDJszgxD2ASACfmmZwYMFfYXGHzLDY2z5IJYANg0jyTSQAyATBprrrqqquuuuqqq676T2Vzzc58
+esbSO5sSz8Xm0kQEFfZGJAgurAGicDAhQWMFUaiwOwCoILg4AKiwmgAk9iYiEM9tSuZMW/PO5gWg
+8p9jWHPVVVddddVVV1111VXPaz3xJo85/Xu33/Endx02QvxXMyw0vfeLzR50anNKXgAqL5q0W6O1
+xlVXXXXVVVddddVVV/07NDg2L1/xxjfdfvFwasl/OcPWrLv55MbUWlCyJRSeG5UXQZRy7523/nUO
+mclVV1111VVXXXXVVVf9uwlqBOK/xSVz/ikJRMTZ++57+Zd7WZ4blRdBa+2hD3nIK73SK3HVVVdd
+ddVVV1111VX/tzz5yU/OTJ4blauuuuqqq6666qqrrrrquVG56qqrrrrqqquuuuqqq54blauuuuqq
+q6666qqrrrrquVG56qqrrrrqqquuuuqqq54blauuuuqqq6666qqrrrrquVG56qqrrrrqqquuuuqq
+q54blf+pLl269Fd/9Vf8d7A9m81e4RVeoes6/lutVqs///M/H8dREv/lJL3cy73c1tYWV1111VVX
+XXXVVf/vUPmf6s///M9f6qVequ97QBK2QRK2QZJtQBIgCTttpJBs25ZCwk4bpJDstPkXRcS99977
+N3/zNy//8i/Pf6u/+qu/uvnmm0+dOmUQAM40SDKEZKeNJABJ4EyDIoQzjRQSdtqgCIEzzb9E0tHR
+0Z//+Z+/9mu/NlddddVVV1111VX/71D5nyozd3Z2+r4H3JKQJKcRkrJllAA8NUKH+/uaL3ZmPW4H
+h8vF5lYNTePy4Gjc2tqqJTKng4PlYmO7q+JFcHBwcO7cOS572lOfcOnChSiBGYYhImqt8/nsQQ99
+5HyxyX+m1trW1tbW1tbR/t6Q7rp+sbFZws3IPjg4nC+2+052MzEc7g/qtne2BOPycGC+s1Wd7WD/
+oCw2tvoOe3mw726+Ne95EZRSMpPL7r7rtrvvuL3UAhqGtVDXdbWUBz30EVs7x7nqqquuuuqqq676
+v4bKv93wJ7/yy0+4++L26Ye+8Zu/xgbPx5/9yo/kw1/vlR52mudx7+P+4E/vq2/y2q9U+ResLz7l
+G7/mp9/wwz/0xU4vfu83f+HaF3vdnQt/9N0/e8dHfMp7bbH/yz/9e7Odw797wn37K7/z+7z/9Lif
+/7E/fNxNL/7G7/PGj/qJ7/mes8tlnnzJD3u3N/ntn/iWP3nadOMjXuJd3vZ1e/4Vluvpm39v9/ze
+uhZNrWXL1ibbh8v1577Xg1/8QZu8EF7+3i//8tPu2zvziFd801d9DA/k6S9+69eOPfrFnvinf/dS
+r/X6N52Y8QJIAUd/9Cu/8Iy9S3/3509+10/7vMdOT/3D2/f7i0/4/cft3/DQx7z7O7zhrb//S09Y
+cefjbjtYLV/yDd7p9R8+fOPX/ciqHn+Pj3i/e37/J373iRcOVuU9P+AD47bf/sGf/bPFmWvf4p3e
+/cHHK/8a3/2H559057qvpbWpZWZraR8cLj/4La59o5c9zlVXXXXVVVddddX/NVT+7Q5/6Ft+8KXe
+531/94e+eX38lnd59QcN61XpZ0WaxiGJviv3PePW/sYRGIah1L4Edo7j1Pf94bl77r53U5DT0Khd
+DfCwHqJ2tQRXSEyrP/7NX3zSnedey9D27rrj/C2PPv/bv/mbd166CRjuuvVe8Rav+Eav/YY7f/TD
+X/+Hf/zn49Nvf9f3/uDf/PEfuHXvJd747d/v2PGjL//cb/u7f7jhby8c/+iPeddxuV8M4kU3Nr7z
+yWfOaxMZBCBAHKze67xe/EG8MHnhO77jB17n/T7jlR97EzCNoxVdLUAu93/62776sR/2ubu33/Xo
+CchhaF3fCaZhSEXfVS6zEzZe7+3f5b7H/c5h3PTyN2787e8+fb1XH3dP/5Ef/ZFeH3Q++Jvb91/8
+VV/v9V/vzY/+7he/48//5pqLF4+93Ju/jv7u9//kSW/2qm/6Mm947Ne/68v/7G/+Lh/3xDd63w9+
+9E7kTPwr/chTjv3N3nUUgUEIEEfjK97TvRFXXXXVVVddddVV//dQ+bfTYh63Pe7v9rdOv9hDTv3J
+z3/jD/32U+rmQ97zLR7zA9//S8ujszuPeJNH1cMzyzs+5+O/cOi2Lg6bH/khb/Edn/fVswcfW269
+8ru+2Lha6xe//yt+4U/Pz5dn3+CjPmvrr3/85//h7jsed9vbf+oXvN0rPRTAppu/1tu8z623fWPL
+GC88fdh62C033fzgd3nnp33HHwhuv+uukycedOr4jpd3/dnT9l75La5//L2L08dPzDf6YSrHTi3u
++MtfX5946PG6v3fn077nG75u40Ev8W5v+zr8axxN/pBXnM9rPuRU/5e3L2852W9H+9t7xxe7cWPE
+/Ati0eu2p/zD3S9+7Z//4Nf87FP2vLr0Zh/w6e2Pvuv37zr6q6ePL1fzqZf27/yrX/vaH/65jWtj
+/vC3f7cX3/+mH/6Dw3N33Py67/1p7/NGEvebfvt3/vSlX//9hO+54+KpRz70b/70z77/m75hftNj
+3uH1HjW4u/nB1ywYf/VPH//QR7/5ePEvbnroye3lsene9ebWsWn/1r+6c3qz1zr1W3981/mf+d5f
+88Y7vcf73NzxopvSb/iI/gNPRgk98d7VS9+0cW53de9Be8kHbZ07aFx11VVXXXXVVVf9H0Tw75DE
+tY986Rfb5M9+5xe/9Vt/sDt580kufN8P/PCpV3iX93ujl7t49z133frks7u7t907vNXbvs3+vX/z
+F3/zjP3l7G3f8y2f8Su/9cTbnnr7nfeeve++61/sDV/9Mfzsz/zcD/zi37/LB3/iK57W2d0DHiiC
+Rqm684m3nXnYjQEgEuDcvWevf9TDaed/4Ht/5hGv8+6v/OiT+0fDsBrG5VE36y895fd/9E/vfvf3
+f+cTarOTD/+Qj3nvw8f/2dMuNf41SugpZ9d/e9fqj289+ptzPv7Hv/ueP/w57/0LX/n7z1iFxL/A
+ju66mx58w5ntc3fc+aBXfr2Xv3bxKz/x3T/2m3e9/0d/8ms+4sQ0HD75yU+/cO7cqlzztm/3uv/w
+cz/x7d/3Cy/+Zh/4Lq/8oPvuO8sD+PD2ew+PPebhJ1k+41zc/LATs3LswR/y0e+TT/+bP3nCE7bO
+PHYTfu+nf+TSiVd8+9d4lD0sl+v1cknXk+e/93t/8WXf9L1f7MGbjfkbvPeHveo1h7//10/jX6NI
+9+yNf3bb8s9vW/79udz9q8d94I981of89Bf8xRMvTOaqq6666qqrrrrq/yKCf4c2rHcvnD134ULd
+uebhj3jwsdM3v/KbvsVrPOyGJ/zZr/3WXz+pleJM2waV0tJtmnApKhrHMdO2bUoBprL54J32q7/y
+c4+/d6+U4Dm11jTuP+7s0cOuvx7Abs3Zzj/53NZL3Tj7qW/+mr85W0/GvXfu8uLXb/zkT/3g0daj
+rtXTv/CrvuvYdY+694n/UM484ubtSz/987+RZx5y807hXyPT12x3Nx3vH3p6dmanf+xiVR5080M3
+2sNO9bb5l0zr1e6F8/fcfX5MghKZpdu5/tjyF3/x5/7hjktA2rZxKVIOPOghp/7693/5Dx53O6Xy
+ABef8dSj4zecFnc94dat609d86BH3HJ8+VO/8BvjqRvz9rMPepmHPPk3v//7f/2JN11f/+Gp9zz0
+xR/95N/91d/8s9tf4sVv+JGv/vKnHm1ujXfccyle9sUf9Kc//0uPv1uPfeT1/GukfWxeHnyyf/Cp
+/prt7jHb09YNZ2441j/mVJHEVVddddVV/yuNf/9nv/czP/0zP/1TP/k7f/t08/x4/Vd/+Ns/89M/
+89M/9VO//w+3A7Tl4/7u7w9G8wDnL567dDhyRTv6h7993IX9+/72H57WeP52987vHkznbnv80+/e
+46qr/ueifPInfzKQmavVam9v7/rrr5/P5zyn1Wp1/vz5m266iefQPeolHnNsVl/idd7kDV7z5V/l
+FV+hz9Vs+7rXeMPXe/iN20/96z9eXfcKH/ZB7/bIhzz8FV7+ZR7y4Ae/3Mu+/Iu/2GNf/pVf5pab
+H/pyr/yyL/nyr/gyL/FiL/YSL/sSj3nIIx77Mq/w0i/zum/8ahvjwV/81d++9Ou/3WNu2H7a0572
+4Ac/uJQC5YYHP+y6Uyevv/76M6eO1YB++6EPf+jJ7Z0zN910YrPfOnHdLTecaC23T93wUi/+cNO9
+wqu/5ql5ve6Wh56YyaW/7paHP/Zh11461Gu99mseW1ReBAcHB5cuXbrpppsO1/knTz/oa5zerrsH
+o8+cmff8ws5LcN31xxflsdcveCFi/uIv/tidudXtvMyrveqLPephj3qJl3q5V3zF13q9V+pb/5pv
++eYv+9gXe4WXfenHvPiLvdwrvOSDHvyIl3vFl3/NN36DB+90//CXfzR/2Ku/9ss+7Pbbbzt9+szG
+xkbMjj3soQ/a2VqUjWM3X3vtfGP74Q+9bu/Ar/6ar37LTbfccHq7mx97yINvVOZ8Y+fBD3/stVvl
+2ke+7Es+7Nqtk9fffO3O2Dh26voXf4nH+mDvwS//qi9+40leBOM43nHHHQ95yENsfv3x+yc2al/j
+YDkdu+7kpYw/Ov6o4ZaHNPuVH7rFVVddddVV/+vkfZ/08Z/gW17tUWf4se//tsMzr/hiN27xXIZn
+fNTHfcbOo17zoafzF374B+7uHvJSDztzsH+4c+JEF+KZDr/0kz5745Gv8aAzMwDacpXr83/ySV/1
+O2/1lq/e87ymb/rMzzi49hUefY3G2Nze6Lnqqv9uFy5ckHTy5EmeA5V/u/Kgx7zkgx7DM524+dVe
+82bg7JP+5I9/97fPH3vUe7/bm1x33Rw4c/w48MhHPRq45vQp4NEvcYznsHMa/urXfuUP/+wfHvYm
+7/4GL3MDYJtnKtfedBPA7Bqu6DZuvnkDuPHMHLj5EY+9mWfZfIVXPA3AsZd46ZfnWU7c/OqvejMv
+Mtu2gb6W33naen9vtb0ou4fTH83r13cvdXQ4LP7wwue99U38C7qHPvalH8oDHQfg1JnrHsZlJ3eO
+AafOADzmxU7f/bjf+b0/+MPDm17jQ97qtYBMc9ls59RNOwAbx05sALA4ftOrvepNAGwC/Q0Pfvkb
+Hsz9HvqSL8NlD37Uiz+YZ3vJV35lXmS2bQMl9Liz+WuPO98X7a/aX2x2+/ni45Cbv3v+3V/1Gq66
+6qqrrvrfyF5sHXu1N3ij17heZ//uz46WF37tB3748NHv+tYvd+L7vvxLH/WOH/6Ktxwjvblz8jXf
+8PVf5iQvedPmh3/ut77ZK3/mH/z2773eWy5+4ie/66+esnvqQa/2jq+58Ss/8wvTw99Ad9zxkz/3
+tMe+4ivM1sNLv8rxo6f/7ud+wt5w7NqP/tiPWv/xj/6pX+zdX+/Ffuxrv2zxqMf88s/+0sO3Xuma
+V/XFY6+5c+kpX/XN33qxxSu848e8y8vNvvzzvv7I89t39z7wEz7vperjv+w7f/LsfcPLveG7vceb
+vzRXXfVfjcp/tNOPeMX3f/grKEL867z0673DS73eOyhCACwWi9tuu63rOv7LRcSFCxc2NzeB7UV8
+xlvftNpfAiESMCEG1Vd5xBb/0a5/zGt+yKNfQxECYHNz8+677z48PLTNfy1Jq9VqY2ODyz7xLW44
+d/YgRIg0EsDoeLmH73DVVVddddX/RlGG83d/8+d/+m+fXv/O7z/pc9/pM7bv+5lv/oVfffOHPfYX
+/vKO1/zQYwDCxglw/KaHXrexvO/wwpP+9nE3nD74yb849w1f/2W7T3jijY+6/lVe7VXe/C1f757v
+fZ/uZT/0A97plo//qK9+2Cu+Xk4nPvizv/Cun/m8r/32n367a+588uoG4Ml//hcv/epv91qv+Sov
+/VZvvPyTL73t2LVf/Rvf+oj3+9J3uOXc+338Fz/28z/kj//saZ/6fT+4/PnP+e4f+vU3nf3cXcdf
+/8s/9k2e+JT7DOKqq/6LUfmPJkkS/3qKEM/2iq/4io973OP472B7Nps99rGPBap4i0fOYc5/DSkk
+7vfSL/3S//AP/3Du3DlJ/JeLiJd/+Zfnstd7UMeDTnDVVVddddX/Gdm649e9y8d91us9tHu1b/6U
+7/+en/yGj3rn8gff/BM/fNt1L/G6D9rguY1DW+csSpI3v/o7vdYffcpHfcCHvdRLv/rHvMRbhxQk
+Wze+1IMfQiTqcpxe4jVe9eZNTrzSy//g9z9xeSa6rgB1FioRUkhR+/Hw3L5PvfKL31I2Tj/y2sO/
+v+O+Bz/ykTefLhdO3TA+Yff1Pvljf+b9P/lD//6PXvtN3vGlXvLhXHXVfzUq/1PNZrOXeZmX4f+3
+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
+f/itvzv76o8+/jN/fOfbvsEriKuu+te5cOGCpJMnT/IcCP7dBOC9e2791Z//yaftX/eKjz6zHHmp
+13rTM8un/fofP2WrH576jLsdgXAm5mjvzj/+/T/vb3roDcc2Hv/Xf3LnpXXEbK7Dpz3jnim55eEP
+37vtH/78iRce/uDrZVTD6l/hdd9s8+zjfucvn9rVwlVXXXXVfztFO7rrt/7ijpd9+Vd5jVe45U//
+6M+WTaV2EapK5scfdmbx57//+3ub1zzshjO7tz3ub55yjyThElVkv7Gxd9dtZ/cHSVz1v8b42Ff/
+wM9+/zcbLjzt53/jjyntKU95/N133L1sDUWg2//ur5927nAcp5d73Td4m7d+s4On/dHv3Tp/sWPT
+Qbc4c3wLla7rutpNy3vuWM7f8v0/6tH16On3rjeiNqflYze+yhu/+ovj+Wu+3sv+wS/+7NH2IzfG
+o2uOLW5/2hNOvcqbvftbvO0dT3ziqVMv+e7v8ZYPufHUbY//kyc/8db99ZCrPWDvjif32y/3/u/+
+hmeu3RzG9qiXe9UzuvP2tc7c8OCHPfwhJ05vv9wbvckjTm+MY3v4o1/6Hd7nncvFp9w3RF/KOOTm
+yWsf9vBHXHdq+/DCvXfVh7z7u3zAQ/yM3d2dt3+7t3q1V3zMwf7q9LHZ3nqP+x0cHPz+7//+z/3c
+zz3hCU/gBRjH8RnPeMbp06cf/OAHP+hBD3rQgx70oAc9qNbK/U7dcpNu+/unHrC87c++55d+nrq5
+NS+PerU3eLEbtqehTRMGYMztd/3AT/7CL/+Sd3zdlyp9f/yG63e6vgqcmc3OiJO3nNnqtzYRWxuz
+nZse8fqv9JLBVVf9R6Hy79am6fTDX+193vK6oyzv94Fvem23/+EnH1uHS6/3Nu/zqJd87PCKD75n
+T+/zPu9749bGsXd9DzZ3XulRN58/ytd93Zc41s4//il3xsu8zMOuefBD3/sd7rmUj3zxl3rQTTc9
+4vF/daCXerFH3XjXS91z5qYT7/uOD/Py/Ju98wc96iUftR4nrrrqqqv+B5im7o3f9X0f9qiXnLdH
+3vyEe2LOyTPXPuzUzdee7N7jIa96at7+4Qm3vsO7vu4jTpcTp/5+Ob3ameuub6tXOnHm2hve48T1
+Dz4533iKx4F5x1X/a8Sv//C3jo96tRu3tLx3+Qe//ofzB73Wzbc//mg9mYPf+52/23nIq99w9/nV
+atKisXjILecf/2ePfdmjO/+2P/1S2/XWkw99xJu89qs98eBvf+7o9LXz1c9959c9Ydx6g0fMf/X3
+fuUp9/7dta/+YClC5Orohke9xv43fPND3+r9H3bu3p+7ePTqD330+W/+pR98xuF1D3+lo8c9XXYu
+V2ce8XKPeYmnPvhUv3jYjcDOQ1+8P/rW7/jhO++7e/bQbd162zNuftBL3fkPf3fXQ1/27NOfdmEr
+ypnSJhs//fa//+nv+8nlyUc+7Pg9v/a7Pzk+/kmv8tavfHjPM+4+fsPGsZt29v76B37kO57OTQ8/
+GQaGIchze8PObJv7HTt27G3e5m1++7d/e7Va8QJkZq31sY997M7ODs/Xycd86Lu85rd/6kdnV9/w
+Az/h5R597Td/0w/9xcGD3u31XuLeo2GDGzcqwKmbHho7PZedvO7GaV62rr2ue/hLXX/3X33Bp3/2
+y73zRz1s70ndfObjp1/yJV7llvkP/cYf/OWrvcnLcNVV/2HQxYsXbY/juLu7e8cdd7zsy77s8ePH
+eU67u7tPfOITX+mVXokHaK2t12sAkKLrKtCmsVldCUshpnEkagkwU2tRCnZEkWjTmERXC/Y0jSo1
+BGZqrdZO5Di1UktOGSVQhDyNY5qrrrrqqv8RpK7WaRohai02mS1CLSkiTa0l2zSlu9pJZGtImRkR
+rWXtShvHNFfM5/OI4Kr/2drB+d/69V89y/HXfoM3Ob7/uF/64yddd+MtN91w7XrNsW7vD/7wSTc+
++qGnN+csTj70mvm3f+nn3fiWn/iaN1y82D/oWs49/o7lSz7mIfv3PP1enbyR3V/+rd9/yKu/2Utf
+H7/1q7/urRse8fCHHe3tPeRhN932tDs2tf/N3/fz7/+Jn35zue3rv+mX3vFDP+jin//K3+/XN3z9
+17z7SU+/5VE33/qkOx726Ic8/s9+43G38fpv/nqnFxW47Ql/+GdP2X34w1/uxOximW3//R/8dn3U
+q7/Oo0/96e/92fGbr9s4fcux5T0XvDi4++lPu+viy73WG9zU7/3qr/5ed92NL/aoR9/+pL/R/NSJ
+a24502775T/6+xd/rTc/fnh3nL6xnb+z2znxKz/+vY95ow952QfNeYDf/d3fLaW82qu9Gs/P3t7e
+z//8z7/lW77l1tYWL1hmM1FCQGaiCPEiynSEeCA7kyjiqqv+9Z785CdLevjDH85zQBcvXrQ9juPu
+7u4dd9zxsi/7ssePH+c57e7uPvGJT3ylV3olHqC1tl6vueqqq6666t9tPp9HBFf9X7E8f/uf/s19
+r/66L1f4V7vzH/7y7nb65V/yFuD2pz+lO3bTdSfn/HdZnf+rWw9e5tEP4jn9/u//fma+5mu+Js/P
+pUuXfv7nf/5t3/ZtF4sFV131v8GTn/xkSQ9/+MN5DlT+rSRFBFddddVVV/27SeKq/0MWp25+rde9
+mX+TG1/sZW/kmW5+yMP57zU/9TKPPsXzkGSbF8C27VIK/2k8rS7ur4+fOBZ498L52cbm2bvv3rnm
+5uObHfdb7l1Yl83jmzP+e/jS+Qvd9vGNvvAfanVp99Y7796+7sE3npzfe/vT7724uumhDzs2m57y
+1LuuedDDTywEOMenP+Vp82secsPxfv/8bXft8bCH3FLb6hlPfdrmtQ8+fWyDq14kVP6thmE4d+6c
+JK666qqr/q+QBNjmv9a1115ba+Wq/0L7z/jL7/zRn73A6Xd8j/d7sesWXLY+//Tf+vM7XveNXqPn
++bvjyX/1l3/79O66h7/Jq73kU//0V+498bKv+ogzPF/rsz/7q3/3um/6uluFZ/G494d/+hcx7v/i
+r/15Py8PeqW3fM83fBmeSx7+xm/9/ku+0hue2RLPz+r803/7L+54vTd8jQ5u/dNf+ZFf/l2ufeT7
+vud7PP2Pf/7al3uLB+2Iy+57wm/84K89YXPLtT92y0u82uu95EP5j1NKGYaBFyAzMzMi+E+zvPvP
+P/trf+/zv+xTduDpT/673dtv+56f/5NP/PwvHi/eNm5ee8OJLeD8bY+/s3/IY091Z/f3r735wZtt
+dettd2xc96ATtU0xK7ma6Mb9+y7l5rUb3H7P+VPXP2izTOfP3T31Ozdde3pc7t925/kbbn7wLPae
+/ozz19xwy85GAR8dHu1duC8W11xzot57zz3evOY4u3dcarc86CYd7Z27uKf5ZqwuzY9dc+sTHr/5
+8MfesLM17324cleGC/ddiq1tL3c3jt+ws+AZT7tt49S115zYBmC47Rl3zLavPz5P6qKwWk5l1i7d
+dm5544MfVI8u3XN+99i1N+/Mhh/51i/6/SfcdfrF3vQz3uflP/8Lvu4xL/+qb3jt6T/44e/4tSfs
+n3nwy33qh79dgb/4pe/63t96xmz75k/+4Df61q/9mrOTXvudPuGh537l+375rzj2kI/79I+5pnDV
+i4DKv9V6vb7jjjsigquuuuqq/xMkrddrSX3f2+a/0MmTJ2utXPVfp33bl3/xzlt9ztueesI3fu/P
+fOy7vNSP/cCPjde8wju+xok/+dN/ePD1+tlf+K1rH/tab/riWz/y07/cTjz8Dd/4DY4t79zTtbf9
+4a887tx4eK69yau95F2P+7PHP+SRj1z+7bf87O+89Ft84CvN73yKb35Q3HvXXvuHv/8jho3HPfXO
+ofn13uI1bv2Dv7j+ZV72uu3ZU37vl5+eD916yq8ee/m3/vi3eNDnf8JX/PXDjv/Nr/zwvcM17/UB
+7/wPv/Kjf/a05Zu+wYt93Zd/ybt92iMftvq9n/jDvff6oPc9+tMf+KU7N970VR7zR7/88+trXvEd
+Xu3YH/7R373WG75Gd3TXV3zVd7/9533j7O++/9u/83uf8uvf85If9OCXufSnv/2U/Td767f6o+//
++l+5c+fwwoWP/8TPfcYf/Mqtt3zgg48X/oOUUmzzAmSmpIgAxnG0zb+bpK7ruJ+dU2sA5D/85e8+
+/SlndebBF/7+V3/sD//y3NR98Md+1oudjvue9nd/uvv4r/nlP7zhVB57qXd7lZ0n/N7jd6+55eUf
+ufm089e9xYMv/fQTVo/66x/5moe/+yeeuOMv7tq/tNtufvTxe3758Rdme5c+7Iu+/I5f/M4/fvrB
+o1/51bbu/Yu/uGtF97DP/rT36Fl/2xd81N+trjk+O/EOr3Pzl3/Tz7/Hx3zw037rl89NRze/5nuc
+/JPv+71L2xfO33rjNddp8/pHnNi6Ye+2H3jqiY9+s/5rf2Xv5nt+6W/W19x12z2Pvmlnec1LvOWD
+V7/wNxdP3PKQD3nvd9mu/MUvfOs3/doztnTqNV/6+N41r/DY8U///Ogh3TP++I7lwc5Lvc2jb/35
+H3jS7HO/8NN3utX+3viYV3rNt3qnd55u/4Xb77jtEa/0ajtl+SdPyE//tA/6mk/+siftve1jdlZ/
++Ce3v9dHfuTffMeX/vjPrIaHv+knPnb9xb/4C2fj1rf4uC/826/9xD983KW3foljXPUvo/JvdezY
+sVd+5Vfmqquuuur/kMPDQ0kbGxtc9X9ceaN3evtv+s5vvvASL/aOb/vWZ2//81te9pX/7Gd//I9u
+edft2fq22y+99Cu87M/+ws+fvPDgx18488Evs/rl3/+7Rxz9xc7Lv+ET7znxai9fv+Trfv5r27kn
+/Olfv+z1b/RdP/DTr/CWb/Pz3/9Nw6Ouv/e6+bz/mz9/6v5f/uXjPvyTPvjpd+3t3fFHv/uHp27/
+6z97x1d8FVj/3uPve7W3e4unPfXH/vgXfvzrnr61uvnFur27tx/0chf/9Gd/7Me2dp96xyu89qsN
+cfwlX+GVbmiP/85fv+cdX/36b/n677t2/09vevNPLPtPufllXvlPfubH/+Smd96cy8DGNW/99i//
+g1/+pY9+mZd4t7d+vR+/988feSLOH55+yevu+8lf/atXe7FXfIOHP+Sep/39y7/8y9xx5+//7dPu
+ePDLPojL9vf3n/rUp0YEl9mezWYPe9jDuq7jRRMRmckLME1TKSUiLl269Mu//Mu2JfHvYHuxWLzh
+G77hYrHgmSSJyw4Ph0e+3KtcW4//9S//xL3bL1Hu+ZO/efI9L3b6hnG93Dsotzz21T7+XR/6VT98
+9/zm4/PZ4aNf8uE84YmZeFoPq9XGY1/9fd78tf7o528/+8T9c/c8/WK/9Xbv82H1z3/y6X/2G3/2
+tO5zv/iz69m/fr8P/P0Xf83X+Is//Ys7jt7joRuZufPeH//xZ3/uu/7gH5722Dd7t1foz37bX9/7
+Oi9z4i//9E9fxfM3eY/3fcpPfdcrvMu7/P5Pft+95znzoK5NkOM4rlbafuv3fv+//p5vf+33eoef
++slfj8X1G2V49EMfuajA6o/+8Okf9NGfedfPf81tU977l3+0qgcPeanhu37wKa/yqg/7mz//4xtP
+zN7wXd//4ScqHHvvD/+gr/qSL/marxk/7J1e6yM++TPqnb/9Fd/w/eo3t+Ybql7mBONqbFuzjX5R
+77yw2z1ka7Epr87v57i5sbk965erNVe9SKhcddVVV111P9uSuOr/vLZi/tDP/4a3vPAXv/B13/8T
+b/wY/9ETL9117sJLKvB025Mef+5o7/aLU+njlpd+7Eu89iN/8zO/9A93XuYj6oW/e9Atp+p9t7zk
+K779O77T7w23XTza3avXvPRLverf/srP7x2sSmF9dDhST9388o+6/tiU8fKv8Vo/9l3fff2rvsM1
+c/CwPxx0s3lmeclXfa23eaOXPHX9jU/99R/46z982l133Puqr/Hir3xd+c3f+6OXeqM32jl5qqz2
+dnYe+hqv/tCf/O1f9I3XPuqxD7nwO7/0h09e3nX+wksrAMF0dPHUzW/6VV/z4L/46W/67l/485tO
+XdNz9Cd//de+9NTVw198e3v7xOLk8tj2omdrIw/WjfutVqs777yzlML97rrrrlLKIx7xCF40EZGZ
+vACttVIKcHBw0Fp7rdd6ra7rbPPvEBGz2Yz7SXm42jt34XDWt2linMblGDfefM1w3SPOPOTYY27Y
+AdwYJxbzra7SprZ58uZXedUTf/RTv/iwhxzecdcTL/z9rfHQR8yPbQ8Xn/6Tv/Anb/jGL/+3dzyu
+Md/Z6I7sujgWPPFJT3nq2Sc9+fRDHv7wR7/cyc2zJ3sg2njuaU++7eIdZ3duumG5tdjYKQ956C2P
+fcUXu843+C+fsbE5c0YXakljQr547kl/+dfl/N0bDz65UTdnkmtlakPdvuV1XuPEL/7Ob7zUy7/s
+g3b6zW3+4clPvvD08499n/doX//hv3nqPb7jsdf+yoNufvTLv/zJg+Ozp/16LHqA1T3f+rXf/6hX
+epX1k+566n3Dw2+87tJ9G2cedIOf9qTf/4u/P+pOX98FbNx0qvuLv/nbWy/oNd74pX/5T//2z2M4
+87CXe8jq95/w57/3tEvTG910gqteJFSuuuqqq6666v+b0t/997/5M7//J/Ojs7c8+NUu3f4rw+xh
+p05tj9NYNd52533Hb3rw6UUbMrti4sxNs3suPPSRdz/9caevf9VZ3HvimutvOH3ypjM761M3vPTx
+vS/74k9eb7/0m7/KNV/+nd/3pO6+W17mNUtXQLYe/LBHrM4/7eaXfRkAbT382In7LpxT6a+96eab
+brwJOH/2GZfG+Y2nrzm46yl/efHWOudwLNq77Ta//Pzopz7mM//4Ya/wptvnfyOKz97+9GH+6JOn
+todxKBFA7eZ//hs/+Ht/ddOFu+55+Gu+Sf7lL/7pn/zJPXurx153w2EMiSSkKHDr2XLzo7e535kz
+Z97szd6MB/jTP/3TJz7xiY94xCN40ZRSbPMCTNNUSgGWy+XW1tb1118fEfyHmh1/0Itf23/313z5
+gx/78o9+xVc/sX3ikk+8ykMf/Z3f8e237bzsW123BVz3qJd65RsKw06/vfVqr3Z85nt+71f/9CXf
+7L3e8KHjN33LD04PeqlXfJlH7F06tnPypjd5jYf97W3jG73+q56ebd98cmf1Ei9THvIqj966+J3f
+8UNv8o7v+dHvtf0tP/b7L/Yqb7xTgaz97I9/+sdf+XXe7k1fov7pvf2xx77Y27/SU37pT570lu/0
+qovulbeObegVX+maY8df/hVfaVotHvZyL5F3fdefPq1/7Td69VumM9dsbbZXetVTO6df+ZVf5eTi
+6Pt//c9e+tXf7OYdgd7xPd7tK7/tJ0+81Fu98Ys/5Ma3efsbtl96+5ZHv/sbPv6n/uCvX/st3vvm
+U6+4vGYBML/+Ld/45b/kG7/rxd/pM97o5a77zm/+7rN58v0+4l381N/6uh/8g7d4/w9rz/j1H77j
+Ie/4vu/y5V//Iw963Xd57dd9Kc5/7W/eVj7oQ97g1N7N3/zN3/WoN3/fV76+46oXCbp48aLtcRx3
+d3fvuOOOl33Zlz1+/DjPaXd394lPfOIrvdIr8ULY6/U6au1q5QWYhnWjzvrCVVddddX/SAcHBxGx
+sbHBi8Lr227bveGma2qwXq9LN6tFOU2T3Xcd5HqYuq4LCcicxsmzvsMehqH0syKu+u80HTzlKU87
+9NYjH/HQOp1/4tPOnTl9enNrns0aju64Z/f0DdcsqrJubhzd/uVf8+1v8kGf/mKnp3Vsz9r+3hAn
+dzZXB7tjt73Vdp/w9LtPP+TRZzbi9qc9Zeh2rjuxtZ584thi/2Dcfdyvf8tv3vWpn/hBmwXg4Gl/
+/F2/d8e7vc0bd12/veiBtj566pNv3TpzZmdn++DCHecv1cc+5sG75+5YlRNbsfv0u9aPesRDx6ML
+3dZJDeef9PRzZ86c3tyctzF3jm0L2sH5Jz3tNnauecSDb1ydv/OSN3x49ii3rz2z3SsnOmfq0pO/
+65cf/37v8y6bhRfk0qVLP/3TP/2Wb/mWJ06c4EXw93//97fffvubvMmb8Pw87WlP+5u/+Zu3eZu3
++fu///vbb7/9Td7kTfi/Y/XrP/trj3y1N7rlVM9/G0/jMrqN4PnYv+8fnr66+SVv2eGqf40nP/nJ
+kh7+8IfzHNDFixdtj+O4u7t7xx13vOzLvuzx48d5Tru7u0984hNf6ZVeiRck13/xW7/4x4+/8+RD
+XvJt3vQ15wIY9279td+/59jOuesf+yYPPVnueeIffs8P/vbWdTe+7hu/+jNuve01X/N1NgpXXXXV
+Vf+jHBwcRMTGxgYvgsf93o9+/Q/85Tt++Ie/5MZ9P/KLv7dxzWPf9q1e6Xd//Mf+/q7Vm73be8zv
+/KNf+J0/O/Nib/qub/KytMNf/NHvf9xdR6/7du978sKf/+Sv/+11L/5K7/ymrxpc9b/AsH/h7nOr
+Bz3kBv71du++bV1PXHtmmyvcds/ft3Hy+j74LzMc7V4cN6491vNC/eIv/uLp06df8RVfkRfB4x//
++Kc//elv8iZvIonn8aQnPekJT3jCW77lW/7Zn/3Z3t7e673e63HVVf+zPfnJT5b08Ic/nOdA8B/h
+7if+2RPOn/jgD//wt3+9V+hzfNrf/uEf//3Th2m6dOlgf393NRk42h9e7rXf9m3e6FF/9wd/e37v
+nj/7vT946p2XYHrcn/zOr/3BXy0Hn7/nKX/2h3/4F0+8G7j3qf/w+3/8Z5cGrrrqqqv+pzr8m79+
++su+yTu/1mNv2r7usR/y4R+ws3/+r//sdw6uf9WPeM9X/6tf//W/eOLee33kJ25d+PPbVpx7wl8t
+T738h7zbmzzpT37615948P4f9QEb559x28WBq/436LdPPughN/Bvcvz6W649s82zqBw/fX0f/Ffq
+N45fe6znX/KIRzzi6U9/+jRNvAgiIjN5AVprpRRgtVr1fc9VV/1vReU/wtmzd554zBsUKPPF0/7g
+p374d/9huTfsv9Ubz7ouIiSAWvJJ//Bnu+e6mx7xyL//81/b67d/53d/4+LNx552Nk/Pnvxrf6Dh
+735y/bBXP/rrX96MV/j1H/3Js6vVree7d3+zl+aqq6666n+izdd83Zf7yu/4wb948Ye8/MOOPf1v
+fpebH3ymu+/SsZMbW83nf3917OHH+37nxOxo6Txc7/TXbp7cGNcHHLt+Y7a10+rRsIKeq676n+FB
+D3rQn//5n995550PetCD+JdEhG3bknge0zSVUoBxHDc3N7nqqv+tCP4jnNg+deff/xWwXq7uvuOe
+47e81Nu/yzs86rqtYZxapg1gZ2v5iJd+rVd9sWs3bnz067/ma5zcWd1+9+rRL/sqr/nyj7p4133z
+6298zdd+w8fcsHr6M+4a5je+5du986u/3C1cddVVV/0P1U498hVf56Uf/Yd//Ee3PeHPH3928WZv
++MondzYv3XV2f/feOHPTor90YXm0d3HM4SCJS8Pu/tndbnEsjo4ODvd3Y9yaLbjqqv8x+r6/5ZZb
+nvSkJ/EiKKVkpm2en9ZaKQUYhmGxWHDVVf9bEfxHuPklX+PFt+/6qq/52l/43b9/9Gu+3ualp//5
+Xz6NfuPMmWMnjp/Z6AR0i5Mv/yqv/lKPuJ7ozpw4EVGO7Vz/sq/w4D/6iW//2h/9s1d8jZc9c/Ka
+Ptg8du0jX+plH3qq/fGf/M3BOrjqqquu+h8q/+Rnf+SX/uRpL/0yL3b2SX//uH/44+/+ru87OvnS
+O/f+zjf81F+/+pu84Us9fOt7vuYbFg9/jbjncfvbD94495ff+RN/+LKv9bav99D+G7/x28uDX/yW
+4x1XXfU/ySMf+ci777774OCAf0kpxbZtnp9xHEspwDAMs9mMq6763wpdvHjR9jiOu7u7d9xxx8u+
+7MseP36c57S7u/vEJz7xlV7plXihWmsRIcnOTEcp4l9mp01E8AB2ZjqiSFx11VVX/Zc5ODiIiI2N
+DV4kwz33Hl177XFBtmaIUuRMExFAy4wIAWA7TQkBmU1RxFVX/c9i+2d+5mce8pCHvNRLvRQv1G23
+3fYnf/Inb/3Wb911Hc/jr/7qr1ar1Su90iv93M/93Mu8zMvccsstXHXV/2xPfvKTJT384Q/nOVD5
+j1NK4TIpSuFFJIXEc5GiFK666qqr/mfrr7u257IoBQBQhLiiRHA/SUVcEVG46qr/eSQ98pGPfMIT
+nvASL/ESEcELtrOz87CHPSwieH5e7MVerLUm6TVe4zU2Nze56qr/rQiuuuqqq6666qqrLnvIQx5y
+eHh433338UIdP378ZV/2ZUspPD993y8WC0knT56czWZcddX/VlT+rcZxvHTpkiSuuuqqq/5PkLRe
+ryWtVivb/Bc6fvx4KYWrrvrvtlgsbrrppsc97nHXXXcdV131/x2Vf4dSiiSuuuqqq/5PkBQRkkop
+trnqqv+XHvWoR91xxx22JfGisZ002+msdthEEAUVEFdd9b8VlX8rSbVWrrrqqqv+r5AUEZJKKbb5
+LySJq676n+GGG2644YYbeAHsHHM4f3T2noPbzy3v219fvLS6uDfsrqfVlMNRju94/o7HLg8zNg4e
+c2b/xs27Vy/R11PH5zccm1+/3Z/pYi4FV131vwOVq6666qqr/q0kbK666v+8oa1u3X3K39z7J7df
+euo9B3ccDJfW02rIdWaTQpIQMKgcnbudo71sWl5bLx6vf3TXX6zTXcxrmc3L9pnNh167+cgzmw+9
+ZvMRx+Y3CHHVVf9zUfmPIEUEraUUEaTVlRjH0TyLai1tmsx/jygVt0zzHypKKaFsLVX6WrON49S6
+fia3cZwMKPq+9zSMLWvXF+V6mKLUrpZpGJrNVVdd9b+WopQI3KaWESXksWWtXS0a1gNR+q62cZjS
+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
+dwW0tl6tB+7XhmG5XCUANkCb1kdH6zTPlLk6OhpbYi+Xyym56qr/An9zfv3xf3Luwrp1gaCGuqKu
+qA91QRfqQ31RH6qSwWBjjH3Q9U986RcvgI2NcXjxBOpQjcHGxsa27bRtjC2nNQ5p28a2wbaNbdsG
+g42NsXGCDWBjY6EStagv6qu6El2Jrqgr6opqqIBqzJ564Q9+6clfNLYlV131n4LyyZ/8yUBmrlar
+vb2966+/fj6f85xWq9X58+dvuukmXoDVfU/54R/5sb/4+6df+4jHHpsFQK5++zd/sTvz6J0ZL8D0
+R7/1m3fd+eQn7PYPu+74X/35H684dWK74/mbfv/XfjO3rz+x2fEs63t/8Zf/8Pztf/YDP/v7T/77
+v7jQnbl5qz3haeeuueaEeD4O9s5evOStzZ7nZ3XuyT//q3/ziMc8NLjqqqv+/xqGQVLXdTw/e7f9
+9dd9w3c8/YJe6sVu/Pnv+9Zf/v2/2Lrxsdcdmw1H9/7Sj/3M3zz53IMe8/C59r/3y78uHvESF//u
+1374x3/l4uz0I288Bfl3f/Drv/Srf7q47vr7/uaXv+cnf+POS+2xj7wluOqq/0RP3Rs/4g/P3nY4
+9SFBF+qCLtSFukIf6kJ9UEMhDDaAwQgL+9KxnYc+4/b+0oERgF3GOHx0Hm4ulQAGAAwADb3k0cG1
+43B0LXfNZhdXIZkHEPcTgBAAAgQIQAAIKSSFBCBAkgAJgY1DcfboqXvDvQ878aqhwlVX/VtduHBB
+0smTJ3kOBP8R7njGP6xPvsIHvd+73rjg6Y//89/87T+6tBwOjw6m5e5f/NHv/PFfP3EYD5/w+L/6
+3d/982fcdZHp6OnPeMbR7vmLq9m1x+vF/SPIg4ODqXHprn/4hV/45afde2n/4t33XhpWe/fedXb3
+9lv//i/+8h92dy897alPPZq4dM+dd57dB+584tM2rn/I5ry+5tu+3wd/2Lvt/t2f3n4U1585ftft
+j/uDP/77o8NLf/ZHv/tXT7gLxr/549/5wz/5mz/81Z/89h/+hYOpPelvfv+Xf+13L67Hc3fd/ud/
+/CdPftqTfutXfuNivf5Yu+0J941cddVVV70AT/u7f5g97JXe7k3fqJx/wrljL/HWr/6Sdz3jduBp
+f/Lrt+fiIY99xPHCnf/wJ085N3poj33Vt/qw9379+55xFzCdfcof/d0Trn3sY2+Yr3/vyauP/sgP
+nN331GdcHLjqqv8051btE//k3FP2xz4kqKEu6EN9qA91oa6oL6ohgcHGYLCxbYy9N58/6aVfrNi2
+bRu037afWgkZG4ONjY1tTEIap3JoY9KMjcFgsLGxSWxsY2NIsDE2tjHY2LZQqKvRRfRFtagrUSNq
+UQ0VUIn+H+775T+6/bu56qr/eJRP/uRPBjJztVrt7e1df/318/mc57Rarc6fP3/TTTfxApy87kEH
+T/jtX/qLpz/qxR+7f9vf/fIv/Pzt0zUn+/0ztzzqrr/6rZ/5jT89eWLz13/zjx/+8Ov+4u9uPTnb
++8O/2zuWdw2nX+LB5c4f/dlfv/VJ//BnTz73Ug/a/q0//rubH3L94/7oz88e3HnPeP323l/88VOX
+j/+DX9562EvrcHf3zqfuzU/e+be/sT7+2BtPzJ7wD3/KqZfYWj75aOvhDzp5fPW0J5/PS0/8h7NP
++pvfKNc/9u6/+oXf/NMn/f3j/2G9PrjjbHvkIx807t97oGtv4Gm/+5Tlg7anv33Cbbc/8U/vnU6d
+e+Kv3smDX+mlHnZ06d7zy+2HXL/NVVdd9f/VMAySuq7j+Tl945m/+bUfefrq5Es95pZb/+o3/+Kp
+By/7Kq90zc78z37lF4ZrH93u+PM7DvKuc3s3b5049pCHblx66g/97G/f8uKv8NDrT1y49e/+4O/P
+P+KG+hdPue/4ePD0i2ef9rjbH/byL3d6o+Oqq/4TrJs/6U/O/c49q3mRoIquqA91oS7UBV2oCxVh
+wBgMBmyDAbCxvXds++FPfXrdP0LCuLn03dlHH5jEXGEMgBu81OHBNW4HN23eoa2DIYXFZQIMCMwz
+icskQDyTAAEIACGpAEgASAhxP0vlzv2/Pz6/4czmw7jqqn+TCxcuSDp58iTPgeA/wnp19Ipv996v
+et3Rz/zKb//dEy+84qu+3Hj+QivxtL/8g93Zg17qwWcunt+74cVe+hVe/lVe7OTh7/75rS/7src8
+6dZLL/7w0+vJL/dG7/wBH/Rhb/5aL7XaPVvPPPiVXvaVT9TdvSM8rleHy5ym4w959Mu/2MNybI96
+pVfa+7s/PKuHvNRDtwEJbGdawd5T/2Z3uvb4dmbbvOmhr/ASjzy4ePERr/Ba7/GOb6O9u6578Zd7
+2INvuvb66x9yy0PLtHfdI172FV/+Jaa9O8bZzS//ci/9xm/xrtcu/+GPHn+7QpK46qqrrnr+zPzE
+a7zRWy+f/ie//Cu/Vx/yuu/35o/9kz//K+D4dace/mIv/+K3HPvLP/6jxz/+yb/7+7/2e3/0F/XG
+F3vfd3mz2/7ij+66dLhqcf0jH/OKL/aoKcsbvd1b3rhBuebm6zYXXHXVf46v+rvdX7zjaF4EFFFD
+XaiGaqgGNdSHijDYGBtsbBsMNjYG2Rc3Np/8Ui9WMp227aB/Rm4uF0kaG5sEjI2NIQlNtR/dgcHG
+xraxsW2DjcHGxtjYxmCwwTYYABsDRaWoRnRFtagW1aIaqiKE0u03n/a1dx88nquu+o9E8B9h3Lvn
+B7/ha3//tu41XuZhXp978p0Xb7j+zKkT15w5dfzsHU/Yy8W1Z05fc3wHuO7mxT272ye4WE8/7ERP
+3ThxZmcO7GxtnnnYy167/7gv+8qvWt3w6m/yyi97++9+78/92d1nTp86fep0wInTJ6+55uZ68IzF
+wx7TA3Dt8dN75+9ZLDZ//ye+9Ru/+zde5g1f9+ZTJ06dPn765JlS41Ve9TUuPOXP/uIJz3i5V3nN
+J/zad3/fT/zO1pnrbv/7Xx/OvNyFP/7Br/qOn334K7zRQ68/tpiVO578N08772OLeva2u6+95Rqu
+uuqqq54/3f34P/2xH/6Zeu2Lvc4bvcrRP/zWt//S37/8i934R3/z5Jd89Td6yq9902/dsfMhH/GR
+H/fRH/2u7/hOb/xqL/UXP/c9X/Ntv/DI13iNw1v//uLiEY/ZvPfrf/hXXu4VX/kZf/Onf/G397zW
+67/m8TlXXfWf4RdvP/zOJ+31RUARXagLdVIXdEEX6kIhDDbGRjbGNgYbQ4KNbbX8u8c8YnX6uFrD
+BscBW0/tstrYto2d2LZt23bQahkSk8bGYLCxsTE2trEx2NgY27YxGGzbtjHYGFRUi2pEF6qhGlFD
+NVSFQuVgvPBrT/2q1XTAVVf9h0EXL160PY7j7u7uHXfc8bIv+7LHjx/nOe3u7j7xiU98pVd6JV4w
+25IAMADimQzishz2fvWnf2b2sNd59Uf3+3Hy5KLyPGxLArCReIDzt/3NT/3WP7z5O7zrdRsATOd+
+8ef/9JXf9E1P9jYSz8M2SALbSMJGwjZI4pkMWt73pF/703vf/M1fI7jqqqv+/zo4OIiIjY0NXoBL
+ly7NZlvzeeGy4eytf3n34Su95IvJIJ6LbUncz0bCNkjiqqv+M9xxOL3Lb95z12GrQYg+1IX6UBf0
+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
+yfmjbOPY0pIkprGBJCFpffDnf/v35+960t/efnGxsbjt1iffe3HoqoZhIEKI+0khD3//V399z+66
+FEnYVimHdz7t8bffe+8z/mE89YiXfPj1noZhnFCUiGkcxylPnLk+zz35Tx/3tBPX3szZJ/78b/7e
+6CpJCLv25R9+51fvjVMPvuHM8s6//dFf/VOjcRymVM1Lv/eHTzyx8G/92d9tbmz+5e/9wVKduOqq
+q/5fq52e+Ee/d/uyv+708bv/4U/+7BkHJ6fzf/gXj3N0p2645cUfffN9z7j97F1//4d/v3u6u/A7
+v/8Xv/d7f7hz7XV/81u/esH90Z2P+4Mn3He6rv7wj37n137rT3fOnPqrP/ydc0cOcdVV/05Hk3/m
+1sMigBBFlKAERRRRAgDzLAaMwWBjsA0YMAaDjZGxjcFgYzAMir9+uZf2rHdmHPrkndupNLbT2ACe
+Iib3dto2NgaDjY2xsY0BY7CNMWAMtg0YwLbBxoABMBiwAWOhUAmVUAkVqYSKUCh213c98dzvcNVV
+/3ZU/t1sb585s/7Tv92Pxz76dP+nv/Wzv/PnT3+FN3qrxXxRxou/9JM/c+vB5lu90Sv+5q//atTT
+px/0yNd+8VO/+adPf4UXP9kdf9SDTt/2O7/7B7988JR/eNq9b3jDi/3Gz/z0X9926cGPepVHXnOw
+O3uJh8YTHnfx+MHTf2dv9siTpfz1b/9y90ZvvH7KHx0ce8nXfOkb/+EZt5+5+WV2zj/jvjtuPXfL
+iUtP/5tf+cO/etSrvs1Lbt/1Y7/51y/+cq+7U++NoSz68tS//YM777r7t/7iGaz2j9/40i9+4p4/
+um3xZq//MidPX7f7108tL/kSR7f92a/90j+82MOvueOvfudpF2Zv8EaP/bu/e/zGdbO/+Ou/v+kR
+L7WYPenec0cPPtW1NFddddX/V7YWO5sH55+0fe1NeccTt2945IvdtPuDf3Lr9Govcebmh3TTpYe8
+9Kucbrff/ZiXfo1H5fd916/o2E1v8NqvPV34zrMX1/O7773mppd4zZfb/P6f/Lnl5kPf5HVefbzt
+x87u7Z9ebGNz1VX/Dn947/Ipe2MNCYpUpCIVqYSqENgYDDYGwFxmAGzAgDEYMIBtg8FgAxgbRWtP
+vuH6ex790Ov+4h/SbD4uyovXnCYAYxm7RRscxgYZwIAQAAZAxkJgEGAMkowFNhJGAmOBQcZCXCFj
+gSGIVAllqoSbVVJhG/wPZ3/5Ja59kxozrrrq34Lg3y3bdOpBL/de7/L6T//jX/jNv7+7uJvH8m//
++mnUOFquNmebu/fe8ZSn3FZOPOw93v3NdPGuv3/c329fd+Ntj7/1lsc+iKktto+fOX362M724V3/
+cG77MZ/yCZ+wc+Ev/+bW+9YtGI929/ZXOvamb/Zas65/8C0nn/K4J9x+z/5NN1/L1I6G/ezmsra2
+j2/WGDxtdDz5z373dx9/xzu9/8e8+Ws88uK5e5eTQ7p0/t7TD33p133D133D13i583f+w9887t6b
+H3oz6/XNL/ua7/Cmr/rHv/jTh7ObX/tN3+KxN27LGxfPPeXug2Ov8pqv9Tqv+bqv9Kqv8nIv9Yh5
+9uthQFx11VX/n7VxevgrvcEbveL1P/tDP1Qf+SqLe//qx37uj7avOVMj8PDUJ9x686MeXrJlQzZR
+ihKULaOUEjLGBtmESZCCq676d/u1O4+GtCBECYoIUYIiSggwAMbGBhuDjcHYYLAxGLANxgaDwQYw
+2LKNvZL++uVfyrM+ye3bun6vGNs2tg0eWA45SQYbGxtj27ZtDBhj24CNjQFjwBhsDDbGGAADBgw2
+xpgrFCpShEIqIkIFFKr3HjzpnoMnctVV/0YE/24R5fytf/n7f3tHP5tdvOuJf/a3t974kAfNPGVw
+x9//2dOPugdfdzxb67c3ojv1Eg9tv//3y8fe0J8bFw8+c2xsee1DH/Nyr/gKD73pZL9xavmMv/v5
+X/mFe6czj7z+9NP+7Nd++08e35r77c0OpmF9+mEv2z39Dy6declbjpUJLbrNPDpotX/YS7zCY67p
+/uDP/+G6Wx48X/TbXv3Ob/3yPzzlXkXgbJm2a1fuvfXJ5+P0TXnhydPikdefJHjqP/zV3z3p7kXo
+wD66+2l/8Ju/c/tSD7rmxDQM4zi11sZxauvhKI8W8znmqquu+v+sVJ7+uL96ym3DxmZpLR72mEed
+uulBL/Owm8+eveCDe/7hEjcd3zx548PO/9Vv/sQv/f71L/dKZzbO/9yP/sS54czerX9xz3px39P/
+7Gd/4ffPPOwVHuxzP/ETP3t36W84vpU2V13173Bx3f7ovlUNASGKVEQRBYoQ2AAGLAADGABjG4PB
+YLAxMtgYDDYG2zYGg6G0fMLNN597xIMjJ90+Hr+4nZFgY2Psoe2tpyOMbWNjsLExGNsYbAy2DQZM
+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
+tymu+legctVVV1111VVX/W+znPwPF9dVAEIhQgoQEpcZAJvnZGwuMwDGYGww2BhsjG0MBgub5xX2
+7mzx96/yMq/2Q7948tz23rFDoBEj4l9kIxkEGDCSQcZCPJtBBmEsCwEYZBDimQxCUsgCCUEIGaWn
+uw+e+NATr8q/xcE3fNGXP+zdv/CV2+989/f83Ie93aO//4d+fv6gl3+Hl6p/9Cd3PuaGo5/5yd8+
+8/Jv8qaP5nt/9Peuvf74y77Ju1576a/O7jz07//or++4954Lpzbf6FUe9ZTH/emq3nTm6B++84f+
++PXf7T0fWu68zQ+5pTz1aXub9/zJr13YPnnbXz/9Qp290Wu82u2P+72Tj3ytG7b0N7//y3fpZfnL
+Pz/52Hd579eYf/4Xfe2x93/X/QurP/rdH/r9v9S7vc3L/sLP/Uw588rv906v8ee/+L2//fThpa9r
+X/Ddv3PzI1/89t/9vj+/48T7ve+b/vmPfte9px/7mGNHv/VHT3/T93mfTV34xd/6k/d981fmqn8F
+gquuuuqqq6666n+bs6t2x+EUkiCEJEFIAUI8m3hu4gHMA5hnMUIYDDYvSLT2t4959NEN1x7/y4gS
+QEMjRQgEAoFAIBAIBAJhg8FgxLMZwDx/5n4CMEaYZxFICCSJy0yeP3oGL4DtaZouXbr0jGc84x/+
+4R/+7u/+7vz58zzb1tu+6Wv9/k989c/9w/Kt3+b173rqrY96qZd5+u/90t/dcVB7br/t3Eu+yov/
+1S/8+O/+2W8/OU884nT8/m/93m/99l/u33f3va1/iUde9ze/8yPf+q3f+HO/+g91vOubv/1XXun1
+X/onv+Wb//TP/vCvn3ju3qf80R//yV/+yh/d/gov99Injun2v/irv/z7P//t33zifEMwPf5vn/Ji
+r/jYCO+cOn3shpd8rYdt/vlf//1f/8Pj/uRXf/X0Sz3m9370W/a2H/K03/6R7/n+7/vlJ42v/0ov
+0bT98q/8susn/tIvPmn2Mifu+fpv/oFf/P2nPvpR1/zmz//JS7zii+9dOnjUy7/4HU98yoqr/lWo
+/AdZr47GKba25twvMxUhXiC3qaGICMlpJIkXJDOlkHigHEeHVkfLmM8XXce/kp1GIQHj0eEabW5s
+iOfgHJbrnPdltVp3i40ugquuuuqqy5zLJz/5vgc99OZZp9Xh4UTZ3Fy0Yb2avLkxl6fDw9VsY6NG
+AG1crgZvbG7IeXh41C02+yKuuurf6s6jaWgGBAKBAJCQsLmfDRiDjTH3MxjAIAxgMNg2AtsAmBci
+7PMbG3//Si/5sn91bmO92NXBWLrREuZFYwDLWAgM4n4GicsM4pmMBRgLEdgSAEiSJEmSsIQAKfbW
+d49t1ZU5AFy8ePH8+fN7e3uXLl3a39/f29sDFovFfD63vbOzc+rUKa4YL60e9Bpf+rnv9ow//6kf
++6GfeIVrln99z7mn37UMEOtnPPnpT99rF/b2zKNf6lGPfqXXuv43vvirL9z0yi9bLubiEWe2H3fz
+Y175bd7mTbjv3LR7dlWPveprv+Kf/fJvnD9q3XEd7o1T+hEv/vCbrzs9evMNX+uxP/TDP/So13/P
+kwEc7V3wsU3SQgWmZ5w7P7vuMWMO9cSjX+aht/zZr97xjItPufHGW4aLt0+zl3npl3+lw5P6wztX
+4+7Fm2586Vd7tfO/8O1/dP0jb3nEo15m863v+OXf+ZObX+0GHnO6rjwm8+CqFxmV/wjLe570wz/7
+a1N38o3e7h1v2SkAufqtX/+lR73y29y0wwsw/eFv/0Z0bW/nsW/00g/+i7/4o5M3vPRDb9zg+Zt+
+71d/4+aXfY2HXrPBs6zu/oVf+ZuTi3O/9bdnz5y+7i3e7p1u2A4e4PC+ew66xbUnjvEC3PkXv/zE
+2Yu/3kvccnj2CT/+Y7+53D7zlm/yBgdHy4fffH2IK/76N3/hSdPpm2Z7T3zKE7dvfPV3eNNX5Kqr
+rrrqsr/77Z/81h//h3f8sA99sZ2z3/f9v3PDS73Sm73Oo379R3/ySWdXb/CO7za74w9/7Y/+5sQj
+X+/d3+KVNO79/I/84FPvO3q1t3qvk+f+/Od/7/GnH/my7/qWr1m46qp/o7uP2phIICQkJEJICAwG
+2waZ5LmZB7LB3E/CtjEYDGAQL4Ba/s1LPuYl/vSvtu64tPsgTYvFmEa8SGwEyCCDeC7G4jlZEg9g
+kEHIIBASEhICCQXl0uru5XSpK3MA+Ju/+Ztz585tbm4eO3bs+uuvP3ny5ObmZt/3XdfxXLrZ0//4
+Z377N6/dPHrC9Y9+zXv+5jd16kHXbe4N2cTwjKfftvWolz1+17lhlMJs3rK93PM1j9593O9c+1Lv
+1N3x98euufnMmZtuuGZnPPPQR57+q8/+mC/duO7FX/kxs6/6kW/+63H3hpe+oYYQbuONL/PyF774
+Ox79YY8AYOeGh8xvv3NaaPnLv/D90+O7Z8xe9kNf7MyP3bHf1cgye+XXfoPb/2qvHU4v95pvcPf3
+/9gXf9Gf3fLwF9+78x/aK7/lnb/3I5/z5/XlX/s1d5/4uHZ46S//8nGL7bI/jO2eu3xqvhFc9a9B
+5T/CXXc8YTz5ch/49q/s1p7693/8lHvGV3rll1qtltPq4p/+7V+O8+tf/iVvefKTHn/fffngRz78
+odcunnL7vdefWOwNG4+5ZnXbxUOYDg4Ojlu7t//tb//FbY99pVe/rj88LKePc+H8ejYd3HbvBe/t
+7z/tSU+69sRLjedu34/jN1+7c8cTn75948O21/uv+04ffuZpP/qnf/3Xp6YL2zc86iUfdc1f/tbv
+jSdvPPqbX/vDg+s+5r3e9B/+4vd328nXfJ1XvPiEx912cHBia+P22+956Mu8ZjceLRmBux7/JN3w
+Uh/81q926Ym/8fnf/gcf/uEf4ItPu+dS//Ivc91v/P4/vORrv9pv/+GfvcJrveNw11/cuvcKD94R
+V1111VUcPu4f7nipN3iH13yxm57+V387bpx+mZd59N7T/+Lollf/yDebfuTnfr3v4r0/+pN+90e/
+8xnLV9p8yt+0617pQ95o66d/42f/llMf+FEf+Bs/8jO3XVg/5OSMq676N7nnaBrS8yKBQCAQCAAL
+GUvYFpj7ybZ5NiPbPJABgXnRFOe9OztPeqmXuPHWs3c85NLQxTrXIvjXMwgAG4nnYBAGZCEewCAA
+C4xAICEhKQARR+Ol1bS/M7sWAF71VV81Imqt/Mvmb//eH/nkxz9x6F790S/2CF7/FZ98270n3vnd
+jm31L/cK0eWbP/3e1XVv907zvlO/WF184oX+5nd4rcc8vD7oxTe3eeR7fOzUAa/zTu/NfKu++IOe
+8KS7HvyIRx3b9KedeYm2cezU8eOe2vbO5od87Ife/Q+/f/0rv95LPGSby17h1V79Z37z19/5gz7v
+Ic+4Y3D/Ng9/zKl+/f43vVyozTYX85vevb/lSWV+7SMecu1DT5y87bA96lEPfe1XeqmNa275lBtv
+uG9v/piHX7+/92rHjh1723d5u6fdmy/xEo/43R/+jld65TcqXPWvQuU/wsNe9o3uvvNHvvF77niX
+d3n7XO392W/+yu1H3S19ja7bv+upv/BXf1jy9f7gj/7ydV/rFf/gj/6yvOTOnz/RL3/j0dZDXuqE
+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
+c8/rv/7rP+hBD+J5vP4NG694zfyP7l3NiiY7UhIlGUUkEa4SAgMgMAIEBoEBEBiDBAYwSGBACGGD
+jAGQMM8kY5AADAIM4gq53bV69GM3TgWXIJAEIJAAhBACCUBIQoAQkhBIgBAAQsbpKT2lW7qlW3qy
+Eyx4hRvfeV63ueqqfxfKJ3/yJwOZuVqt9vb2rr/++vl8znNarVbnz5+/6aabuOqqq6666qr/Dr/3
+w1/6w/+glzpx8F0/9Nuv9nqv8Lg/+o3H3XbpzGL9dd/1Yy/1Ui/2Z7//W/ccccPJ2V/9xZ899Ul3
+d8eObXF03+Fw59/+5rf98I/+yVPWb/KaL/2U3/3un3n8/NVeYvs3f/13DtrxU7Oj23fXi3Z478WD
+e57+lKc+9XE//EM/v3Xz9Sd2TuXubRfaYmtWD2//8x/6zaePd/7Wj/zx8jVe/uGLrZPX7OiPfvM3
+br0YD7rx5J1P+Js/+etnHDtebn/63X/4Kz+7q2NHF5/wTV/89YtHvMTJjc0YDs5dXG5tLc7+7c9+
+1nf+/iu99MN/+ru/b5UXvurrfvbV3vgV/v6PfuepZ49Obh1+wYd9xp88/u/+6M9uvfnG2T884/Al
+HnkTz+O+++77pV/6pVLKm77pm545c4bnp4SuXZRfuuPIBkAESARIgAKFQDyTxGUCAAGAkMRlAiEu
+E5JBQiAJhEAACAQSElcECCQEgoCQl7l50+LOzXo7FCEQSICEEAIJgZCEACEkIZAASQgkAki3zCk9
+pqf0lB6bJ3DL8eZjL/3aD/7QUOGqq140Fy5ckHTy5EmeA+WTP/mTgcxcrVZ7e3vXX3/9fD7nOa1W
+q/Pnz990001cddVVV1111X+Hc09/wp/++eMf88qv8pIv+Zi47x9+8+/ufNof//wdeUMu7x53z91+
+Ye83f/6XzxzzF3319z7o+vmv/tX5a6an/8FThnbP3y0e+sgn/cHf7Vx38m/+7PfHMy9x+Gc/8MtP
+OvjzX/0dTff9ylOPHjE8+Ud++29+/se+q9z80u2+C0f7//D0w2vu+INfWF/32JtPLP7gZ37+xMu/
+zsndv/ubuxev8BIPf9SjHvaE3/uZv7tr749+/qe45prf/NlfWa4uPuPeux//D/fMttX2z/71HfeN
+9+yf2Fn92TPW3X1/8BcXr3uJh5wYDs/9zs//5pmXepmXeanHnKiHf/aX99507frxt+7+zW/8zNHx
+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
+1VVXXXXVVVdd9dyoXHXVVVddddVVV1111VXPjcq/le3WGlddddVVV1111VVXXfV/EJV/q0uXLv3l
+X/5lKYWrrrrqqqv+fV7plV5pc3OTq6666qqr/geh8m916tSpN3iDN+Cqq6666qqrrrrqqqv+D6Jy
+1VVXXXXVVVddddVVVz03KlddddVVV1111VVXXXXVc6Ny1VVXXXXVVVddddVVVz03KlddddVVV111
+1VVXXXXVc6Ny1VVXXXXVVVddddVVVz03KlddddVVV1111VVXXXXVc6Ny1VVXXXXVVVddddVVVz03
+KlddddVVV1111VVXXXXVc6Ny1VVXXXXVVVddddVVVz03KlddddVVV1111VVXXXXVc6Ny1VVXXXXV
+VVddddVVVz03KlddddVVV1111VVXXXXVc6Ny1VVXXXXVVVddddVVVz03KlddddVVV1111VVXXXXV
+c6Ny1VVXXXXVVVddddVVVz03KlddddVVV1111VVXXXXVc6Ny1VVXXXXVVVddddVVVz03KlddddVV
+V1111VVXXXXVc6Ny1VVXXXXVVVddddVVVz03KlddddVVV1111VVXXXXVc6Ny1VVXXXXVVVddddVV
+Vz03KlddddVVV1111VVXXXXVc6Ny1VVXXXXVVVddddVVVz03KlddddVVV1111VVXXXXVc6Ny1VVX
+XXXVVVddddVVVz03Ki8CSffee+8TnvCE1hpXXXXVVVddddVVV131f0Up5fbbb3/oQx/Kc6PyItje
+3n75l3/5cRwlcdVVV1111VVXXXXVVf+HPPrRj7722mt5blReBBFxww03cNVVV1111VVXXXXVVf9f
+ULnqqquuuuqqq6666qqrnhuVq6666qqrrrrqqquuuuq5Ubnqqquuuuqqq6666qqrnhuVq6666qqr
+rrrqqquuuuq5Ubnqqquuuuqqq6666qqrnhuVq6666qqrrrrqqquuuuq5Ubnqqquuuuqqq6666qqr
+nhv/CArAz075hP2HAAAAAElFTkSuQmCC
+------=_Part_96_129671720.1784636611342
+Content-Type: application/octet-stream
+Content-Transfer-Encoding: base64
+Content-Location: file:///C:/9b45ae8c85c16a66aad904c0270f58d8cbd79c476bc8d003bcec7b51f05e1f85
+
+iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAA3NCSVQICAjb4U/gAAAAFVBMVEX/
+//9wcHBwcHBwcHBwcHBwcHBwcHA3RenHAAAAB3RSTlMAZoiZzN3/SzZomQAAAAlwSFlzAAALEgAA
+CxIB0t1+/AAAABx0RVh0U29mdHdhcmUAQWRvYmUgRmlyZXdvcmtzIENTNui8sowAAAAUdEVYdENy
+ZWF0aW9uIFRpbWUANi8xLzEzOKlF0AAAACFJREFUCJljYCATsCgwqIAZTMnMyRAhsTABCIMxkVxT
+GQCLcwHyUKXpLgAAAABJRU5ErkJggg==
+------=_Part_96_129671720.1784636611342--

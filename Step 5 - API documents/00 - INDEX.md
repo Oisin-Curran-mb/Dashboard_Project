@@ -17,7 +17,7 @@
 |---|---|---|---|
 | Budget Compared to Actual (W01) | ✅ Done | [Budget Compared to Actual](Budget%20Compared%20to%20Actual/) | 🟡 Draft — needs review |
 | Pension Plans (W02) | ✅ Done | *(none yet)* | ⚪ Not started — eligible now, no spec written yet |
-| Payroll Distributions (W03) | ✅ Done | [Payroll Distributions](Payroll%20Distributions/) | ✅ Approved — sent out and done |
+| Payroll Distributions (W03) | ✅ Done | [Payroll Distributions](Payroll%20Distributions/) | 🟡 Draft — needs review (reopened 2026-07-21, see note below) |
 | Deposit Accounts (W07) | ✅ Done | [Deposit Accounts](Deposit%20Accounts/) | 🟡 Draft — needs review |
 
 All other widgets (W04–W06, W09–W17) aren't eligible yet — none are marked Done in Step 4.
@@ -58,6 +58,6 @@ All other widgets (W04–W06, W09–W17) aren't eligible yet — none are marked
 
 **Pension Plans (W02) is Done in Step 4 but has no spec here yet.** Per the rule above, it's eligible to start now — this is the next one to write, following `How to Write a Widget API Spec.md` and using `Widget_Comparison_Classic.html`'s `pp1` entry as the baseline (`PensionPlans` legacy class, `pension-plans` modern API). Flagging rather than starting it, since writing the actual spec is real technical work, not folder upkeep.
 
-## Known open item carried over from the last review
+## Known open item — resolved by reopening the spec (2026-07-21)
 
-The Payroll Distributions spec (now approved) never addresses the pay-type/earnings-code breakdown (Regular, Vacation, OverTime, Sick, Double Time, Personal, Holiday, Misc, Other) that the widget's build and final design doc both need — it isn't in the Tables section, the old-vs-new table, or the sign-off list. Since the spec is now marked done, this is worth a conscious call: either it's being deliberately deferred to a later revision, or it was missed. Not re-opening the spec unilaterally — just carrying the flag forward since it was raised before the "done" call was made.
+The previous version of the Payroll Distributions spec never addressed the pay-type/earnings-code breakdown (Regular, Vacation, OverTime, Sick, Double Time, Personal, Holiday, Misc, Other) that the widget's build and final design doc both need — it wasn't in the Tables section, the old-vs-new table, or the sign-off list, despite the spec being marked done. Per direct instruction, the whole spec was rewritten in place (same file, no version-numbered copy) to name this gap directly: the only field either codebase actually returns (`PR_HistoryCompensation.Name`, via `CompensationDistributionID`) doesn't confirm whether it's the Department dimension, the pay-type Category dimension, or something else entirely — see the new spec's "Flag" under Tables and its "Still needs sign-off" list. The all-departments view is fully specified and buildable; the single-department Category view is explicitly flagged as not buildable until that's resolved. Status reverted to 🟡 Draft — needs review, since a spec that names a real unresolved architecture question can't honestly stay marked done.
