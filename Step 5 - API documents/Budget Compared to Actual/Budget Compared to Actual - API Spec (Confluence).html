@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Budget Compared to Actual — API Spec</title>
+<style>
+body { font-family: -apple-system, Helvetica, Arial, sans-serif; max-width: 900px; margin: 30px auto; line-height: 1.5; color: #172B4D; }
+h1 { font-size: 24px; }
+h2 { font-size: 19px; border-bottom: 1px solid #DFE1E6; padding-bottom: 6px; margin-top: 32px; }
+h3 { font-size: 16px; margin-top: 20px; }
+table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+th, td { border: 1px solid #DFE1E6; padding: 6px 10px; text-align: left; vertical-align: top; }
+th { background: #F4F5F7; }
+code { background: #F4F5F7; padding: 1px 5px; border-radius: 3px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 90%; }
+pre { background: #F4F5F7; padding: 12px; border-radius: 4px; overflow-x: auto; }
+pre code { background: none; padding: 0; }
+.status { background: #FFF0B3; display: inline-block; padding: 3px 10px; border-radius: 3px; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<h1>Budget Compared to Actual — API Spec</h1>
+<p><span class="status">Status: DRAFT — not final</span></p>
+<h2>Tables</h2>
+<table>
+<thead>
+<tr>
+<th>Table</th>
+<th>Fields used</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GLSummary</code></td>
+<td>Posted actual amounts per account and period</td>
+</tr>
+<tr>
+<td><code>GLBudgetDetail</code></td>
+<td>Budget amounts per account and period, <code>RevisionStartingPeriodID</code></td>
+</tr>
+<tr>
+<td><code>GLPeriod</code></td>
+<td>Period, YearID — fiscal periods for the year, excluding any period named <code>"Audit"</code></td>
+</tr>
+<tr>
+<td><code>GLAccount</code></td>
+<td>AccountNumber, StatementType (<code>I</code>/<code>E</code>), <code>MasterAccountID</code></td>
+</tr>
+<tr>
+<td><code>GLSpecialReport</code></td>
+<td>Report titles (the "Special Report Title" dropdown)</td>
+</tr>
+<tr>
+<td><code>GL_SpecialReportLine</code></td>
+<td>LineNumber, Name/description, low/high <code>AccountNumber</code> range — the "Special Report Line" dropdown within a selected report</td>
+</tr>
+</tbody>
+</table>
+<p>No new tables. Everything below is new queries and new response fields against the same tables the legacy and modern widgets already use.</p>
+<p><strong>Correction — "Line Description" is the existing Special Report Line dropdown, not an unconfirmed field.</strong> <code>Step 4</code>'s design doc originally left "Line Description" open with a guess that it might be a fixed, hard-coded list. It isn't — the legacy widget's Special Report Filter UI is two dropdowns (Special Report Title, then Special Report Line <em>within</em> that report, ordered by <code>LineNumber</code>), and the modern API already has a matching endpoint (<code>GET /special-report-lines?specialReportId={guid}</code>, returns <code>List&lt;DropDownItem&gt;</code>). "Line Description" is this second dropdown's label text — a real, already-built field, not a separate open question.</p>
+<h2>Old vs. new</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Old (live today)</th>
+<th>New (needed)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Endpoint</td>
+<td><code>GET /api/dashboard/budget-vs-actual/data?accountType={0\|1\|2}&amp;specialReportLineId={guid}</code> returns <code>List&lt;BudgetVsActualPeriodDto&gt;</code> — no variance, no totals</td>
+<td>Same endpoint, response extended with pre-computed per-period variance and a top-level <code>total</code> object for the fiscal year</td>
+</tr>
+<tr>
+<td>Master company (consolidated)</td>
+<td><strong>Broken.</strong> Modern API returns an empty list for <code>CompanyNumber=0</code>. Legacy joined child accounts via <code>GLAccount.MasterAccountID</code></td>
+<td><strong>Must fix</strong> — reinstate the <code>MasterAccountID</code> join so consolidated orgs return combined figures, matching legacy</td>
+</tr>
+<tr>
+<td>User preference persistence</td>
+<td>Legacy saved each user's last Account Type + Special Report Line via <code>SSUserTenantPreferenceRepository</code> (<code>UserPreferences.WidgetBudgetComparedToActual</code>)</td>
+<td>Not implemented in the modern API — client currently manages this state itself. Flagged below, not silently accepted</td>
+</tr>
+<tr>
+<td>Excel/CSV export</td>
+<td>Legacy generated XLSX directly in a button handler (<code>buttonExportToExcel_Click</code>)</td>
+<td>No export endpoint exists yet. The redesigned widget's menu already includes "Download as Excel"/"Download as CSV" at every size except KPI — flagged below</td>
+</tr>
+<tr>
+<td>Period grain</td>
+<td>Monthly only (one row per <code>GLPeriod</code>)</td>
+<td>Monthly unchanged; Quarterly is a client-side sum of 3 consecutive monthly rows — no new endpoint or param needed. Weekly has no day-level GL grain anywhere today — see "Still needs sign-off"</td>
+</tr>
+<tr>
+<td>Variance</td>
+<td>Not returned — legacy and modern both leave <code>Actual - Budget</code> for the caller to compute</td>
+<td>Server pre-computes <code>variance</code>/<code>variancePercent</code> per period, plus once more for the fiscal-year <code>total</code>, matching the pre-computed-diff pattern used in every other spec in this folder</td>
+</tr>
+</tbody>
+</table>
+<h2>Request params</h2>
+<table>
+<thead>
+<tr>
+<th>Param</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>accountType</code></td>
+<td>enum <code>0\|1\|2</code></td>
+<td>yes</td>
+<td>—</td>
+<td><code>0</code> = Income Accounts, <code>1</code> = Expense Accounts, <code>2</code> = Special Report Line (the redesign's "Custom Report")</td>
+</tr>
+<tr>
+<td><code>specialReportLineId</code></td>
+<td>guid</td>
+<td>only if <code>accountType=2</code></td>
+<td>—</td>
+<td>One Special Report Line, from <code>GET /special-report-lines?specialReportId={guid}</code></td>
+</tr>
+</tbody>
+</table>
+<p>Fiscal year is chosen via the existing <code>X-Year-ID</code> header (set from the Fiscal Year filter — FY 2026/FY 2025/FY 2024), and company via <code>X-Company-ID</code> — neither is a new param. <strong>Being able to change Fiscal Year in the filter is the only actual new function here</strong>, and it's a per-request choice, not a global account-wide setting — one request still returns exactly one year's data. This is not a comparison feature like Deposit Accounts' <code>compareTo</code>; it never returns two years side by side.</p>
+<p>Example requests:</p>
+<pre><code>GET /api/dashboard/budget-vs-actual/data?accountType=0
+GET /api/dashboard/budget-vs-actual/data?accountType=2&amp;specialReportLineId=3fa85f64-5717-4562-b3fc-2c963f66afa6
+</code></pre>
+<h2>Response shape</h2>
+<pre><code>{
+  &quot;accountType&quot;: 0,
+  &quot;total&quot;: {
+    &quot;budget&quot;: 248000,
+    &quot;actual&quot;: 245800,
+    &quot;variance&quot;: -2200,
+    &quot;variancePercent&quot;: -1
+  },
+  &quot;periods&quot;: [
+    {
+      &quot;periodId&quot;: 101,
+      &quot;period&quot;: &quot;Jul&quot;,
+      &quot;displayValue&quot;: &quot;Jul 2025&quot;,
+      &quot;actual&quot;: 79500,
+      &quot;budget&quot;: 82000,
+      &quot;variance&quot;: -2500,
+      &quot;variancePercent&quot;: -3
+    },
+    {
+      &quot;periodId&quot;: 102,
+      &quot;period&quot;: &quot;Aug&quot;,
+      &quot;displayValue&quot;: &quot;Aug 2025&quot;,
+      &quot;actual&quot;: 85100,
+      &quot;budget&quot;: 82000,
+      &quot;variance&quot;: 3100,
+      &quot;variancePercent&quot;: 4
+    },
+    {
+      &quot;periodId&quot;: 103,
+      &quot;period&quot;: &quot;Sep&quot;,
+      &quot;displayValue&quot;: &quot;Sep 2025&quot;,
+      &quot;actual&quot;: 81200,
+      &quot;budget&quot;: 84000,
+      &quot;variance&quot;: -2800,
+      &quot;variancePercent&quot;: -3
+    }
+  ]
+}
+</code></pre>
+<ul>
+<li><code>total</code> comes first — it's the fiscal-year-to-date sum of <code>actual</code>/<code>budget</code>/<code>variance</code> across every period in <code>periods[]</code>, placed at the top so the KPI header strip (YTD Budget, YTD Actual, Variance, % Used) reads one object without waiting on the array.</li>
+<li>Each period only carries that period's own <code>actual</code>/<code>budget</code>/<code>variance</code>/<code>variancePercent</code> — no running/YTD fields per row. Anything cumulative lives in <code>total</code> only.</li>
+<li><code>variance</code> = <code>actual - budget</code> (already sign-adjusted per the existing Income ×−1 / Expense ×+1 / Special-Report-Line <code>ReverseSign</code> convention, which is unchanged and confirmed correct). Positive doesn't always mean "favourable" — that flip is Account-Type-dependent and is a frontend colour decision, not something this endpoint decides.</li>
+<li><code>variancePercent</code> = <code>variance</code> as a rounded percent of the matching <code>budget</code> (per-period against that period's <code>budget</code>; for <code>total</code> against the summed <code>budget</code>).</li>
+</ul>
+<h2>Sort</h2>
+<p>Fixed — <code>periods[]</code> in <code>GLPeriod</code> order (chronological, "Audit" excluded). Not user-sortable, matches the Finance-domain default.</p>
+<h2>Edge cases to confirm</h2>
+<ol>
+<li><strong>Empty year</strong> — a fiscal year with no <code>GLBudgetDetail</code> rows at all (never budgeted). Empty <code>periods[]</code> and a zeroed <code>total</code>, or an explicit error?</li>
+<li><strong>Division by zero in <code>variancePercent</code></strong> — a period with <code>budget: 0</code>. Return <code>null</code> instead of a percent, consistent with how the other specs in this folder handle it.</li>
+<li><strong>Special Report Line with no accounts in range</strong> — a <code>GL_SpecialReportLine</code> whose low/high <code>AccountNumber</code> range matches nothing this year. Empty <code>periods[]</code>, or an error?</li>
+<li><strong>Master company with zero child accounts</strong> — a consolidated company with no linked entities yet. Same shape as a normal empty result, or distinguishable somehow?</li>
+<li><strong><code>specialReportLineId</code> provided without <code>accountType=2</code></strong> — conflicting params. Ignore <code>specialReportLineId</code>, or reject the request?</li>
+</ol>
+<h2>Not in scope</h2>
+<ul>
+<li><strong>Weekly-grain data</strong> — not being built against real data right now; see "Still needs sign-off."</li>
+<li>No per-transaction or per-account breakdown — this stays at period-level aggregation only, same as today.</li>
+</ul>
+<h2>Still needs sign-off</h2>
+<ul>
+<li><strong>Custom Report (Special Report Line) is the one to worry about most.</strong> Every value here is customer-configured — each org defines its own Special Reports and Special Report Lines, with its own low/high <code>AccountNumber</code> ranges — so there's no single fixed shape to test against. The new <code>variance</code>/<code>total</code> fields and the master-company fix below both need explicit testing against real customer-configured reports, not just verified against the fixed Income/Expense paths.</li>
+<li><strong>Master company (<code>CompanyNumber=0</code>) rollup</strong> — confirmed broken (returns empty today). Needs the <code>MasterAccountID</code> join reinstated; exact dedupe/aggregation logic across child accounts still needs a dev answer.</li>
+<li><strong>Weekly Period View</strong> — no confirmed day-level GL transaction grain exists in <code>GLSummary</code>/<code>GLBudgetDetail</code> today. This needs a real feasibility answer, not just a confirmation — there's no partial support to build on.</li>
+<li><strong>Excel/CSV export endpoint</strong> — the redesigned widget's menu already assumes this exists (Download as Excel/CSV, every size except KPI). No backend endpoint has been built. Needs a decision on whether/when to build it before this ships.</li>
+<li><strong>User preference persistence</strong> — legacy remembered each user's last Account Type + Special Report Line. Decide whether the modern API should regain this (new preference-storage work) or whether client-managed state is acceptable permanently.</li>
+<li><strong>Fiscal year varying by organisation</strong> — confirm the existing <code>X-Year-ID</code>/<code>X-Company-ID</code> header scoping (<code>GLPeriod</code> is per-company, per-year, not a hardcoded calendar range) already returns correct data for orgs whose fiscal year isn't July–June. Not a new feature to build, just needs a straight yes/no from backend.</li>
+</ul>
+
+</body>
+</html>
