@@ -4,33 +4,59 @@
 
 **Widget:** W10 — Loans With Balance Due
 **Module:** Finance
-**Researched:** Pending
-**Status:** ⚪ Not yet researched — structure only, set up 2026-07-21 per direct instruction, following `Market Research/TEMPLATE.md`
+**Researched:** 2026-07-22
+**Status:** ✅ Researched — via the `widget-market-research` skill (parallel-agent research pass, manual cross-check in place of automated verification)
 
 ## What This Widget Shows Today
 
-*(Pending — one or two lines, to be linked to `Step 1 - Dashboard Research/10 - Loans With Balance Due.md` once this file is actually researched.)*
+Per `Step 1 - Dashboard Research/10 - Loans With Balance Due.md`: a table (account number, name, last payment date, amount due — sorted by name then account, totals row) side by side with a pie chart ("By Age") grouping the total balance into 4 buckets — Current (<30 days), 30 (30–59), 60 (60–89), Over 60 (90+) — unaffected by the table's loan-type filter. **Note:** this widget is already Step 4 — locked (see `Step 4 - Widget Final Design/W10 - Loans With Balance Due.md`); the design below has already moved off the pie chart described here, onto Balance Bars + Summary Table. This research pass checks that decision against precedent rather than proposing it fresh.
 
 ## Data Used
 
-*(Pending — to be pulled from `Step 1 - Dashboard Research/10 - Loans With Balance Due.md`'s "Where the Data Comes From" section and `Step 3 - Mock_Work/Data and Build Readiness - Developer Punch List.md`'s `## W10` section.)*
+`LN_Loan` (scoped by Bank Account), `LN_InvoicePost`, `LN_Type` (per Step 1). Per `Step 3 - Mock_Work/Data and Build Readiness - Developer Punch List.md`'s `## W10` section (flagged ⚠️ high-risk widget): Loan Type filter ✅ available; **Status filter (Active/In Arrears) 🔴 missing/unconfirmed** — no explicit field exists, today's "arrears" concept is only derived from the aging buckets; **aging buckets 🔴 decided — must-fix before launch** — the Modern API doesn't replicate the legacy oldest-first (LIFO) payment allocation, and the decision on file is to rebuild that calculation server-side to match legacy rather than adopt the Modern API's simpler current-bucketing; KPI Total Balance Due ✅ available, unaffected by the aging gap; drill-through (account-name links) 🔴 missing, destination unconfirmed. Nothing in this research pass changes any of these flags — they're the real constraint on what's buildable regardless of visual choice.
 
 ## Competitor / Industry Findings
 
-*(Pending — not yet researched.)*
+**Already on file, carried forward from Step 3/4 rather than re-derived:**
+- Loan aging dashboards use bar charts by age bucket, with delinquency KPIs and colour-coded severity (green = healthy, red = default risk) — [FasterCapital](https://fastercapital.com/content/Loan-Data-Visualization--How-to-Use-Charts-and-Dashboards-to-Communicate-Your-Loan-Performance-Insights.html). **Confidence: single source**, already the basis for the locked Balance Bars option.
+- Oldest-first ("LIFO") payment allocation — clearing the oldest overdue bucket before newer ones — is the confirmed actual industry standard for both AR and loan-servicing payment application, not a legacy quirk: [LegalClarity](https://legalclarity.org/how-to-prepare-an-accounts-receivable-schedule/), [Bill.com](https://www.bill.com/blog/accounts-receivable-best-practices), [Sallie Mae](https://www.salliemae.com/student-loans/manage-your-private-student-loan/understand-student-loan-payments/apply-and-allocate-your-student-loan-payments/). **Confidence: confirmed pattern (3 independent sources)** — this is what backs the locked decision to rebuild the aging calculation to match legacy instead of the Modern API's simpler approach.
+
+**New this pass:**
+- **Confirmed pattern** — In loan-servicing platforms specifically, per-loan aging/delinquency is shown as a categorized or filterable *table* attribute, not primarily a chart, at the individual-loan level. *Sources: [LoanPro — Delinquency Categories](https://help.loanpro.io/delinquency-and-defaults/delinquency-categories) (2026); [LendFoundry — Collection Management](https://lendfoundry.com/solutions/loan-servicing-software/collection-management/) (Mar 2026).* This directly supports keeping Summary Table as a live view alongside Balance Bars, and further undercuts the original pie chart.
+- **Confirmed pattern** — An "at a glance" summary of key balance figures sits above/beside the loan detail, with click-through for more — LoanPro's dashboard card (Amount Past Due, Days Past Due, Payoff, Principal Balance) and LendFoundry's "Current Outstanding Balance" widget both follow this shape. *Sources: [LoanPro — Dashboards](https://help.loanpro.io/setting-up-agents/dashboards); [LendFoundry](https://lendfoundry.com/solutions/loan-servicing-software/collection-management/).* Supports the locked KPI headline (Total Balance Due).
+- **Single source, lower confidence** — Portfolio-level delinquency visualized with pie/bar charts. *Source: [Nortridge — Loan Reporting Dashboards](https://nortridge.com/features/loan-reporting-software-dashboards/) (2026).* This is the only finding across the whole pass that even resembles a pie chart for this data, and it's single-sourced — it does not meaningfully validate the original design.
+- **Single source, lower confidence** — A per-loan red/yellow/green "stoplight" risk indicator, rule-driven (e.g. red at 30+ days past due). *Source: [LoanPro — Delinquency Report](https://help.loanpro.io/delinquency-report).* Relevant to this widget's own open Status/In-Arrears gap (below) as a possible visual stand-in, not a confirmed pattern.
+- **Honest gap** — Church-native tools (PowerChurch, Aplos, ACS Technologies/Realm) expose no loan-tracking UI at all publicly; loans are handled as manual GL liability entries. *Source: [PowerChurch — PPP loan setup KB](https://www.powerchurch.com/support/497/1/how-to-set-up-paycheck-protection-program-loans-in-powerchurch).* No nonprofit-specific precedent exists for this widget — the FasterCapital/LoanPro/LendFoundry findings above are the closest available precedent, from general lending software rather than church-specific tools.
+- **Confirmed pattern, conflicts with locked bucket count** — A 5-band aging structure (Current / 1–30 / 31–60 / 61–90 / 91+) is the near-universal standard across both nonprofit fund-accounting aging (MIP, Sage Intacct) and general receivables aging, wider than this widget's locked 4 bands (Current 0–29 / 30–59 / 60–89 / 90+). *Sources: [MIP — Aged Payables Reports](https://documentation.mip.com/MIPModern/Content/MAD/AgedPayablesReports.htm); [DWD Technology Group — Understanding Aged Reports in MIP](https://www.dwdtechgroup.com/abila-mip-fund-accounting/understanding-aged-reports-in-mip/) (2023, updated 2025-04-04); [Sage Intacct — Vendor Aging graph](https://www.intacct.com/ia/docs/en_US/help_action/Reporting/Graphs/Application_graphs/vendor-aging-graph.htm); [Chaser — Understanding Aged Receivables](https://chaserhq.com/blog/understanding-aged-receivables) (Sep 2025, updated May 2026); [ApprovalMax — AR Aging Report](https://blog.approvalmax.com/accounts-receivable-aging-report) (2026).* These last two are general receivables sources rather than loan-specific, cited here as comparative bucket-structure precedent, not as loan-servicing-specific confirmation.
 
 ## Visual Options (aim for 3)
 
-*(Pending — not yet researched. Once findings exist above, distill into up to three options here, each flagged with a data-feasibility read.)*
+1. **Expand from 4 to 5 aging buckets** (Current / 1–30 / 31–60 / 61–90 / 91+), matching the near-universal standard found above. Based on: the MIP/Sage Intacct/Chaser/ApprovalMax finding. Data needed: 🟡 needs new query/logic — but the aging calculation is already being rebuilt server-side for the LIFO fix (per punch list, decided — must-fix before launch), so a bucket-count change could realistically ride along with that work rather than being a separate ask.
+2. **Derive a per-row color status chip directly from the existing aging bucket**, as a lower-cost stand-in for the currently-unconfirmed "Status: Active/In Arrears" field. Based on: LoanPro's stoplight finding (single source, not a confirmed pattern) plus this widget's own open Status-field gap. Data needed: ✅ available today once the LIFO aging fix ships — the bucket value already exists for Balance Bars, this just applies it per row instead of (or alongside) a Status field that may not exist.
+3. **Revisit whether "In Arrears" is the right framing at all** — not a visual option but a scope question raised by combining this research with the existing Ben Lane interview finding (`Step 4 - Widget Final Design/W10...md`): these loans are HQ-to-church and function more like a grant than a commercial loan, with no real expectation of scheduled repayment. None of the competitor precedent reviewed (LoanPro, LendFoundry, FasterCapital) assumes that context — they all model genuine collections/repayment relationships. Flagged as internal, not precedent-based. Data needed: N/A.
 
 ## Net Assessment
 
-*(Pending.)*
+**Mixed-supports.** The locked move away from a pie chart onto Balance Bars + Summary Table is now more strongly supported than when Step 4 was written — beyond the original single FasterCapital citation, this pass found loan-servicing platforms (LoanPro, LendFoundry) consistently table-first for per-loan aging, and only one thin, single-sourced example (Nortridge) of anything resembling the old pie chart. The LIFO payment-allocation decision is also reinforced, not just carried forward — general AR-aging precedent lines up with the LegalClarity/Bill.com/Sallie Mae citations already on file. The one real **conflict**: this widget's locked 4-bucket aging is narrower than the 5-bucket structure used almost everywhere else researched, nonprofit and mainstream alike — low-cost to reconsider since it could ride along with the aging-calc rework already scheduled, but it is a genuine mismatch worth a second look, not just a stylistic nitpick. Separately, and outside this research's scope but worth repeating: the existing Ben Lane interview finding that these loans function more like grants sits oddly next to every competitor pattern found here, all of which assume real collections activity.
 
 ## Sources
 
-*(Pending.)*
+- [FasterCapital — Loan Data Visualization](https://fastercapital.com/content/Loan-Data-Visualization--How-to-Use-Charts-and-Dashboards-to-Communicate-Your-Loan-Performance-Insights.html)
+- [LegalClarity — How to Prepare an Accounts Receivable Schedule](https://legalclarity.org/how-to-prepare-an-accounts-receivable-schedule/)
+- [Bill.com — Accounts Receivable Best Practices](https://www.bill.com/blog/accounts-receivable-best-practices)
+- [Sallie Mae — Apply and Allocate Your Student Loan Payments](https://www.salliemae.com/student-loans/manage-your-private-student-loan/understand-student-loan-payments/apply-and-allocate-your-student-loan-payments/)
+- [LoanPro — Delinquency Categories](https://help.loanpro.io/delinquency-and-defaults/delinquency-categories)
+- [LoanPro — Dashboards](https://help.loanpro.io/setting-up-agents/dashboards)
+- [LoanPro — Delinquency Report](https://help.loanpro.io/delinquency-report)
+- [LendFoundry — Loan Servicing Collection Management](https://lendfoundry.com/solutions/loan-servicing-software/collection-management/)
+- [Nortridge — Loan Reporting Software Dashboards](https://nortridge.com/features/loan-reporting-software-dashboards/)
+- [PowerChurch — PPP Loan Setup KB](https://www.powerchurch.com/support/497/1/how-to-set-up-paycheck-protection-program-loans-in-powerchurch)
+- [MIP — Aged Payables Reports](https://documentation.mip.com/MIPModern/Content/MAD/AgedPayablesReports.htm)
+- [DWD Technology Group — Understanding Aged Reports in MIP](https://www.dwdtechgroup.com/abila-mip-fund-accounting/understanding-aged-reports-in-mip/)
+- [Sage Intacct — Vendor Aging Graph](https://www.intacct.com/ia/docs/en_US/help_action/Reporting/Graphs/Application_graphs/vendor-aging-graph.htm)
+- [Chaser — Understanding Aged Receivables](https://chaserhq.com/blog/understanding-aged-receivables)
+- [ApprovalMax — Accounts Receivable Aging Report](https://blog.approvalmax.com/accounts-receivable-aging-report)
 
 ## Note on Existing Content Elsewhere
 
-Some competitor/market-research content for this widget may already exist under `## How Other Companies Fulfil This Purpose` in `Step 3 - Mock_Work/Widget_Specs/W10-Loans-With-Balance-Due.md` and/or the same heading in `Step 4 - Widget Final Design/W10 - Loans With Balance Due.md` (where those files exist). That existing content has **not** been moved, copied, or duplicated into this file yet. A follow-up pass will decide whether to move it here, copy it, or just link out to it, so nothing ends up lost or disagreeing across three places.
+`Step 3 - Mock_Work/Widget_Specs/W10-Loans-With-Balance-Due.md` and `Step 4 - Widget Final Design/W10 - Loans With Balance Due.md` both still carry their own `## Purpose & Competitive Fit Check` / `## How Other Companies Fulfil This Purpose` sections (FasterCapital + LegalClarity/Bill.com/Sallie Mae). Nothing there has been moved or deleted — this file cites the same sources and adds substantially more on top. Whether to update those two sections to point here, or leave them as shorter standalone summaries, is still an open decision.

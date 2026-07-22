@@ -4,33 +4,57 @@
 
 **Widget:** W05 — Receivable Invoices Outstanding
 **Module:** Finance
-**Researched:** Pending
-**Status:** ⚪ Not yet researched — structure only, set up 2026-07-21 per direct instruction, following `Market Research/TEMPLATE.md`
+**Researched:** 2026-07-22
+**Status:** ✅ Researched — via the `widget-market-research` skill (parallel-agent research pass, manual cross-check in place of automated verification)
 
 ## What This Widget Shows Today
 
-*(Pending — one or two lines, to be linked to `Step 1 - Dashboard Research/05 - Receivable Invoices Outstanding.md` once this file is actually researched.)*
+Per `Step 1 - Dashboard Research/05 - Receivable Invoices Outstanding.md`: a table + pie chart ("Invoice Aging"), one row/segment per age bucket (Current 0–30, 31–60, 61–90, 91–120, 121+), totals row, filtered together by Revenue Center and Source. Clicking a nonzero bucket row opens a detail panel (Customer, Bill To, Due Date, Invoice #, Days Past Due, Outstanding), and each invoice expands into four tabs — Details, Attachments, Note, Payments. **Note:** this widget is already Step 4 — locked (see `Step 4 - Widget Final Design/W05 - Receivable Invoices Outstanding.md`); the design has already moved off the pie chart onto KPI Tiles + Aging Bars (default) with an Aging Table as a switchable second view. This research pass checks that decision against precedent rather than proposing it fresh.
 
 ## Data Used
 
-*(Pending — to be pulled from `Step 1 - Dashboard Research/05 - Receivable Invoices Outstanding.md`'s "Where the Data Comes From" section and `Step 3 - Mock_Work/Data and Build Readiness - Developer Punch List.md`'s `## W05` section.)*
+`ARInvoice`, `ARInvoiceDetail`, plus `ARRevenueCenterRepository`/`ARSourceRepository` (dynamically populating the Revenue Center and Source dropdowns) — per Step 1. Confirmed formulas: invoice filter `Posted = true AND UndoJournalID = null AND Outstanding != 0`; `Outstanding = TotalAmount + SalesTax − Payments − Discounts − WriteOffs`; age bucket `= Today − DueDate`. **Known Modern API gap:** `BillToDisplay` is always empty in the Modern API. Per `Step 3 - Mock_Work/Data and Build Readiness - Developer Punch List.md`'s `## W05` section: Age Band/Revenue Center/Source filters ✅ available; KPI Tiles + Aging Bars / Aging Table views ✅ available; KPI Total Outstanding ✅ available; the Bill-To field and the Attachments/Note/Payments tabs are ✅ **decided — resolved via drill-through**, i.e. rather than wait on the Bill-To bug or build new endpoints for the other three tabs, the locked design adds a "View full invoice" link out to the real AR record for those specific pieces, keeping only the Details (line items) tab in-page. Nothing in this research pass changes that decision.
 
 ## Competitor / Industry Findings
 
-*(Pending — not yet researched.)*
+**Already on file, carried forward from Step 3/4 rather than re-derived:**
+- AR aging dashboards commonly combine a bar or donut chart for the aging-bucket breakdown with a sortable, full-detail table — a pie chart as the *sole* view is explicitly called out as the wrong choice for aging data. *Sources: [Vertaccount](https://www.vertaccount.com/blog/best-accounts-receivable-dashboard-examples-templates-for-2026/); [Coupler.io](https://www.coupler.io/dashboard-examples/accounts-receivable-dashboard).* **Confidence: confirmed pattern (2 sources)**, already the basis for the locked KPI Tiles + Aging Bars / Aging Table views.
+- KPI snapshot tiles above the aging breakdown (Total Outstanding, Overdue, Current, Oldest Invoice) is a directly recommended combination. *Source cited in Step 3 spec: [QuickBooks AR Report](https://quickbooks.intuit.com/learn-support/en-us/accounts-receivable/accounts-receivable-aging-report/).*
+
+**New this pass:**
+- **Confirmed pattern** — A 5-bucket aging structure is near-universal across mainstream accounting software, and Sage Intacct's default (0–30, 31–60, 61–90, 91–120) is nearly identical to this widget's own buckets. *Sources: [QuickBooks — Run an A/R Aging report](https://quickbooks.intuit.com/learn-support/en-us/help-article/accounts-receivable-reports/run-accounts-receivable-aging-report/L4N7PC2hg_US_en_US) (May 2026); [Xero — AR aging report guide](https://www.xero.com/us/guides/accounts-receivable-aging-report/) (Jul 2026); [Sage Intacct — Customer Aging report](https://www.intacct.com/ia/docs/en_ZA/help_action/Reporting/AR_reports/customer-aging-report.htm); [FreshBooks — Accounts Aging report](https://support.freshbooks.com/hc/en-us/articles/219118308-What-is-an-Accounts-Aging-report).* This directly validates the widget's existing 5-band Age Band filter — no change needed here, unlike the sibling W10 Loans widget, which is narrower than this standard.
+- **Confirmed pattern** — Competitors typically split an "Aging Summary" (bucket totals) from a separate "Aging Detail" (per-invoice) report, rather than fusing both into one widget. *Sources: QuickBooks help article (above); [Sage Intacct — Customer Aging report](https://www.intacct.com/ia/docs/en_ZA/help_action/Reporting/AR_reports/customer-aging-report.htm).* This widget's locked design sits between the two approaches — Aging Bars/Table are switchable *views* within one widget rather than two separate reports, which is a slightly tighter integration than either competitor pattern, not a mismatch.
+- **Confirmed pattern** — Where a chart exists, it's typically a separate, optional artifact bolted onto the table rather than fused with it. *Sources: [Sage Intacct — Vendor Aging graph](https://www.intacct.com/ia/docs/en_US/help_action/Reporting/Graphs/Application_graphs/vendor-aging-graph.htm); corroborated by third-party Sage Intacct dashboard writeups (Cleverence, RKL).*
+- **Confirmed pattern** — The same 5-bucket aging structure is standard in nonprofit fund-accounting too, not just mainstream software. MIP's Aged Receivables Report uses the same Current + 3 aging periods + Over structure. *Sources: [MIP — Aged Receivables Reports](https://documentation.mip.com/MIPModern/content/mad/AgedReceivablesReports.htm); [DWD Technology Group — Understanding Aged Reports in MIP](https://www.dwdtechgroup.com/abila-mip-fund-accounting/understanding-aged-reports-in-mip/) (2023, updated 2025-04-04).*
+- **Single source, lower confidence** — Sage Intacct's nonprofit-edition AR Aging widget matches this widget's exact buckets (Current/1–30/31–60/61–90/90+) inside a role-based "AR Manager" dashboard. *Source: [Sage.com — nonprofit AR page](https://www.sage.com/en-us/).*
+- **Honest gap** — None of the nonprofit vendors researched (MIP, Sage Intacct, Aplos, ACS Technologies/Realm) document a pie-chart aging visualization or a tabbed (Details/Attachments/Note/Payments) invoice drill-down — that specific combination appears to be this widget's own design contribution, not something borrowed from precedent. This also means the locked "View full invoice" link-out for Bill-To/Attachments/Note/Payments has no direct competitor pattern to lean on either way — it's a locally-scoped fix for a Modern API gap, not a design borrowed from elsewhere, and this research doesn't change that read.
+- **Single source, lower confidence** — Sage Intacct's own invoice page puts summary KPIs at the top, treats attachments as a first-class field, makes line items expandable, and gives approval history its own tab — the closest partial precedent found for a tabbed invoice drill-down, though not a full match, and not nonprofit-specific. *Source: [Sage Intacct — About AR Invoices](https://www.intacct.com/ia/docs/en_US/help_action/Accounts_Receivable/Invoices/about-ar-invoices.htm) (modified Jul 9, 2026).*
 
 ## Visual Options (aim for 3)
 
-*(Pending — not yet researched. Once findings exist above, distill into up to three options here, each flagged with a data-feasibility read.)*
+1. **No change to the Age Band buckets** — this is a validated option, not a proposal: the 5-bucket structure is confirmed standard across mainstream and nonprofit software alike, unlike the sibling W10 widget. Based on: the QuickBooks/Xero/Sage Intacct/MIP finding above. Data needed: ✅ already available and already locked.
+2. **Leave the KPI Tiles + Aging Bars / Aging Table split as switchable views rather than separating them into two distinct widgets/reports**, since no competitor precedent found requires the separation, and the current integration is tighter (arguably an improvement) rather than a deviation. Based on: the Aging Summary/Detail split finding above. Data needed: ✅ already available and already locked.
+3. **No change to the "View full invoice" link-out for Bill-To/Attachments/Note/Payments** — there's no positive precedent either way for a tabbed in-widget drill-down at this depth, so the locked, narrower-scope fix (driven by the Modern API's `BillToDisplay` bug and unverified sub-tab data sources) remains the right call on data-feasibility grounds alone, independent of visual precedent. Based on: the honest-gap finding above. Data needed: ✅ already available and already locked (Details tab); the rest is a deliberate link-out, not a data gap to close.
 
 ## Net Assessment
 
-*(Pending.)*
+**Supports.** Every locked decision in Step 4 held up under this pass, and in some places is more strongly supported than the original Step 3 citation suggested: the 5-bucket Age Band structure is now confirmed standard across both mainstream (QuickBooks, Xero, Sage Intacct, FreshBooks) and nonprofit (MIP, Sage Intacct nonprofit) software, not just a reasonable guess. The move off a pie chart onto KPI Tiles + Aging Bars is reinforced by the same Vertaccount/Coupler.io citation already on file, with no competitor found using pie for this data anywhere in this pass either. The one area with **no strong signal either way** is the specific tabbed drill-down (Details/Attachments/Note/Payments) and its partial replacement with a "View full invoice" link-out — no nonprofit vendor exposes anything comparable, and even the closest mainstream partial match (Sage Intacct's invoice page) isn't a full precedent. That's not a problem with the locked design; it just means this particular piece was, and remains, driven by data-feasibility (the Modern API's Bill-To bug) rather than competitor pattern-matching, and this research doesn't change that.
 
 ## Sources
 
-*(Pending.)*
+- [Vertaccount — Best Accounts Receivable Dashboard Examples & Templates for 2026](https://www.vertaccount.com/blog/best-accounts-receivable-dashboard-examples-templates-for-2026/)
+- [Coupler.io — Accounts Receivable Dashboard](https://www.coupler.io/dashboard-examples/accounts-receivable-dashboard)
+- [QuickBooks — Accounts Receivable Aging Report](https://quickbooks.intuit.com/learn-support/en-us/accounts-receivable/accounts-receivable-aging-report/)
+- [QuickBooks — Run an A/R Aging report](https://quickbooks.intuit.com/learn-support/en-us/help-article/accounts-receivable-reports/run-accounts-receivable-aging-report/L4N7PC2hg_US_en_US)
+- [Xero — Accounts Receivable Aging Report Guide](https://www.xero.com/us/guides/accounts-receivable-aging-report/)
+- [Sage Intacct — Customer Aging Report](https://www.intacct.com/ia/docs/en_ZA/help_action/Reporting/AR_reports/customer-aging-report.htm)
+- [Sage Intacct — Vendor Aging Graph](https://www.intacct.com/ia/docs/en_US/help_action/Reporting/Graphs/Application_graphs/vendor-aging-graph.htm)
+- [Sage Intacct — About AR Invoices](https://www.intacct.com/ia/docs/en_US/help_action/Accounts_Receivable/Invoices/about-ar-invoices.htm)
+- [FreshBooks — Accounts Aging Report](https://support.freshbooks.com/hc/en-us/articles/219118308-What-is-an-Accounts-Aging-report)
+- [MIP — Aged Receivables Reports](https://documentation.mip.com/MIPModern/content/mad/AgedReceivablesReports.htm)
+- [DWD Technology Group — Understanding Aged Reports in MIP](https://www.dwdtechgroup.com/abila-mip-fund-accounting/understanding-aged-reports-in-mip/)
+- [Sage.com — nonprofit AR page](https://www.sage.com/en-us/)
 
 ## Note on Existing Content Elsewhere
 
-Some competitor/market-research content for this widget may already exist under `## How Other Companies Fulfil This Purpose` in `Step 3 - Mock_Work/Widget_Specs/W05-Receivable-Invoices-Outstanding.md` and/or the same heading in `Step 4 - Widget Final Design/W05 - Receivable Invoices Outstanding.md` (where those files exist). That existing content has **not** been moved, copied, or duplicated into this file yet. A follow-up pass will decide whether to move it here, copy it, or just link out to it, so nothing ends up lost or disagreeing across three places.
+`Step 3 - Mock_Work/Widget_Specs/W05-Receivable-Invoices-Outstanding.md` and `Step 4 - Widget Final Design/W05 - Receivable Invoices Outstanding.md` both still carry their own `## Purpose & Competitive Fit Check` / `## How Other Companies Fulfil This Purpose` sections (Vertaccount, Coupler.io, QuickBooks, Xero). Nothing there has been moved or deleted — this file cites the same sources and adds substantially more on top. Whether to update those two sections to point here, or leave them as shorter standalone summaries, is still an open decision.

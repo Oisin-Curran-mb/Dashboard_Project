@@ -8,7 +8,7 @@ Some widgets already carry a `## How Other Companies Fulfil This Purpose` (or `#
 
 ## Current status
 
-**All 16 files were created 2026-07-21 as empty placeholders.** W15 was researched the same day using the `widget-market-research` skill (see below) and is now filled in — the other 15 are still placeholders, pending a decision on when/whether to run the same pass on each. See each file's own "Note on Existing Content Elsewhere" section for what it currently points back to in Step 3/4.
+**All 16 files were created 2026-07-21 as empty placeholders.** W15 was researched the same day using the `widget-market-research` skill; W05 and W10 were researched 2026-07-22 the same way, both building on existing Step 3/4 "How Other Companies Fulfil This Purpose" citations rather than starting fresh (see each file's own "Note on Existing Content Elsewhere"). W04 is also marked Researched below. The remaining 12 are still placeholders, pending a decision on when/whether to run the same pass on each.
 
 ## Template
 
@@ -20,12 +20,12 @@ Some widgets already carry a `## How Other Companies Fulfil This Purpose` (or `#
 | 02 | Pension Plans | [W02](W02%20-%20Pension%20Plans.md) | ⚪ Not yet researched |
 | 03 | Payroll Distributions | [W03](W03%20-%20Payroll%20Distributions.md) | ⚪ Not yet researched |
 | 04 | Remittance Pledges | [W04](W04%20-%20Remittance%20Pledges.md) | ✅ Researched (2026-07-21) |
-| 05 | Receivable Invoices Outstanding | [W05](W05%20-%20Receivable%20Invoices%20Outstanding.md) | ⚪ Not yet researched |
+| 05 | Receivable Invoices Outstanding | [W05](W05%20-%20Receivable%20Invoices%20Outstanding.md) | ✅ Researched (2026-07-22) |
 | 06 | Insurance Billing Plans | [W06](W06%20-%20Insurance%20Billing%20Plans.md) | ⚪ Not yet researched |
 | 07 | Deposit Accounts | [W07](W07%20-%20Deposit%20Accounts.md) | ⚪ Not yet researched |
 | 08 | My Status | [W08](W08%20-%20My%20Status.md) | ⚪ Not yet researched |
 | 09 | Payroll Scheduled Time Off | [W09](W09%20-%20Payroll%20Scheduled%20Time%20Off.md) | ⚪ Not yet researched |
-| 10 | Loans With Balance Due | [W10](W10%20-%20Loans%20With%20Balance%20Due.md) | ⚪ Not yet researched |
+| 10 | Loans With Balance Due | [W10](W10%20-%20Loans%20With%20Balance%20Due.md) | ✅ Researched (2026-07-22) |
 | 11 | Fixed Asset Values | [W11](W11%20-%20Fixed%20Asset%20Values.md) | ⚪ Not yet researched |
 | 12 | *(Empty Slot)* | — | ➖ N/A — no widget assigned to this slot |
 | 13 | Purchasing Management | [W13](W13%20-%20Purchasing%20Management.md) | ⚪ Not yet researched |
