@@ -17,9 +17,12 @@ What this widget's data already supports today, per `Step 1 - Dashboard Research
 
 ## Competitor / Industry Findings
 
-One entry per source found. For each: what the company/product/article actually shows (visuals and information presented, not just "they have a dashboard"), and a confidence read — is this a genuine pattern across multiple sources, or a single blog post making a claim? Don't round a single source up to "industry standard." If nothing relevant turns up after a real search, say so plainly rather than stretching a loosely-related finding to fill the section.
+One entry per finding. For each: what the company/product/article actually shows (visuals and information presented, not just "they have a dashboard"), and a confidence read — is this a genuine pattern across multiple sources, or a single blog post making a claim? Don't round a single source up to "industry standard." If nothing relevant turns up after a real search, say so plainly rather than stretching a loosely-related finding to fill the section.
 
-- **[Source name, with link, and date]** — [what they show, how] — Confidence: [strong pattern across sources / single source, treat as a data point not a standard]
+**Every finding needs its URL(s) shown right here, not just down in Sources.** A confirmed-pattern finding needs 2 independent URLs backing it — both cited inline. A single-source finding still gets included with its 1 URL cited inline, just clearly marked lower-confidence, not upgraded to match a 2-source finding's tone. Every URL cited here must also appear in the Sources list at the bottom — the two lists should never disagree about what was actually used.
+
+- **[Claim]** — [Source 1 name, link, date]; [Source 2 name, link, date] — Confidence: **confirmed pattern** (2 independent sources)
+- **[Claim]** — [Source name, link, date] — Confidence: **single source, lower confidence**
 
 ## Visual Options (aim for 3)
 
@@ -35,4 +38,4 @@ One clear call: does this research **support**, **conflict with**, or give **no 
 
 ## Sources
 
-Full list, each with a link and the date it was accessed/published (web research goes stale — a source from a few years ago cited today needs a second look before being trusted).
+Full list, each with a link and the date it was accessed/published (web research goes stale — a source from a few years ago cited today needs a second look before being trusted). **This list must contain every URL cited in Competitor / Industry Findings above, and nothing else** — no source that isn't actually backing a specific finding in the body.

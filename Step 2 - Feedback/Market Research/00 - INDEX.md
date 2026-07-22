@@ -19,7 +19,7 @@ Some widgets already carry a `## How Other Companies Fulfil This Purpose` (or `#
 | 01 | Budget Compared to Actual | [W01](W01%20-%20Budget%20Compared%20to%20Actual.md) | ⚪ Not yet researched |
 | 02 | Pension Plans | [W02](W02%20-%20Pension%20Plans.md) | ⚪ Not yet researched |
 | 03 | Payroll Distributions | [W03](W03%20-%20Payroll%20Distributions.md) | ⚪ Not yet researched |
-| 04 | Remittance Pledges | [W04](W04%20-%20Remittance%20Pledges.md) | ⚪ Not yet researched |
+| 04 | Remittance Pledges | [W04](W04%20-%20Remittance%20Pledges.md) | ✅ Researched (2026-07-21) |
 | 05 | Receivable Invoices Outstanding | [W05](W05%20-%20Receivable%20Invoices%20Outstanding.md) | ⚪ Not yet researched |
 | 06 | Insurance Billing Plans | [W06](W06%20-%20Insurance%20Billing%20Plans.md) | ⚪ Not yet researched |
 | 07 | Deposit Accounts | [W07](W07%20-%20Deposit%20Accounts.md) | ⚪ Not yet researched |

@@ -21,8 +21,9 @@ Shows how the organisation's actual income or spending compares to what was budg
 | Filter | Values |
 |--------|--------|
 | Account Type | Income Accounts · Expense Accounts · Custom Report |
-| Fiscal Year | FY 2026 · FY 2025 · FY 2024 |
 | Period View | Monthly · Quarterly · **Weekly (Large/Expanded only)** |
+
+**Fiscal Year is page-level only, not a widget filter.** Taken from the control at the top of the page, matching the current/legacy version — this widget has no in-widget way to change it. See "Tried and rejected" below for why.
 
 ## Data Table Sort
 Fixed chronological — Period ascending, not user-sortable. This is the Finance/account-number-table default (see Hard Rules doc); HR/Payroll widgets get their own default when reached.
@@ -55,7 +56,7 @@ The Modern API defines a **`budget-vs-actual-summary`** widget that the comparis
 | **Small (1×1)** | 4 periods shown, bars only, no variance row, no legend |
 | **Medium (2×2)** | 6 periods shown, variance row visible beneath bars, legend, table toggle introduced |
 | **Large (4×4)** | All periods (up to 12), variance row, legend, table toggle (fixed sort: Period ascending), Period View includes Weekly |
-| **KPI (1×0.5)** | Headline: **YTD Actual + YTD Budget** shown together as two figures in one tile — needs a fit test; fall back to a single combined figure if it doesn't fit. Fiscal Year filter only, no download, no switch. |
+| **KPI (1×0.5)** | Headline: **YTD Actual + YTD Budget** shown together as two figures in one tile — needs a fit test; fall back to a single combined figure if it doesn't fit. No filter, no download, no switch — see "Tried and rejected" below. |
 | **Expanded** | Full-year bars + variance row/legend, table toggle, Weekly available, all three filters live inside the modal |
 
 ---
@@ -73,7 +74,7 @@ The Modern API defines a **`budget-vs-actual-summary`** widget that the comparis
 | **Small (1×1)** | One KPI number only — Variance ($). Bars dropped entirely at this size. |
 | **Medium (2×2)** | Try to fit all 4 KPI tiles (YTD Budget, YTD Actual, Variance, % Used) above a short bar list — needs a fit test; trim tiles if too tight. Switch introduced: KPI + Bars / Bars Only. |
 | **Large (4×4)** | All 4 KPI tiles + full list of horizontal bars, one per period. KPI + Bars / Bars Only switch. No Data Table view in this option (see Fine-Tuning Notes). |
-| **KPI (1×0.5)** | Headline: **Variance ($)** — e.g. "+$12k" — colour-coded green/red, with a trend sparkline across recent periods. Fiscal Year filter only, no download, no switch. |
+| **KPI (1×0.5)** | Headline: **Variance ($)** — e.g. "+$12k" — colour-coded green/red, with a trend sparkline across recent periods. No filter, no download, no switch — see "Tried and rejected" below. |
 | **Expanded** | All 4 KPI tiles + full horizontal bar list (or table), all three filters live inside the modal |
 
 ---
@@ -91,13 +92,22 @@ The Modern API defines a **`budget-vs-actual-summary`** widget that the comparis
 | **Small (1×1)** | Compact step chart: "Base" segment + 3 variance steps, colour-coded green/red, minimal axis-context labelling instead of a caption |
 | **Medium (2×2)** | Step chart with 5 variance steps + "Cumulative variance waterfall" caption, table toggle introduced: Waterfall / Data Table |
 | **Large (4×4)** | Full-year waterfall (all periods), or the table (Period / Budget / Actual / Cumulative Variance — fixed, no longer missing), fixed sort: Period ascending, Period View includes Weekly |
-| **KPI (1×0.5)** | Headline: **% Used** — deliberately different from Version B's Variance($). Paired with a tiny inline step sparkline. Fiscal Year filter only, no download, no switch. |
+| **KPI (1×0.5)** | Headline: **% Used** — deliberately different from Version B's Variance($). Paired with a tiny inline step sparkline. No filter, no download, no switch — see "Tried and rejected" below. |
 | **Expanded** | Full 12-period waterfall, each step clickable/hoverable, fixed table with cumulative variance column, Weekly available, all three filters live inside the modal |
 
 ---
 
+#### Tried and rejected — in-widget Fiscal Year filter (2026-07-21, design call with Jo)
+
+An in-widget Fiscal Year filter was built and shipped in the Final Check mock: its own dropdown in "Change filters" (Account Type · Fiscal Year · Period View), and its own slot in the KPI/Small headline text ("Variance — [Account Type], [Fiscal Year]"). It was also the one filter kept at KPI size under Hard Rule 1, so all three options' KPI rows above read "Fiscal Year filter only."
+
+**Rejected on review.** The app already has, or will have, a page-level Fiscal Year control at the top of the page — matching the current/legacy version. Giving this widget its own separate, in-widget Fiscal Year on top of that risked the exact kind of "which control actually took effect" confusion this project avoids elsewhere: a customer changing the page-level control could reasonably expect every widget to follow it, with no obvious reason this one wouldn't, or would need its own separate value. Jo's call: cut the in-widget filter entirely, not rework it — Fiscal Year goes back to being page-level only. Account Type and Period View are unaffected; per direct instruction, "everything else is solid" here. Kept here as history per the project's rule against deleting rejected ideas outright.
+
+Removed from `Dashboard Widget Mockups.html`: the Fiscal Year entry in `MOCK_DATA.filters[1]` (so it no longer appears in "Change filters" at any size), the `1: 'Fiscal Year'` entry in `MOCK_DATA.kpiTimeFilter` (KPI size now offers no filter for W01 at all, same pattern already used for W04/W17), and Fiscal Year's slot in the KPI/Small headline logic (`FC_KPI_HEADLINE[1]`), which now reads just "Variance — [Account Type]." The chart itself still shows a fiscal year — `fyLabel` in `WRENDER[1]` falls back to FY 2026 exactly as it always did, so nothing about what data renders has changed — there is just no widget-level way to change which year that is anymore.
+
 ## Fine-Tuning Notes
-- All three options share the same filter set
+- All three options share the same filter set — Account Type and Period View only; Fiscal Year is page-level, not part of this set (see "Tried and rejected" above)
 - View toggle (bar ↔ table) should persist per option, not shared across A/B/C
 - Variance colours: green = positive (under budget on expenses / over on income), red = negative
 - Full design rationale and API contract details for the Comparison Bar Chart, KPI Tile, and Waterfall/Step Chart templates used by these three options: see "Reusable Visualisation Templates" in `General Widget Design Rules.md`. (Previously lived in `Widget_Concepts/01 -`/`02 -`, since removed — see `Step 3 - Mock_Work/00 - INDEX.md` for that history.)
+- **2026-07-21 (design call with Jo):** the in-widget Fiscal Year filter is cut — see "Tried and rejected" above for the full history. Fiscal Year is page-level only now, matching the current/legacy version; removed from `Dashboard Widget Mockups.html`'s filter list, KPI-size time-filter map, and KPI/Small headline logic. No other changes to this widget from this review.

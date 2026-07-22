@@ -20,17 +20,15 @@ Shows a breakdown of payroll amounts by compensation type across a chosen date r
 ## Filter Options
 | Filter | Values |
 |--------|--------|
-| Pay Period | **Last 7 Days** *(rolling, replaces "Current Period" — proposed label, pending final wording)* · **Last 30 Days** *(rolling, replaces "Last Period" — proposed label)* · **Custom** *(reveals two date fields — Beginning/Ending — to the right of the filter for user-entered dates)* |
-| Department | All Departments · Finance · Admin · Ministry · Facilities |
+| Pay Period | Weekly · Bi-Weekly · Monthly · **Custom** *(reveals two date fields — Beginning/Ending — to the right of the filter for user-entered dates)* |
 
-**Note:** Both rolling presets are calculated from today's date (not calendar week/month) — "Last 7 Days" = today minus 7, "Last 30 Days" = today minus 30. Department is kept unchanged per explicit decision, though the original Purpose doc's data-source section doesn't show a department field on `PRHistory`/`PRHistoryCompensation` — flagged for backend to confirm the field exists before build, without revisiting the filter decision itself.
+**No Department filter.** This widget always shows the full org's Distribution breakdown (pay-type categories — Regular, Vacation, OverTime, etc.); there is no way to narrow it to one department. See "Tried and rejected" below for why.
 
-**KPI size (3-dot menu):** Time filter only (per Hard Rule 1) — Department is dropped at KPI size.
+**KPI size (3-dot menu):** Time filter only (per Hard Rule 1) — there is no other filter to drop at KPI size now.
 
 ## Data Table Sort
-- **All Departments view** (grouped by department): fixed default sort by Department, alphabetical.
-- **Drilled into a single department** (grouped by category): fixed default sort by Category, alphabetical.
-- **Both levels:** user can toggle the sort to Amount (descending) via a sort control — this is a two-state alphabetical/amount toggle, not open column-by-column sorting.
+- Fixed default sort by Distribution (pay-type category), alphabetical.
+- User can toggle the sort to Amount (descending) via a sort control — this is a two-state alphabetical/amount toggle, not open column-by-column sorting.
 
 ## Drill-Through
 **NEW FEATURE — not present in the old design** (the Purpose doc confirms no drill-down exists today). Add a link from the widget out to the full Payroll History module, filtered to the same date range. Flagged clearly as new so it isn't mistaken for carrying forward existing behaviour.
@@ -101,6 +99,20 @@ The Modern API defines a **`payroll-pct-of-budget`** widget in the Payroll domai
 
 ---
 
+#### Tried and rejected — Department filter, per-department rollup, and "Separate By Department" (2026-07-21, design call with Jo)
+
+A Department filter (All Departments · Finance · Admin · Ministry · Facilities) was built and shipped in the Final Check mock — a redesign addition on top of the legacy design, which never had a department filter at all. With it: "All Departments" showed one row per department (each bar stacked by its own Distribution composition), drilling into one department showed that department's own Distribution breakdown instead, and a "Set Pay Period separately per department" checkbox let each department run on its own Start Date/Period/Recurring rather than one shared Pay Date.
+
+**Rejected on review.** Per direct instruction, this was "kind of already a bit of a miss match" — the Department field was never confirmed to exist on the real `PRHistory`/`PRHistoryCompensation` tables (an open question this decision now closes, rather than resolves), and it added a whole extra navigation layer on top of what this widget is actually built to show: a breakdown by Distribution. Jo's call: cut it entirely, not rework it — this widget goes back to always showing the Distribution breakdown directly, matching the legacy design's own scope, while keeping every other improvement from this redesign (Bar default, Pie/Table peers, Pay-Date anchoring, recurring flag, current-vs-prior comparison). Kept here as history per the project's rule against deleting rejected ideas outright.
+
+Removed from `Dashboard Widget Mockups.html`: the Department filter entry in `MOCK_DATA.filters[3]`; the Finance/Admin/Ministry/Facilities buckets in `MOCK_DATA.series[3]` (only 'All Departments' remains, as the sole bucket, kept as an internal key name only); the department-rollup branch, `catBreakdown`, and `hbarStacked()` stacked-bar rendering in `WRENDER[3]`; the `deptName` parameter on `w3PeriodRange()`; and the "Set Pay Period separately per department" checkbox and its per-department Start Date/Period/Recurring fields in `_renderFltBody()`.
+
+#### Also raised, and also dropped for now — a deeper Distribution breakdown (2026-07-21, design call with Jo)
+
+Per direct instruction: "the break down of Distributions would be amazing improvement but concept of how it should work is not clear currently." The idea — drilling into a single Distribution (e.g. "Regular") to see some further level of detail beneath it — isn't built anywhere in this mock and wasn't started as part of this pass; there's no clear concept yet of what that further detail would even be (per-employee amounts? per-pay-run history? something else?), so nothing here was designed or coded toward it.
+
+**Not dropped outright — deferred to a dev question.** Per direct instruction, this is worth raising as an open question to the developer in **Step 5's API topic**, in a later pass: specifically, whether the backend can identify a real data link that would support drilling from a Distribution into further detail. If it can't, the idea is fully dropped rather than half-built on a guess. This is explicitly a separate, later pass, not part of this mock_work-only review — nothing has been changed in `Step 5 - API documents` yet.
+
 ## Fine-Tuning Notes
-- Department filter narrows all three options to that department's payroll only
 - Period Comparison (C) should show delta % next to each bar pair at Large size
+- **2026-07-21 (design call with Jo):** the Department filter, its per-department rollup, and "Separate By Department" are cut — see "Tried and rejected" above for the full history. This widget always shows the org-wide Distribution breakdown now, matching the legacy design's scope; no other change to Options A/B/C. A deeper "breakdown of Distributions" idea was also raised and also dropped for now — see "Also raised, and also dropped for now" above — with a forward-pointer to raise it as a dev question in Step 5's API topic in a later pass.

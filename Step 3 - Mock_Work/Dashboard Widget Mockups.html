@@ -485,8 +485,8 @@ body{font-family:'Red Hat Text',sans-serif;background:#fafafa;color:#202020;}
     <div class="opt sz-k" id="fc-opt-1-k">
       <div class="opt-chrome">
         <div class="opt-chrome-left">
-          <!-- Text set by fcApplyKpiHeadline on render — reflects the active Account Type/Fiscal Year
-               filters instead of the static chart name; "Variance" here is just the pre-JS fallback. -->
+          <!-- Text set by fcApplyKpiHeadline on render — reflects the active Account Type filter
+               instead of the static chart name; "Variance" here is just the pre-JS fallback. -->
           <div class="opt-title-wrap"><div class="opt-t">Variance</div></div>
         </div>
         <div class="opt-chrome-right">
@@ -529,8 +529,8 @@ body{font-family:'Red Hat Text',sans-serif;background:#fafafa;color:#202020;}
       <div class="opt sz-s" id="fc-opt-1-s">
         <div class="opt-chrome">
           <div class="opt-chrome-left">
-            <!-- Text set by fcApplyKpiHeadline on render — reflects the active Account Type/Fiscal Year
-                 filters instead of the static chart name; "Variance" here is just the pre-JS fallback. -->
+            <!-- Text set by fcApplyKpiHeadline on render — reflects the active Account Type filter
+                 instead of the static chart name; "Variance" here is just the pre-JS fallback. -->
             <div class="opt-title-wrap"><div class="opt-t">Variance</div></div>
           </div>
           <div class="opt-chrome-right">
@@ -665,7 +665,8 @@ body{font-family:'Red Hat Text',sans-serif;background:#fafafa;color:#202020;}
     <p><strong>Round 2 fixes (2026-07-09).</strong> KPI and Small card titles now read "Variance — [Account Type], [Fiscal Year]" instead of a static chart name, reusing the same generic headline function built for W02 (now extended to support more than one card size). Weekly was added as a real, selectable Period View option (previously missing from the option list entirely, despite being in the locked doc) — it's scoped to Large/Expanded in the Change Filters modal, matching the doc's "Large/Expanded only" restriction; the underlying weekly transaction-grain question is still a backend open item, unaffected by this mock-side fix.</p>
     <p><strong>Round 3 fixes (2026-07-09, same day).</strong> The KPI sparkline hover from Round 2 wasn't actually triggering — it used an SVG <code>&lt;title&gt;</code> child element, which doesn't reliably fire a hover tooltip on freshly-injected inline SVG here; switched to a <code>title</code> attribute instead, the same mechanism the grouped-bar hovers elsewhere already use successfully. The KPI-label definition bubbles from Round 2 were also getting clipped at the card's left edge for YTD Budget/Variance (the left-column labels) — they were centred on the trigger, so a narrow card had nowhere to put the left half; now anchored to the trigger's own left/right edge so they always grow inward. '% Used' (and Variance) wording was rewritten to drop the "YTD" shorthand from the explanation itself, checked against how budgeting sources plainly explain a %-of-budget figure.</p>
     <p><strong>Two real, confirmed bugs</strong> were also found and fixed while re-verifying the data for the above: (1) Budget/Actual per period are dollar amounts, not a percentage — the table, bar chart tooltips, and axis titles across all three views were mislabelling and displaying them as "78%" instead of "$78k"; all now show dollar amounts, with Variance additionally showing a % of that period's budget since it's the one figure that legitimately works either way. Quarterly's grouping was switched from averaging to summing months to match (averaging was only ever valid under the old, wrong %-of-budget reading). Recomputing exact sums also caught two smaller data bugs along the way: FY2026's totals didn't quite match its own periods for any Account Type (now corrected, and a partial 'Jul' period was added since FY2026 was also missing its current in-progress month entirely — that's why Quarterly could never show more than Q1+Q2 before; it now shows a real, honestly-low Q3), and Custom Report's FY2025/FY2024 totals were each exactly $100k too high, an unrelated data-entry typo. (2) This doc has always said "green = favourable (under budget on expenses / over on income)," but the KPI headline, table rows, cumulative variance, and Option B's bar chart never implemented that flip — they coloured green whenever Actual ≥ Budget regardless of Account Type, backwards for Expense Accounts/Custom Report. Now correctly flips at every level.</p>
-    <p>Every card on this page — KPI, Small, Medium, Large — is the real widget card, not a simplified stand-in: same badge, chart name/subtitle, eye (purpose) button, expand button, and 3-dot menu (download, filters, chart-type switch, size) as the live Dashboard tab. The eye and expand buttons disappear at KPI size and the chart-type switch disappears at KPI/Small — both deliberate, matching the locked size-behaviour table, not missing chrome. Size buttons here resize that card only, independent of the other three, so you can compare all four side by side; Change filters and chart-type switching are shared with the Dashboard tab's own state, since Account Type/Fiscal Year and the current view are genuinely global to Option A in the real app, not per-size. <strong>Caveat:</strong> because "Change filters" on every Final Check card size (KPI/Small/Medium/Large) delegates to the same modal the real Dashboard tab's Option A card uses, the Weekly-at-Large-only trim reads that real card's current size, not whichever Final Check card you clicked from — worth a manual check once this is wired into the real gallery.</p>
+    <p>Every card on this page — KPI, Small, Medium, Large — is the real widget card, not a simplified stand-in: same badge, chart name/subtitle, eye (purpose) button, expand button, and 3-dot menu (download, filters, chart-type switch, size) as the live Dashboard tab. The eye and expand buttons disappear at KPI size and the chart-type switch disappears at KPI/Small — both deliberate, matching the locked size-behaviour table, not missing chrome. Size buttons here resize that card only, independent of the other three, so you can compare all four side by side; Change filters and chart-type switching are shared with the Dashboard tab's own state, since Account Type and the current view are genuinely global to Option A in the real app, not per-size. <strong>Caveat:</strong> because "Change filters" on every Final Check card size (KPI/Small/Medium/Large) delegates to the same modal the real Dashboard tab's Option A card uses, the Weekly-at-Large-only trim reads that real card's current size, not whichever Final Check card you clicked from — worth a manual check once this is wired into the real gallery.</p>
+    <p><strong>Tried and rejected — in-widget Fiscal Year filter (2026-07-21, design call with Jo).</strong> Round 2 above added Fiscal Year as one of this widget's own filters, with its own dropdown in "Change filters" and its own slot in the KPI/Small headline ("Variance — [Account Type], [Fiscal Year]"). Rejected on review: the app already has (or will have) a page-level Fiscal Year control at the top of the page, matching the current/legacy version — giving this widget its own separate, in-widget override on top of that risked exactly the kind of "which control actually took effect" confusion this project avoids elsewhere, since a customer would have no reliable way to tell whether the page-level or widget-level value was the one actually driving the chart. Jo's call: cut the in-widget filter entirely, not rework it — Fiscal Year goes back to being page-level only, same as before this widget got its own dropdown. Account Type and Period View are unaffected; "everything else is solid" per direct instruction. Removed from the build: the Fiscal Year entry in <code>MOCK_DATA.filters[1]</code> (so it no longer appears in "Change filters" at any size), the <code>1: 'Fiscal Year'</code> KPI-size time-filter entry (KPI size now shows no filter at all for W01, same pattern as W04/W17), and Fiscal Year's slot in the KPI/Small headline (now just "Variance — [Account Type]"). The chart itself still shows a year — <code>fyLabel</code> in <code>WRENDER[1]</code> falls back to FY 2026 exactly as it always did — there's just no widget-level way to change which year that is anymore. Kept here as history per the project's rule against deleting rejected ideas outright.</p>
   </div>
   </div><!-- /fc-widget-1 -->
   <div class="fc-widget" id="fc-widget-2">
@@ -996,12 +997,14 @@ body{font-family:'Red Hat Text',sans-serif;background:#fafafa;color:#202020;}
 
   <div class="sec-hd" style="margin-top:20px">Logic — What This Shows, and Why We Built It This Way</div>
   <div class="fc-logic">
-    <p><strong>Current design.</strong> One row per breakdown item, sized by amount — Horizontal Bars is the default because it scales cleanly regardless of category count (Donut/Pie only reads well up to ~4-5 slices). When Department = All Departments, each row is one of the four departments (staff groups) with that department's total; picking a specific department drills into its own pay-type breakdown — Regular, Vacation, OverTime, Sick, Double Time, Personal, Holiday, Misc, Other (changed 2026-07-16, per direct instruction — see the note below) — instead. In the All-Departments Bar view, each department's bar is now a stack of its own pay-type segments rather than one flat colour (added 2026-07-16, per direct instruction) — so the composition behind each department's total is visible at a glance, with a shared legend below; drilled into one department, bars are already that breakdown, so they stay plain single-colour. Bar, Pie Chart and Data Table all read this exact same row set, so switching between them changes only how it's drawn, never what's being counted. Every row also shows a ▲/▼ % change against the same-length prior period (on the bar, and as a Change column on the table) — a raw total doesn't say whether costs are trending up or down, so the comparison is always visible, not tucked behind a separate view. Small shows the top 3 rows, Medium the top 5, Large all of them plus totals; the KPI headline is Total Payroll Amount for the selected period. Switch Chart Type (Bar/Pie/Table) is available at every size except KPI, including Small.</p>
-    <p><strong>Filters.</strong> Department narrows every view to one department's payroll. Pay Period is Weekly/Bi-Weekly/Monthly/Custom: the three presets anchor on a Pay Date field (the date payroll is actually issued) and count backward from it — Weekly = 7 days, Bi-Weekly = 14, Monthly = 30 (a day-count approximation, not calendar-month-aware — open question, not guessed at). Custom instead reveals its own explicit Beginning/Ending date fields and ignores Pay Date entirely. A "Make this recurring" checkbox sits alongside the preset periods, and a second checkbox, "Set Pay Period separately per department," replaces the single shared Pay Date with one Start Date + Period + Make recurring block per department (Weekly/Bi-Weekly/Monthly only — Custom isn't offered per-department), each block separated by a divider line. The resolved end date shows above the card as "Paid: <em>date</em>" (with a 🔁 if recurring); the table view additionally shows the full range as "Period shown: <em>start – end</em>" on the table grid. When Separate By Department is on and Department = All Departments, there's no single shared date to show up top, so the callout says as much and each department's own row carries its own period + recurring indicator instead — a Period column on the table, subtext under each bar, and a small per-department list under the pie.</p>
-    <p><strong>Note — "paid," not "owed" (2026-07-16, per direct instruction).</strong> This widget reports payroll that has already been <em>paid</em> within the selected period — it's an after-the-fact check of what went out, not a forward-looking view of an outstanding obligation. That's an important correction to how this was framed: the "Payment due" callout above every view used to name the pay date as if it were something still owed, which is backwards — the pay date shown is always in the past or present, never a future amount due. Relabelled to "Paid: <em>date</em>" everywhere it appears (the top-of-card callout, the per-department rows, and this doc). The current-vs-prior comparison isn't affected by this correction — it's still comparing two already-paid periods against each other, which is exactly the kind of after-the-fact check this widget is for.</p>
-    <p><strong>Note — pay-type categories replace the paycheck-stub breakdown (2026-07-16, per direct instruction).</strong> Drilling into a specific department used to show Net Pay/Fed Tax/Benefits/State Tax/Retirement/Overtime — a gross-to-net breakdown of one paycheck's line items, more like reading a pay stub top to bottom. That's not the right lens here. It's now Regular, Vacation, OverTime, Sick, Double Time, Personal, Holiday, Misc, Other — the pay-type/earnings codes hours are actually coded under on a pay run, which is what "breaking down a pay group" should mean. This should be linkable in the real system — pay groups already tie to compensation records — but the exact field or table isn't confirmed; the original Purpose doc's formula (`SUM(PRHistoryCompensation.Amount) GROUP BY CompensationDistributionID, Name`) groups by compensation distribution, not by pay type, so there's likely a different dimension (an earnings/pay-type code) somewhere off `PRHistoryCompensation` or a related detail table that this widget would need instead. Flagged for the developer to dig into rather than assumed — see the Developer Punch List.</p>
-    <p><strong>Compared to the current real system</strong> (<a href="../Step 1 - Dashboard Research/03%20-%20Payroll%20Distributions.md" target="_blank" rel="noopener">Purpose doc</a>): today's widget is a single fixed layout — a table and a pie chart shown side by side, always grouped by compensation category, with plain Beginning/Ending date pickers (defaulting 1 Jan–today), no comparison to any other period, no per-department scheduling of any kind, no recurring option, no drill-down, and no department filter. This redesign changes all of that: Bar is the new default (pie/donut alone doesn't hold up once an org has more than ~5 categories), Pie and Table are kept as full peers rather than dropped; a Department filter and department-level rollup were added since HR/finance review is usually department-first, and — since different departments can genuinely run on different pay schedules — that filter now optionally splits into fully independent per-department periods rather than forcing one shared date on every department; the raw date pickers became named, Pay-Date-anchored periods, with an explicit recurring flag, since a payroll total only means something in the context of an actual pay run, not an arbitrary calendar range; and a current-vs-prior comparison was added everywhere because "what did we spend" is a weaker question than "is this drifting." A drill-through to the Payroll History module is specced as a genuinely new feature — the current system has no drill-down of any kind — and Department is a new filter the current system's data source doesn't clearly support yet (see Open Items below).</p>
-    <p><strong>Open items — not built, flagged rather than guessed at:</strong> (1) Department field is not confirmed to exist on the real `PRHistory`/`PRHistoryCompensation` tables — backend needs to confirm before this filter can go live. (2) Drill-through target page (the Payroll History module) isn't confirmed yet. (3) The Data Table Sort rule (fixed alphabetical, with a user toggle to Amount descending) — only the fixed alphabetical default is built; the toggle isn't. (4) Monthly's 30-day approximation vs. a true calendar-month subtraction, noted above. (5) "Make this recurring" is stored and displayed (including per-department) but is a flag only in this mockup — nothing here actually advances a period forward over calendar time; that's real scheduling logic for the backend, not something a static mock can demonstrate. (6) Custom isn't offered as a per-department option — only Weekly/Bi-Weekly/Monthly — flagged as a scope decision rather than an oversight, since a fully independent custom range per department starts to look like four separate widgets. (7) The new pay-type breakdown (Regular/Vacation/OverTime/Sick/Double Time/Personal/Holiday/Misc/Other) is mock data only — it should be linkable via pay groups, but the real field/table backing it isn't confirmed; needs developer investigation before build.</p>
+    <p><strong>Current design.</strong> One row per Distribution (pay-type category — Regular, Vacation, OverTime, Sick, Double Time, Personal, Holiday, Misc, Other), sized by amount — Horizontal Bars is the default because it scales cleanly regardless of category count (Donut/Pie only reads well up to ~4-5 slices). Bar, Pie Chart and Data Table all read this exact same row set, so switching between them changes only how it's drawn, never what's being counted. Every row also shows a ▲/▼ % change against the same-length prior period (on the bar, and as a Change column on the table) — a raw total doesn't say whether costs are trending up or down, so the comparison is always visible, not tucked behind a separate view. Small shows the top 3 rows, Medium the top 5, Large all of them plus totals; the KPI headline is Total Payroll Amount for the selected period. Switch Chart Type (Bar/Pie/Table) is available at every size except KPI, including Small. <strong>(2026-07-21 update:</strong> this used to branch on a Department filter — All Departments showed one row per department with a stacked-by-Distribution bar, a specific department drilled into its own Distribution breakdown. That branch is gone; there's only ever the one breakdown now. See the tried-and-rejected note at the end of this section.)</p>
+    <p><strong>Filters.</strong> Pay Period is Weekly/Bi-Weekly/Monthly/Custom: the three presets anchor on a Pay Date field (the date payroll is actually issued) and count backward from it — Weekly = 7 days, Bi-Weekly = 14, Monthly = 30 (a day-count approximation, not calendar-month-aware — open question, not guessed at). Custom instead reveals its own explicit Beginning/Ending date fields and ignores Pay Date entirely. A "Make this recurring" checkbox sits alongside the preset periods. The resolved end date shows above the card as "Paid: <em>date</em>" (with a 🔁 if recurring); the table view additionally shows the full range as "Period shown: <em>start – end</em>" on the table grid. <strong>(2026-07-21 update:</strong> a "Set Pay Period separately per department" checkbox used to sit alongside "Make this recurring," replacing the single shared Pay Date with one Start Date + Period + Make recurring block per department. Removed along with the Department filter — see the tried-and-rejected note below.)</p>
+    <p><strong>Note — "paid," not "owed" (2026-07-16, per direct instruction).</strong> This widget reports payroll that has already been <em>paid</em> within the selected period — it's an after-the-fact check of what went out, not a forward-looking view of an outstanding obligation. That's an important correction to how this was framed: the "Payment due" callout above every view used to name the pay date as if it were something still owed, which is backwards — the pay date shown is always in the past or present, never a future amount due. Relabelled to "Paid: <em>date</em>" everywhere it appears. The current-vs-prior comparison isn't affected by this correction — it's still comparing two already-paid periods against each other, which is exactly the kind of after-the-fact check this widget is for.</p>
+    <p><strong>Note — pay-type categories replace the paycheck-stub breakdown (2026-07-16, per direct instruction).</strong> This widget's breakdown used to show Net Pay/Fed Tax/Benefits/State Tax/Retirement/Overtime — a gross-to-net breakdown of one paycheck's line items, more like reading a pay stub top to bottom. That's not the right lens here. It's now Regular, Vacation, OverTime, Sick, Double Time, Personal, Holiday, Misc, Other — the pay-type/earnings codes hours are actually coded under on a pay run, which is what "Distribution" should mean for this widget. This should be linkable in the real system — pay groups already tie to compensation records — but the exact field or table isn't confirmed; the original Purpose doc's formula (`SUM(PRHistoryCompensation.Amount) GROUP BY CompensationDistributionID, Name`) groups by compensation distribution, not by pay type, so there's likely a different dimension (an earnings/pay-type code) somewhere off `PRHistoryCompensation` or a related detail table that this widget would need instead. Flagged for the developer to dig into rather than assumed — see the Developer Punch List.</p>
+    <p><strong>Compared to the current real system</strong> (<a href="../Step 1 - Dashboard Research/03%20-%20Payroll%20Distributions.md" target="_blank" rel="noopener">Purpose doc</a>): today's widget is a single fixed layout — a table and a pie chart shown side by side, always grouped by compensation category, with plain Beginning/Ending date pickers (defaulting 1 Jan–today), no comparison to any other period, no per-department scheduling of any kind, no recurring option, no drill-down, and no department filter. This redesign changed some of that and, as of 2026-07-21, has come back around on one part of it: Bar is still the new default (pie/donut alone doesn't hold up once an org has more than ~5 categories), Pie and Table are still kept as full peers rather than dropped, the raw date pickers are still named, Pay-Date-anchored periods with an explicit recurring flag, and a current-vs-prior comparison is still shown everywhere. But the Department filter and department-level rollup this redesign had added on top of the legacy design — see the tried-and-rejected note below — were cut back out on review, landing this widget back on the legacy design's own "no department filter" position, just with the other improvements above kept. A drill-through to the Payroll History module remains specced as a genuinely new feature the current system has no equivalent of.</p>
+    <p><strong>Tried and rejected — Department filter, per-department rollup, and "Separate By Department" (2026-07-21, design call with Jo).</strong> This redesign added a Department filter (All Departments · Finance · Admin · Ministry · Facilities) on top of the legacy design, which never had one. With it: Bar/Pie/Table showed one row per department at "All Departments," each department's bar stacked by its own Distribution composition; drilling into one department showed that department's own Distribution breakdown instead; and a "Set Pay Period separately per department" checkbox let each department run on its own Start Date/Period/Recurring rather than one shared Pay Date. <strong>Rejected on review.</strong> Per direct instruction, this was "kind of already a bit of a miss match" — the Department field was never confirmed to exist on the real `PRHistory`/`PRHistoryCompensation` tables in the first place (see the open item this closes, below), and it added a whole extra navigation layer on top of what this widget is actually named and built to show: a breakdown by Distribution. Cut entirely, not reworked — this widget goes back to always showing the Distribution breakdown directly, matching the legacy design's own scope, while keeping every other improvement from this redesign (Bar default, Pie/Table peers, Pay-Date anchoring, recurring flag, current-vs-prior comparison). Removed from `Dashboard Widget Mockups.html`: the Department filter entry in `MOCK_DATA.filters[3]`; the Finance/Admin/Ministry/Facilities buckets in `MOCK_DATA.series[3]` (only 'All Departments' remains, as the sole bucket); the department-rollup branch, `catBreakdown`, and `hbarStacked()` stacked-bar rendering in `WRENDER[3]`; the `deptName` parameter on `w3PeriodRange()`; and the "Set Pay Period separately per department" checkbox and its per-department Start Date/Period/Recurring fields in `_renderFltBody()`. Kept here as history per the project's rule against deleting rejected ideas outright.</p>
+    <p><strong>Also raised, and also dropped for now — a deeper Distribution breakdown (2026-07-21, design call with Jo).</strong> Per direct instruction: "the break down of Distributions would be amazing improvement but concept of how it should work is not clear currently." The idea — drilling into a single Distribution (e.g. "Regular") to see some further level of detail beneath it — isn't built anywhere in this mock and wasn't started as part of this pass; there's no clear concept yet of what that further detail would even be (per-employee amounts? per-pay-run history? something else?), so nothing here was designed or coded toward it. Per direct instruction, this is worth raising as an open question to the developer in Step 5's API topic in a later pass — specifically, whether the backend can identify a real data link that would support drilling from a Distribution into further detail. If it can't, the idea is fully dropped rather than half-built on a guess. <strong>Scope note:</strong> that Step 5 conversation is explicitly a separate, later pass — not part of this mock_work-only review — so nothing has been changed in `Step 5 - API documents` yet.</p>
+    <p><strong>Open items — not built, flagged rather than guessed at:</strong> (1) <s>Department field is not confirmed to exist on the real `PRHistory`/`PRHistoryCompensation` tables — backend needs to confirm before this filter can go live.</s> <strong>Closed 2026-07-21, superseded by rejection:</strong> moot — the Department filter itself was cut on review with Jo, not because backend confirmed or denied the field. See the tried-and-rejected note above. (2) Drill-through target page (the Payroll History module) isn't confirmed yet. (3) The Data Table Sort rule (fixed alphabetical, with a user toggle to Amount descending) — only the fixed alphabetical default is built; the toggle isn't. (4) Monthly's 30-day approximation vs. a true calendar-month subtraction, noted above. (5) "Make this recurring" is stored and displayed but is a flag only in this mockup — nothing here actually advances a period forward over calendar time; that's real scheduling logic for the backend, not something a static mock can demonstrate. (6) The new pay-type breakdown (Regular/Vacation/OverTime/Sick/Double Time/Personal/Holiday/Misc/Other) is mock data only — it should be linkable via pay groups, but the real field/table backing it isn't confirmed; needs developer investigation before build. (7) <strong>New 2026-07-21:</strong> whether a deeper breakdown within a single Distribution is buildable at all — see "Also raised, and also dropped for now" above; needs a dev question in Step 5's API topic in a later pass before this goes anywhere.</p>
   </div>
   </div><!-- /fc-widget-3 -->
   <div class="fc-widget" id="fc-widget-4">
@@ -2216,8 +2219,6 @@ body{font-family:'Red Hat Text',sans-serif;background:#fafafa;color:#202020;}
           <div class="wc-dropdown" id="fc-dd-14-k">
             <button class="wc-dd-item" onclick="openFilter(14,event,'A')"><span class="material-symbols-rounded">tune</span>Change filters</button>
             <div class="wc-dd-div"></div>
-            <button class="wc-dd-item" onclick="w14ToggleFix(14,event)"><span class="material-symbols-rounded w14-fix-ico">check_box_outline_blank</span>Fix this list</button>
-            <div class="wc-dd-div"></div>
             <div class="wc-dd-lbl">Widget size</div>
             <div class="wc-dd-size">
               <button class="wc-sz-btn" data-fc-sz="s" onclick="fcSetSize(14,'k','s',event)"><span class="material-symbols-rounded">crop_square</span><span class="wc-sz-label">Small</span></button>
@@ -2248,8 +2249,6 @@ body{font-family:'Red Hat Text',sans-serif;background:#fafafa;color:#202020;}
             <div class="wc-dropdown" id="fc-dd-14-s">
               <button class="wc-dd-item" onclick="openFilter(14,event,'A')"><span class="material-symbols-rounded">tune</span>Change filters</button>
               <div class="wc-dd-div"></div>
-              <button class="wc-dd-item" onclick="w14ToggleFix(14,event)"><span class="material-symbols-rounded w14-fix-ico">check_box_outline_blank</span>Fix this list</button>
-              <div class="wc-dd-div"></div>
               <div class="wc-dd-lbl">Widget size</div>
               <div class="wc-dd-size">
                 <button class="wc-sz-btn" data-fc-sz="s" onclick="fcSetSize(14,'s','s',event)"><span class="material-symbols-rounded">crop_square</span><span class="wc-sz-label">Small</span></button>
@@ -2277,8 +2276,6 @@ body{font-family:'Red Hat Text',sans-serif;background:#fafafa;color:#202020;}
             <div class="wc-dropdown" id="fc-dd-14-m">
               <button class="wc-dd-item" onclick="openFilter(14,event,'A')"><span class="material-symbols-rounded">tune</span>Change filters</button>
               <div class="wc-dd-div"></div>
-              <button class="wc-dd-item" onclick="w14ToggleFix(14,event)"><span class="material-symbols-rounded w14-fix-ico">check_box_outline_blank</span>Fix this list</button>
-              <div class="wc-dd-div"></div>
               <div class="wc-dd-lbl">Widget size</div>
               <div class="wc-dd-size">
                 <button class="wc-sz-btn" data-fc-sz="s" onclick="fcSetSize(14,'m','s',event)"><span class="material-symbols-rounded">crop_square</span><span class="wc-sz-label">Small</span></button>
@@ -2305,8 +2302,6 @@ body{font-family:'Red Hat Text',sans-serif;background:#fafafa;color:#202020;}
             <button class="wc-btn" onclick="fcToggleMenu(14,'l',event)"><span class="material-symbols-rounded">more_vert</span></button>
             <div class="wc-dropdown" id="fc-dd-14-l">
               <button class="wc-dd-item" onclick="openFilter(14,event,'A')"><span class="material-symbols-rounded">tune</span>Change filters</button>
-              <div class="wc-dd-div"></div>
-              <button class="wc-dd-item" onclick="w14ToggleFix(14,event)"><span class="material-symbols-rounded w14-fix-ico">check_box_outline_blank</span>Fix this list</button>
               <div class="wc-dd-div"></div>
               <div class="wc-dd-lbl">Widget size</div>
               <div class="wc-dd-size">
@@ -2338,7 +2333,6 @@ body{font-family:'Red Hat Text',sans-serif;background:#fafafa;color:#202020;}
   <div class="sec-hd" style="margin-top:20px">Logic — What This Shows, and Why We Built It This Way</div>
   <div class="fc-logic">
     <p><strong>Half 1 — Module Task Shortcuts.</strong> The Module dropdown (Large only, via the same generic inline-filter mechanism every other widget uses) picks which module's real task list renders, sourced from Step 1 Section 8's confirmed <code>Label — URL</code> data per module (<code>MOCK_DATA.moduleTasks</code>) — not invented. Each tile's icon is matched to the task's subject (journal, transaction, vendor, employee, invoice, etc.) per the icon-mapping table in Widget_Specs/W14-Main-Content-Tasks.md, so two different actions on the same kind of record share an icon.</p>
-    <p><strong>"Fix this list."</strong> Unchecked (Auto, default) means the list follows whatever module the user is actually in elsewhere in the app, matching legacy's page-context behaviour. Checked (Fixed) pins the list to whichever module is currently selected, and stops following page context until unchecked again. Both states render identically in this static mock — there's no real page-navigation context here to auto-follow — so the visible difference is only the checkbox icon (synced via <code>fcMarkActive</code>) and a small "(Fixed)" label next to Half 1's heading when checked. Per the confirmed design, this needs no new backend capability: the task list is already looked up per-module, Auto vs. Fixed only changes which module name gets requested.</p>
     <p><strong>Half 2 — My Tasks &amp; My Reports.</strong> This is the existing legacy saved-shortcut feature (see reference screenshots, 2026-07-21) surfaced inside this widget instead of wherever it lives today — not new save/pin functionality. Saving still happens via the existing "Add To My Tasks" action elsewhere in the app; this panel only displays what's already saved. Both the existing side-panel instance and this widget instance are confirmed to work off the same underlying save mechanism simultaneously.</p>
     <p><strong>KPI size — added, frozen, then reopened for one more experiment, all 2026-07-21.</strong> There's still no natural headline number for a purely navigational shortcuts panel. Latest pass: Main Content Tasks, My Tasks, and My Reports icons all sit in one continuous, non-wrapping row (<code>.w14-hscroll</code>), separated by a vertical line (<code>.w14-vline</code>) between each group, scrollable left/right — the only way to fit three icon groups into a 300&times;110 card without shrinking or wrapping them. Only that one row scrolls; the card's chrome bar above it is untouched, exactly as it's always been. Change Module still works via the 3-dot "Change filters" modal.</p>
     <p><strong>Small — icon-only tiles kept, title and a vertical line added 2026-07-21.</strong> Half 1 is unchanged: the same compact icon-only row as KPI (first 4 tasks), per direct instruction ("keep the small icons") — now with a small label above it showing the active module's name, matching My Tasks/My Reports' own label style below (per direct instruction, to use the free space the card had left over). My Tasks and My Reports sit side by side below a thin divider, now separated from each other by a real vertical-line element (<code>.w14-vline</code>) rather than just a gap. Module is only changeable via the 3-dot "Change filters" modal.</p>
@@ -2890,8 +2884,13 @@ MOCK_DATA.meta = [
 
 MOCK_DATA.filters = {
   1: [
+    // Fiscal Year removed here (2026-07-21, design call with Jo) — tried and rejected: it sat alongside a
+    // page-level Fiscal Year control users would expect to just work, so an in-widget override risked looking
+    // like the "real" control while the page-level one silently didn't apply, or vice versa — hard for a
+    // customer to reason about which one actually took effect. Fiscal Year is page-level only now, matching
+    // the current/legacy version. yrData()/fyLabel below already fall back to 'FY 2026' safely with no
+    // Fiscal Year filter present, so this is a filter-list removal only, not a data-logic change.
     {label:"Account Type",opts:["Income Accounts","Expense Accounts","Custom Report"]},
-    {label:"Fiscal Year",opts:["FY 2026","FY 2025","FY 2024"]},
     {label:"Period View",opts:["Monthly","Quarterly","Weekly"]}
   ],
   2: [
@@ -2908,8 +2907,13 @@ MOCK_DATA.filters = {
     // "Pay Date" field (added 2026-07-13, per direct instruction) — the date payroll is issued, which the
     // period is then counted backward from (see w3PeriodRange() in WRENDER[3]). Both dependent-field sets live
     // in _renderFltBody, not here, since they're single date inputs rather than another opts list.
-    {label:"Pay Period",opts:["Weekly","Bi-Weekly","Monthly","Custom"]},
-    {label:"Department",opts:["All Departments","Finance","Admin","Ministry","Facilities"]}
+    {label:"Pay Period",opts:["Weekly","Bi-Weekly","Monthly","Custom"]}
+    // Department removed here (2026-07-21, design call with Jo) — tried and rejected: it was a new addition on
+    // top of the legacy design (which never had a department filter at all), the underlying field was already
+    // flagged as unconfirmed on PRHistory/PRHistoryCompensation, and it left the widget's real "Distribution"
+    // breakdown (pay-type categories: Regular, Vacation, OverTime, etc. — see MOCK_DATA.series[3] below) one
+    // level deeper than it needed to be. Cut entirely, going back to always showing that breakdown directly —
+    // see fc-widget-3's Logic section for the full history.
   ],
   4: [
     // Date Range values corrected to match the locked design doc ("Current Month · Last Month · Custom
@@ -2945,7 +2949,9 @@ MOCK_DATA.filters = {
     // contradicts the doc's "cut entirely... remains closed" ruling on reconciliation for this widget.
     {label:"Account Type",opts:["All Accounts","Checking","Savings","Certificate of Deposit","Restricted Funds","Grant Funds"]},
     // New 2026-07-09 — Trend view comparison, per direct instruction. Lives in the 3-dot "Change filters"
-    // menu (incl. at KPI size, trimmed like W01's Fiscal Year), not an inline dropdown on the card.
+    // menu (incl. at KPI size, trimmed via MOCK_DATA.kpiTimeFilter like W03's Pay Period — W01's Fiscal Year
+    // used to be the other example here, but that filter was cut entirely 2026-07-21; see fc-widget-1's
+    // Logic section), not an inline dropdown on the card.
     // Simplified 2026-07-13, per direct instruction: only two real comparisons exist now — last month vs
     // this month, and this time last year vs this time this year. "Last Quarter" and "None" are removed;
     // Last Month is first (and the default everywhere) — every Table/KPI/Trend now always shows a comparison.
@@ -3013,9 +3019,11 @@ MOCK_DATA.filters = {
 };
 
 // Hard Rule 1 — at KPI size, only the time filter is offered. Default is Fiscal Year everywhere; a widget can
-// override here if Fiscal Year isn't its right time dimension (none do yet).
+// override here if Fiscal Year isn't its right time dimension, or drop the entry entirely if it has no
+// widget-level time filter at all.
+// W01 entry removed (2026-07-21, design call with Jo) — Fiscal Year is no longer a widget-level filter for
+// W01 at any size, so KPI size now shows no filter, same as W04/W17's "No filters at KPI size" pattern.
 MOCK_DATA.kpiTimeFilter = {
-  1: 'Fiscal Year',
   3: 'Pay Period',
   7: 'Compare To'
 };
@@ -3345,21 +3353,21 @@ MOCK_DATA.series[2] = {
 // W3 — Payroll Distributions
 // Categories changed 2026-07-16, per direct instruction: the old set — Net Pay/Fed Tax/Benefits/State Tax/
 // Retirement/Overtime — was a gross-to-net paycheck-stub breakdown (pay minus tax/deduction withholdings).
-// That's not what should show when drilling into a pay group. Replaced with pay-TYPE codes — the categories
+// That's not what should show for this widget's breakdown. Replaced with pay-TYPE codes — the categories
 // hours/earnings are actually coded under on a pay run: Regular, Vacation, OverTime, Sick, Double Time,
 // Personal, Holiday, Misc, Other. This should be linkable in the real system — pay groups already tie to
 // compensation records — but the exact field/table (a pay-type or earnings-code dimension, likely somewhere
 // off `PRHistoryCompensation` or a related detail table, not the `CompensationDistributionID/Name` pairing the
 // original Purpose doc's formula relies on) isn't confirmed. Flagged for the dev to dig into — see the
-// Developer Punch List and this widget's Final Check Logic notes. Values below are illustrative mock numbers
-// only, not derived from anything real; department totals still sum to the same "All Departments" total as
-// before for internal consistency.
+// Developer Punch List and this widget's Final Check Logic notes.
+// Department-level buckets (Finance/Admin/Ministry/Facilities) removed 2026-07-21, design call with Jo — the
+// Department filter and its per-department rollup were tried and rejected (see fc-widget-3's Logic section
+// and Widget_Specs/W03-Payroll-Distributions.md for the full history). 'All Departments' is now the only
+// bucket and is kept as-is rather than renamed, purely as an internal mock-data key WRENDER[3] already
+// references everywhere — it isn't shown to users. Values below are illustrative mock numbers only, not
+// derived from anything real.
 MOCK_DATA.series[3] = {
-  'All Departments': {cats:['Regular','Vacation','OverTime','Sick','Double Time','Personal','Holiday','Misc','Other'],vals:[126800,7600,6200,3200,700,2050,4900,970,1780],prev:[122600,7300,5550,3060,590,1970,4730,935,1730]},
-  'Finance':         {cats:['Regular','Vacation','OverTime','Sick','Double Time','Personal','Holiday','Misc','Other'],vals:[38000,2200,1400,900,200,600,1500,300,780],prev:[36700,2100,1200,850,150,580,1450,290,750]},
-  'Admin':           {cats:['Regular','Vacation','OverTime','Sick','Double Time','Personal','Holiday','Misc','Other'],vals:[27500,1600,800,700,100,450,1100,250,800],prev:[26600,1550,650,680,80,430,1050,240,770]},
-  'Ministry':        {cats:['Regular','Vacation','OverTime','Sick','Double Time','Personal','Holiday','Misc','Other'],vals:[44500,2600,2800,1100,300,700,1600,280,0],prev:[43000,2500,2400,1050,260,670,1550,270,0]},
-  'Facilities':      {cats:['Regular','Vacation','OverTime','Sick','Double Time','Personal','Holiday','Misc','Other'],vals:[16800,1200,1200,500,100,300,700,140,200],prev:[16300,1150,1300,480,100,290,680,135,210]}
+  'All Departments': {cats:['Regular','Vacation','OverTime','Sick','Double Time','Personal','Holiday','Misc','Other'],vals:[126800,7600,6200,3200,700,2050,4900,970,1780],prev:[122600,7300,5550,3060,590,1970,4730,935,1730]}
 };
 
 // W4 — Remittance Pledges
@@ -3928,18 +3936,14 @@ function hbarGrid(label,val,pctW,color){
   var grid='<div class="ht-grid"><span style="left:25%"></span><span style="left:50%"></span><span style="left:75%"></span></div>';
   return '<div class="hr"><div class="hl">'+label+'</div><div class="ht" style="position:relative">'+grid+'<div class="hf" style="width:'+pctW+'%;background:'+color+'"></div></div><div class="hv">'+val+'</div></div>';
 }
-// Same row shape as hbar(), but the fill is split into multiple coloured segments instead of one solid colour —
-// added 2026-07-16, per direct instruction, for W03's "show the breakdown when the grouped view is showing"
-// request: when Department = All Departments, each department's bar now shows its own pay-type composition
-// (Regular/Vacation/OverTime/etc.) as stacked segments, instead of one flat-coloured bar that only encodes the
-// department's total. `segments` is [{p:percentOfThisRowsOwnTotal, c:color}] — segment widths sum to ~100% of
-// pctW (this row's share of the widest row), same overall scale hbar() uses. Reuses the existing .hr/.hl/.ht/.hv
-// classes untouched — only the .hf single-colour fill is replaced with a flex row of segment divs, so this
-// doesn't affect any other widget's plain hbar() rows.
-function hbarStacked(label,val,pctW,segments){
-  var segHtml=segments.map(function(s){return '<div style="width:'+s.p+'%;height:100%;background:'+s.c+'"></div>';}).join('');
-  return '<div class="hr"><div class="hl">'+label+'</div><div class="ht"><div style="display:flex;height:100%;width:'+pctW+'%">'+segHtml+'</div></div><div class="hv">'+val+'</div></div>';
-}
+// hbarStacked() removed (2026-07-21, design call with Jo) — it existed only to draw W03's per-department
+// stacked bars (added 2026-07-16, for "show the breakdown when the grouped view is showing" when Department =
+// All Departments), and had no other caller. The Department filter and its per-department rollup were tried
+// and rejected on this same review; see fc-widget-3's Logic section for the full history. Was defined as:
+// function hbarStacked(label,val,pctW,segments){
+//   var segHtml=segments.map(function(s){return '<div style="width:'+s.p+'%;height:100%;background:'+s.c+'"></div>';}).join('');
+//   return '<div class="hr"><div class="hl">'+label+'</div><div class="ht"><div style="display:flex;height:100%;width:'+pctW+'%">'+segHtml+'</div></div><div class="hv">'+val+'</div></div>';
+// }
 function vbars(items,h){
   h=h||70; var w=Math.floor(100/items.length);
   var b=items.map(function(it,i){
@@ -4606,44 +4610,37 @@ WRENDER[2]=function(opt,wid,sz){
 // approximation, not calendar-month-aware — flagged as a simplification, not a real calendar-month rule).
 // E.g. Pay Date = a Friday, Bi-Weekly = that Friday back through the Friday two weeks earlier. Custom bypasses
 // this entirely and uses its own explicit Beginning/Ending fields, ignoring Pay Date.
-// Extended 2026-07-15, per direct instruction, with two settings that were missing from the filter panel:
+// Extended 2026-07-15, per direct instruction, with a setting that was missing from the filter panel:
 // - Recurring: a plain flag on the global (non-Custom) period — doesn't change the math, just whether this
 //   keeps advancing each cycle instead of being a one-off; surfaced wherever the pay date is shown.
-// - Separate By Department: when on, each department has its own Start Date + Period + Recurring instead of
-//   one shared setting. Pass `deptName` to resolve that department's own period (reads PayDate_<dept>,
-//   Period_<dept>, Recurring_<dept> — Custom isn't offered per-department, only Weekly/Bi-Weekly/Monthly).
-//   Without a deptName, Separate By Department has no single answer (each department differs) — callers
-//   handle that themselves rather than this function guessing which department to show.
+// (A second setting, Separate By Department — each department getting its own Start Date + Period +
+// Recurring via a `deptName` parameter here — was also added 2026-07-15, then removed again 2026-07-21
+// alongside the Department filter itself; see the note just below and fc-widget-3's Logic section.)
 // Returns null if nothing's resolvable yet (Custom picked but dates not filled in); otherwise an object with
 // `range` (short "start – end" string, for in-table use), `due` (the pay date itself, formatted with year —
 // property name kept from before the 2026-07-16 "paid, not owed" correction; it's the date payroll WAS issued,
 // not an amount outstanding — callers now label it "Paid: ..." rather than "Payment due: ..."), and
 // `recurring` (boolean).
-function w3PeriodRange(wid,deptName){
+// deptName parameter removed (2026-07-21, design call with Jo) — it drove the per-department "Separate Pay
+// Period per department" branch, which only existed because a Department filter existed to separate by.
+// Department was cut entirely (tried and rejected — see fc-widget-3's Logic section), so this function is
+// back to the single, global-period case it always had for the non-per-department path.
+function w3PeriodRange(wid){
   var fmtShort=function(dt){return dt.toLocaleDateString('en-US',{month:'short',day:'numeric'});};
   var fmtLong=function(dt){return dt.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});};
   var start,end,recurring;
-  if(deptName){
-    var period=fv(wid,'Period_'+deptName)||'Weekly';
+  var period=fv(wid,'Pay Period')||'Weekly';
+  if(period==='Custom'){
+    var b=fv(wid,'Beginning Date'), e=fv(wid,'Ending Date');
+    if(!b||!e) return null;
+    start=new Date(b+'T00:00:00'); end=new Date(e+'T00:00:00');
+    recurring=false; // Custom is inherently a one-off range; recurring isn't offered for it.
+  } else {
     var days=({Weekly:7,'Bi-Weekly':14,Monthly:30})[period]||7;
-    var payDateStr=fv(wid,'PayDate_'+deptName);
+    var payDateStr=fv(wid,'Pay Date');
     end=payDateStr?new Date(payDateStr+'T00:00:00'):new Date();
     start=new Date(end); start.setDate(start.getDate()-days);
-    recurring=(fv(wid,'Recurring_'+deptName)==='Yes');
-  } else {
-    var period=fv(wid,'Pay Period')||'Weekly';
-    if(period==='Custom'){
-      var b=fv(wid,'Beginning Date'), e=fv(wid,'Ending Date');
-      if(!b||!e) return null;
-      start=new Date(b+'T00:00:00'); end=new Date(e+'T00:00:00');
-      recurring=false; // Custom is inherently a one-off range; recurring isn't offered for it.
-    } else {
-      var days=({Weekly:7,'Bi-Weekly':14,Monthly:30})[period]||7;
-      var payDateStr=fv(wid,'Pay Date');
-      end=payDateStr?new Date(payDateStr+'T00:00:00'):new Date();
-      start=new Date(end); start.setDate(start.getDate()-days);
-      recurring=(fv(wid,'Recurring')==='Yes');
-    }
+    recurring=(fv(wid,'Recurring')==='Yes');
   }
   return {range:fmtShort(start)+' – '+fmtShort(end),due:fmtLong(end),recurring:recurring};
 }
@@ -4651,11 +4648,10 @@ function w3PeriodRange(wid,deptName){
 WRENDER[3]=function(opt,wid,sz){
   sz=sz||getSz(wid,opt);
   var view=sv(wid,opt);
-  var key=fv(wid,'Department')||'All Departments';
-  var d=MOCK_DATA.series[3][key]||MOCK_DATA.series[3]['All Departments'];
+  var d=MOCK_DATA.series[3]['All Departments'];
   // Extended from 6 to 9 colors on 2026-07-16, alongside the pay-type category change — the old 6-color
-  // palette would have silently repeated (via colors[i%colors.length]) once the department rollup or a
-  // drilled-in department's breakdown had more than 6 rows, which is now the normal case (9 pay types).
+  // palette would have silently repeated (via colors[i%colors.length]) once this breakdown had more than 6
+  // rows, which is now the normal case (9 pay types).
   var colors=['#4b6ec3','#6e8bd4','#a0b5e6','#c4d4f0','#e0e8fa','#bcc8e8','#2f4e8f','#7c5cb0','#a986d6'];
   var total=d.vals.reduce(function(a,b){return a+b;},0)||1;
   var maxV=Math.max.apply(null,d.vals)||1;
@@ -4666,49 +4662,32 @@ WRENDER[3]=function(opt,wid,sz){
     // visible that the period is being counted backward from Pay Date rather than assumed from "today."
     // Refined 2026-07-14: the callout names the actual pay date rather than a bare date range — the full
     // start–end range sits with the table instead, specifically in the table view.
-    // Refined again 2026-07-15, per direct instruction, for the new Separate By Department setting: when it's
-    // on AND Department = All Departments, there's no single pay date to show here — each department has its
-    // own (see the recurBadge/perDeptMode handling below and each row's own period). Drilled into one specific
-    // department, that department's own period is used instead of the global one.
     // Reframed 2026-07-16, per direct instruction — important conceptual correction: this widget reports
     // payroll that has already been PAID within a period, not an amount owed/outstanding. "Payment due" was
     // the wrong word for what pr.due actually is (the pay date itself, always in the past or present, never a
     // future obligation) — it read as an AP-style "money you still owe" callout, which this isn't. Relabelled
     // to "Paid" throughout. The current-vs-prior comparison is unaffected by this — it's still comparing two
     // already-paid periods against each other, which is exactly the "after the fact" check this widget is for.
-    var sepByDept=(fv(wid,'Separate By Department')==='Yes');
-    var perDeptMode=(sepByDept && key==='All Departments');
-    var pr=perDeptMode?null:(sepByDept?w3PeriodRange(wid,key):w3PeriodRange(wid));
+    // Department filter and its per-department period override ("Separate By Department") removed 2026-07-21,
+    // design call with Jo — tried and rejected. This block used to branch on Department = All Departments vs.
+    // a single drilled-into department, and, if Separate By Department was on, on a per-department resolved
+    // period; both branches are gone, so `pr` below is always the one global period. See fc-widget-3's Logic
+    // section for the full history.
+    var pr=w3PeriodRange(wid);
     var recurBadge=function(p){ return (p&&p.recurring)?' <span title="Recurring" style="font-size:9px">🔁</span>':''; };
-    var rangeTag=perDeptMode
-      ? '<div style="font-size:10px;color:#4b6ec3;font-weight:600;margin-bottom:6px">Paid: varies by department — see rows below</div>'
-      : (pr?('<div style="font-size:10px;color:#4b6ec3;font-weight:600;margin-bottom:6px">Paid: '+pr.due+recurBadge(pr)+'</div>'):'');
+    var rangeTag=pr?('<div style="font-size:10px;color:#4b6ec3;font-weight:600;margin-bottom:6px">Paid: '+pr.due+recurBadge(pr)+'</div>'):'';
     // KPI (1x0.5): locked design doc — "Headline: Total Payroll Amount for the selected period... No download,
     // no switch." Not previously implemented (no sz==='k' branch existed).
     if(sz==='k'||sz==='xk'){
       return rangeTag+kpiTileMini($m(total),'#202020','Total Payroll Amount',null,null,sz);
     }
     // Unified breakdown rows for Bar / Pie / Table — added per direct instruction (2026-07-10): the bar chart
-    // and pie chart now read the exact same rows as the data table, instead of the bar chart always grouping by
-    // category regardless of the Department filter. When Department = All Departments, rows are the 4
-    // departments (staff groups) with their totals/prior totals; drilled into a single department, rows are
-    // that department's own compensation categories — same grouping rule already applied to the table view.
-    // Each row carries both `cur` and `prev` so Bar/Pie/Table can all show the current-vs-prior comparison.
-    // Added 2026-07-15: in perDeptMode each row also carries its own resolved period (`pr`), since that's
-    // exactly the case where each department can have a different Start Date/Period/Recurring setting.
-    var rowsAll;
-    if(key==='All Departments'){
-      var deptNames=Object.keys(MOCK_DATA.series[3]).filter(function(k){return k!=='All Departments';}).sort();
-      rowsAll=deptNames.map(function(dn){
-        var dd=MOCK_DATA.series[3][dn];
-        // catBreakdown added 2026-07-16, per direct instruction: each department row now also carries its own
-        // pay-type composition, so the Bar view can show each department's bar as a stack of its own
-        // Regular/Vacation/OverTime/etc. segments instead of one flat colour — see hbarStacked() below.
-        return {l:dn,cur:dd.vals.reduce(function(a,b){return a+b;},0),prev:dd.prev.reduce(function(a,b){return a+b;},0),pr:perDeptMode?w3PeriodRange(wid,dn):null,catBreakdown:dd.cats.map(function(c,ci){return {l:c,v:dd.vals[ci]};})};
-      });
-    } else {
-      rowsAll=d.cats.map(function(c,ri){return {l:c,cur:d.vals[ri],prev:d.prev[ri],pr:null,catBreakdown:null};});
-    }
+    // and pie chart read the exact same rows as the data table. Rows are this widget's pay-type/Distribution
+    // categories (Regular, Vacation, OverTime, etc.) — the department-rollup branch that used to sit here when
+    // Department = All Departments is gone along with the Department filter itself (see note above); this is
+    // now the only shape rows ever take. Each row carries both `cur` and `prev` so Bar/Pie/Table can all show
+    // the current-vs-prior comparison.
+    var rowsAll=d.cats.map(function(c,ri){return {l:c,cur:d.vals[ri],prev:d.prev[ri]};});
     var rows=capN(rowsAll,sz);
     var rowsMaxV=Math.max.apply(null,rowsAll.map(function(r){return r.cur;}))||1;
 
@@ -4716,68 +4695,39 @@ WRENDER[3]=function(opt,wid,sz){
       // Column header renamed "Category"→"Distribution" (2026-07-09, matches the widget's own name) and rows
       // now come from the unified rowsAll/rows above. Added 2026-07-10, per direct instruction: Prior/Current/
       // Change columns (previously Amount/Share only) — the same current-vs-prior comparison as the bar chart,
-      // now on the table too. Added 2026-07-15: in perDeptMode, a Period column shows each department's own
-      // resolved range (plus a 🔁 if that department is recurring), since the top-of-card callout can't show
-      // one shared date anymore.
+      // now on the table too.
       var trows=rows.map(function(r){
         var chg=r.cur-r.prev;
         var chgPct=pctChange(r.cur,r.prev);
         var chgTxt=(chg>=0?'+':'')+$m(chg)+(chgPct===null?'':' ('+(chgPct>=0?'+':'')+chgPct+'%)');
-        var row=[r.l,$m(r.prev),$m(r.cur),'<span style="color:'+(chg>=0?'#2e7d32':'#e53935')+';font-weight:600">'+chgTxt+'</span>'];
-        if(perDeptMode) row.push((r.pr?r.pr.range:'—')+recurBadge(r.pr));
-        return row;
+        return [r.l,$m(r.prev),$m(r.cur),'<span style="color:'+(chg>=0?'#2e7d32':'#e53935')+';font-weight:600">'+chgTxt+'</span>'];
       });
       var tcols=['Distribution',{l:'Prior',r:true},{l:'Current',r:true},{l:'Change',r:true}];
-      if(perDeptMode) tcols.push('Period');
       // Added 2026-07-14: the full start–end range sits directly with the table (distinct from the "Payment
-      // due" callout above). Suppressed in perDeptMode since each row now carries its own Period column instead
-      // of one shared range for the whole table.
-      var periodCaption=(pr&&!perDeptMode)?('<div style="font-size:10.5px;color:#484848;font-weight:600;background:#f5f7fb;padding:5px 8px;border-radius:6px 6px 0 0;border:.5px solid #e4e8f1;border-bottom:none">Period shown: '+pr.range+'</div>'):'';
+      // due" callout above).
+      var periodCaption=pr?('<div style="font-size:10.5px;color:#484848;font-weight:600;background:#f5f7fb;padding:5px 8px;border-radius:6px 6px 0 0;border:.5px solid #e4e8f1;border-bottom:none">Period shown: '+pr.range+'</div>'):'';
       return rangeTag+ftags(wid)+periodCaption+(sz==='l'||sz==='x'?tblScroll(tcols,trows,tH(sz)):tbl(tcols,trows))+lOnly('<div style="font-size:10px;color:#888;margin-top:6px;text-align:right">Total: '+$m(total)+'</div>',sz);
     }
     if(view==='pie'){
       // New view, added 2026-07-10 per direct instruction: Pie Chart using the same rows/total as Bar/Table,
       // available at every size except KPI (Small included — see fcApplyMenuTrim's hideSwAtSmall override).
-      // Added 2026-07-15: in perDeptMode, a small list under the chart spells out each department's own period
-      // — pieChart()'s legend itself is a shared helper used by every widget, so this is a separate line rather
-      // than changing what that legend can render.
       var slices=rows.map(function(r,i){return {l:r.l,p:pct(r.cur,total),c:colors[i%colors.length]};});
       var psz=sz==='s'?80:sz==='m'?90:110;
-      var perDeptList=perDeptMode?('<div style="font-size:9.5px;color:#888;margin-top:8px;line-height:1.6">'+rows.map(function(r){return '<strong>'+r.l+':</strong> '+(r.pr?r.pr.range:'—')+recurBadge(r.pr);}).join('<br>')+'</div>'):'';
-      return rangeTag+ftags(wid)+pieChart(slices,psz)+perDeptList+mUp('<div style="font-size:10px;color:#888;margin-top:8px;text-align:center">Total payroll: '+$m(total)+'</div>',sz);
+      return rangeTag+ftags(wid)+pieChart(slices,psz)+mUp('<div style="font-size:10px;color:#888;margin-top:8px;text-align:center">Total payroll: '+$m(total)+'</div>',sz);
     }
     // Default: Horizontal Bars. Small (1x1) used to show a "biggest category" headline instead of bars — that
     // was the "'Top category by amount' as KPI headline" concept the doc's "What Got Cut" section says was
     // dropped; removed 2026-07-09 so Small falls through to the same bars every other size uses. Each bar shows
     // a % up/down badge (added 2026-07-09) comparing the current value to `prev` — the same-length prior period
-    // for whatever Pay Period is selected — reusing the existing pctChange() helper. Added 2026-07-15: in
-    // perDeptMode, each row's own period shows as small subtext under its bar (hidden at Small, same as the
-    // Total caption, for space).
-    // Added 2026-07-16, per direct instruction ("can the bar chart show the breakdown when the grouped view is
-    // showing"): when Department = All Departments, each department's bar is now a stack of its own pay-type
-    // segments (Regular/Vacation/OverTime/etc.) via hbarStacked(), instead of one flat-coloured bar that only
-    // encoded the department's total. Segment colours match the same colors[] index a category gets when
-    // you're drilled into a single department, so the legend stays meaningful across both views. Drilled into
-    // one department, bars are already the pay-type breakdown itself, so they stay plain single-colour bars —
-    // there's nothing further to stack.
-    var barLegend='';
-    if(key==='All Departments'){
-      var legendCats=rowsAll[0]&&rowsAll[0].catBreakdown?rowsAll[0].catBreakdown:[];
-      barLegend=mUp('<div class="aleg" style="margin-top:10px">'+legendCats.map(function(cb,ci){return '<div class="ali"><div class="asw" style="background:'+colors[ci%colors.length]+'"></div>'+cb.l+'</div>';}).join('')+'</div>',sz);
-    }
+    // for whatever Pay Period is selected — reusing the existing pctChange() helper. The department-stacked-bar
+    // variant (hbarStacked, added 2026-07-16) that used to show here when Department = All Departments is gone
+    // along with the Department filter itself (2026-07-21, design call with Jo) — bars are plain single-colour
+    // now, always.
     return rangeTag+ftags(wid)+'<div class="hbars">'+rows.map(function(r,i){
       var chg=pctChange(r.cur,r.prev);
       var chgHtml=(chg===null)?'':(' <span style="color:'+(chg>=0?'#2e7d32':'#e53935')+';font-weight:600;font-size:10px">'+(chg>=0?'▲':'▼')+' '+Math.abs(chg)+'%</span>');
-      var barHtml;
-      if(key==='All Departments' && r.catBreakdown){
-        var segs=r.catBreakdown.map(function(cb,ci){return {p:pct(cb.v,r.cur),c:colors[ci%colors.length]};});
-        barHtml=hbarStacked(r.l,$m(r.cur)+chgHtml,Math.round(r.cur/rowsMaxV*100),segs);
-      } else {
-        barHtml=hbar(r.l,$m(r.cur)+chgHtml,Math.round(r.cur/rowsMaxV*100),colors[i%colors.length]);
-      }
-      if(perDeptMode && sz!=='s'){ barHtml+='<div style="font-size:9px;color:#aaa;margin:-4px 0 6px 2px">'+(r.pr?r.pr.range:'—')+recurBadge(r.pr)+'</div>'; }
-      return barHtml;
-    }).join('')+'</div>'+barLegend+mUp('<div style="font-size:10px;color:#888;margin-top:8px;text-align:right">Total: '+$m(total)+'</div>'+(perDeptMode?'':'<div style="font-size:9px;color:#aaa;margin-top:2px;text-align:right">% vs. same-length prior period</div>'),sz);
+      return hbar(r.l,$m(r.cur)+chgHtml,Math.round(r.cur/rowsMaxV*100),colors[i%colors.length]);
+    }).join('')+'</div>'+mUp('<div style="font-size:10px;color:#888;margin-top:8px;text-align:right">Total: '+$m(total)+'</div><div style="font-size:9px;color:#aaa;margin-top:2px;text-align:right">% vs. same-length prior period</div>',sz);
   }
   if(opt==='B'){
     var slices=d.cats.map(function(c,i){return {l:c,p:pct(d.vals[i],total),c:colors[i]};});
@@ -5427,26 +5377,12 @@ function w14SavedPanel(icon,title,items){
   }).join('') : '<div style="font-size:11px;color:#888;padding:4px 0">Nothing saved yet.</div>';
   return '<div class="w14-saved-panel"><div class="w14-saved-hd"><span class="material-symbols-rounded" style="font-size:16px;color:#606060">'+icon+'</span><span style="flex:1">'+title+'</span></div>'+rows+'</div>';
 }
-// "Fix this list" — toggles whether the Module dropdown's selection stays pinned (Fixed) or keeps following
-// page context elsewhere in the app (Auto, default, per Widget_Specs). Both modes render identically in this
-// static mock (there's no real page-navigation context to simulate here) — the toggle exists so the two states
-// and their menu-icon sync are visible for review; a small "(Fixed)" label appears next to Half 1's heading
-// when checked, unchecked shows nothing extra (Auto is the implicit default, matching legacy behaviour).
-function w14ToggleFix(wid,e){
-  if(e){e.stopPropagation();}
-  var s=gs(wid);
-  s.w14Fixed=!s.w14Fixed;
-  closeMenu();
-  rerender(wid);
-}
 WRENDER[14]=function(opt,wid,sz){
   sz=sz||getSz(wid,opt);
   if(opt!=='A') opt='A'; // single confirmed design (2026-07-21) — no competing options left to choose between
   var mod=fv(wid,'Module')||'Home'; // renamed from 'Main' (2026-07-21, per direct instruction)
   var tasks=(MOCK_DATA.moduleTasks[14]||{})[mod]||[];
-  var fixed=!!gs(wid).w14Fixed;
   var myTasks=MOCK_DATA.myTasks[14]||[], myReports=MOCK_DATA.myReports[14]||[];
-  var fixedTag=fixed?' <span style="font-weight:400;color:#aaa;text-transform:none">(Fixed)</span>':'';
 
   // KPI (1x0.5): added 2026-07-21, briefly frozen the same day, then reopened for one more explicit experiment
   // (2026-07-21, "last experiment"): one continuous, non-wrapping, horizontally-scrollable icon strip — Main
@@ -5492,14 +5428,14 @@ WRENDER[14]=function(opt,wid,sz){
     // is untouched and still never scrolls — only the body below it does. This deliberately deviates from
     // Hard Rule 2 ("nothing scrolls except Expanded and table rows") — see General Widget Design Rules.md's
     // Fine-Tuning/exceptions note and Widget_Specs/W14-Main-Content-Tasks.md for the same flag.
-    var half1m='<div class="w14-sec-hd">'+mod+' — Module Task Shortcuts'+fixedTag+'</div>'+w14BigTileGrid(tasks,3);
+    var half1m='<div class="w14-sec-hd">'+mod+' — Module Task Shortcuts</div>'+w14BigTileGrid(tasks,3);
     var half2m='<div class="w14-sec-hd" style="margin-top:10px">My Tasks &amp; My Reports</div>'
       +'<div style="display:flex;gap:8px;flex-wrap:wrap">'+w14SavedPanel('list_alt','My Tasks',myTasks)+w14SavedPanel('description','My Reports',myReports)+'</div>';
     return ftags(wid)+half1m+half2m;
   }
   // Large — Half 1 switched back to the bigger icon+label card, same reason/instruction as Medium above.
   // Half 2 unchanged — full My Tasks/My Reports lists, as originally built.
-  var half1='<div class="w14-sec-hd">'+mod+' — Module Task Shortcuts'+fixedTag+'</div>'+w14BigTileGrid(tasks,4);
+  var half1='<div class="w14-sec-hd">'+mod+' — Module Task Shortcuts</div>'+w14BigTileGrid(tasks,4);
   var half2='<div class="w14-sec-hd" style="margin-top:14px">My Tasks &amp; My Reports</div>'
     +'<div style="display:flex;gap:10px;flex-wrap:wrap">'+w14SavedPanel('list_alt','My Tasks',myTasks)+w14SavedPanel('description','My Reports',myReports)+'</div>';
   return inlineFilters(wid,opt)+half1+half2;
@@ -5824,9 +5760,10 @@ function openFilter(wid,e,opt){
 function _renderFltBody(wid,fdefs){
   var state=gs(wid);
   var draft={};
-  // Reads selects, date inputs, and now checkboxes (W03's Recurring / Separate By Department toggles, added
-  // 2026-07-15) — checkboxes store 'Yes'/'No' off their `.checked` state rather than `.value`, which for a
-  // checkbox is just whatever static `value` attribute it has (or "on"), not whether it's actually checked.
+  // Reads selects, date inputs, and now checkboxes (W03's Recurring toggle, added 2026-07-15 — its sibling
+  // Separate By Department toggle was removed 2026-07-21, design call with Jo) — checkboxes store 'Yes'/'No'
+  // off their `.checked` state rather than `.value`, which for a checkbox is just whatever static `value`
+  // attribute it has (or "on"), not whether it's actually checked.
   document.querySelectorAll('#flt-body select, #flt-body input').forEach(function(sel){
     draft[sel.getAttribute('data-filter')]=(sel.type==='checkbox')?(sel.checked?'Yes':'No'):sel.value;
   });
@@ -5853,12 +5790,13 @@ function _renderFltBody(wid,fdefs){
     body+='</select></div>';
   }
   if(wid===3){ var todayStr=new Date().toISOString().slice(0,10); }
-  var w3SepByDept=(wid===3 && val('Separate By Department')==='Yes');
+  // Separate By Department (added 2026-07-15) removed entirely 2026-07-21, design call with Jo — tried and
+  // rejected alongside the Department filter itself (see fc-widget-3's Logic section for the full history).
+  // Custom/Beginning/Ending and Pay Date below used to be conditioned on "!w3SepByDept"; that condition is
+  // gone since there's no longer a Separate By Department state to check.
   // W03 (2026-07-09, per direct instruction): Pay Period = Custom reveals two date inputs — Beginning Date and
   // Ending Date — so the user can enter a fully manual range instead of the Weekly/Bi-Weekly/Monthly presets.
-  // Hidden entirely when Separate By Department is on (2026-07-15) — Custom/Beginning/Ending is a single global
-  // range and doesn't make sense once each department has its own Start Date + Period below.
-  if(wid===3 && !w3SepByDept && val('Pay Period')==='Custom'){
+  if(wid===3 && val('Pay Period')==='Custom'){
     body+='<div style="margin-bottom:14px"><label style="display:block;font-size:11px;font-weight:600;color:#484848;margin-bottom:5px">Beginning Date</label>';
     body+='<input type="date" data-filter="Beginning Date" value="'+(val('Beginning Date')||'')+'" style="width:100%;padding:7px 10px;border:.5px solid #d2d2d2;border-radius:6px;font-family:inherit;font-size:13px;background:#fff">';
     body+='</div>';
@@ -5869,49 +5807,23 @@ function _renderFltBody(wid,fdefs){
   // W03 (2026-07-13, per direct instruction): for the three preset periods (Weekly/Bi-Weekly/Monthly), the
   // filter anchors on Pay Date — the date payroll is actually issued — rather than assuming "today." The period
   // runs backward from Pay Date: Weekly = the 7 days up to and including it, Bi-Weekly = 14 days, Monthly = 30
-  // days. Defaults to today if nothing's been picked yet. Hidden when Separate By Department is on — same
-  // reasoning as Custom above, each department gets its own Start Date instead (see block further down).
-  if(wid===3 && !w3SepByDept && val('Pay Period')!=='Custom'){
+  // days. Defaults to today if nothing's been picked yet.
+  if(wid===3 && val('Pay Period')!=='Custom'){
     body+='<div style="margin-bottom:14px"><label style="display:block;font-size:11px;font-weight:600;color:#484848;margin-bottom:5px">Pay Date</label>';
     body+='<input type="date" data-filter="Pay Date" value="'+(val('Pay Date')||todayStr)+'" style="width:100%;padding:7px 10px;border:.5px solid #d2d2d2;border-radius:6px;font-family:inherit;font-size:13px;background:#fff">';
     body+='<div style="font-size:10.5px;color:#888;margin-top:4px">The date payroll is issued — the '+(val('Pay Period')||'Weekly').toLowerCase()+' period is counted backward from here.</div>';
     body+='</div>';
   }
-  // W03 (2026-07-15, per direct instruction): two settings previously missing from this filter panel.
-  // (1) "Make this recurring" — only shown for the global, non-Custom case (a one-off Custom range or a
-  // per-department setup below have their own recurring semantics, or none). (2) "Set Pay Period separately
-  // per department" — when on, replaces the single Pay Date above with one Start Date + Period + Make
-  // recurring block per department, each separated by a divider line. Both are plain checkboxes, read via
-  // their `.checked` state (see the draft-reading and applyFilter changes that special-case type="checkbox").
-  if(wid===3){
-    if(!w3SepByDept && val('Pay Period')!=='Custom'){
-      body+='<div style="margin-bottom:14px;display:flex;align-items:center;gap:8px">';
-      body+='<input type="checkbox" data-filter="Recurring" id="w3-cb-recurring"'+(val('Recurring')==='Yes'?' checked':'')+' style="width:15px;height:15px">';
-      body+='<label for="w3-cb-recurring" style="font-size:12px;color:#484848">Make this recurring</label>';
-      body+='</div>';
-    }
-    body+='<div style="height:.5px;background:#e4e8f1;margin:6px 0 14px"></div>';
-    body+='<div style="margin-bottom:'+(w3SepByDept?'14':'0')+'px;display:flex;align-items:center;gap:8px">';
-    body+='<input type="checkbox" data-filter="Separate By Department" id="w3-cb-sepdept" onchange="_renderFltBody(3,MOCK_DATA.filters[3])"'+(w3SepByDept?' checked':'')+' style="width:15px;height:15px">';
-    body+='<label for="w3-cb-sepdept" style="font-size:12px;color:#484848">Set Pay Period separately per department</label>';
+  // W03 (2026-07-15, per direct instruction): "Make this recurring" — only shown for the global, non-Custom
+  // case (a one-off Custom range has no recurring semantics). Plain checkbox, read via its `.checked` state
+  // (see the draft-reading and applyFilter code above that special-cases type="checkbox"). Its sibling setting,
+  // "Set Pay Period separately per department," was removed 2026-07-21 along with the Department filter — see
+  // note above.
+  if(wid===3 && val('Pay Period')!=='Custom'){
+    body+='<div style="margin-bottom:14px;display:flex;align-items:center;gap:8px">';
+    body+='<input type="checkbox" data-filter="Recurring" id="w3-cb-recurring"'+(val('Recurring')==='Yes'?' checked':'')+' style="width:15px;height:15px">';
+    body+='<label for="w3-cb-recurring" style="font-size:12px;color:#484848">Make this recurring</label>';
     body+='</div>';
-    if(w3SepByDept){
-      var w3Depts=Object.keys(MOCK_DATA.series[3]).filter(function(k){return k!=='All Departments';}).sort();
-      w3Depts.forEach(function(dn,i){
-        body+='<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:700;color:#202020;margin-bottom:6px">'+dn+'</div>';
-        body+='<label style="display:block;font-size:10.5px;font-weight:600;color:#484848;margin-bottom:4px">Start Date</label>';
-        body+='<input type="date" data-filter="PayDate_'+dn+'" value="'+(val('PayDate_'+dn)||todayStr)+'" style="width:100%;padding:6px 10px;border:.5px solid #d2d2d2;border-radius:6px;font-family:inherit;font-size:12.5px;background:#fff;margin-bottom:8px">';
-        body+='<label style="display:block;font-size:10.5px;font-weight:600;color:#484848;margin-bottom:4px">Period</label>';
-        body+='<select data-filter="Period_'+dn+'" style="width:100%;padding:6px 10px;border:.5px solid #d2d2d2;border-radius:6px;font-family:inherit;font-size:12.5px;background:#fff;margin-bottom:8px">';
-        ['Weekly','Bi-Weekly','Monthly'].forEach(function(o){var sel=(val('Period_'+dn)===o)?' selected':'';body+='<option'+sel+'>'+o+'</option>';});
-        body+='</select>';
-        body+='<div style="display:flex;align-items:center;gap:8px">';
-        body+='<input type="checkbox" data-filter="Recurring_'+dn+'" id="w3-cb-rec-'+dn+'"'+(val('Recurring_'+dn)==='Yes'?' checked':'')+' style="width:15px;height:15px">';
-        body+='<label for="w3-cb-rec-'+dn+'" style="font-size:11.5px;color:#484848">Make recurring</label>';
-        body+='</div></div>';
-        if(i<w3Depts.length-1){ body+='<div style="height:.5px;background:#e4e8f1;margin:0 0 12px"></div>'; }
-      });
-    }
   }
   document.getElementById('flt-body').innerHTML=body;
 }
@@ -6289,13 +6201,6 @@ function fcMarkActive(wid,slot){
     b.classList.toggle('is-current',cur);
     if(cur) b.setAttribute('disabled',''); else b.removeAttribute('disabled');
   });
-  // W14 (Main Content Tasks) — "Fix this list" is a checkbox-style menu item, not a size/view button, so it
-  // needs its own sync: icon reflects gs(14).w14Fixed on every render and every menu open, same as everything
-  // else this function keeps in sync.
-  if(wid===14){
-    var fixIco=dd.querySelector('.w14-fix-ico');
-    if(fixIco) fixIco.textContent=gs(14).w14Fixed?'check_box':'check_box_outline_blank';
-  }
 }
 function fcToggleMenu(wid,slot,e){
   toggleMenu(e,'fc-dd-'+wid+'-'+slot);
@@ -6304,16 +6209,20 @@ function fcToggleMenu(wid,slot,e){
 // One fcInitState(wid, defaultOptionLetter) call per widget, registering which locked/default option its Final
 // Check section previews. Add one line here per widget as its section is built.
 fcInitState(1,'A');
-// KPI card AND Small card titles both reflect the active Account Type/Fiscal Year filters (2026-07-09).
-// Unlike W02, neither filter here has an "all" state to drop — Account Type is always one of three real
-// values, Fiscal Year is always one real year — so this always shows both, prefixed with "Variance" per
-// direct instruction, rather than using fcKpiFilterHeadline's "collapse to allLabel" behaviour.
+// KPI card AND Small card titles reflect the active Account Type filter (2026-07-09).
+// Fiscal Year dropped from this headline (2026-07-21, design call with Jo) — it's no longer a
+// widget-level filter at all (see MOCK_DATA.filters[1] above), so there's nothing left for the headline to
+// reflect on that front. Previously read "Variance — [Account Type], [Fiscal Year]"; now just
+// "Variance — [Account Type]". Account Type still has no "all" state to drop — it's
+// always one of three real values — so it always shows, prefixed with "Variance" per direct
+// instruction, same as before. (Also fixed while touching this: allValue was silently a stray NUL byte
+// instead of a space in both entries below — pre-existing data corruption, unrelated to this
+// change, corrected here since the Fiscal Year entry it lived on was being removed anyway.)
 FC_KPI_HEADLINE[1]={
   slots:['k','s'],
   fn:function(){
     return 'Variance — '+fcKpiFilterHeadline(1,[
-      {label:'Account Type',allValue:' '},
-      {label:'Fiscal Year',allValue:' '}
+      {label:'Account Type',allValue:' '}
     ],'Variance',', ');
   }
 };
