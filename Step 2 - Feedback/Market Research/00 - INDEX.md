@@ -8,7 +8,7 @@ Some widgets already carry a `## How Other Companies Fulfil This Purpose` (or `#
 
 ## Current status
 
-**All 16 files were created 2026-07-21 as empty placeholders.** W15 was researched the same day using the `widget-market-research` skill; W05 and W10 were researched 2026-07-22 the same way, both building on existing Step 3/4 "How Other Companies Fulfil This Purpose" citations rather than starting fresh (see each file's own "Note on Existing Content Elsewhere"). W04 is also marked Researched below. The remaining 12 are still placeholders, pending a decision on when/whether to run the same pass on each.
+**All 16 widget files have now been researched.** W15 and W04 were researched 2026-07-21; the remaining 14 (W01, W02, W03, W05, W06, W07, W08, W09, W10, W11, W13, W14, W16, W17) were researched 2026-07-22, all via the `widget-market-research` skill. Every widget that already had Step 3/4 "How Other Companies Fulfil This Purpose" citations had its Market Research file build on those explicitly rather than starting fresh (see each file's own "Note on Existing Content Elsewhere"); W08 and W14 had no prior citations to build on, since neither has a locked Step 4 design yet (W08 is deferred at Step 3, W14 is still in progress) — both got fresh research instead. Widget 12 has no file, matching every other Step folder's treatment of that empty slot.
 
 ## Template
 
@@ -16,23 +16,23 @@ Some widgets already carry a `## How Other Companies Fulfil This Purpose` (or `#
 
 | # | Widget | File | Status |
 |---|--------|------|--------|
-| 01 | Budget Compared to Actual | [W01](W01%20-%20Budget%20Compared%20to%20Actual.md) | ⚪ Not yet researched |
-| 02 | Pension Plans | [W02](W02%20-%20Pension%20Plans.md) | ⚪ Not yet researched |
-| 03 | Payroll Distributions | [W03](W03%20-%20Payroll%20Distributions.md) | ⚪ Not yet researched |
+| 01 | Budget Compared to Actual | [W01](W01%20-%20Budget%20Compared%20to%20Actual.md) | ✅ Researched (2026-07-22) |
+| 02 | Pension Plans | [W02](W02%20-%20Pension%20Plans.md) | ✅ Researched (2026-07-22) |
+| 03 | Payroll Distributions | [W03](W03%20-%20Payroll%20Distributions.md) | ✅ Researched (2026-07-22) |
 | 04 | Remittance Pledges | [W04](W04%20-%20Remittance%20Pledges.md) | ✅ Researched (2026-07-21) |
 | 05 | Receivable Invoices Outstanding | [W05](W05%20-%20Receivable%20Invoices%20Outstanding.md) | ✅ Researched (2026-07-22) |
-| 06 | Insurance Billing Plans | [W06](W06%20-%20Insurance%20Billing%20Plans.md) | ⚪ Not yet researched |
-| 07 | Deposit Accounts | [W07](W07%20-%20Deposit%20Accounts.md) | ⚪ Not yet researched |
-| 08 | My Status | [W08](W08%20-%20My%20Status.md) | ⚪ Not yet researched |
-| 09 | Payroll Scheduled Time Off | [W09](W09%20-%20Payroll%20Scheduled%20Time%20Off.md) | ⚪ Not yet researched |
+| 06 | Insurance Billing Plans | [W06](W06%20-%20Insurance%20Billing%20Plans.md) | ✅ Researched (2026-07-22) |
+| 07 | Deposit Accounts | [W07](W07%20-%20Deposit%20Accounts.md) | ✅ Researched (2026-07-22) |
+| 08 | My Status | [W08](W08%20-%20My%20Status.md) | ✅ Researched (2026-07-22) |
+| 09 | Payroll Scheduled Time Off | [W09](W09%20-%20Payroll%20Scheduled%20Time%20Off.md) | ✅ Researched (2026-07-22) |
 | 10 | Loans With Balance Due | [W10](W10%20-%20Loans%20With%20Balance%20Due.md) | ✅ Researched (2026-07-22) |
-| 11 | Fixed Asset Values | [W11](W11%20-%20Fixed%20Asset%20Values.md) | ⚪ Not yet researched |
+| 11 | Fixed Asset Values | [W11](W11%20-%20Fixed%20Asset%20Values.md) | ✅ Researched (2026-07-22) |
 | 12 | *(Empty Slot)* | — | ➖ N/A — no widget assigned to this slot |
-| 13 | Purchasing Management | [W13](W13%20-%20Purchasing%20Management.md) | ⚪ Not yet researched |
-| 14 | Main Content Tasks | [W14](W14%20-%20Main%20Content%20Tasks.md) | ⚪ Not yet researched |
+| 13 | Purchasing Management | [W13](W13%20-%20Purchasing%20Management.md) | ✅ Researched (2026-07-22) |
+| 14 | Main Content Tasks | [W14](W14%20-%20Main%20Content%20Tasks.md) | ✅ Researched (2026-07-22) |
 | 15 | Bank Balances | [W15](W15%20-%20Bank%20Balances.md) | ✅ Researched (2026-07-21) |
-| 16 | Accounts Payable By Due Date | [W16](W16%20-%20Accounts%20Payable%20By%20Due%20Date.md) | ⚪ Not yet researched |
-| 17 | Gifts Pledges | [W17](W17%20-%20Gifts%20Pledges.md) | ⚪ Not yet researched |
+| 16 | Accounts Payable By Due Date | [W16](W16%20-%20Accounts%20Payable%20By%20Due%20Date.md) | ✅ Researched (2026-07-22) |
+| 17 | Gifts Pledges | [W17](W17%20-%20Gifts%20Pledges.md) | ✅ Researched (2026-07-22) |
 
 ## Naming convention
 
