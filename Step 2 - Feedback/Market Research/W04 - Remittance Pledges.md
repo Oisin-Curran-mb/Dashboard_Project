@@ -39,17 +39,17 @@ Confirmed available per `Step 1 - Dashboard Research/04 - Remittance Pledges.md`
 
 ## Sources
 
-- PowerChurch, "Budget Setup, Entry, and Reporting," powerchurch.com/support/573/1/budget-setup-entry-and-reporting — undated
-- IconCMO, "Denomination Management," iconsystemsinc.com/products-services/denomination-management — undated
-- NCOA, "Grant Funds Tracking Tipsheet," ncoa.org/article/grant-funds-tracking-tipsheet — 2026-06-23
-- HUD Exchange, "Using the Burn Rate Tool," files.hudexchange.info/resources/documents/SCMF-Using-the-Burn-Rate-Tool.pdf — undated
-- Adpulse, "How is Budget Pacing calculated?" support.adpulse.app/en/articles/10224019 — 2026-04-29
-- Basis, "Creating The Ultimate Budget Pacing Dashboard," basis.com/blog/budget-pacing-dashboard — 2021-01-27
-- Salsa Labs, "Performance Dashboard," help.salsalabs.com — 2025-10-07
-- Virtuous, "Managing Pledge Payments," support.virtuous.org/hc/en-us/articles/360051023372-Managing-Pledge-Payments — 2025-07-02
-- Bloomerang, "Track Your Yearly Revenue Goal," help.bloomerang.com/en/articles/14708929-track-your-yearly-revenue-goal — 2026-04-21
-- Virtuous, "What is the Pledge Payment Report?" support.virtuous.org/hc/en-us/articles/360051245192-What-is-the-Pledge-Payment-Report — 2023-11-01
-- DonorPerfect, "Mastering Nonprofit Pledge Fulfillment," donorperfect.com/nonprofit-technology-blog/fundraising-software/pledge-fulfillment — 2024-08-14
+- [PowerChurch — Budget Setup, Entry, and Reporting](https://www.powerchurch.com/support/573/1/budget-setup-entry-and-reporting)
+- [IconCMO — Denomination Management](https://www.iconsystemsinc.com/products-services/denomination-management/)
+- [NCOA — Grant Funds Tracking Tipsheet](https://www.ncoa.org/article/grant-funds-tracking-tipsheet)
+- [HUD Exchange — Using the Burn Rate Tool](https://files.hudexchange.info/resources/documents/SCMF-Using-the-Burn-Rate-Tool.pdf)
+- [Adpulse — How is Budget Pacing calculated?](https://support.adpulse.app/en/articles/10224019)
+- [Basis — Creating The Ultimate Budget Pacing Dashboard](https://www.basis.com/blog/budget-pacing-dashboard)
+- [Salsa Labs — Performance Dashboard](https://help.salsalabs.com)
+- [Virtuous — Managing Pledge Payments](https://support.virtuous.org/hc/en-us/articles/360051023372-Managing-Pledge-Payments)
+- [Bloomerang — Track Your Yearly Revenue Goal](https://help.bloomerang.com/en/articles/14708929-track-your-yearly-revenue-goal)
+- [Virtuous — What is the Pledge Payment Report?](https://support.virtuous.org/hc/en-us/articles/360051245192-What-is-the-Pledge-Payment-Report)
+- [DonorPerfect — Mastering Nonprofit Pledge Fulfillment](https://www.donorperfect.com/nonprofit-technology-blog/fundraising-software/pledge-fulfillment/)
 
 ## Note on Existing Content Elsewhere
 

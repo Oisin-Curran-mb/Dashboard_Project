@@ -30,7 +30,7 @@ Some widgets already carry a `## How Other Companies Fulfil This Purpose` (or `#
 | 12 | *(Empty Slot)* | — | ➖ N/A — no widget assigned to this slot |
 | 13 | Purchasing Management | [W13](W13%20-%20Purchasing%20Management.md) | ✅ Researched (2026-07-22) |
 | 14 | Main Content Tasks | [W14](W14%20-%20Main%20Content%20Tasks.md) | ✅ Researched (2026-07-22) |
-| 15 | Bank Balances | [W15](W15%20-%20Bank%20Balances.md) | ✅ Researched (2026-07-21) |
+| 15 | Bank Balances | [W15](W15%20-%20Bank%20Balances.md) | ✅ Researched (2026-07-23 — redone from a 2026-07-21 version with no verifiable links) |
 | 16 | Accounts Payable By Due Date | [W16](W16%20-%20Accounts%20Payable%20By%20Due%20Date.md) | ✅ Researched (2026-07-22) |
 | 17 | Gifts Pledges | [W17](W17%20-%20Gifts%20Pledges.md) | ✅ Researched (2026-07-22) |
 
