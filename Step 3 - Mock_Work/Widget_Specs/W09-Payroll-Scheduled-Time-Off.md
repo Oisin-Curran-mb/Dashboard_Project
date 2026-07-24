@@ -89,3 +89,33 @@ Standalone icon on the card (not a 3-dot menu item), present at every size inclu
 ## Fine-Tuning Notes
 - Leave type should use consistent colour coding across both options (colours per org-configured type, not a fixed green/amber/blue — labels themselves are renamable per org)
 - Department filter (where shown) should narrow both options consistently
+
+---
+
+## 2026-07-23 — Create Mock Designs run (Rules 8-11): 3 options rebuilt
+
+Built via the Create step of the 3-skill pipeline. Options A/B/C in `Dashboard Widget Mockups.html` and `WRENDER[9]` replaced in place; per-option filter scoping added. Prior entries above are unchanged (additive history).
+
+### Option A — Approval Workflow *(Keep/Refresh — Restyled Original)*
+Legacy approval/calendar screen restyled with Pathway. Default view is a per-request **approval list**: colour-coded leave-type bar, employee, dept · type, date range, and a **Pending/Approved status chip**, with a "N pending of M requests" header. A **Calendar** alternate view (colour-coded month grid) is offered via the on-menu view switch. No competitor citation — faithful restyle.
+
+### Option B — Approval Queue *(Improve — Competitor Match)*
+Matches the Gusto "Manage Requests" / Rippling **pending-first queue** pattern (Market Research confirmed): requests sorted Pending-first, each pending row showing an inline approve (`check_circle`) / decline (`cancel`) affordance; a Table alternate view. **Rule 10 second dimension:** a **days-by-type composition strip** above the list, aggregating `days` by leave `type` (Annual/Sick/Personal) across the current selection — a real second breakdown, not a restyle of the same list.
+
+### Option C — Coverage Breakdown *(Redesign — Maximum Freedom)*
+Reframes the widget around **coverage risk**: per-department **horizontal stacked bars of leave DAYS by type**, showing where cover is thin, plus a Table view of the same **department × leave-type × days** cross-tab. **Rule 10 second dimension:** the dept × type × days aggregation. Purpose-driven, no citation.
+
+### Rule 8 — per-option filter scoping
+`WRENDER[9]` uses `var fk=wid+'-'+opt` and reads all filters via `fv(fk,…)` / `ftags(fk)`, so 9-A / 9-B / 9-C keep independent filter state. The shared `_renderFltBody` / `applyFilter` scoping conditions were extended to include `wid===9` alongside the existing 4/5/6 (those left intact); `openFilter` needed no change (it already captures `opt`). Dashboard cards call `openFilter(9,event,'A'|'B'|'C')`.
+
+### Rule 9 — sizes, and the no-Small exception
+KPI, Medium, and Large all render real content for all three options. **Small is intentionally absent** for W09 — the pre-existing confirmed exception (General Widget Design Rules, Rule 6: the approval workflow / calendar need more room than 1×1). The Dashboard cards offer Medium / Large / KPI size buttons only (no Small button), and each card now defaults to Medium rather than Small. This is a documented exception, not a silent omission.
+
+### KPI headline
+KPI size shows the live **Pending Approvals count** (from the `st` field). `kpiTimeFilter[9]` is set to `Calendar Year` so the KPI-size filter modal has a valid time filter rather than showing the "No filters" toast.
+
+### Rule 11 — data caveats (documented here, not shown on-screen)
+This build surfaces approval **status** (`st`: Pending/Approved) — a field added to `MOCK_DATA.series[9]` this pass (every leave row now carries `st`; a realistic ~30% Pending mix). **Backend availability of an approval-status field, and especially an approve/reject action + status endpoint, is an open gap** (Modern API per the Developer Punch List does not implement inline approve/reject or a per-request status). Also unconfirmed and noted for finalisation: approval-authority department scoping (the Modern API returns all company schedules, not just those the viewer can approve) and custom org-defined leave-type labels (static Annual/Sick/Personal used). None of these are marked on the mockup itself — the cards render as if real; this note is the record for whoever finalises the design.
+
+### Where written
+`Dashboard Widget Mockups.html` — `MOCK_DATA.options[9]` (titles/subs/imp/citations), the three Option A/B/C cards' markup (titles, per-option filter calls, view-switch labels, size buttons), `WRENDER[9]` (all three branches + KPI), `MOCK_DATA.series[9]` (added `st` per leave row), `MOCK_DATA.kpiTimeFilter[9]`, and the shared filter-scoping branches (extended to include 9). `mock-data.master.js` re-synced for `options[9]` and `series[9]`. **Final Check tab `#fc-widget-9` was not edited** — it still shows its "Final design — locked" badge and its old "Month Calendar / Upcoming List / Department View" chrome; because it renders live through this same `WRENDER[9]`, it now shows the new render under stale labels (the known, already-documented shared-render carryover — to be reconciled separately, out of scope for this skill).

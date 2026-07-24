@@ -118,3 +118,27 @@ A second related widget, **`giving-trend`**, tracks overall giving (not per-camp
 - Campaigns exceeding their Pledge Total should be shown in green with a "✓ Goal Met" badge
 - Due Remaining amounts should be in amber/red (can be negative if ahead of schedule — see Date Range note above)
 - Campaign filter should highlight the selected campaign across all views
+
+---
+
+## 2026-07-23 — Create Mock Designs run (fragment/assembler flow): 3 options rebuilt
+
+Built with the revised Create pipeline (isolated fragment files + `assemble-mock-widget.py`). Real `series[17]` is a per-campaign list `items:[{l,p,r,c}]` (l=campaign, p=pledged, r=received, c=health colour). Prior entries above unchanged.
+
+### Option A — Campaign Progress *(Keep/Refresh — Restyled Original)*
+A progress bar per campaign showing received as a share of pledged (% funded), colour-coded; Pie and Table views alternate. Legacy giving-progress view restyled.
+
+### Option B — Pledged vs Received *(Improve — Competitor Match)*
+Paired bars per campaign — pledged next to received — making the shortfall visible side by side; Table view alternate. Rule 10 second dimension: both the pledged goal and received amount together (not just the percentage). Small-size view toggle fixed (Table reachable at every size).
+
+### Option C — Fundraising Gap *(Redesign — Maximum Freedom)*
+Reframes the widget around what's left to raise: the outstanding **gap (pledged − received)** per campaign, sorted largest-gap-first so the campaigns furthest from goal lead; Table view adds pledged / received / gap / % funded. Rule 10 second dimension: the **dollar gap to goal**, a lens neither the progress nor paired views rank on. (T5: gap-bar length = the gap the label shows.)
+
+### Rules 8/9
+Per-option filter scoping via `fk=wid+'-'+opt` (Campaign and Date Range filters read via `fv(fk,…)`); shared branches extended to include `wid===17` (4/5/6/9/10/11/13/15/16 intact). KPI = overall % Due (received of pledged, fixed). KPI/Medium/Large render for all three; **Small retained for all three**; each option's view toggle checks `view` before the size default (no dead control); KPI size button added to all cards.
+
+### Rule 11 — data caveats (documented here, not shown on-screen)
+The Date Range filter applies a multiplier to pledged/received figures in the mock data (an illustrative device, not real period math); the received/pledged ratio stands in for "% Due" as there's no separate Due field. Confirm real period-scoped figures and a true Due field at finalisation. Not surfaced on the mockup.
+
+### Where written
+`Dashboard Widget Mockups.html` — `WRENDER[17]` (scaffold + 3 branches), `MOCK_DATA.options[17]`, the three `opt-17-*` cards, shared filter branches. `mock-data.master.js` re-synced for `options[17]` (`series[17]` unchanged). Final Check tab `#fc-widget-17` not edited (known shared-render carryover). Built via `_build/W17/` fragments + `assemble-mock-widget.py`.

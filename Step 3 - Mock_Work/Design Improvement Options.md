@@ -1,5 +1,7 @@
 # Dashboard Widget Design Improvement Options
 
+> **⚠️ Superseded — 2026-07-23.** This file is a historical decision trail only; it does not reflect the current state of any widget's design options. `Widget_Specs/WNN-Name.md` (per-widget Options A/B/C, including explicitly rejected ones) and the live `Dashboard Widget Mockups.html` have since diverged from what's proposed here in places — e.g. this file's Receivable Invoices Outstanding suggestions (stacked bar + DSO KPI card + per-customer risk tiering) are a different set of ideas than what's actually built now (Bar by Age Band / Aging Strip + Table / KPI Cards + Table). Kept for reference rather than deleted, per this project's standing rule against removing a decision trail — but treat `Widget_Specs/` and the live HTML as the current source, not this file. **The "Create Mock Designs" skill does not read this file.**
+
 > **Document type:** Step 2 input — Design direction suggestions  
 > **Feeds into:** Step 3 (Design) of the re-platform lifecycle  
 > **Based on:** Purpose documents 01–17 in this folder  

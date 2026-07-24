@@ -8,6 +8,8 @@ body { font-family: -apple-system, Helvetica, Arial, sans-serif; max-width: 900p
 h1 { font-size: 24px; }
 h2 { font-size: 19px; border-bottom: 1px solid #DFE1E6; padding-bottom: 6px; margin-top: 32px; }
 h3 { font-size: 16px; margin-top: 20px; }
+.release { background: #0052CC; color: #fff; font-size: 20px; padding: 8px 14px; border-radius: 4px; margin-top: 40px; }
+.release.v2 { background: #403294; }
 table { border-collapse: collapse; width: 100%; margin: 12px 0; }
 th, td { border: 1px solid #DFE1E6; padding: 6px 10px; text-align: left; vertical-align: top; }
 th { background: #F4F5F7; }
@@ -15,120 +17,58 @@ code { background: #F4F5F7; padding: 1px 5px; border-radius: 3px; font-family: '
 pre { background: #F4F5F7; padding: 12px; border-radius: 4px; overflow-x: auto; }
 pre code { background: none; padding: 0; }
 .status { background: #FFF0B3; display: inline-block; padding: 3px 10px; border-radius: 3px; font-weight: 600; }
+.resolved { background: #E3FCEF; color: #006644; padding: 1px 6px; border-radius: 3px; font-weight: 600; }
+.info-box { background: #DEEBFF; border: 1px solid #B3D4FF; border-radius: 5px; padding: 12px 16px; margin: 14px 0; }
 </style>
 </head>
 <body>
 
 <h1>Payroll Distributions — API Spec</h1>
-<p><strong>Status: DRAFT — not final</strong> <em>(reopened 2026-07-21, per direct instruction, replacing the prior approved version — the rewrite surfaces a real, previously-flagged gap this spec can no longer skip past; see "Flag" under Tables)</em></p>
+<p><strong>Status: DRAFT — not final</strong> <em>(restructured 2026-07-23, per direct instruction, into two releases. Version 1 is the distribution-level view that is buildable today and matches the locked design. Version 2 is a planned second-round improvement — the pay-type composition drill-down — added here so its data source and shape are documented now, even though it is <strong>not</strong> part of the current locked design. The old "pay-type breakdown has no confirmed data source" flag is now resolved; see Version 2.)</em></p>
+
+<div class="info-box">
+<strong>How to read this spec.</strong> This widget is documented as two releases.
+<ul>
+<li><strong>Version 1 — first release.</strong> What actually gets built now: total payroll paid over a period, broken down by distribution name (the org's own compensation-distribution labels), with period control, an optional department scoping filter, prior-period comparison, and a link out to Payroll History. Buildable today on the two tables the current API already queries.</li>
+<li><strong>Version 2 — planned improvement (round two).</strong> A drill-down <em>inside</em> a distribution showing what <strong>pay types</strong> make up that number — Regular, Overtime, Holiday, Vacation, Sick, etc. — as aggregated totals, so a user can answer "is overtime creeping up?" or "why did this go up this period?". This is <strong>not</strong> in the Version 1 build or the locked Step 4 design. It is documented here because its data source is now confirmed (see the Pay Type Breakdown analysis, July 2026).</li>
+</ul>
+</div>
+
+<p class="release">Version 1 — First Release (buildable today)</p>
+
 <h2>Tables</h2>
 <table>
-<thead>
-<tr>
-<th>Table</th>
-<th>Fields used</th>
-</tr>
-</thead>
+<thead><tr><th>Table</th><th>Fields used</th></tr></thead>
 <tbody>
-<tr>
-<td><code>PR_History</code></td>
-<td>(via <code>PREmployee</code>) CompanyID, CheckDate, CheckType, VoidJournalID</td>
-</tr>
-<tr>
-<td><code>PR_HistoryCompensation</code></td>
-<td>CompensationDistributionID, Name, Amount</td>
-</tr>
+<tr><td><code>PR_History</code></td><td>(via <code>PREmployee</code>) CompanyID, CheckDate, CheckType, VoidJournalID</td></tr>
+<tr><td><code>PR_HistoryCompensation</code></td><td>CompensationDistributionID, Name, Amount</td></tr>
 </tbody>
 </table>
-<p>No new tables are needed for the all-departments view below — it's the same two tables the current API already queries.</p>
-<p><strong>Flag — the pay-type/Category breakdown has no confirmed data source.</strong> Step 4's design needs two different levels: an all-departments view (rows = department/distribution names, e.g. "Finance," "Administration Staff") and, per its own Data Table Sort section ("Fixed alphabetical by Department (all-departments view) or Category (single-department view)"), a single-department view where rows switch to pay-type <strong>Category</strong> instead — matching the Purpose section's specific list (Regular, Vacation, OverTime, Sick, Double Time, Personal, Holiday, Misc, Other). The only field either codebase actually returns today is <code>PR_HistoryCompensation.Name</code> (labelled "Compensation Distribution Name" in the legacy grid, confirmed via <code>Widget_Comparison_Classic.html</code>'s <code>wc-impl-pd1</code>/<code>wc-data-pd1</code> panels) — one dimension, not two. Nothing in that comparison confirms a second field carrying pay-type/earnings-code data. <strong>This is the same gap the last review flagged as never addressed in the previous version of this spec</strong> — it wasn't in the Tables section, the old-vs-new table, or the sign-off list there either. This version names it up front instead of letting it stay implicit.</p>
-<p>This spec fully covers the all-departments view, which is buildable today. The single-department Category view is flagged everywhere it applies below and should not be treated as buildable until someone confirms where that data actually comes from.</p>
+<p>No new tables are needed for Version 1 — it is the same two tables the current API already queries.</p>
+
 <h2>Old vs. new</h2>
 <table>
-<thead>
-<tr>
-<th></th>
-<th>Old (live today)</th>
-<th>New (needed)</th>
-</tr>
-</thead>
+<thead><tr><th></th><th>Old (live today)</th><th>New (Version 1)</th></tr></thead>
 <tbody>
-<tr>
-<td>Endpoint</td>
-<td><code>GET /api/dashboard/payroll-distributions/data?startDate&amp;endDate</code> — one call, fixed date range</td>
-<td>Same shape, but <code>startDate</code>+<code>period</code> (Weekly/Bi-Weekly/Monthly/Custom) instead of raw <code>startDate</code>/<code>endDate</code></td>
-</tr>
-<tr>
-<td>Rows</td>
-<td>Flat list, one row per Distribution Name, current period only</td>
-<td>Same, when the Department filter is "All Departments." When one department is selected, Step 4 expects rows to switch to pay-type Category instead — <strong>not buildable as specified today</strong>, see Flag above</td>
-</tr>
-<tr>
-<td>Comparison</td>
-<td>None</td>
-<td>Every row needs current + prior period amounts, with <code>diffAmount</code>/<code>diffPct</code> pre-computed, shown as a ▲/▼ badge in every view per Step 4's Fine-Tuning Notes</td>
-</tr>
-<tr>
-<td>Department filter</td>
-<td>None</td>
-<td>"All Departments" (default) or one specific value — see Flag above for what selecting one specific value actually returns</td>
-</tr>
-<tr>
-<td>Sort</td>
-<td>Fixed alphabetical by Name</td>
-<td>Alphabetical (default, by whichever label is showing) or Amount descending — user-toggled</td>
-</tr>
+<tr><td>Endpoint</td><td><code>GET /api/dashboard/payroll-distributions/data?startDate&amp;endDate</code> — one call, fixed date range</td><td>Same shape, but <code>startDate</code>+<code>period</code> (Weekly/Bi-Weekly/Monthly/Custom) instead of raw <code>startDate</code>/<code>endDate</code></td></tr>
+<tr><td>Rows</td><td>Flat list, one row per Distribution Name, current period only</td><td>Same — one row per Distribution Name. Optionally scoped to one department (see Department filter)</td></tr>
+<tr><td>Comparison</td><td>None</td><td>Every row carries current + prior period amounts, with <code>diffAmount</code>/<code>diffPct</code> pre-computed, shown as a ▲/▼ badge per Step 4's Fine-Tuning Notes</td></tr>
+<tr><td>Department filter</td><td>None</td><td>"All Departments" (default) or one specific value — narrows which distributions are included</td></tr>
+<tr><td>Sort</td><td>Fixed alphabetical by Name</td><td>Alphabetical (default) or Amount descending — user-toggled</td></tr>
 </tbody>
 </table>
-<p><strong>Cut from this version, and why:</strong> the previous spec fully specified a "per-distribution period mode" (each department/distribution running its own date range) plus a <code>recurring</code> flag. Step 4's own Filters section calls both of those mockup-only — "not wired to any real scheduling logic" — so this version doesn't build API surface for a frontend feature that isn't confirmed real yet. If Step 4 later confirms either one, that's a real addition to make then, not something to speculatively support now.</p>
+<p><strong>Cut from this version, and why:</strong> the previous spec fully specified a "per-distribution period mode" (each distribution running its own date range) plus a <code>recurring</code> flag. Step 4's own Filters section calls both of those mockup-only — "not wired to any real scheduling logic" — so Version 1 doesn't build API surface for a frontend feature that isn't confirmed real yet. If Step 4 later confirms either one, that's a real addition to make then.</p>
+
 <h2>Request params</h2>
-<p>One shared period for the whole widget — the only mode Step 4 actually confirms as real:</p>
+<p>One shared period for the whole widget:</p>
 <table>
-<thead>
-<tr>
-<th>Param</th>
-<th>Type</th>
-<th>Required</th>
-<th>Default</th>
-<th>Notes</th>
-</tr>
-</thead>
+<thead><tr><th>Param</th><th>Type</th><th>Required</th><th>Default</th><th>Notes</th></tr></thead>
 <tbody>
-<tr>
-<td><code>startDate</code></td>
-<td>date</td>
-<td>yes</td>
-<td>—</td>
-<td></td>
-</tr>
-<tr>
-<td><code>period</code></td>
-<td>enum</td>
-<td>yes</td>
-<td><code>Weekly</code></td>
-<td><code>Weekly</code>, <code>Bi-Weekly</code>, <code>Monthly</code>, <code>Custom</code> — end date is derived from <code>startDate</code> + period length, except <code>Custom</code></td>
-</tr>
-<tr>
-<td><code>endDate</code></td>
-<td>date</td>
-<td>only if <code>period=Custom</code></td>
-<td>—</td>
-<td></td>
-</tr>
-<tr>
-<td><code>department</code></td>
-<td>string</td>
-<td>no</td>
-<td><em>(all)</em></td>
-<td>Filters to one department/distribution value. Values come from whatever <code>Distribution</code> names the org actually has today — <strong>not</strong> the fixed five-item list in Step 4's Filters table (All Departments · Finance · Admin · Ministry · Facilities), which would need to become dynamic per org rather than staying hardcoded</td>
-</tr>
-<tr>
-<td><code>sort</code></td>
-<td>enum</td>
-<td>no</td>
-<td><code>alphabetical</code></td>
-<td><code>alphabetical</code>, <code>amount</code></td>
-</tr>
+<tr><td><code>startDate</code></td><td>date</td><td>yes</td><td>—</td><td></td></tr>
+<tr><td><code>period</code></td><td>enum</td><td>yes</td><td><code>Weekly</code></td><td><code>Weekly</code>, <code>Bi-Weekly</code>, <code>Monthly</code>, <code>Custom</code> — end date is derived from <code>startDate</code> + period length, except <code>Custom</code></td></tr>
+<tr><td><code>endDate</code></td><td>date</td><td>only if <code>period=Custom</code></td><td>—</td><td></td></tr>
+<tr><td><code>department</code></td><td>string</td><td>no</td><td><em>(all)</em></td><td>Filters to one department/distribution value. Values come from whatever <code>Distribution</code> names the org actually has today — <strong>not</strong> the fixed five-item list in Step 4's Filters table (All Departments · Finance · Admin · Ministry · Facilities), which would need to become dynamic per org rather than staying hardcoded</td></tr>
+<tr><td><code>sort</code></td><td>enum</td><td>no</td><td><code>alphabetical</code></td><td><code>alphabetical</code>, <code>amount</code></td></tr>
 </tbody>
 </table>
 <p>Example requests:</p>
@@ -136,8 +76,8 @@ pre code { background: none; padding: 0; }
 GET /api/dashboard/payroll-distributions/data?startDate=2026-07-14&amp;period=Weekly&amp;department=Finance&amp;sort=amount
 </code></pre>
 <p><strong>Prior period is not a separate param.</strong> Server computes it as the immediately preceding period of equal length. This definition is assumed, not confirmed — see sign-off list.</p>
+
 <h2>Response shape</h2>
-<p><strong>All-departments view — fully supported today:</strong></p>
 <pre><code>{
   &quot;period&quot;: { &quot;range&quot;: &quot;Jul 14–20, 2026&quot; },
   &quot;total&quot;: { &quot;current&quot;: 154200, &quot;prior&quot;: 148900, &quot;diffAmount&quot;: 5300, &quot;diffPct&quot;: 4 },
@@ -148,24 +88,14 @@ GET /api/dashboard/payroll-distributions/data?startDate=2026-07-14&amp;period=We
   ]
 }
 </code></pre>
-<p><strong>Single-department Category view — illustrative shape only, not confirmed buildable (see Flag under Tables):</strong></p>
-<pre><code>{
-  &quot;period&quot;: { &quot;range&quot;: &quot;Jul 14–20, 2026&quot; },
-  &quot;department&quot;: &quot;Finance&quot;,
-  &quot;total&quot;: { &quot;current&quot;: 44680, &quot;prior&quot;: 43060, &quot;diffAmount&quot;: 1620, &quot;diffPct&quot;: 4 },
-  &quot;rows&quot;: [
-    { &quot;label&quot;: &quot;Regular&quot;, &quot;current&quot;: 32000, &quot;prior&quot;: 31500, &quot;diffAmount&quot;: 500, &quot;diffPct&quot;: 2 },
-    { &quot;label&quot;: &quot;Overtime&quot;, &quot;current&quot;: 4200, &quot;prior&quot;: 3900, &quot;diffAmount&quot;: 300, &quot;diffPct&quot;: 8 },
-    { &quot;label&quot;: &quot;Vacation&quot;, &quot;current&quot;: 2600, &quot;prior&quot;: 2500, &quot;diffAmount&quot;: 100, &quot;diffPct&quot;: 4 }
-  ]
-}
-</code></pre>
-<p>No field on <code>PR_HistoryCompensation</code> is confirmed to actually carry "Regular"/"Overtime"-style labels — don't build against this shape until that's confirmed.</p>
 <p><code>diffAmount</code>/<code>diffPct</code> are pre-computed server-side, same convention as the rest of this project's specs — never raw current/prior for the client to subtract. <code>total</code> is the sum across every row in the current filtered scope, current and prior both.</p>
+
 <h2>Sort</h2>
 <p>Default alphabetical by <code>label</code>. <code>sort=amount</code> switches to amount descending. Two states only — not open column sorting.</p>
+
 <h2>Drill-through</h2>
-<p>New — a link out to the Payroll History module, filtered to the same date range. Plain link built from <code>startDate</code>/<code>endDate</code> on the frontend, not a new API call — no transaction-level detail endpoint needed.</p>
+<p>A link out to the Payroll History module, filtered to the same date range. Plain link built from <code>startDate</code>/<code>endDate</code> on the frontend, not a new API call — no transaction-level detail endpoint needed for Version 1.</p>
+
 <h2>Edge cases to confirm</h2>
 <ol>
 <li><strong>No payroll runs in range</strong> — empty <code>rows[]</code> and zeroed <code>total</code>, or an explicit empty/error response?</li>
@@ -174,17 +104,106 @@ GET /api/dashboard/payroll-distributions/data?startDate=2026-07-14&amp;period=We
 <li><strong><code>endDate</code> before <code>startDate</code></strong> (Custom period only) — reject with an error, or silently swap?</li>
 <li><strong><code>department</code> value that doesn't match any real Distribution name for that org</strong> — empty result, or an error?</li>
 </ol>
-<h2>Not in scope</h2>
+
+<h2>Not in scope for Version 1</h2>
 <ul>
-<li>No per-employee or per-transaction breakdown — rows are grouped by department/distribution (or Category, once confirmed), never down to an individual paycheck.</li>
-<li>"Make this recurring" and setting the Pay Period separately per department — Step 4 marks both mockup-only; no backend work is specified here until they're confirmed real.</li>
-<li>The single-department Category view — not buildable until its data source is confirmed, see Flag under Tables.</li>
+<li>No pay-type composition (Regular/Overtime/Vacation/etc.) — that is Version 2 below.</li>
+<li>No per-employee or per-transaction breakdown — rows are grouped by distribution name, never down to an individual paycheck or a named person.</li>
+<li>"Make this recurring" and setting the Pay Period separately per department — Step 4 marks both mockup-only; no backend work until they're confirmed real.</li>
 </ul>
+
+<p class="release v2">Version 2 — Planned Improvement (round two, not in the locked design)</p>
+
+<p><strong>Scope of this improvement:</strong> when a user clicks a distribution row, drill <em>into</em> it and show the <strong>pay-type composition</strong> of that distribution's total — Regular vs Overtime vs Holiday vs Vacation vs Sick, etc. — as aggregated totals (hours and amount per pay type). The purpose is diagnostic: seeing the <em>mix</em> is what tells a user whether overtime is climbing, or why a number moved period-over-period.</p>
+
+<p><strong>Deliberately excluded from this improvement:</strong></p>
+<ul>
+<li><strong>No employee names.</strong> The breakdown is by pay type, not by person.</li>
+<li><strong>No individual check / transaction detail.</strong> Rows are pay-type totals within the distribution, never a per-paycheck list.</li>
+</ul>
+<p>This keeps the improvement free of PII and consistent with Version 1's grouping approach — one more level of <em>category</em> depth, not a jump to transaction data.</p>
+
+<h2>Data source — now confirmed</h2>
+<p>The old flag ("pay-type breakdown has no confirmed data source") is <span class="resolved">RESOLVED</span>. Per the Pay Type Breakdown analysis (July 2026), the pay-type data already lives in the same table Version 1 already reads — <code>PR_HistoryCompensation</code>. Each row in that table is one compensation line on one paycheck and already carries the pay type, hours, and rate. The current widget simply ignores those columns.</p>
+<table>
+<thead><tr><th>Table</th><th>Fields used (new for V2)</th><th>What it gives</th></tr></thead>
+<tbody>
+<tr><td><code>PR_HistoryCompensation</code></td><td><code>SubType</code></td><td>The pay-type code (1–10) — Regular, Overtime, etc. This is the field that answers "what kind of pay was this?"</td></tr>
+<tr><td><code>PR_HistoryCompensation</code></td><td><code>Hours</code></td><td>Hours for that pay type within the distribution (aggregated)</td></tr>
+<tr><td><code>PR_HistoryCompensation</code></td><td><code>Rate</code></td><td>Pay rate — informational; not required for the composition view</td></tr>
+</tbody>
+</table>
+<p><strong>No schema changes are needed</strong> — the data exists today; it is an API + UI exposure task, not a data-model change.</p>
+
+<h2>Pay-type codes — <code>SubType</code> field</h2>
+<table>
+<thead><tr><th>Code</th><th>Pay type</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Regular</td><td>Standard hours/pay</td></tr>
+<tr><td>2</td><td>OverTime</td><td>Beyond normal week, typically 1.5×</td></tr>
+<tr><td>3</td><td>DoubleTime</td><td>2× rate</td></tr>
+<tr><td>4</td><td>Holiday</td><td>Recognised holidays</td></tr>
+<tr><td>5</td><td>Other</td><td>Catch-all, hours-based</td></tr>
+<tr><td>6</td><td>Vacation</td><td><strong>Org-configurable label</strong></td></tr>
+<tr><td>7</td><td>Sick</td><td><strong>Org-configurable label</strong></td></tr>
+<tr><td>8</td><td>Personal</td><td><strong>Org-configurable label</strong></td></tr>
+<tr><td>9</td><td>Misc.</td><td><strong>Org-configurable label</strong></td></tr>
+<tr><td>10</td><td>Other Pay</td><td>Typically non-hours-based supplementary pay</td></tr>
+</tbody>
+</table>
+<p><strong>Label caveat:</strong> SubTypes 6–9 do not have fixed names — each org sets its own labels in <code>PR_Company</code> settings (e.g. "Vacation" may be "Annual Leave" or "PTO"). The API must resolve these names from company config at query time, rather than hardcoding them. This is the same variable-label rule that already applies to distribution names.</p>
+
+<h2>Proposed endpoint and response shape (V2)</h2>
+<p>Triggered when a user drills into one distribution. Aggregated by pay type — no <code>employees</code> array, no check rows.</p>
+<pre><code>GET /api/dashboard/payroll-distributions/breakdown
+    ?distributionName=Administration+Staff&amp;startDate=2026-07-14&amp;period=Weekly</code></pre>
+<pre><code>{
+  &quot;period&quot;: { &quot;range&quot;: &quot;Jul 14–20, 2026&quot; },
+  &quot;distributionName&quot;: &quot;Administration Staff&quot;,
+  &quot;total&quot;: { &quot;current&quot;: 4530.63, &quot;prior&quot;: 4200.00, &quot;diffAmount&quot;: 330.63, &quot;diffPct&quot;: 8 },
+  &quot;payTypes&quot;: [
+    { &quot;label&quot;: &quot;Regular&quot;,  &quot;subType&quot;: 1, &quot;hours&quot;: 120.0, &quot;current&quot;: 3800.00, &quot;prior&quot;: 3700.00, &quot;diffAmount&quot;: 100.00, &quot;diffPct&quot;: 3 },
+    { &quot;label&quot;: &quot;Overtime&quot;, &quot;subType&quot;: 2, &quot;hours&quot;: 12.0,  &quot;current&quot;: 540.63,  &quot;prior&quot;: 300.00,  &quot;diffAmount&quot;: 240.63, &quot;diffPct&quot;: 80 },
+    { &quot;label&quot;: &quot;Vacation&quot;, &quot;subType&quot;: 6, &quot;hours&quot;: 8.0,   &quot;current&quot;: 190.00,  &quot;prior&quot;: 200.00,  &quot;diffAmount&quot;: -10.00, &quot;diffPct&quot;: -5 }
+  ]
+}
+</code></pre>
+<p>The Overtime row in this example (+80%) is exactly the kind of movement this view is meant to surface at a glance. <code>diffAmount</code>/<code>diffPct</code> follow the same server-side pre-computed convention as Version 1.</p>
+
+<h2>Consistency filters carried over from Version 1</h2>
+<p>So the pay-type totals reconcile exactly to the Version 1 distribution total:</p>
+<ul>
+<li><strong>Voided checks excluded</strong> (<code>VoidJournalID IS NULL</code>) — same as today.</li>
+<li><strong>Manual checks excluded</strong> (<code>CheckType = 2</code>) — same as today.</li>
+<li><strong>Non-cash compensation excluded</strong> — benefit items (health contributions, car allowances, etc.) flow through a separate table (<code>PR_HistoryNonCash</code>) and are not part of the distribution totals, so they do not appear here either.</li>
+</ul>
+
+<h2>What would need to be built (V2)</h2>
+<p>No database changes. Work is API + UI only:</p>
+<table>
+<thead><tr><th>Component</th><th>Change</th><th>Complexity</th></tr></thead>
+<tbody>
+<tr><td>Modern API — entity</td><td>Map <code>SubType</code>, <code>Hours</code>, <code>Rate</code> on <code>PR_HistoryCompensation</code> (already mapped for <code>Amount</code>)</td><td>Low</td></tr>
+<tr><td>Modern API — DTO</td><td>New <code>PayrollDistributionBreakdownDto</code> — pay-type rows only, no employee nesting</td><td>Low</td></tr>
+<tr><td>Modern API — service</td><td><code>GetPayrollDistributionBreakdownAsync(distributionName, startDate, period)</code> — group by <code>SubType</code>, resolve labels from company config</td><td>Medium</td></tr>
+<tr><td>Modern API — controller</td><td>New endpoint <code>GET /api/dashboard/payroll-distributions/breakdown</code></td><td>Low</td></tr>
+<tr><td>UI — drill-in</td><td>Clickable distribution rows open an in-widget panel showing the pay-type composition</td><td>Medium</td></tr>
+</tbody>
+</table>
+
+<h2>Not in scope even for Version 2</h2>
+<ul>
+<li>Per-employee and per-check detail (names, check numbers) — explicitly excluded per instruction.</li>
+<li>Project-level and Workers'-Comp breakdowns — <code>ProjectID</code> and <code>WorkersCompID</code> exist on the line but are out of scope unless a future need arises.</li>
+<li>Implied hourly rate for salaried staff — <code>Rate</code> holds a per-period salary for salaried workers, not an hourly figure; deriving an hourly rate is a calculation, not a stored value, and isn't part of this composition view.</li>
+</ul>
+
 <h2>Still needs sign-off</h2>
 <ul>
-<li><strong>Where does pay-type/Category data (Regular, Vacation, OverTime, Sick, Double Time, Personal, Holiday, Misc, Other) actually come from</strong> — is there a field on <code>PR_HistoryCompensation</code> beyond <code>CompensationDistributionID</code>/<code>Name</code> that wasn't caught in this comparison, or does this need new schema/data work entirely? This is the single biggest open item, carried forward from the last review and now named directly instead of left implicit.</li>
-<li><strong>Is "Department" the same field as "Distribution"</strong> — today's one confirmed grouping field — or a genuinely separate concept that would need its own confirmed source (e.g. from <code>PREmployee</code>'s own department field, unconfirmed and unchecked in this pass)?</li>
-<li><strong>"Prior period" definition</strong> — immediately preceding period of equal length, as assumed above, or something else (e.g. same period last year)?</li>
+<li><strong>Where does pay-type data come from — <span class="resolved">RESOLVED</span>.</strong> Confirmed as <code>PR_HistoryCompensation.SubType</code> (+ <code>Hours</code>/<code>Rate</code>) via the Pay Type Breakdown analysis (July 2026). No schema work needed. Carried here only to close the item.</li>
+<li><strong>Is "Department" the same field as "Distribution"</strong> — today's one confirmed grouping field — or a genuinely separate concept that would need its own confirmed source (e.g. <code>PREmployee</code>'s own department field, unconfirmed and unchecked in this pass)? Affects the Version 1 <code>department</code> filter.</li>
+<li><strong>"Prior period" definition</strong> — immediately preceding period of equal length, as assumed above, or something else (e.g. same period last year)? Applies to both versions.</li>
+<li><strong>Org-configurable pay-type label resolution (V2)</strong> — confirm the <code>PR_Company</code> settings that map SubTypes 6–9 to org labels can be read at query time.</li>
 </ul>
 
 </body>

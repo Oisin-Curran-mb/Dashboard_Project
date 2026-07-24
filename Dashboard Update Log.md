@@ -4,9 +4,55 @@
 
 ## Open items (persist until you close them)
 
-None currently open.
+| ID | Category | Widget | Step | First flagged | Detail |
+|---|---|---|---|---|---|
+| OI-b2706b46 | deviation (negative) | Payroll Distributions | Step 5 | 2026-07-24 | Step 5 - API documents/Payroll Distributions/Payroll Distributions - API Spec.md still has the DRAFT line but the Step 5 index tracker status says "✅ Complete". |
+| OI-a3eef181 | deviation (positive) | (Empty Slot) | Step 4 | 2026-07-24 | Dashboard Tracker.xlsx Step 4 column says "Not Started" but Step 4 index's Tracker status column says "➖ N/A" - these should always match since one is synced from the other. |
+| OI-9b0b5bac | unreferenced file | Step 2 | Step 2 | 2026-07-24 | Market Research/W01 - Budget Compared to Actual.md isn't mentioned in Step 2's own index |
+| OI-46f78deb | unreferenced file | Step 2 | Step 2 | 2026-07-24 | Market Research/W02 - Pension Plans.md isn't mentioned in Step 2's own index |
+| OI-c0ed84cd | unreferenced file | Step 2 | Step 2 | 2026-07-24 | Market Research/W03 - Payroll Distributions.md isn't mentioned in Step 2's own index |
+| OI-f0c18b6f | unreferenced file | Step 2 | Step 2 | 2026-07-24 | Market Research/W04 - Remittance Pledges.md isn't mentioned in Step 2's own index |
+| OI-3fea5ecc | unreferenced file | Step 2 | Step 2 | 2026-07-24 | Market Research/W05 - Receivable Invoices Outstanding.md isn't mentioned in Step 2's own index |
+| OI-269bf2e6 | unreferenced file | Step 2 | Step 2 | 2026-07-24 | Market Research/W06 - Insurance Billing Plans.md isn't mentioned in Step 2's own index |
+| OI-1e0bc1ab | unreferenced file | Step 2 | Step 2 | 2026-07-24 | Market Research/W07 - Deposit Accounts.md isn't mentioned in Step 2's own index |
+| OI-b60d3744 | unreferenced file | Step 2 | Step 2 | 2026-07-24 | Market Research/W08 - My Status.md isn't mentioned in Step 2's own index |
+| OI-19ba84f0 | unreferenced file | Step 2 | Step 2 | 2026-07-24 | Market Research/W09 - Payroll Scheduled Time Off.md isn't mentioned in Step 2's own index |
+| OI-5d153966 | unreferenced file | Step 2 | Step 2 | 2026-07-24 | Market Research/W10 - Loans With Balance Due.md isn't mentioned in Step 2's own index |
+| OI-2ccfaa60 | unreferenced file | Step 2 | Step 2 | 2026-07-24 | Market Research/W11 - Fixed Asset Values.md isn't mentioned in Step 2's own index |
+| OI-c3585659 | unreferenced file | Step 2 | Step 2 | 2026-07-24 | Market Research/W13 - Purchasing Management.md isn't mentioned in Step 2's own index |
+| OI-2bf73cc8 | unreferenced file | Step 2 | Step 2 | 2026-07-24 | Market Research/W14 - Main Content Tasks.md isn't mentioned in Step 2's own index |
+| OI-618ab52d | unreferenced file | Step 2 | Step 2 | 2026-07-24 | Market Research/W15 - Bank Balances.md isn't mentioned in Step 2's own index |
+| OI-d2406895 | unreferenced file | Step 2 | Step 2 | 2026-07-24 | Market Research/W16 - Accounts Payable By Due Date.md isn't mentioned in Step 2's own index |
+| OI-883ffc75 | unreferenced file | Step 2 | Step 2 | 2026-07-24 | Market Research/W17 - Gifts Pledges.md isn't mentioned in Step 2's own index |
 
 ## Run history
+
+### Run: 2026-07-24 00:00
+
+First run - nothing to diff against yet. Everything below is baseline, not drift.
+
+**Deviations found (2):**
+- [↓ negative] Payroll Distributions (Step 5): Step 5 - API documents/Payroll Distributions/Payroll Distributions - API Spec.md still has the DRAFT line but the Step 5 index tracker status says "✅ Complete".
+- [↑ positive] (Empty Slot) (Step 4): Dashboard Tracker.xlsx Step 4 column says "Not Started" but Step 4 index's Tracker status column says "➖ N/A" - these should always match since one is synced from the other.
+
+**Unreferenced files spotted (16):**
+- [still present] Step 2: `Market Research/W01 - Budget Compared to Actual.md`
+- [still present] Step 2: `Market Research/W02 - Pension Plans.md`
+- [still present] Step 2: `Market Research/W03 - Payroll Distributions.md`
+- [still present] Step 2: `Market Research/W04 - Remittance Pledges.md`
+- [still present] Step 2: `Market Research/W05 - Receivable Invoices Outstanding.md`
+- [still present] Step 2: `Market Research/W06 - Insurance Billing Plans.md`
+- [still present] Step 2: `Market Research/W07 - Deposit Accounts.md`
+- [still present] Step 2: `Market Research/W08 - My Status.md`
+- [still present] Step 2: `Market Research/W09 - Payroll Scheduled Time Off.md`
+- [still present] Step 2: `Market Research/W10 - Loans With Balance Due.md`
+- [still present] Step 2: `Market Research/W11 - Fixed Asset Values.md`
+- [still present] Step 2: `Market Research/W13 - Purchasing Management.md`
+- [still present] Step 2: `Market Research/W14 - Main Content Tasks.md`
+- [still present] Step 2: `Market Research/W15 - Bank Balances.md`
+- [still present] Step 2: `Market Research/W16 - Accounts Payable By Due Date.md`
+- [still present] Step 2: `Market Research/W17 - Gifts Pledges.md`
+
 
 ### Run: 2026-07-21 01:00 — W01/W14 status re-sync
 

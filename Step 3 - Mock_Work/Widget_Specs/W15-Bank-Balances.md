@@ -108,3 +108,27 @@ Standalone icon on the card (not a 3-dot menu item), present at every size inclu
 - Reconciliation status badges (pending confirmation above): green = reconciled, amber = pending, red = overdue
 - ~~Show filter changes which columns are visible, not which accounts appear~~ — dropped along with the invented "Show" filter; see note above.
 - ~~W15 and W07 (Deposit Accounts) are similar — consider differentiating them more clearly~~ — resolved: W07's reconciliation framing was dropped as a mismatch, so the two widgets are now naturally distinct.
+
+---
+
+## 2026-07-23 — Create Mock Designs run (fragment/assembler flow): 3 options rebuilt
+
+Built with the revised Create pipeline (isolated fragment files + `assemble-mock-widget.py`). Real `series[15]` is a per-account list: `accts:[{n,bal,s,sc,ico,d}]` (name, balance, status text, status colour, icon, reconciled-date note). Prior entries above unchanged.
+
+### Option A — Balance Cards *(Keep/Refresh — Restyled Original)*
+Each account as a card: icon, name, last-reconciled note, balance and a colour-coded reconciliation status chip. Legacy account list restyled; Table view alternate.
+
+### Option B — Reconciliation Overview *(Improve — Competitor Match)*
+A **Reconciled vs Pending total strip** above per-account balance bars coloured by reconciliation status; Table view alternate. **Rule 10 second dimension: the reconciled/pending split** — how much cash is confirmed versus still unreconciled, using the `s` status field a plain balance list ignores. Deliberately not "just another bar chart of balance."
+
+### Option C — Balance Composition *(Redesign — Maximum Freedom)*
+Reframes around where the cash sits: each account's **share of total balance** as a proportion bar (bar length = % of total, per Rule T5), with status; Table view adds a % of Total column. **Rule 10 second dimension: each account's percentage of the whole.**
+
+### Rules 8/9
+Per-option filter scoping via `fk=wid+'-'+opt` (Account filter read via `fv(fk,…)`); shared branches extended to include `wid===15` (4/5/6/9/10/11/13 intact). KPI = Total Balance across all accounts (fixed, filter-independent). KPI/Medium/Large render for all three; **Small retained for all three** (no no-Small exception for W15); each option's view toggle checks `view` before rendering, so it's live at every size (no dead control). KPI size button added to all three cards.
+
+### Rule 11 — data caveats (documented here, not shown on-screen)
+Reconciliation status (`s`) drives Option B's split and the status chips; the underlying reconciled/unreconciled figures come from the mock data — confirm backend availability of a per-account reconciliation status/date at finalisation. Not surfaced as a caveat on the mockup.
+
+### Where written
+`Dashboard Widget Mockups.html` — `WRENDER[15]` (scaffold + 3 branches), `MOCK_DATA.options[15]`, the three `opt-15-*` cards, shared filter branches. `mock-data.master.js` re-synced for `options[15]` (`series[15]` unchanged). Final Check tab `#fc-widget-15` not edited (known shared-render carryover). Built via `_build/W15/` fragments + `assemble-mock-widget.py`.

@@ -91,16 +91,16 @@ MOCK_DATA.filters = {
     // consistently built around real campaign names; flagged as a naming mismatch to reconcile, not silently
     // renamed either direction.
     {label:"Date Range",opts:["Current Month","Last Month","Custom"]},
-    {label:"Campaign",opts:["All Campaigns","Spring Appeal","Year-End","Capital Campaign","Mission Drive"]}
+    {label:"Activity Type",opts:["All Activity Types"]}
   ],
   5: [
-    // "Account" renamed to "Revenue Center" + "Source" added to match the locked design doc's filter list
-    // (neither was ever read by WRENDER[5], so this is a metadata-only correction, no render logic touched).
-    // Year removed — doc: "No Fiscal Year filter — aging is an as-of-today snapshot," and it was never read
-    // either. NOTE — not fixed, flagged instead: the doc specifies 5 age bands (0-30/31-60/61-90/91-120/121+);
-    // the mock data and render only have 4 (0-30/31-60/61-90/90+). Splitting the last bucket needs a mock-data
-    // change plus touching the 91-120=amber/121+=red colour rule — bigger than a safe same-night fix.
-    {label:"Age Band",opts:["All Ages","0-30 days","31-60 days","61-90 days","90+ days"]},
+    // Rebuilt 2026-07-23 under Rules 8-11 (create-mock-designs, W05). Age Band restored to the REAL 5-bucket
+    // ARInvoice structure (Current / 31-60 / 61-90 / 91-120 / 121+). The earlier mock merged 91-120 and 121+
+    // into a single "90+" band, losing exactly the distinction that matters most for collections prioritisation
+    // and the Ben Lane interview's confirmed mislabel fix. The 5-bucket structure is CONFIRMED real (Step 1
+    // legacy baseline + Developer Punch List "Age Band filter — Available"), so it carries no Rule 11 caveat.
+    // Year is not a filter here — aging is an as-of-today snapshot. Revenue Center / Source unchanged.
+    {label:"Age Band",opts:["All Ages","Current","31-60 days","61-90 days","91-120 days","121+ days"]},
     {label:"Revenue Center",opts:["All Revenue Centers","Church","Insurance Billing","Pension Billing","School"]},
     {label:"Source",opts:["All Sources","Insurance Billing","Pension Billing"]}
   ],
@@ -216,19 +216,25 @@ MOCK_DATA.options = {
     {num:"C",title:"Period Comparison",sub:"Improve",imp:"Side-by-side bars for current vs prior period. Tracks cost trends.",il:"ADP Workforce Analytics",iu:"https://www.adp.com/what-we-offer/workforce-analytics.aspx"}
   ],
   4: [
-    {num:"A",title:"Progress Bars",sub:"Keep/Refresh",imp:"One bar per campaign showing received vs pledged. Clear for pledge tracking.",il:"Virtuous Pledge Tracking",iu:"https://virtuous.org/blog/donor-pledge-tracking/"},
-    {num:"B",title:"Paired Bars",sub:"Improve",imp:"Pledged and received as side-by-side bars per campaign. Gap is immediately visible.",il:"DonorPerfect Giving Report",iu:"https://www.donorperfect.com/giving-report-pledge-progress/"},
-    {num:"C",title:"Summary Table",sub:"Keep/Refresh",imp:"Table with pledged, received, outstanding, and % per campaign.",il:"Bloomerang Pledge Tracking",iu:"https://bloomerang.co/blog/pledge-tracking/"}
+    {num:"A",title:"Remittance Table",sub:"Restyled original",imp:"Restyled legacy remittance table — the live system is table-only, so the faithful restyle is the table (not progress bars). Restores the full legacy column set (Activity · Annual · YTD Expected · YTD Paid · Outstanding · % Paid) with a totals row at Large, re-adds the YTD Expected column the prior mockup had dropped, and colour-bands % Paid (green ≥80 / amber ≥50 / red <50). A Progress Bars view is offered via the chart switch. Driven by the Step 1 legacy baseline — no competitor citation."},
+    {num:"B",title:"Pacing Bars",sub:"Competitor match",imp:"A horizontal progress bar per activity (received fill vs. annual) with a pacing tick at the pro-rated 'expected by now' point, the bar coloured green (on/ahead of pace) or amber (behind). Its genuine second dimension is YTD Expected / pace — tick position and colour are driven by the expected-to-date figure and the sign of the variance, not just received-vs-pledged. This is the Market Research file's Visual Option 1, the budget-pacing pattern — its only genuinely new and best-supported option.",il:"Adpulse — How is Budget Pacing calculated?",iu:"https://support.adpulse.app/en/articles/10224019"},
+    {num:"C",title:"Pace Variance",sub:"Maximum freedom",imp:"A diverging bar chart centred on a zero axis — each activity's YTD Paid − YTD Expected. Behind pace extends left (red), ahead extends right (green), scaled to the largest absolute variance, with the dollar variance printed per row and a single continuous zero line down the centre. A Data Table view lists Expected · Paid · Variance with a totals row. Reframes the widget around 'are we ahead or behind the expected pace right now, and by how much' rather than 'how much of annual is done' — purpose-driven, no direct competitor citation."}
   ],
   5: [
-    {num:"A",title:"Bar by Age Band",sub:"Redesign",imp:"Bar chart replacing the incorrect pie. Aging is sequential — bars respect that order.",il:"GlobalData365 AR Dashboard",iu:"https://globaldata365.com/accounts-receivable-dashboard/"},
-    {num:"B",title:"Aging Strip + Table",sub:"Improve",imp:"Segmented colour strip (yellow to red) + detail table. Two views in one.",il:"Coupler.io AR Dashboard",iu:"https://www.coupler.io/dashboard-examples/accounts-receivable-dashboard"},
-    {num:"C",title:"KPI Cards + Table",sub:"Improve",imp:"Total outstanding and total overdue as KPI tiles, then detail below.",il:"Vertaccount AR",iu:"https://www.vertaccount.com/blog/best-accounts-receivable-dashboard-examples-templates-for-2026/"}
+    // Rebuilt 2026-07-23 under Rules 8-11 (create-mock-designs, W05). Full rationale in
+    // Widget_Specs/W05-Receivable-Invoices-Outstanding.md, "2026-07-23 — Rebuild under Rules 8-11" entry.
+    {num:"A",title:"Aging Table + Donut",sub:"Restyle original",imp:"The faithful restyle of the legacy widget — the live system's left-hand aging table beside its right-hand \"Invoice Aging\" pie, rebuilt in Pathway as a donut. Interview-driven tweak (Ben Lane, 2026-07-13): the mislabelled aging bands are corrected to the real 5-bucket ARInvoice structure (Current / 31-60 / 61-90 / 91-120 / 121+), with 121+ in red and 91-120 amber, plus a totals row.",il:"Coupler.io AR Dashboard",iu:"https://www.coupler.io/dashboard-examples/accounts-receivable-dashboard"},
+    {num:"B",title:"KPI Tiles + Aging Bars",sub:"Competitor match",imp:"The directly-recommended competitor combination (QuickBooks / Vertaccount / Coupler.io): KPI snapshot tiles (Total Outstanding, Overdue, Current, 121+) above horizontal aging bars. Its genuine second dimension is an on-screen By Amount / By Count toggle that re-scales the bars to invoice COUNT (the n field) — matching how mainstream AR aging reports expose both dollars and invoice counts.",il:"QuickBooks AR Aging Report",iu:"https://quickbooks.intuit.com/learn-support/en-us/accounts-receivable/accounts-receivable-aging-report/"},
+    {num:"C",title:"Collections Priority",sub:"Maximum freedom",imp:"Reframes the widget around its stated purpose — help staff prioritise which outstanding amounts need attention first. A red 'oldest first' focus callout leads, above a severity-ordered list (121+ down to Current) where each band shows amount, invoice count, and its own distinct second dimension: average invoice size (amount / count), surfacing which buckets hold the big individual invoices worth chasing first.",il:"Vertaccount AR",iu:"https://www.vertaccount.com/blog/best-accounts-receivable-dashboard-examples-templates-for-2026/"}
   ],
   6: [
-    {num:"A",title:"Plan Table",sub:"Keep/Refresh",imp:"Horizontal bar per plan by enrolled count (default), with a plan-table alternate view.",il:"Staffbase HR Widgets",iu:"https://support.staffbase.com/hc/en-us/articles/27956507092114-Overview-of-HR-Widgets"},
-    {num:"B",title:"Bar by Enrolment",sub:"Improve",imp:"Bar showing enrolled headcount per plan. Good for spotting uptake.",il:"ADP Benefits Admin",iu:"https://www.adp.com/what-we-offer/benefits-administration.aspx"},
-    {num:"C",title:"Plan Cards",sub:"Improve",imp:"One card per plan with enrolled count and cost.",il:"ADP Benefits Admin",iu:"https://www.adp.com/what-we-offer/benefits-administration.aspx"}
+    // Re-run 2026-07-23 (afternoon) under new Rules 8-11 — full rationale in
+    // Widget_Specs/W06-Insurance-Billing-Plans.md, "2026-07-23 — Re-run under Rules 8-11" entry (kept separate
+    // from the two earlier same-day entries — nothing in those was edited). Owner feedback driving this pass:
+    // the morning's B/C read as "3 different graphs using the same data idea," not genuinely different depth.
+    {num:"A",title:"Table + Pie by Plan",sub:"Keep/Refresh",imp:"Restyled legacy shape — table and pie shown together at Large, exactly like the old design; pie-first at Small/Medium. One grounded tweak: table now sorts alphabetically by Plan, matching Step 1's confirmed legacy query. Unchanged in concept from the morning run — only its filter state is now scoped to this option alone (Rule 8).",il:"Milliman — Enrollment Insights & EB Plan Design",iu:"https://www.milliman.com/en/insight/how-enrollment-insights-can-drive-eb-plan-design"},
+    {num:"B",title:"Donut by Plan + Cost Watch",sub:"Improve",imp:"True donut showing proportional enrolment split per plan (the Gusto/Milliman-confirmed peer-view pattern), now paired with a genuine second dimension: an Employer $-cost-per-enrolled callout flagging whichever plan costs disproportionately more per enrollee, plus $/mo and $/Enrolled columns in the Table alternate. Goes beyond restyling the same enrollment count a third time.",il:"Gusto — Benefits Dashboard",iu:"https://support.gusto.com/article/112462198100000/Gusto-benefits-dashboard"},
+    {num:"C",title:"Enrollment Spotlight + Pending Flag",sub:"Redesign",imp:"Reframes the widget around 'which plan wins' — a Spotlight callout naming the top plan, above one continuous segmented bar showing every plan's share — now paired with a distinct Pending-status callout (e.g. COBRA) surfaced from the plan status field, a second dimension separate from B's cost angle. Purpose-driven, no direct competitor citation."}
   ],
   7: [
     // Retitled/rewritten 2026-07-09 — Option A is now the real design: Table (default) / Distribution / Trend,
@@ -245,19 +251,23 @@ MOCK_DATA.options = {
     {num:"C",title:"Grouped by Type",sub:"Improve",imp:"Items under type headers with counts. Role-based scanning.",il:"ADP Workforce Analytics",iu:"https://www.adp.com/what-we-offer/workforce-analytics.aspx"}
   ],
   9: [
-    {num:"A",title:"Month Calendar",sub:"Keep/Refresh",imp:"Calendar with colour-coded leave. Good for payroll coverage planning.",il:"BambooHR Time Off",iu:"https://www.bamboohr.com/hr-software/time-off-management/"},
-    {num:"B",title:"Upcoming List",sub:"Improve",imp:"List of upcoming absences sorted by start date. Fastest to scan.",il:"TeamHub HR",iu:"https://www.figma.com/community/file/1552262349953288359/teamhub-hr-team-management-admin-dashboard-ui-design"},
-    {num:"C",title:"Department View",sub:"Redesign",imp:"Per-department rows with colour-coded absence chips.",il:"BambooHR Time Off",iu:"https://www.bamboohr.com/hr-software/time-off-management/"}
+    {num:"A",title:"Approval Workflow",sub:"Keep/Refresh",imp:"Restyled legacy approval list — per-request rows, each with a colour-coded type bar, employee, dept·type, date range, days, and a Pending/Approved status chip. A Calendar alternate view (colour-coded month grid) is offered via the view toggle. Faithful restyle of the legacy calendar/approval screen — no competitor citation."},
+    {num:"B",title:"Approval Queue",sub:"Improve",imp:"A flat request queue sorted Pending-first, each pending row showing an inline approve/decline affordance — the Gusto Manage Requests / Rippling pending-first pattern. Its genuine second dimension is a leave-type days-composition strip (Annual/Sick/Personal proportions across the current selection). List and Table views via toggle.",il:"Gusto — Approve or decline time-off requests",iu:"https://support.gusto.com/article/106622757100000/Approve-or-decline-a-time-off-request"},
+    {num:"C",title:"Coverage Breakdown",sub:"Redesign",imp:"Reframes the widget around coverage risk — per-department horizontal stacked bars of leave DAYS by type (Annual/Sick/Personal), showing where cover is thin, plus a Table view of the same department × leave-type × days cross-tab. Purpose-driven, no competitor citation."}
   ],
   10: [
-    {num:"A",title:"Loan Cards",sub:"Keep/Refresh",imp:"Card per loan with progress bar for term completion.",il:"LoanPro Portfolio",iu:"https://loanpro.io/resources/loan-portfolio-management/"},
-    {num:"B",title:"Balance Bars",sub:"Improve",imp:"Horizontal bars showing remaining balance per loan.",il:"Tableau Loans",iu:"https://public.tableau.com/app/profile/tableau.finance/viz/LoanPortfolioDashboard"},
-    {num:"C",title:"Loan Table",sub:"Keep/Refresh",imp:"All key fields: original, balance, rate, monthly payment.",il:"LoanPro Portfolio",iu:"https://loanpro.io/resources/loan-portfolio-management/"}
+    // Rebuilt 2026-07-23 (refresh) — Step 3 Mock_Work "Create Mock Designs" skill, live run under Rules 8-11.
+    // Replaces the earlier 2026-07-23 dry-run options in place; each option's filter state is now scoped per
+    // option (Rule 8, fk = '10-'+opt in WRENDER[10]). Full rationale in
+    // Widget_Specs/W10-Loans-With-Balance-Due.md, "2026-07-23 refresh" entry.
+    {num:"A",title:"Balance Table + Type Mix",sub:"Improve",imp:"Restyled legacy table, sorted by loan name; the age-based pie is swapped for a Balance-by-Loan-Type donut, since per-loan aging data isn't confirmed and Ben Lane's interview flags balance — not payment or aging labels — as what users actually check."},
+    {num:"B",title:"Snapshot Tiles + Status Table",sub:"Redesign",imp:"An at-a-glance summary strip (Total Due, Active, In Arrears) above a status-chip table, matching LoanPro's dashboard-card-plus-delinquency-category pattern from this widget's Market Research — built with Pathway's own chips/tiles, not LoanPro's literal styling.",il:"LoanPro — Dashboards & Delinquency Report",iu:"https://help.loanpro.io/delinquency-report"},
+    {num:"C",title:"Repayment Progress by Type",sub:"Redesign",imp:"Reframes the widget around repayment progress instead of lateness — a % Repaid bar per loan, colour-coded by loan type, with a portfolio Type-mix breakdown — sidestepping the still-unconfirmed Status/aging fields entirely."}
   ],
   11: [
-    {num:"A",title:"Bar by Category",sub:"Keep/Refresh",imp:"Net book value bar per asset category.",il:"GlobalData365 Fixed Assets",iu:"https://globaldata365.com/fixed-assets-dashboard/"},
-    {num:"B",title:"Depreciation Table",sub:"Improve",imp:"Cost, accumulated depreciation, NBV, and annual charge.",il:"BlueTally Assets",iu:"https://bluetally.com/blog/best-fixed-asset-management-software"},
-    {num:"C",title:"Pie by Category",sub:"Keep/Refresh",imp:"Pie shows which categories make up the largest share of asset base.",il:"GlobalData365 Fixed Assets",iu:"https://globaldata365.com/fixed-assets-dashboard/"}
+    {num:"A",title:"Category Value Bars",sub:"Keep/Refresh",imp:"One horizontal bar per asset category, length = Net Book Value (Original minus Accumulated Depreciation) \u2014 the legacy bar treatment, restyled. Table view exposes Original, Accumulated Depreciation and Net together with a totals row.",il:"GlobalData365 Fixed Assets",iu:"https://globaldata365.com/fixed-assets-dashboard/"},
+    {num:"B",title:"Depreciation Lifecycle",sub:"Competitor match",imp:"A Total Original / Accumulated Depreciation / Net summary strip above a per-category lifecycle table adding % Depreciated and annual Rate \u2014 the class-breakdown-plus-lifecycle-table pattern fixed-asset dashboards standardise on. Cards view as the alternate.",il:"SlideTeam Fixed Assets Dashboards",iu:"https://www.slideteam.net/blog/must-have-fixed-assets-dashboard-templates-with-examples-and-samples"},
+    {num:"C",title:"Depreciation Progress",sub:"Maximum freedom",imp:"Reframes the widget around how far each category has depreciated: a % Depreciated bar (Accumulated Depreciation over Original) per category, sorted most-depreciated first, with annual rate \u2014 a lens the value-based options don't show. Table view gives % Depreciated, Rate and Net."}
   ],
   12: [
     {num:"A",title:"Remove Slot",sub:"Recommended",imp:"Empty slots confuse users and waste dashboard real estate.",il:"Nielsen Norman",iu:"https://www.nngroup.com/articles/dashboard-design/"},
@@ -265,9 +275,9 @@ MOCK_DATA.options = {
     {num:"C",title:"Add Widget Slot",sub:"Future State",imp:"+ Add Widget tile lets users customise their dashboard.",il:"Xero Dashboard",iu:"https://central.xero.com/s/article/Customise-your-Xero-dashboard"}
   ],
   13: [
-    {num:"A",title:"PO Status Table",sub:"Keep/Refresh",imp:"All POs listed with ref, vendor, amount, status, and due date.",il:"Uizard PO Dashboard",iu:"https://uizard.io/templates/web-app-templates/purchase-order-management-system-web-app/"},
-    {num:"B",title:"Kanban by Status",sub:"Redesign",imp:"Three columns: Pending, Approved, Overdue.",il:"AppSmith Orders",iu:"https://www.appsmith.com/use-case/customer-order-dashboard"},
-    {num:"C",title:"Spend by Department",sub:"Improve",imp:"Horizontal bars showing PO spend per department.",il:"AppSmith Orders",iu:"https://www.appsmith.com/use-case/customer-order-dashboard"}
+    {num:"A",title:"PO Status Table",sub:"Keep/Refresh",imp:"All purchase orders listed with reference, vendor, department, amount, status and due date \u2014 the legacy list restyled. Kanban view available as the alternate. Status colour-coding surfaces Overdue POs at a glance.",il:"Uizard PO Dashboard",iu:"https://uizard.io/templates/web-app-templates/purchase-order-management-system-web-app/"},
+    {num:"B",title:"Kanban by Status",sub:"Redesign",imp:"Purchase orders grouped into status columns (Pending Approval / Approved / Overdue) as a Kanban board \u2014 the procurement-workflow pattern; each card shows vendor, amount and due date. Table view as the alternate. Second dimension: workflow status as the primary grouping.",il:"AppSmith Orders",iu:"https://www.appsmith.com/use-case/customer-order-dashboard"},
+    {num:"C",title:"Spend by Department",sub:"Improve",imp:"Aggregates PO amounts by department as horizontal bars (Pie view alternate) \u2014 reframes the widget from an individual-PO list to a spend-distribution view. Second dimension: departmental spend total, a field the list/kanban don't summarise.",il:"AppSmith Orders",iu:"https://www.appsmith.com/use-case/customer-order-dashboard"}
   ],
   14: [
     {num:"A",title:"Action Grid",sub:"Keep/Refresh",imp:"Large icon tiles for the 6 most common finance actions.",il:"QuickBooks Quick Create",iu:"https://quickbooks.intuit.com/learn-support/en-us/help-article/quick-create-transactions/quickbooks-online-quick-create-menu/L0vvVKH1c"},
@@ -275,19 +285,19 @@ MOCK_DATA.options = {
     {num:"C",title:"Compact Chips",sub:"Improve",imp:"Small icon + label chips. Minimal space, hover shows description.",il:"Xero Dashboard",iu:"https://central.xero.com/s/article/Your-Xero-dashboard"}
   ],
   15: [
-    {num:"A",title:"Balance Cards",sub:"Redesign",imp:"Card per account with balance, status badge, and combined total row.",il:"Xero Bank Reconciliation",iu:"https://www.xero.com/us/features-and-tools/accounting-software/bank-reconciliation/"},
-    {num:"B",title:"Balance Bars",sub:"Improve",imp:"Horizontal bars showing account balances. Includes total.",il:"Xero Bank Reconciliation",iu:"https://www.xero.com/us/features-and-tools/accounting-software/bank-reconciliation/"},
-    {num:"C",title:"Compact Table",sub:"Keep/Refresh",imp:"Account, balance, status, and reconciliation date with total row.",il:"Xero Bank Reconciliation",iu:"https://www.xero.com/us/features-and-tools/accounting-software/bank-reconciliation/"}
+    {num:"A",title:"Balance Cards",sub:"Keep/Refresh",imp:"Each bank account as a card \u2014 icon, name, last-reconciled note, balance and a colour-coded reconciliation status chip. The legacy account list restyled; Table view as the alternate."},
+    {num:"B",title:"Reconciliation Overview",sub:"Improve",imp:"A Reconciled vs Pending total strip above per-account balance bars coloured by reconciliation status. Second dimension: the reconciled/pending split \u2014 surfacing how much cash is confirmed vs still unreconciled, which a plain balance list doesn't show.",il:"Ramp Cash Dashboard",iu:"https://ramp.com/"},
+    {num:"C",title:"Balance Composition",sub:"Redesign",imp:"Reframes the widget around where the cash sits: each account's share of total balance as a proportion bar (with status), plus a Table view adding a % of Total column. Second dimension: each account's percentage of the whole."}
   ],
   16: [
-    {num:"A",title:"AP Aging Table",sub:"Improve",imp:"Table sorted by due date with overdue status. Days overdue column.",il:"Coupler.io AP Dashboard",iu:"https://www.coupler.io/marketing-dashboards/looker-studio-quickbooks-accounts-payable-dashboard"},
-    {num:"B",title:"Aging Bar Chart",sub:"Redesign",imp:"Bar per age band (0-30, 31-60, 61-90, 90+). Correct replacement for broken pie.",il:"Coefficient AP Dashboard",iu:"https://coefficient.io/dashboard-examples/qbo-accounts-payable-dashboard"},
-    {num:"C",title:"Vendor Breakdown",sub:"Improve",imp:"Bars per vendor showing total owed. Red = overdue.",il:"Coupler.io AP Dashboard",iu:"https://www.coupler.io/marketing-dashboards/looker-studio-quickbooks-accounts-payable-dashboard"}
+    {num:"A",title:"AP Aging Table",sub:"Improve",imp:"Payables listed and sorted by due date, each with its aging band and days-overdue, colour-coded by band; Vendor Cards view as the alternate. The legacy AP list restyled with aging surfaced.",il:"Coupler.io AP Dashboard",iu:"https://www.coupler.io/marketing-dashboards/looker-studio-quickbooks-accounts-payable-dashboard"},
+    {num:"B",title:"Aging Bar Chart",sub:"Redesign",imp:"Amount owed per aging band (0-30 / 31-60 / 61-90 / 90+) as bars \u2014 the correct aging visualisation. Pie view alternate. Second dimension: the aging band, the core AP-by-due-date question.",il:"Coefficient AP Dashboard",iu:"https://coefficient.io/dashboard-examples/qbo-accounts-payable-dashboard"},
+    {num:"C",title:"Vendor Breakdown",sub:"Improve",imp:"Total owed per vendor as bars (Pie and Table views alternate), overdue amounts highlighted. Second dimension: vendor concentration \u2014 which suppliers hold the most payable, distinct from the band view.",il:"Coupler.io AP Dashboard",iu:"https://www.coupler.io/marketing-dashboards/looker-studio-quickbooks-accounts-payable-dashboard"}
   ],
   17: [
-    {num:"A",title:"Progress Bars",sub:"Keep/Refresh",imp:"One bar per campaign showing % received of pledged amount.",il:"Virtuous Pledge Tracking",iu:"https://virtuous.org/blog/donor-pledge-tracking/"},
-    {num:"B",title:"Paired Bars",sub:"Improve",imp:"Pledged vs received side-by-side per campaign.",il:"DonorPerfect Giving Report",iu:"https://www.donorperfect.com/giving-report-pledge-progress/"},
-    {num:"C",title:"Campaign Table",sub:"Keep/Refresh",imp:"Campaign, pledged, received, outstanding, % — with totals row.",il:"Bloomerang Pledge Tracking",iu:"https://bloomerang.co/blog/pledge-tracking/"}
+    {num:"A",title:"Campaign Progress",sub:"Keep/Refresh",imp:"A progress bar per campaign showing received as a share of pledged (% funded), colour-coded by health; Pie and Table views as alternates. The legacy giving-progress view restyled."},
+    {num:"B",title:"Pledged vs Received",sub:"Improve",imp:"Paired bars per campaign \u2014 pledged next to received \u2014 making the shortfall visible side by side; Table view alternate. Second dimension: both the pledged goal and the received amount together, not just the percentage.",il:"Bloomerang Giving Dashboard",iu:"https://bloomerang.co/product/reporting-analytics/"},
+    {num:"C",title:"Fundraising Gap",sub:"Redesign",imp:"Reframes the widget around what's left to raise: the outstanding gap (pledged minus received) per campaign, sorted largest-gap-first, so the campaigns furthest from goal lead; Table view adds pledged/received/gap/% funded. Second dimension: the dollar gap to goal, a lens the progress and paired views don't rank on."}
   ]
 };
 
@@ -440,31 +450,40 @@ MOCK_DATA.series[4] = {
 };
 
 // W5 — AR Invoices Outstanding
+// Rebuilt 2026-07-23 (create-mock-designs, W05): restructured to the REAL 5-bucket ARInvoice aging
+// (Current / 31-60 / 61-90 / 91-120 / 121+). Each band carries v (outstanding $), c (severity colour),
+// and n (invoice count). Colours escalate green -> red: Current #4caf50, 31-60 #ffc107, 61-90 #ff9800,
+// 91-120 #ff7043 (amber), 121+ #e53935 (red) — matching the Fine-Tuning rule (121+ red, 91-120 amber).
 MOCK_DATA.series[5] = {
   'All Ages': {
-    'FY 2026': {bands:[{l:'0-30 days',v:8200,c:'#4caf50',n:3},{l:'31-60 days',v:15400,c:'#ff9800',n:5},{l:'61-90 days',v:9800,c:'#ff7043',n:4},{l:'90+ days',v:6200,c:'#e53935',n:2}]},
-    'FY 2025': {bands:[{l:'0-30 days',v:11500,c:'#4caf50',n:5},{l:'31-60 days',v:18200,c:'#ff9800',n:7},{l:'61-90 days',v:7400,c:'#ff7043',n:3},{l:'90+ days',v:4100,c:'#e53935',n:2}]},
-    'FY 2024': {bands:[{l:'0-30 days',v:6800,c:'#4caf50',n:3},{l:'31-60 days',v:12600,c:'#ff9800',n:4},{l:'61-90 days',v:11200,c:'#ff7043',n:5},{l:'90+ days',v:8900,c:'#e53935',n:3}]}
+    'FY 2026': {bands:[{l:'Current',v:8200,c:'#4caf50',n:3},{l:'31-60 days',v:15400,c:'#ffc107',n:5},{l:'61-90 days',v:9800,c:'#ff9800',n:4},{l:'91-120 days',v:5400,c:'#ff7043',n:2},{l:'121+ days',v:4100,c:'#e53935',n:2}]},
+    'FY 2025': {bands:[{l:'Current',v:11500,c:'#4caf50',n:5},{l:'31-60 days',v:18200,c:'#ffc107',n:7},{l:'61-90 days',v:7400,c:'#ff9800',n:3},{l:'91-120 days',v:2600,c:'#ff7043',n:1},{l:'121+ days',v:1500,c:'#e53935',n:1}]},
+    'FY 2024': {bands:[{l:'Current',v:6800,c:'#4caf50',n:3},{l:'31-60 days',v:12600,c:'#ffc107',n:4},{l:'61-90 days',v:11200,c:'#ff9800',n:5},{l:'91-120 days',v:5400,c:'#ff7043',n:2},{l:'121+ days',v:3500,c:'#e53935',n:2}]}
   },
-  '0-30 days': {
-    'FY 2026': {bands:[{l:'0-30 days',v:8200,c:'#4caf50',n:3}]},
-    'FY 2025': {bands:[{l:'0-30 days',v:11500,c:'#4caf50',n:5}]},
-    'FY 2024': {bands:[{l:'0-30 days',v:6800,c:'#4caf50',n:3}]}
+  'Current': {
+    'FY 2026': {bands:[{l:'Current',v:8200,c:'#4caf50',n:3}]},
+    'FY 2025': {bands:[{l:'Current',v:11500,c:'#4caf50',n:5}]},
+    'FY 2024': {bands:[{l:'Current',v:6800,c:'#4caf50',n:3}]}
   },
   '31-60 days': {
-    'FY 2026': {bands:[{l:'31-60 days',v:15400,c:'#ff9800',n:5}]},
-    'FY 2025': {bands:[{l:'31-60 days',v:18200,c:'#ff9800',n:7}]},
-    'FY 2024': {bands:[{l:'31-60 days',v:12600,c:'#ff9800',n:4}]}
+    'FY 2026': {bands:[{l:'31-60 days',v:15400,c:'#ffc107',n:5}]},
+    'FY 2025': {bands:[{l:'31-60 days',v:18200,c:'#ffc107',n:7}]},
+    'FY 2024': {bands:[{l:'31-60 days',v:12600,c:'#ffc107',n:4}]}
   },
   '61-90 days': {
-    'FY 2026': {bands:[{l:'61-90 days',v:9800,c:'#ff7043',n:4}]},
-    'FY 2025': {bands:[{l:'61-90 days',v:7400,c:'#ff7043',n:3}]},
-    'FY 2024': {bands:[{l:'61-90 days',v:11200,c:'#ff7043',n:5}]}
+    'FY 2026': {bands:[{l:'61-90 days',v:9800,c:'#ff9800',n:4}]},
+    'FY 2025': {bands:[{l:'61-90 days',v:7400,c:'#ff9800',n:3}]},
+    'FY 2024': {bands:[{l:'61-90 days',v:11200,c:'#ff9800',n:5}]}
   },
-  '90+ days': {
-    'FY 2026': {bands:[{l:'90+ days',v:6200,c:'#e53935',n:2}]},
-    'FY 2025': {bands:[{l:'90+ days',v:4100,c:'#e53935',n:2}]},
-    'FY 2024': {bands:[{l:'90+ days',v:8900,c:'#e53935',n:3}]}
+  '91-120 days': {
+    'FY 2026': {bands:[{l:'91-120 days',v:5400,c:'#ff7043',n:2}]},
+    'FY 2025': {bands:[{l:'91-120 days',v:2600,c:'#ff7043',n:1}]},
+    'FY 2024': {bands:[{l:'91-120 days',v:5400,c:'#ff7043',n:2}]}
+  },
+  '121+ days': {
+    'FY 2026': {bands:[{l:'121+ days',v:4100,c:'#e53935',n:2}]},
+    'FY 2025': {bands:[{l:'121+ days',v:1500,c:'#e53935',n:1}]},
+    'FY 2024': {bands:[{l:'121+ days',v:3500,c:'#e53935',n:2}]}
   }
 };
 
@@ -571,57 +590,57 @@ MOCK_DATA.series[8] = {
 MOCK_DATA.series[9] = {
   'All Departments': {
     'FY 2026': {leave:[
-      {n:'James Lee',      dept:'Finance',    type:'Annual',  s:8, e:9, ms:'Jul 8', me:'Jul 9', days:2},
-      {n:'Sarah Mitchell', dept:'Finance',    type:'Annual',  s:14,e:18,ms:'Jul 14',me:'Jul 18',days:5},
-      {n:'Linda Perez',    dept:'Finance',    type:'Personal',s:21,e:21,ms:'Jul 21',me:'Jul 21',days:1},
-      {n:'Rachel Brown',   dept:'Admin',      type:'Sick',    s:12,e:12,ms:'Jul 12',me:'Jul 12',days:1},
-      {n:'Amy Park',       dept:'Admin',      type:'Annual',  s:35,e:39,ms:'Aug 4', me:'Aug 8', days:5},
-      {n:'Tom Hughes',     dept:'Ministry',   type:'Sick',    s:21,e:23,ms:'Jul 21',me:'Jul 23',days:3},
-      {n:'Chris Wu',       dept:'Ministry',   type:'Annual',  s:42,e:46,ms:'Aug 11',me:'Aug 15',days:5},
-      {n:'Maria Chen',     dept:'Facilities', type:'Personal',s:28,e:28,ms:'Jul 28',me:'Jul 28',days:1},
-      {n:'Kevin Okafor',   dept:'Facilities', type:'Annual',  s:28,e:32,ms:'Jul 28',me:'Aug 1', days:5},
-      {n:'David Kim',      dept:'IT',         type:'Annual',  s:49,e:53,ms:'Aug 18',me:'Aug 22',days:5}
+      {n:'James Lee',      dept:'Finance',    type:'Annual',  s:8, e:9, ms:'Jul 8', me:'Jul 9', days:2,st:'Pending'},
+      {n:'Sarah Mitchell', dept:'Finance',    type:'Annual',  s:14,e:18,ms:'Jul 14',me:'Jul 18',days:5,st:'Pending'},
+      {n:'Linda Perez',    dept:'Finance',    type:'Personal',s:21,e:21,ms:'Jul 21',me:'Jul 21',days:1,st:'Approved'},
+      {n:'Rachel Brown',   dept:'Admin',      type:'Sick',    s:12,e:12,ms:'Jul 12',me:'Jul 12',days:1,st:'Pending'},
+      {n:'Amy Park',       dept:'Admin',      type:'Annual',  s:35,e:39,ms:'Aug 4', me:'Aug 8', days:5,st:'Approved'},
+      {n:'Tom Hughes',     dept:'Ministry',   type:'Sick',    s:21,e:23,ms:'Jul 21',me:'Jul 23',days:3,st:'Approved'},
+      {n:'Chris Wu',       dept:'Ministry',   type:'Annual',  s:42,e:46,ms:'Aug 11',me:'Aug 15',days:5,st:'Approved'},
+      {n:'Maria Chen',     dept:'Facilities', type:'Personal',s:28,e:28,ms:'Jul 28',me:'Jul 28',days:1,st:'Approved'},
+      {n:'Kevin Okafor',   dept:'Facilities', type:'Annual',  s:28,e:32,ms:'Jul 28',me:'Aug 1', days:5,st:'Approved'},
+      {n:'David Kim',      dept:'IT',         type:'Annual',  s:49,e:53,ms:'Aug 18',me:'Aug 22',days:5,st:'Approved'}
     ]},
     'FY 2025': {leave:[
-      {n:'James Lee',    dept:'Finance',    type:'Annual',  s:15,e:19,ms:'Jul 15',me:'Jul 19',days:5},
-      {n:'Amy Park',     dept:'Admin',      type:'Sick',    s:22,e:23,ms:'Jul 22',me:'Jul 23',days:2},
-      {n:'Tom Hughes',   dept:'Ministry',   type:'Annual',  s:8, e:9, ms:'Jul 8', me:'Jul 9', days:2},
-      {n:'Chris Wu',     dept:'Ministry',   type:'Personal',s:36,e:36,ms:'Aug 5', me:'Aug 5', days:1},
-      {n:'Maria Chen',   dept:'Facilities', type:'Annual',  s:29,e:33,ms:'Jul 29',me:'Aug 2', days:5},
-      {n:'Kevin Okafor', dept:'Facilities', type:'Sick',    s:12,e:14,ms:'Jul 12',me:'Jul 14',days:3}
+      {n:'James Lee',    dept:'Finance',    type:'Annual',  s:15,e:19,ms:'Jul 15',me:'Jul 19',days:5,st:'Approved'},
+      {n:'Amy Park',     dept:'Admin',      type:'Sick',    s:22,e:23,ms:'Jul 22',me:'Jul 23',days:2,st:'Approved'},
+      {n:'Tom Hughes',   dept:'Ministry',   type:'Annual',  s:8, e:9, ms:'Jul 8', me:'Jul 9', days:2,st:'Pending'},
+      {n:'Chris Wu',     dept:'Ministry',   type:'Personal',s:36,e:36,ms:'Aug 5', me:'Aug 5', days:1,st:'Approved'},
+      {n:'Maria Chen',   dept:'Facilities', type:'Annual',  s:29,e:33,ms:'Jul 29',me:'Aug 2', days:5,st:'Approved'},
+      {n:'Kevin Okafor', dept:'Facilities', type:'Sick',    s:12,e:14,ms:'Jul 12',me:'Jul 14',days:3,st:'Pending'}
     ]},
     'FY 2024': {leave:[
-      {n:'Sarah Mitchell',dept:'Finance',    type:'Annual',  s:8, e:12,ms:'Jul 8', me:'Jul 12',days:5},
-      {n:'Rachel Brown',  dept:'Admin',      type:'Annual',  s:22,e:26,ms:'Jul 22',me:'Jul 26',days:5},
-      {n:'Chris Wu',      dept:'Ministry',   type:'Annual',  s:15,e:19,ms:'Jul 15',me:'Jul 19',days:5},
-      {n:'Tom Hughes',    dept:'Ministry',   type:'Personal',s:29,e:29,ms:'Jul 29',me:'Jul 29',days:1},
-      {n:'David Kim',     dept:'IT',         type:'Sick',    s:10,e:11,ms:'Jul 10',me:'Jul 11',days:2}
+      {n:'Sarah Mitchell',dept:'Finance',    type:'Annual',  s:8, e:12,ms:'Jul 8', me:'Jul 12',days:5,st:'Pending'},
+      {n:'Rachel Brown',  dept:'Admin',      type:'Annual',  s:22,e:26,ms:'Jul 22',me:'Jul 26',days:5,st:'Approved'},
+      {n:'Chris Wu',      dept:'Ministry',   type:'Annual',  s:15,e:19,ms:'Jul 15',me:'Jul 19',days:5,st:'Approved'},
+      {n:'Tom Hughes',    dept:'Ministry',   type:'Personal',s:29,e:29,ms:'Jul 29',me:'Jul 29',days:1,st:'Approved'},
+      {n:'David Kim',     dept:'IT',         type:'Sick',    s:10,e:11,ms:'Jul 10',me:'Jul 11',days:2,st:'Pending'}
     ]}
   },
   'Finance': {
-    'FY 2026': {leave:[{n:'James Lee',dept:'Finance',type:'Annual',s:8,e:9,ms:'Jul 8',me:'Jul 9',days:2},{n:'Sarah Mitchell',dept:'Finance',type:'Annual',s:14,e:18,ms:'Jul 14',me:'Jul 18',days:5},{n:'Linda Perez',dept:'Finance',type:'Personal',s:21,e:21,ms:'Jul 21',me:'Jul 21',days:1}]},
-    'FY 2025': {leave:[{n:'James Lee',dept:'Finance',type:'Annual',s:15,e:19,ms:'Jul 15',me:'Jul 19',days:5}]},
-    'FY 2024': {leave:[{n:'Sarah Mitchell',dept:'Finance',type:'Annual',s:8,e:12,ms:'Jul 8',me:'Jul 12',days:5}]}
+    'FY 2026': {leave:[{n:'James Lee',dept:'Finance',type:'Annual',s:8,e:9,ms:'Jul 8',me:'Jul 9',days:2,st:'Pending'},{n:'Sarah Mitchell',dept:'Finance',type:'Annual',s:14,e:18,ms:'Jul 14',me:'Jul 18',days:5,st:'Pending'},{n:'Linda Perez',dept:'Finance',type:'Personal',s:21,e:21,ms:'Jul 21',me:'Jul 21',days:1,st:'Approved'}]},
+    'FY 2025': {leave:[{n:'James Lee',dept:'Finance',type:'Annual',s:15,e:19,ms:'Jul 15',me:'Jul 19',days:5,st:'Approved'}]},
+    'FY 2024': {leave:[{n:'Sarah Mitchell',dept:'Finance',type:'Annual',s:8,e:12,ms:'Jul 8',me:'Jul 12',days:5,st:'Pending'}]}
   },
   'Admin': {
-    'FY 2026': {leave:[{n:'Rachel Brown',dept:'Admin',type:'Sick',s:12,e:12,ms:'Jul 12',me:'Jul 12',days:1},{n:'Amy Park',dept:'Admin',type:'Annual',s:35,e:39,ms:'Aug 4',me:'Aug 8',days:5}]},
-    'FY 2025': {leave:[{n:'Amy Park',dept:'Admin',type:'Sick',s:22,e:23,ms:'Jul 22',me:'Jul 23',days:2}]},
-    'FY 2024': {leave:[{n:'Rachel Brown',dept:'Admin',type:'Annual',s:22,e:26,ms:'Jul 22',me:'Jul 26',days:5}]}
+    'FY 2026': {leave:[{n:'Rachel Brown',dept:'Admin',type:'Sick',s:12,e:12,ms:'Jul 12',me:'Jul 12',days:1,st:'Pending'},{n:'Amy Park',dept:'Admin',type:'Annual',s:35,e:39,ms:'Aug 4',me:'Aug 8',days:5,st:'Approved'}]},
+    'FY 2025': {leave:[{n:'Amy Park',dept:'Admin',type:'Sick',s:22,e:23,ms:'Jul 22',me:'Jul 23',days:2,st:'Approved'}]},
+    'FY 2024': {leave:[{n:'Rachel Brown',dept:'Admin',type:'Annual',s:22,e:26,ms:'Jul 22',me:'Jul 26',days:5,st:'Approved'}]}
   },
   'Ministry': {
-    'FY 2026': {leave:[{n:'Tom Hughes',dept:'Ministry',type:'Sick',s:21,e:23,ms:'Jul 21',me:'Jul 23',days:3},{n:'Chris Wu',dept:'Ministry',type:'Annual',s:42,e:46,ms:'Aug 11',me:'Aug 15',days:5}]},
-    'FY 2025': {leave:[{n:'Tom Hughes',dept:'Ministry',type:'Annual',s:8,e:9,ms:'Jul 8',me:'Jul 9',days:2},{n:'Chris Wu',dept:'Ministry',type:'Personal',s:36,e:36,ms:'Aug 5',me:'Aug 5',days:1}]},
-    'FY 2024': {leave:[{n:'Chris Wu',dept:'Ministry',type:'Annual',s:15,e:19,ms:'Jul 15',me:'Jul 19',days:5},{n:'Tom Hughes',dept:'Ministry',type:'Personal',s:29,e:29,ms:'Jul 29',me:'Jul 29',days:1}]}
+    'FY 2026': {leave:[{n:'Tom Hughes',dept:'Ministry',type:'Sick',s:21,e:23,ms:'Jul 21',me:'Jul 23',days:3,st:'Approved'},{n:'Chris Wu',dept:'Ministry',type:'Annual',s:42,e:46,ms:'Aug 11',me:'Aug 15',days:5,st:'Approved'}]},
+    'FY 2025': {leave:[{n:'Tom Hughes',dept:'Ministry',type:'Annual',s:8,e:9,ms:'Jul 8',me:'Jul 9',days:2,st:'Pending'},{n:'Chris Wu',dept:'Ministry',type:'Personal',s:36,e:36,ms:'Aug 5',me:'Aug 5',days:1,st:'Approved'}]},
+    'FY 2024': {leave:[{n:'Chris Wu',dept:'Ministry',type:'Annual',s:15,e:19,ms:'Jul 15',me:'Jul 19',days:5,st:'Approved'},{n:'Tom Hughes',dept:'Ministry',type:'Personal',s:29,e:29,ms:'Jul 29',me:'Jul 29',days:1,st:'Approved'}]}
   },
   'Facilities': {
-    'FY 2026': {leave:[{n:'Maria Chen',dept:'Facilities',type:'Personal',s:28,e:28,ms:'Jul 28',me:'Jul 28',days:1},{n:'Kevin Okafor',dept:'Facilities',type:'Annual',s:28,e:32,ms:'Jul 28',me:'Aug 1',days:5}]},
-    'FY 2025': {leave:[{n:'Maria Chen',dept:'Facilities',type:'Annual',s:29,e:33,ms:'Jul 29',me:'Aug 2',days:5},{n:'Kevin Okafor',dept:'Facilities',type:'Sick',s:12,e:14,ms:'Jul 12',me:'Jul 14',days:3}]},
-    'FY 2024': {leave:[{n:'Maria Chen',dept:'Facilities',type:'Annual',s:8,e:12,ms:'Jul 8',me:'Jul 12',days:5}]}
+    'FY 2026': {leave:[{n:'Maria Chen',dept:'Facilities',type:'Personal',s:28,e:28,ms:'Jul 28',me:'Jul 28',days:1,st:'Approved'},{n:'Kevin Okafor',dept:'Facilities',type:'Annual',s:28,e:32,ms:'Jul 28',me:'Aug 1',days:5,st:'Approved'}]},
+    'FY 2025': {leave:[{n:'Maria Chen',dept:'Facilities',type:'Annual',s:29,e:33,ms:'Jul 29',me:'Aug 2',days:5,st:'Approved'},{n:'Kevin Okafor',dept:'Facilities',type:'Sick',s:12,e:14,ms:'Jul 12',me:'Jul 14',days:3,st:'Pending'}]},
+    'FY 2024': {leave:[{n:'Maria Chen',dept:'Facilities',type:'Annual',s:8,e:12,ms:'Jul 8',me:'Jul 12',days:5,st:'Approved'}]}
   },
   'IT': {
-    'FY 2026': {leave:[{n:'David Kim',dept:'IT',type:'Annual',s:49,e:53,ms:'Aug 18',me:'Aug 22',days:5}]},
+    'FY 2026': {leave:[{n:'David Kim',dept:'IT',type:'Annual',s:49,e:53,ms:'Aug 18',me:'Aug 22',days:5,st:'Approved'}]},
     'FY 2025': {leave:[]},
-    'FY 2024': {leave:[{n:'David Kim',dept:'IT',type:'Sick',s:10,e:11,ms:'Jul 10',me:'Jul 11',days:2}]}
+    'FY 2024': {leave:[{n:'David Kim',dept:'IT',type:'Sick',s:10,e:11,ms:'Jul 10',me:'Jul 11',days:2,st:'Pending'}]}
   }
 };
 

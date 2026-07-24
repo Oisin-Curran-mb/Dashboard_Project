@@ -75,6 +75,20 @@ Changing a filter, size, or view on one widget must never cascade to any other w
 ### Rule 7 — Refresh is a standalone icon, present at every size including KPI
 Not a 3-dot menu item — its own always-visible icon, separate from the overflow menu. Present at Small, Medium, Large, KPI, and Expanded (unlike Download and Switch, which drop at KPI).
 
+### Rule 8 — Filter state is scoped per design option, not shared across a widget's three options (added 2026-07-23)
+This is a different axis from Rule 5 above. Rule 5 says one widget's filters must never leak to *another widget*. This rule says a widget's **own three design options (A/B/C) must not share filter state with each other either** — changing a filter on Option A must not silently change what Option B or C shows, since they're meant to be independently comparable concepts, not one shared dataset with three skins.
+
+**Scope: applies only to widgets `create-mock-designs` builds or rewrites from 2026-07-23 onward. It is explicitly not retroactive** — already-built widgets (including W06, confirmed 2026-07-23) keep their existing shared-per-widget filter behavior unless a separate, explicit decision is made later to revisit them. Don't "fix" an old widget's filter scoping as a side effect of touching it for something else; that's a separate ask.
+
+### Rule 9 — KPI, Medium, and Large are the mandatory baseline sizes per option; Small is the one size that may be dropped, and only with an explicit, documented decision (added 2026-07-23)
+Every design option must have a real, reachable render at KPI, Medium, and Large. Small is optional — same precedent as the existing W09/W13 exceptions above — but dropping it is never a silent default. If an option doesn't clearly work at Small, that has to be stated plainly (in the skill's self-check report and in the widget's own Widget_Specs entry) as a proposed omission awaiting the project owner's confirmation, not treated as already decided. Expanded is unaffected by this rule (it's governed separately by Rule T3/Rule 6 above).
+
+### Rule 10 — Design 2 (Competitor Match) and Design 3 (Maximum Freedom) should be pushed to explore a genuine second dimension of the widget's data, not just restyle the same single metric (added 2026-07-23)
+Before finalizing Option B or C, check whether the widget's underlying mock data already carries fields that aren't currently surfaced by any option (e.g. a cost/amount field sitting alongside a count field, a category/type field beyond the primary one). Where a real, already-present-but-unused field exists, prefer a design that actually breaks the topic down further using it, over one that just changes chart type on the same single value. This applies most naturally to Design 3 (no tie-break constraint), but is worth checking for Design 2 as well where the matched competitor pattern supports it.
+
+### Rule 11 — Anything proposed that isn't a confirmed real field is flagged in the widget's spec document, never as a front-end element in the live mockup (added 2026-07-23)
+If Rule 10 leads to proposing a breakdown that uses a field not confirmed against the Developer Punch List (or invents a dimension that doesn't exist in the data at all), that uncertainty is disclosed in the `Widget_Specs/WNN-Name.md` write-up — as a "proposed, needs confirmation" note — and nowhere else. It must never appear as a badge, disclaimer, placeholder, or any other visible element inside `Dashboard Widget Mockups.html` itself. The mockup shows the design as if it were real; the caveat lives only in the document, to be resolved when the design is finalized, not before.
+
 ### Items intentionally decided per-widget, not as a global rule
 Three points are deliberately **not** standardized — each is resolved individually as its widget comes up, with the reasoning recorded in that widget's own spec doc:
 - **Data Table sort behaviour** — domain-level patterns have emerged rather than one universal default: Finance widgets organized around account numbers/periods (e.g. W01, W02) default to a fixed alphabetical/chronological sort, not user-changeable. Payroll/HR widgets (e.g. W03) default to fixed alphabetical with a user-facing toggle to Amount-descending. Confirm this pattern holds as more widgets in each domain are reached — don't assume it without checking.
@@ -143,6 +157,9 @@ Every card's content area (`.opt-v`) has `overflow:hidden` — required for Rule
 - [ ] New chart work uses Recharts via `chartCanvas()`/`h()`, and any new `innerHTML=WRENDER[...]` call is routed through `setVizHtml()` (Rule T10).
 - [ ] Any new custom hover-info bubble uses `showHoverTip()`/`.hover-tip-bubble`, not a nested `position:absolute` + CSS `:hover` bubble inside `.opt-v` (Rule T11).
 - [ ] Actually opened the file in a real browser and checked the console — a static read-through is not sufficient sign-off for chart-rendering changes.
+- [ ] For widgets built/rewritten from 2026-07-23 onward: each option's filter state is scoped per-option, not shared across the widget's three options (Rule 8).
+- [ ] For widgets built/rewritten from 2026-07-23 onward: KPI, Medium, and Large all render something real for every option; any dropped Small is stated as a proposed, unconfirmed omission, not decided silently (Rule 9).
+- [ ] Any proposed data/breakdown that isn't a confirmed real field is flagged only in the widget's Widget_Specs entry — never as a visible element in the live mockup (Rule 11).
 
 `check-rules.py` (in `Step 3 - Mock_Work/`) automates what's reliably regex-detectable — T1 (SVG stretching/missing height), T4 (unscoped shared-class overrides), T6 (low-contrast axis/gridline colors) — and prints reminders for T2/T3/T5, which need a human look. Run it after any round that touches charts/tables:
 ```

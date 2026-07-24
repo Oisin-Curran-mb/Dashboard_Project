@@ -106,3 +106,28 @@ Standalone icon on the card (not a 3-dot menu item), present at every size inclu
 - ~~Depreciation method filter changes the calculated book value for all options~~ — dropped, see note above.
 - The selected Financial Measure's column/bar should always be visually distinguished as the "lead" figure (matches old design's "measure's column shown first" behaviour)
 - Buildings and Rooms (and other Group By dimensions with many values) should default sensibly when a chart would otherwise be too crowded — carries forward the reasoning that motivated Option A's bar-over-pie choice
+
+
+---
+
+## 2026-07-23 — Create Mock Designs run (fragment/assembler flow): 3 options rebuilt against real data
+
+Built with the revised Create pipeline — three option renders as isolated fragment files merged by `assemble-mock-widget.py`. **Important correction:** an earlier draft this session was written against a fabricated `groupBy`/`assets` data shape that does **not** exist in the real `MOCK_DATA.series[11]`; Verify caught it (the render would have crashed). This entry documents the corrected build against the **actual** `series[11]`, which is per-**Asset Category** rows with `orig` (original value), `depn` (accumulated depreciation) and `rate` (annual depreciation rate) — no per-asset list, no multi-account grouping. Net Book Value is derived as `orig − depn`; % Depreciated as `depn / orig`. Prior dated entries above are unchanged.
+
+### Option A — Category Value Bars *(Keep/Refresh — Restyled Original)*
+One horizontal bar per asset category, length = Net Book Value (`orig − depn`), restyled from the legacy bar treatment. Table view shows Original, Accumulated Depreciation and Net with a totals row. Views: Value Bars (default) / Table.
+
+### Option B — Depreciation Lifecycle *(Improve — Competitor Match)*
+A Total Original / Accum. Depreciation / Net summary strip above a per-category lifecycle table that adds **% Depreciated** and annual **Rate** columns; Cards view as the alternate. The class-breakdown-plus-lifecycle-table pattern fixed-asset dashboards standardise on (SlideTeam / GlobalData365). Rule 10 second dimension: the %-depreciated and rate breakdown, which the value-only view doesn't surface. (Small size checks the view before rendering, so the Table/Cards toggle is live at every size — no dead control.)
+
+### Option C — Depreciation Progress *(Redesign — Maximum Freedom)*
+Reframes the widget around how far each category has depreciated: a **% Depreciated bar** (`depn/orig`) per category, sorted most-depreciated first, coloured by the category's own colour, with annual rate available in the Table view. A genuinely different lens (progress, not dollar value). Views: Progress Bars (default) / Table.
+
+### Rules 8/9
+Per-option filter scoping via `fk=wid+'-'+opt` in `WRENDER[11]`; shared `_renderFltBody`/`applyFilter` branches extended to include `wid===11` (4/5/6/9/10 intact). KPI/Medium/Large render for all three; **Small retained for all three**. KPI = Total Net Book Value across all categories (fixed, filter-independent).
+
+### Rule 11 — data caveats (documented here, not shown on-screen)
+The real data supports only Asset Category / Original / Accumulated Depreciation / Rate. The legacy doc's richer filter model (Group By: Asset/Accum-Depn/Expense Account; a cascading Specific Group; a five-measure Financial Measure selector) is **not** backed by the current data and is not offered — "Asset Category" is a flat stand-in, as the pre-existing `filters[11]` comment already flags. A prior invented "Depreciation method" (Straight Line/Declining Balance) filter that multiplied figures by a hardcoded factor was also left out. None of this is surfaced on the mockup; the cards render clean.
+
+### Where written
+`Dashboard Widget Mockups.html` — `WRENDER[11]` (scaffold + 3 branches), `MOCK_DATA.options[11]`, the three `opt-11-*` cards, and the shared filter-scoping branches. `mock-data.master.js` re-synced for `options[11]` (`series[11]` unchanged — no fabricated data added). Final Check tab `#fc-widget-11` not edited (known shared-render carryover). Built via `_build/W11/` fragments + `assemble-mock-widget.py`.

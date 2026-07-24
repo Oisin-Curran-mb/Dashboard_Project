@@ -103,3 +103,29 @@ The Modern API defines an **`ap-ar-aging`** widget that explicitly combines this
 - Overdue items must always be red regardless of filter selection
 - Due Date filter should filter all three options independently
 - Total AP outstanding shown as the KPI headline (see above) and as a header figure on all views at Large size
+
+---
+
+## 2026-07-23 — Create Mock Designs run (fragment/assembler flow): 3 options rebuilt
+
+Built with the revised Create pipeline (isolated fragment files + `assemble-mock-widget.py`). Real `series[16]` is a per-payable list `ap:[{vendor,ref,amt,due,age,band,bc}]` (band = aging bucket 0-30/31-60/61-90/90+; bc = band colour). Prior entries above unchanged.
+
+### Option A — AP Aging Table *(Improve — Restyled Original)*
+Payables sorted by due date with aging band, days-overdue and band colour-coding; Vendor Cards view alternate.
+
+### Option B — Aging Bar Chart *(Redesign — Competitor Match)*
+Amount owed per aging band (0-30 / 31-60 / 61-90 / 90+) as bars; Pie view alternate. Rule 10 second dimension: the **aging band** — the core "what's overdue and by how much" question (Coefficient / Coupler.io AP dashboards).
+
+### Option C — Vendor Breakdown *(Improve — Maximum Freedom)*
+Total owed per vendor as bars (Pie + Table views alternate), overdue highlighted. Rule 10 second dimension: **vendor concentration** — which suppliers hold the most payable, a distinct axis from the band view.
+
+### Rules 8/9
+Per-option filter scoping via `fk=wid+'-'+opt` (both Due Date and Vendor filters read via `fv(fk,…)`); shared branches extended to include `wid===16` (4/5/6/9/10/11/13/15 intact). KPI = Total AP Outstanding (fixed against Due Date). KPI/Medium/Large render for all three; **Small retained for all three**; KPI size button added to all cards.
+
+### Rule 11 — data caveats (documented here, not shown on-screen)
+Aging band and days-overdue are computed from due date in the mock data; confirm the backend supplies (or the query derives) the same 0-30/31-60/61-90/90+ bucketing at finalisation. Not surfaced on the mockup.
+
+### Where written
+`Dashboard Widget Mockups.html` — `WRENDER[16]` (scaffold + 3 branches), `MOCK_DATA.options[16]`, the three `opt-16-*` cards, shared filter branches. `mock-data.master.js` re-synced for `options[16]` (`series[16]` unchanged). Final Check tab `#fc-widget-16` not edited (known shared-render carryover). Built via `_build/W16/` fragments + `assemble-mock-widget.py`.
+
+**2026-07-23 — Fix pass (same day):** Verify caught two inherited bugs, both resolved and re-verified clean. (1) Option A's Table view was unreachable — the render defaulted to Cards while "AP Table" was named the primary view; fixed so the table renders by default and Cards is the alternate. (2) Options B and C had a dead view-toggle at Small (early `sz==='s'` return before the view check); reordered so the Pie/Table views are reachable at every size, with `sz==='s'` reduced to a row-count cap only.

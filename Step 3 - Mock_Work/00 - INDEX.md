@@ -39,9 +39,12 @@ None of the snapshot files (v1/v2) contain anything missing from the live build 
 | `Dashboard Widget Mockups.html` | **Live — the real thing** | Self-contained; `★ MASTER ★` comment at the top of each inline `<script>` block. |
 | `mock-data.master.js` | Mirror of live data | See version table above — extracted, not authoritative. |
 | `Data and Build Readiness - Developer Punch List.md` | Live | Per-widget data-readiness checklist against `Step 4 - Widget Final Design/`. Feeds an eventual Excel tracker. |
-| `Design Improvement Options.md` | Live | The Step-2/idea-file feeding `Widget_Specs/` from Step 1's research docs. |
+| `Design Improvement Options.md` | **Superseded 2026-07-23** | Marked superseded at the top of the file itself — its proposed options have since diverged from what's actually in `Widget_Specs/` and the live HTML (e.g. its Receivable Invoices Outstanding suggestions no longer match what's built). Kept for its decision-trail value, not deleted, but no longer read by `Create Mock Designs` or treated as current. |
 | `Final Check - Items Needing Your Review.md` | Live | Active review checklist, real open checkboxes. |
-| `check-rules.py` | Live tool | Lints `Dashboard Widget Mockups.html` against `Widget_Concepts/03 - Technical Build Rules & Definition of Done.md`. Run it with `python3 check-rules.py "Dashboard Widget Mockups.html"`. |
+| `check-rules.py` | Live tool | Lints `Dashboard Widget Mockups.html` against the technical build rules (folded into `Widget_Specs/General Widget Design Rules.md`). Whole-file: `python3 check-rules.py "Dashboard Widget Mockups.html"`. Scoped to one widget (added 2026-07-23): add `--widget N`, e.g. `--widget 10` — only checks that widget's own markup block and `WRENDER[N]` function, not the whole file. Exit code reflects HIGH severity only — MED/LOW findings are printed but don't affect it, read the counts, not just the exit code. |
+| `Verify Findings.md` | **Live, persistent as of 2026-07-23** | Single reusable file, always at this exact path, written by **Verify Mock Designs**. Overwritten on every run — never one file per widget, never a growing history — but as of the chained pipeline, **never deleted even when clean**; a clean run just says so. It's the current-state record of the last check that ran, and now also tracks the fix-attempt counter for Verify's own loop (up to 3 calls to **Fix Mock Designs** per cycle before it stops and reports to the project owner instead of looping further). Fix Mock Designs deletes individual resolved lines from this file, never the file itself. |
+| `assemble-mock-widget.py` | **Live tool (added 2026-07-23)** | Deterministic merge step for the revised **Create Mock Designs** pipeline. Takes a per-widget build folder (`_build/W<N>/` — a `scaffold.js`, three `optA/B/C.js` fragments, and `meta.json`) and splices it into `Dashboard Widget Mockups.html` in one scripted pass (assembles `WRENDER[N]`, rebuilds `MOCK_DATA.options[N]`, rewrites the three cards, wires the per-option filter branches, re-syncs `mock-data.master.js`, runs `node --check` + `check-rules.py`). Replaces the old long single-agent edit that kept dropping mid-stream. Run: `python3 assemble-mock-widget.py N`. |
+| `_build/` (transient) | **Not kept in the project** | The assembler reads per-widget build fragments from `_build/W<N>/` (a `scaffold.js`, three `optA/B/C.js`, and `meta.json`) at build time, but this is regenerable scratch and is **not** left in the project folder — it's created for a run and archived to the session outputs afterward, so it never accumulates here (same hygiene rule as not leaving dry-run backups behind). If you re-run the assembler, recreate `_build/W<N>/` for that run only. |
 | `mock-data.v1.js`, `mock_data_new.v1.js`, `extracted_check.v2.js`, `render-logic.v1.js` | ⚠️ Kept, but **not live** | See version table above. |
 
 *Removed from this folder (2026-07-20): `Dashboard Widget Reference.md` (byte-identical duplicate of the table already in `Step 1 - Dashboard Research/00 - INDEX.md`), `synctest.txt` (leftover connectivity-test file), `extracted_main.js` (0 bytes, failed extraction).*
@@ -66,27 +69,27 @@ The intent: build a reusable pattern library (`Templates/`) — one template per
 
 ## Step 3 tracker status
 
-`Dashboard Tracker.xlsx`'s "Step 3 - Mock_Work" column, synced 2026-07-20 (project owner's own edit, treated as source of truth for this column). This folder didn't have a per-widget status table before — adding one here, since every widget already has a `Widget_Specs/WNN-Name.md` file regardless of this status, so "Not started" below means the tracker doesn't consider Mock_Work done for that widget, not that no file exists. **W14 flipped from "In progress" to "Complete" on 2026-07-21**, per direct instruction, once the project owner confirmed W14's mock-work pass was done and the "Ready to be reviewed by Jo" badge was added in `Dashboard Widget Mockups.html` — Step 4 remains Not Started pending that review:
+`Dashboard Tracker.xlsx`'s "Step 3 - Mock_Work" column, synced 2026-07-20 (project owner's own edit, treated as source of truth for this column). This folder didn't have a per-widget status table before — adding one here, since every widget already has a `Widget_Specs/WNN-Name.md` file regardless of this status, so "Not started" below means the tracker doesn't consider Mock_Work done for that widget, not that no file exists. **W14 flipped from "In progress" to "Complete" on 2026-07-21**, per direct instruction, once the project owner confirmed W14's mock-work pass was done and the "Ready to be reviewed by Jo" badge was added in `Dashboard Widget Mockups.html` — Step 4 remains Not Started pending that review. **W06 flipped from "Not started" to "In progress" on 2026-07-23**, per direct instruction, once real Create/Verify/Fix Mock Designs work actually started on it this session (3 design passes, Rules 8-11 applied, an on-screen cost-comparison toggle added to Option B). `Dashboard Tracker.xlsx` row 13, column I ("Step 3\nMock_Work") was found locked on the first attempt (file open in Excel) and updated once it was closed — both now agree, no drift:
 
 | # | Widget | Step 3 (tracker) |
 |---|---|---|
 | 01 | Budget Compared to Actual | ✅ Complete |
 | 02 | Pension Plans | ✅ Complete |
 | 03 | Payroll Distributions | ✅ Complete |
-| 04 | Remittance Pledges | ⚪ Not started |
-| 05 | Receivable Invoices Outstanding | ⚪ Not started |
-| 06 | Insurance Billing Plans | ⚪ Not started |
+| 04 | Remittance Pledges | 🔵 In progress |
+| 05 | Receivable Invoices Outstanding | 🔵 In progress |
+| 06 | Insurance Billing Plans | 🔵 In progress |
 | 07 | Deposit Accounts | ✅ Complete |
 | 08 | My Status | ⚪ Not started |
-| 09 | Payroll Scheduled Time Off | ⚪ Not started |
-| 10 | Loans With Balance Due | ⚪ Not started |
-| 11 | Fixed Asset Values | ⚪ Not started |
+| 09 | Payroll Scheduled Time Off | 🔵 In progress |
+| 10 | Loans With Balance Due | 🔵 In progress |
+| 11 | Fixed Asset Values | 🔵 In progress |
 | 12 | *(Empty Slot)* | ⚪ Not started |
-| 13 | Purchasing Management | ⚪ Not started |
+| 13 | Purchasing Management | 🔵 In progress |
 | 14 | Main Content Tasks | ✅ Complete |
-| 15 | Bank Balances | ⚪ Not started |
-| 16 | Accounts Payable By Due Date | ⚪ Not started |
-| 17 | Gifts Pledges | ⚪ Not started |
+| 15 | Bank Balances | 🔵 In progress |
+| 16 | Accounts Payable By Due Date | 🔵 In progress |
+| 17 | Gifts Pledges | 🔵 In progress |
 
 ## Where this feeds into (the chain)
 
@@ -108,3 +111,5 @@ Widget_Concepts/ (00, 03 = live rules; 01, 02, Templates/ = W01-only pilot, not 
 4. **If a new widget spec is written**, it belongs in `Widget_Specs/WNN-Name.md`, following the shape of the existing 17. If someone wants to try the template-library approach again, that's a deliberate revival of `Widget_Concepts/`, not a default.
 5. **Any new loose script/data file dropped in this folder's root should get a line added to the table above**, including whether it's live or a snapshot — don't let another `mock_data_new.js` situation happen silently.
 6. **Before writing or editing markup in `Dashboard Widget Mockups.html`, read `Desgin/pathway-ds-main/pathway-for-claude.md` first.** Use Pathway's actual components and tokens rather than ad hoc styling — that folder is a vendored design system, not project documentation, so don't edit its contents as part of mock work, only read from it.
+7. **This folder now has a 3-skill pipeline writing to it directly**, built and chained 2026-07-23: `Create Mock Designs` (edits `Dashboard Widget Mockups.html`, re-syncs `mock-data.master.js`, appends dated entries to the relevant `Widget_Specs/WNN-Name.md`, then automatically hands off to Verify) → `Verify Mock Designs` (writes/keeps `Verify Findings.md`, per the row above, and calls Fix itself if it finds anything) → `Fix Mock Designs` (patches only what's flagged, clears resolved lines from that file, never deletes it). Verify caps itself at 3 calls to Fix per cycle — if a 4th check still finds something, it stops and reports to the project owner rather than continuing. If you're test-running one of these against the real files here, back up first and **remove your own backup folder the same session once the result is locked in** — don't leave a `_dry-run-backups`-style folder sitting in this project directory (one existed briefly for a W10 test on 2026-07-23 and was cleaned up the same day).
+8. **The pipeline's own design rules gained 4 additions on 2026-07-23 — `Widget_Specs/General Widget Design Rules.md` Rules 8-11 (separate numbering from this list).** Summary: (Rule 8) a widget's 3 design options must not share filter state with each other — each option gets its own scoped filter memory; (Rule 9) KPI/Medium/Large are the mandatory baseline per option, Small is optional but any omission must be stated as a flagged, unconfirmed proposal, never a silent gap; (Rule 10) Design 2/3 should be pushed to surface a genuine second data dimension already present-but-unused in the widget's data, not just a chart-type change on the same single metric; (Rule 11) anything proposed that isn't a confirmed real field is flagged only inside the widget's `Widget_Specs/WNN-Name.md` entry — never as a badge, disclaimer, or placeholder inside `Dashboard Widget Mockups.html` itself; the mockup renders as if it were real, the caveat lives in the document, for the project owner to resolve when finalizing. **All 4 apply only to widgets `Create Mock Designs` builds or rewrites from 2026-07-23 onward — explicitly not retroactive.** Confirmed 2026-07-23: **W06 (Insurance Billing Plans) is not being back-changed** for Rule 8/9, same as every other already-built widget; the tracker table above still correctly shows it as the project owner's call whenever it's revisited.
