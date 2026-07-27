@@ -95,6 +95,17 @@ Compiled from the overnight Final Check pass (W01–W17, minus W08/W12/W14 which
 
 ---
 
+## NEW 2026-07-27 — Conflicts found during the Step 4 template upgrade (need a decision, both sides recorded in the Step 4 docs)
+
+These came out of the 2026-07-27 restructure of the Step 4 docs to the upgraded template. Each one is recorded in the widget's own Step 4 doc with both sides kept and evidence marks — nothing was resolved. Checking an item off here means you've made the call AND the Step 4 doc (and mock data, where relevant) has been updated to match it.
+
+- [ ] **W17 — % Due definition (blocks build).** Step 1 research defines % Due as "the percentage of the pledge amount still outstanding"; the locked KPI line says "Received ÷ Due, across all campaigns." These are different quantities and would show different numbers on the same data. Recorded as Disputed in `Step 4 - Widget Final Design/W17 - Gifts Pledges.md`'s Data Contract. Which definition is right?
+- [ ] **W05 — fourth KPI tile.** The Step 4 doc says the fourth tile is "Oldest Invoice"; the Step 3 build record (2026-07-23) says the built Design 2 tiles are "Total Outstanding, Overdue, Current, **121+ days**." Related: "Oldest Invoice" doesn't exist in mock data at all (see W05's earlier item above). Recorded in `W05 - Receivable Invoices Outstanding.md`'s Views section. Which tile should the design carry?
+- [ ] **W04 — KPI-size filter contradiction (internal).** The same doc says "KPI size shows Fiscal Year only" in Filters, but "No filter (Fiscal Year removed)" in the Size behaviour table — and elsewhere records the Fiscal Year filter as removed. The Step 3 spec supports the older "Fiscal Year only" wording. Recorded in `W04 - Remittance Pledges.md`, Sign-off Readiness row 3. Which is current?
+- [ ] **W04 / W05 / W06 — view lists have drifted from the 2026-07-23 mockup rebuilds.** Each of these three Step 4 docs' locked view set no longer matches the three designs the 2026-07-23 rebuild produced (W04: Remittance Table / Pacing Bars / Pace Variance; W05: three new designs; W06: three sets that don't line up 1:1). Recorded in each doc's Views section. Recommend running `widget-final-check-audit` on these three once the conflicts above are settled, rather than deciding view-by-view here.
+
+---
+
 ## Cross-cutting / tooling note
 
 - [ ] The real Dashboard-tab gallery's per-widget dropdown menus live in one very large block of static HTML that couldn't be safely inspected or edited this session (a stale caching issue in the tooling, not a data problem). Every fix made tonight was to the underlying render logic (`WRENDER`) and mock data, which **does** apply to both the Dashboard tab and the Final Check tab — but any change that specifically involves adding/removing a *menu button* (like W02's new Small-size Switch Chart Type option) may only be visible on the Final Check page until someone verifies/edits that block directly.

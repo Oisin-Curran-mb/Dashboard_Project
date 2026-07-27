@@ -4,6 +4,10 @@
 **Status:** 🟢 Final design — locked
 **Full history / rejected ideas:** [Widget_Specs/W02-Pension-Plans.md](../Step%203%20-%20Mock_Work/Widget_Specs/W02-Pension-Plans.md)
 **Data source & formulas:** [Step 1 - Dashboard Research/02 - Pension Plans.md](../Step 1 - Dashboard Research/02%20-%20Pension%20Plans.md)
+**Confluence dossier:** none yet
+**Last verified against build:** 2026-07-20 via widget-final-check-audit (see 00 - INDEX.md)
+
+**Evidence key:** `[LIVE]` verified in beta1/test1 on a stated date · `[SME]` interview-sourced (name + date) · `[RESEARCH]` desktop/market research · `[BUILD]` true of the mockup build · `[DOC]` backed by a named written source · `[TO CONFIRM]` assumed, with a named owner to confirm. Marks appear only on the sections added in the 2026-07-27 template upgrade; pre-existing text is intentionally unmarked.
 
 ## Purpose
 Gives a clear overview of how much is being contributed annually across each pension plan type, with the ability to filter by church district, and lets users drill into individual appointees per plan.
@@ -18,6 +22,45 @@ No named competitor product specifically benchmarks pension-contribution-by-dist
 **Net assessment:** this widget's design is reasonable and standard for the general pattern, even though no direct named competitor covers this specific district/plan-type combination — there's no evidence a materially better structure exists elsewhere to benchmark against.
 
 **Changed on direct instruction (2026-07-09):** the default view was originally set to Grouped Bar by District (see "Net assessment" language above, superseded). Reversed back to Pie by Plan Type as the default — matching the original legacy widget — with Grouped Bar moved to the Switch Chart Type alternate. See Views and Size behaviour below for the current locked shape.
+
+## Data Contract
+
+*(Added 2026-07-27, template upgrade. This section restates and points to facts already recorded elsewhere in this doc; the original sections below remain authoritative and untouched.)*
+
+| Field / value shown | Source | Formula / rule | Evidence |
+|---|---|---|---|
+| Annual contribution per plan type / district | Linked Step 1 doc (see header, Data source & formulas) | Contributions are annual figures with no sub-year breakdown in the source data (see Filters, Fiscal Year note) | [DOC, this doc] |
+| KPI headline | Same dataset | Total Annual Contribution ($) (see Size behaviour, KPI row) | [BUILD] |
+| Church District dimension | Dynamic list | "All Districts" plus a dynamic list (see Filters) | [DOC, this doc] |
+| Plan Type dimension | Dynamic list | Plan-type names are user-configurable elsewhere in the system; the specific values (Defined Benefit, 403(b), etc.) are illustrative, not fixed; confirmed correct as designed (see Filters) | [DOC, this doc] |
+| Data freshness | n/a | The underlying data is an "active as of today" snapshot, not year-scoped (see Filters, Fiscal Year note) | [DOC, this doc] |
+
+Headline number's exact math (how the total is summed across districts/plans): *Not yet specified — needs a pass.*
+Rounding, currency, and locale rules: *Not yet specified — needs a pass.*
+
+## Widget States
+
+*(Added 2026-07-27, template upgrade. Rows are filled only where this doc already states the behaviour.)*
+
+| State | Behaviour |
+|---|---|
+| No module rights / entitlement | *Not yet specified* |
+| Empty (org has no data at all) | *Not yet specified* |
+| Partial (some districts/plans missing) | *Not yet specified* |
+| Loading | *Not yet specified* |
+| Error / API failure | *Not yet specified* |
+| Stale data | The data is an "active as of today" snapshot (see Filters) [DOC, this doc]; refresh icon is present at every size including KPI (see Refresh section) [BUILD]; any "data as of" signal and what refresh actually does: *Not yet specified* |
+
+## Interaction Spec
+
+*(Added 2026-07-27, template upgrade. Pointers only; the original entries remain the source entries.)*
+
+- Church District filter change: rerenders the active view without a page reload (see Fine-Tuning Notes, first entry). [BUILD]
+- Selecting a specific Plan Type: the pie's slicing dimension switches to District, showing that one plan's spread across districts (see Views, View 1, and Fine-Tuning Notes entry 2026-07-09). [BUILD]
+- Click on a plan: opens the appointee panel, an in-widget view change, not a page link (see Drill-Through section). [BUILD]
+- KPI card title: reflects the active Church District/Plan Type filters, truncates with "…" and shows the full text on hover if too long for the card (see Size behaviour, KPI row). [BUILD]
+- Hover/tooltip content per chart element (pie slices, bars): *Not yet specified — needs a pass.*
+- Keyboard / focus behaviour for interactive controls: *Not yet specified — needs a pass.*
 
 ## Filters
 | Filter | Values |
@@ -64,8 +107,26 @@ At Large only, the Summary Table (totals per district and per plan type, fixed s
 
 ---
 
+## Accessibility
+
+*(Added 2026-07-27, template upgrade.)*
+
+- Colour is never the only signal: pie slices and bars are distinguished by colour per plan type/district; an explicit non-colour pairing rule (labels, patterns, or direct value text on the chart) is *Not yet specified — needs a pass.*
+- Chart values as text in the DOM: the Summary Table (Large, alongside the chart) and the standalone Data Table option (Medium) expose totals as text [BUILD]; sr-only or text equivalents for the chart views themselves are *Not yet specified — needs a pass.*
+- Table semantics (`th`/scope) and keyboard reachability of interactive controls (Switch Chart Type, appointee panel): *Not yet specified — needs a pass.*
+
 ## What Got Cut (and why)
 - **"Top district by cost" and "dominant plan type + %" as KPI headlines** — both dropped in favour of a single **Total Annual Contribution** figure. These view-specific insights are still visible once a user opens Medium/Large size and picks a view; they're not right for the single-number KPI tile.
+
+## Sign-off Readiness
+
+*(Added 2026-07-27, template upgrade. Rows are the open/pending items this doc already flags inline; the original inline mentions are untouched and remain authoritative.)*
+
+| # | Open item | Type | Owner | Blocks build? |
+|---|---|---|---|---|
+| 1 | Drill-through link to the Pension Billing source page: confirmed needed but has no target page/URL yet; flagged inline as an open item (see Drill-Through section) | field / target URL | TBD | Not stated as blocking; the in-widget appointee panel ships as-is while the page link stays open |
+
+This doc has 1 open item; it is not sign-off-ready until this table is empty or every row is explicitly accepted as a known risk. (The Plan Type value list is not listed here: this doc records it as "Confirmed correct as designed", see Filters.)
 
 ## Fine-Tuning Notes
 - District filter rerenders the active view without a page reload
