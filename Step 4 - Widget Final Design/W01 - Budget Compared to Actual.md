@@ -4,6 +4,10 @@
 **Status:** 🟢 Final design — locked
 **Full history / rejected ideas:** [Widget_Specs/W01-Budget-Compared-to-Actual.md](../Step%203%20-%20Mock_Work/Widget_Specs/W01-Budget-Compared-to-Actual.md)
 **Data source & formulas:** [Step 1 - Dashboard Research/01 - Budget Compared to Actual.md](../Step 1 - Dashboard Research/01%20-%20Budget%20Compared%20to%20Actual.md)
+**Confluence dossier:** none yet
+**Last verified against build:** 2026-07-21 via widget-final-check-audit
+
+**Evidence key:** `[LIVE]` verified in beta1/test1 on a stated date · `[SME]` interview-sourced (name + date) · `[RESEARCH]` desktop/market research · `[BUILD]` true of the mockup build · `[DOC]` backed by a named written source · `[TO CONFIRM]` assumed, with a named owner to confirm. Marks appear only on the sections added in the 2026-07-27 template upgrade; pre-existing text is intentionally unmarked.
 
 ## Purpose
 Shows how the organisation's actual income or spending compares to what was budgeted, across each period of the financial year — both period-by-period and as a running year-to-date total — so users can quickly see where they're ahead of or behind plan.
@@ -17,6 +21,50 @@ Budget-vs-actual reporting is one of the most standardised chart problems in fin
 - **Conditional colour** (green = favourable, red = unfavourable) is the universal convention for variance reporting across every source reviewed — carried straight into the Fine-Tuning Notes below.
 
 **Net assessment:** this widget's final shape — one primary comparison chart, a reporting-view table, a persistent KPI layer, and colour-coded variance — matches or exceeds what's typically shipped in commercial budget-vs-actual dashboards. The bridge/cumulative (Waterfall) alternate was designed to the same standard but cut for time, not cut for quality — see "What Got Cut." Nothing here is a novel risk; the design choices are traceable to a specific, named best practice rather than internal preference.
+
+## Data Contract
+
+*(Added 2026-07-27, template upgrade. This section restates and points to facts already recorded elsewhere in this doc; the original sections below remain authoritative and untouched.)*
+
+| Field / value shown | Source | Formula / rule | Evidence |
+|---|---|---|---|
+| Budget, Actual (per period) | Linked Step 1 doc (see header, Data source & formulas) | Real dollar figures per period (displayed in $k), not percentages (see Fine-Tuning Notes entry 2026-07-09, data-type fix) | [BUILD] |
+| Variance (per period) | Same dataset | Shown as both a $ amount and a % of that period's budget (see Fine-Tuning Notes entry 2026-07-09) | [BUILD] |
+| KPI headline | Same dataset | Variance ($), colour-coded green/red, with line-graph trend sparkline (see Size behaviour, KPI row) | [BUILD] |
+| KPI header strip (Medium/Large/Expanded) | Same dataset | YTD Budget · YTD Actual · Variance · % Used, persistent layer above the active view (see Views) | [BUILD] |
+| Quarterly rollup | Same dataset | Quarters sum their three months, not averaged; a complete year produces Q1 to Q4 (see Fine-Tuning Notes entries 2026-07-09) | [BUILD] |
+| Favourability / direction logic | n/a | Green = favourable (under budget on expenses, over on income); logic flips for Expense Accounts and Custom Report at every level (see Fine-Tuning Notes entry 2026-07-09, colour-logic fix) | [BUILD] |
+| Weekly period grain | GL data | No confirmed weekly transaction grain in GL data today (see Filters, Period View row) | [TO CONFIRM, owner TBD] |
+| Fiscal year boundaries | Per organisation | Varies per org, not a global July to June constant; carried forward as a Step 5 API-doc requirement (see Filters, Fiscal Year note) | [DOC, this doc, decided 2026-07-20] |
+| Consolidated / master company figures | Modern API | Must combine all child accounts automatically, matching legacy; Modern API currently returns an empty result for CompanyNumber=0, agreed must-fix (see Filters, Consolidated rollup note) | [TO CONFIRM, owner TBD] |
+| Special Report Title, Line Description (Custom Report only) | Customer-created lists (Special Reports module) | See Filters, Dependent fields note | [DOC, this doc, closed 2026-07-21] |
+
+Rounding, currency, and locale rules: *Not yet specified — needs a pass.*
+"Data as of" freshness behaviour: *Not yet specified — needs a pass.*
+
+## Widget States
+
+*(Added 2026-07-27, template upgrade. Rows are filled only where this doc already states the behaviour.)*
+
+| State | Behaviour |
+|---|---|
+| No module rights / entitlement | *Not yet specified* |
+| Empty (org has no data at all) | *Not yet specified* |
+| Partial (some periods/accounts missing) | The in-progress fiscal year carries a partial current month (Budget stays a normal full-month figure, Actual is honestly low) and the quarterly rollup sums real months (see Fine-Tuning Notes entries 2026-07-09) [BUILD]. Consolidated/master orgs currently come back empty from the Modern API, agreed as a must-fix regression (see Filters, Consolidated rollup note) [TO CONFIRM, owner TBD] |
+| Loading | *Not yet specified* |
+| Error / API failure | *Not yet specified* |
+| Stale data | Refresh icon is present at every size including KPI (see Refresh section) [BUILD]; what refresh actually does, and any "data as of" signal: *Not yet specified* |
+
+## Interaction Spec
+
+*(Added 2026-07-27, template upgrade. Pointers only; the original Fine-Tuning Notes entries remain the source entries.)*
+
+- Switch View toggle: persists per widget instance, not shared globally (see Fine-Tuning Notes, first entry). [BUILD]
+- KPI sparkline hover: shows that period's label and its variance dollar amount, e.g. "Jan: +$4k", implemented via a `title` attribute, the same mechanism as the grouped-bar hovers (see Fine-Tuning Notes entry 2026-07-09). [BUILD]
+- KPI header strip label hover (Medium/Large): shows a short definition popover styled like the Purpose popover, anchored to the trigger's own left/right edge so it never clips at the card boundary (see Fine-Tuning Notes entry 2026-07-09). [BUILD]
+- Grouped-bar hover: `title`-attribute tooltips; tooltip values show dollar amounts (see Fine-Tuning Notes entry 2026-07-09, data-type fix). [BUILD]
+- Click behaviour: no drill-through anywhere; decided 2026-07-20, per direct instruction (see Drill-Through section). [DOC, this doc]
+- Keyboard / focus behaviour for interactive controls: *Not yet specified — needs a pass.*
 
 ## Filters
 | Filter | Values |
@@ -71,11 +119,30 @@ Period · Budget · Actual · Variance · Cumulative Variance. Fixed sort: Perio
 
 ---
 
+## Accessibility
+
+*(Added 2026-07-27, template upgrade.)*
+
+- Colour is never the only signal: the green/red favourability convention is defined and implemented (see Fine-Tuning Notes, colour-logic fix), and variance values are always also shown as $ and % text [BUILD], but an explicit non-colour pairing rule (sign or label alongside the colour) is *Not yet specified — needs a pass.*
+- Chart values as text in the DOM: the Data Table view exposes every figure as text [BUILD]; sr-only or text equivalents for the chart views themselves are *Not yet specified — needs a pass.*
+- Table semantics (`th`/scope) and keyboard reachability of interactive controls: *Not yet specified — needs a pass.*
+
 ## What Got Cut (and why)
 - **Waterfall view — cut 2026-07-21, per direct instruction.** Its render logic was already built (the old Option C branch in `Dashboard Widget Mockups.html`) and the chart-research case for it was solid — a near-exact match for this widget's ~12-period series. **Reason for cutting: not a design or quality problem, simply not enough time to take it further right now.** The code is left in place, unreferenced, in case it's picked back up later; it is not wired into the Switch Chart Type menu and should not be treated as a live feature. The widget now ships with two views only: Variance Bar and Data Table.
 - **Dual-figure KPI ("YTD Actual + YTD Budget" shown together)** — dropped in favour of a single Variance ($) headline at KPI size. Competitor research consistently points to variance as the one number that matters most at a glance; showing two raw totals side by side needed a fit-test that a single clear figure doesn't.
 - **"KPI + Bars / Bars Only" toggle** — the KPI tiles are no longer a switchable alternative to the bar chart; they're a permanent header strip shown above whichever view is active, since the research treats KPI cards as a layer on top of a chart, not a competing view.
 - **% Used as its own KPI headline** — folded into the persistent KPI strip at Medium/Large/Expanded instead of being a third competing KPI-size option.
+
+## Sign-off Readiness
+
+*(Added 2026-07-27, template upgrade. Rows are the open/pending items this doc already flags inline; the original inline mentions are untouched and remain authoritative.)*
+
+| # | Open item | Type | Owner | Blocks build? |
+|---|---|---|---|---|
+| 1 | Weekly Period View: kept in the design pending developer feasibility confirmation; no confirmed weekly transaction grain in GL data today (see Filters, Period View row) | field / data grain | TBD | Blocks the Weekly option only; per this doc's own wording it "needs a dev call before build, not a design change" |
+| 2 | Consolidated/master company rollup: Modern API returns an empty result for master companies (CompanyNumber=0); reinstating legacy combine-all-children behaviour is agreed (see Filters, Consolidated rollup note) | math / backend fix | TBD | Yes for consolidated orgs; this doc calls it "a must-fix, not an open question" |
+
+This doc has 2 open items; it is not sign-off-ready until this table is empty or every row is explicitly accepted as a known risk. (The per-org Fiscal Year variation is decided and carried forward to Step 5, so it is not listed as open here: see Filters, Fiscal Year note.)
 
 ## Fine-Tuning Notes
 - View toggle persists per widget instance, not shared globally

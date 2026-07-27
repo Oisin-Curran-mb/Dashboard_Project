@@ -15,7 +15,35 @@ Each widget that reaches this step gets its own subfolder containing a `.doc` fi
 | W03 — Payroll Distributions | `Payroll Distrubution` *(sic — kept as exported, not a typo to fix)* | `Payroll+Distributions.doc` | Part A: What exists today (1–4, incl. a live audit dated 15 Jul 2026); Part B: Users and market (Personas, Jobs to be done, Context scenarios, Competitor benchmark, SME interview — Ben Lane 13 Jul 2026, Pay groups investigation); Part C: Designer brief (The brief, Significant design decisions and trade-offs, **Review of the proposed redesign — Widget Mockups v3, W03**, **Gaps and prioritized improvements**, Open questions and next steps, Sources) |
 | W07 — Deposit Accounts | `Deposit On Hand (Deposit Accounts)` | `Deposits+On+Hand.doc` | What Deposits On Hand is, The widget today, The module today (no read layer), Personas, Designer brief, Competitor and analog benchmark, Design direction (three depth levels), **Gaps found in the live audit — 13 Jul 2026**, Top 10 insights, Open questions and next steps, Sources |
 
-No other widgets have a Step 6 document yet.
+No other widgets have a management-exported `.doc` yet.
+
+## Confluence pulls — full dossier set (added 2026-07-27)
+
+On 2026-07-27, per direct instruction, every widget's dossier page in Confluence space DR was pulled via the Atlassian connector and saved into its own subfolder here as `<Title> (Confluence pull 2026-07-27).html`. These are dated read-only snapshots of Jo's live pages — same never-edit rule as the `.doc` exports. Each file opens with a header comment recording page id, last-modified date, and pull date. Two caveats: the connector doesn't expose version numbers, and embedded screenshots reference Confluence-hosted attachments that won't render offline.
+
+**Freshness note:** 15 of 17 pages were last modified **2026-07-23** — newer than both `.doc` exports above (W03's doc reflects a 15 Jul review, W07's a 13 Jul audit). Where a pull and a `.doc` disagree, the pull is the more current statement of Jo's position, but the `.doc` remains the record of what was formally exported. W07's pull (last modified 21 Jul) and W12's placeholder (06 Jul) are the two exceptions.
+
+| Widget | Subfolder | Page id | Structure |
+|---|---|---|---|
+| W01 — Budget Compared to Actual | `Budget Compared to Actual` | 7371554817 | Part A/B/C, 15 sections (incl. 3b/3c scope-and-period notes, 12. Review of the W01 redesign) |
+| W02 — Pension Plans | `Pension Plans` | 7371030531 | Part A/B/C, 14 sections |
+| W03 — Payroll Distributions | `Payroll Distrubution` *(existing folder)* | 7371980835 | Part A/B/C, 14 sections (incl. 4. Live audit 15 Jul, 8b SME, 8c pay groups, 11. Review of Widget Mockups v3) |
+| W04 — Remittance Pledges | `Remittance Pledges` | 7371980844 | Part A/B/C, 14 sections (Confluence title is singular "Remittance Pledge") |
+| W05 — Receivable Invoices Outstanding | `Receivable Invoices Outstanding` | 7370571835 | Part A/B/C, 14 sections |
+| W06 — Insurance Billing Plans | `Insurance Billing Plans` | 7370113044 | Part A/B/C, 14 sections |
+| W07 — Deposits On Hand | `Deposit On Hand (Deposit Accounts)` *(existing folder)* | 7369818146 | Older single-widget format, 11 sections (L1/L2/L3 design direction, 14-gap audit table) |
+| W08 — My Status | `My Status` | 7370375416 | Part A/B/C, 14 sections + 3b query catalogue |
+| W09 — Payroll Scheduled Time Off | `Payroll Scheduled Time Off` | 7371194413 | Part A/B/C, 14 sections |
+| W10 — Loans With Balance Due | `Loans With Balance Due` | 7372046373 | Part A/B/C, 14 sections |
+| W11 — Fixed Assets Values | `Fixed Assets Values` | 7372537857 | Part A/B/C, 14 sections (Confluence title uses plural "Assets") |
+| W12 — (Empty Slot) | `None (Empty Slot W12)` | 7371194421 | Old 7-section placeholder format, last modified 06 Jul |
+| W13 — Purchasing Management | `Purchasing Management` | 7371554867 | Part A/B/C, 14 sections + 8b SME note |
+| W14 — Main Content Tasks | `Main Content Tasks` | 7371194431 | Part A/B/C, 14 sections |
+| W15 — Bank Balances | `Bank Balances` | 7371980878 | Older shape: Part A/B/C but "9. The brief", 13 sections, 8b/8c as subsections |
+| W16 — Accounts Payable By Due Date | `Accounts Payable By Due Date` | 7371554882 | Part A/B/C, 14 sections |
+| W17 — Gifts & Pledges | `Gifts Pledges` | 7371194449 | Part A/B/C, 14 sections (Confluence title has no ampersand) |
+
+**What this means for reconciliation:** every widget now has sign-off-side material to reconcile against — not just W03/W07. No reconciliation files exist yet for the 15 new pulls; the same `Reconciliation - <Widget Name>.md` pattern applies when one is read closely enough to compare against Steps 1–5.
 
 ## Naming mismatches worth knowing about up front
 

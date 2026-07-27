@@ -6,22 +6,29 @@
 
 ## What should be in each widget's file
 
-Every `WNN - Name.md` file in this folder follows the same shape. Use this as the template when starting a new one, and as the checklist when reviewing an existing one:
+**Upgraded template adopted 2026-07-27** — the full section-by-section definition lives in [`TEMPLATE PROPOSAL - Upgraded Widget Doc.md`](TEMPLATE%20PROPOSAL%20-%20Upgraded%20Widget%20Doc.md) in this folder; read that file when starting or reviewing a doc. Twelve docs were restructured to it on 2026-07-27 (W01/W02 additive-only since they're audit-verified; W04, W05, W06, W09, W10, W11, W13, W15, W16, W17 fully; W03/W07 deliberately left alone — they've reached Step 6 and are considered finished). Section order:
 
 | Section | What goes here |
 |---|---|
-| Header block | `**Module:**`, `**Status:**`, `**Full history / rejected ideas:**` (link to the matching `Step 3 - Mock_Work/Widget_Specs/WNN-Name.md`), `**Data source & formulas:**` (link to the matching `Step 1 - Dashboard Research/NN - Name.md`) |
-| `## Purpose` | One paragraph: what the widget shows and why, in current, correct framing — not the original research framing if it's since been corrected (see W03's Purpose history for an example of this drifting and getting caught) |
-| `## How Other Companies Fulfil This Purpose` *(optional)* | Only if outside research backs a specific design choice (e.g. why two views are kept as peers) |
-| `## Filters` | Table of filter name → values/defaults, plus any footnote on open items (e.g. fields needing backend confirmation) |
-| `## Data Table Sort` | The fixed sort order and whether there's a user-toggle |
-| `## Drill-Through` | Whether it's a new feature, kept from the old design, or still an open item with no target page/URL |
-| `## Refresh` | Where the refresh icon lives and at which sizes |
-| `## Views (Switch View)` | Every switchable view as its own subsection, plus a **Size behaviour** table (Small/Medium/Large/KPI/Expanded) |
-| `## What Got Cut (and why)` | Anything considered and dropped, so nobody re-proposes it without knowing it was already decided against |
-| `## Fine-Tuning Notes` | Dated changelog entries, especially anything marked "per direct instruction" — these are the strongest signal of the most recent real decision |
+| Header block | `**Module:**`, `**Status:**`, `**Full history / rejected ideas:**` (link to `Step 3 - Mock_Work/Widget_Specs/WNN-Name.md`), `**Data source & formulas:**` (link to `Step 1 - Dashboard Research/NN - Name.md`), `**Confluence dossier:**` (link or "none yet"), `**Last verified against build:**` (date + how, or "not yet audited" — never hand-set without running the audit) |
+| Evidence key | One line defining the marks: `[LIVE]` `[SME]` `[RESEARCH]` `[BUILD]` `[DOC]` `[TO CONFIRM]`. Conflicting evidence coexists, each with its own mark — neither side wins by default |
+| `## Purpose` | One paragraph, current framing; data-shape assertions carry evidence marks |
+| `## How Other Companies Fulfil This Purpose` *(optional)* | Only if outside research backs a specific choice — name the products |
+| `## Data Contract` | Field → source table/endpoint → formula → evidence mark. Headline math, favourability logic, rounding/locale, freshness. Unconfirmed fields are `[TO CONFIRM]`, with a stated fallback if the answer is no |
+| `## Widget States` | Full table, every row: no rights, empty, partial, loading, error, stale. "*Not yet specified*" is an honest row value; a missing row is not |
+| `## Interaction Spec` | Per view: hover content, click behaviour, keyboard/focus; full flow for action widgets (confirm/success/failure/undo) |
+| `## Filters` | Table of filter name → values/defaults |
+| `## Data Table Sort` | Fixed order, user-toggle, and the trimmed-view rule (what "top N" is sorted by) |
+| `## Drill-Through` | New/kept/open, plus the verified target or the explicit finding that none exists |
+| `## Refresh` | Where the icon lives, at which sizes, and what refresh actually does |
+| `## Views (Switch View)` | Every view as a subsection + Size behaviour table, plus overflow/truncation rules at real data volumes |
+| `## Accessibility` | Three minimum commitments: colour never the only signal; values in the DOM, not hover-only; real table semantics + keyboard reachability |
+| `## What Got Cut (and why)` | Dropped ideas, with evidence marks and owners on rejections/deferrals |
+| `## Sign-off Input (Jo)` *(only when a Step 6 dossier exists)* | Her flags, one row each, statused Accepted / Rejected / Disputed — her findings never overwrite the body; Disputed keeps both sides' evidence until settled |
+| `## Sign-off Readiness` | Self-audit table of every open item (type, owner, blocks build?). A doc isn't sign-off-ready until this table is empty or every row is an accepted risk |
+| `## Fine-Tuning Notes` | Dated changelog entries, verbatim, especially "per direct instruction" — the strongest signal of the most recent real decision |
 
-**One caution:** almost every file in this folder currently says `**Status:** 🟢 Final design — locked` in its own header — that line is not a reliable signal on its own (it's been true even for widgets later found to be stale against the real build). Treat the status column in this index as the one to trust, not the line inside each file.
+**One caution:** almost every file in this folder currently says `**Status:** 🟢 Final design — locked` in its own header — that line is not a reliable signal on its own (it's been true even for widgets later found to be stale against the real build). Treat the status column in this index as the one to trust, not the line inside each file. As of the 2026-07-27 upgrade, each doc's own `## Sign-off Readiness` table is the second signal to check: a "locked" header with open rows in that table is not actually sign-off-ready.
 
 ---
 
