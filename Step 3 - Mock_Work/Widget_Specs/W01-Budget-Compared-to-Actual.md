@@ -111,3 +111,34 @@ Removed from `Dashboard Widget Mockups.html`: the Fiscal Year entry in `MOCK_DAT
 - Variance colours: green = positive (under budget on expenses / over on income), red = negative
 - Full design rationale and API contract details for the Comparison Bar Chart, KPI Tile, and Waterfall/Step Chart templates used by these three options: see "Reusable Visualisation Templates" in `General Widget Design Rules.md`. (Previously lived in `Widget_Concepts/01 -`/`02 -`, since removed — see `Step 3 - Mock_Work/00 - INDEX.md` for that history.)
 - **2026-07-21 (design call with Jo):** the in-widget Fiscal Year filter is cut — see "Tried and rejected" above for the full history. Fiscal Year is page-level only now, matching the current/legacy version; removed from `Dashboard Widget Mockups.html`'s filter list, KPI-size time-filter map, and KPI/Small headline logic. No other changes to this widget from this review.
+
+---
+
+## 2026-07-27: Time Window Module adopted in Final (v2) tweak round 2
+
+The Final (v2) build's comparison-window model was replaced by the owner-approved **Time Window Module**, a reusable, widget-agnostic time filter now specified standalone in `Time Window Module.md` (this folder). Summary of what W01 adopted:
+
+- **Five windows**, picker order smallest first: This month (current calendar month), This period (current fiscal period), This quarter (ROLLING, the last 3 months back from the as-of date), This year (NEW; ROLLING, the last 12 months back from the as-of date), This fiscal year (fiscal year to date, no longer the full year with unposted future months).
+- **Six grains**, toggle always reading D W M P Q Y (smallest first, period before quarter). Day and Week are new; in the mock they are deterministic synthetic series derived from the monthly figures (seeded variation, no randomness; weeks start Monday with partial first/last weeks flagged).
+- **Availability**: a grain is offered when it yields 2 to 31 data points for the window, plus one owner exception (Month stays offered on the month/period windows as a single-pair summary). Grains per window: D/W/M, D/W/M, W/M/P, M/P/Q/Y, M/P/Q/Y.
+- **Default grain = the smallest available** for the window (Day, Day, Week, Month, Month), stated in the module as an API contract requirement; changing window snaps an invalid grain to that default.
+- **Rolling windows** are anchored to an as-of date (mock: end of Jul 2026) and may cross the fiscal-year boundary; the rolling year here spans Aug 2025 through Jul 2026 and pulls budgets from both FYs.
+- **Caveats carried in docs, not UI**: sub-period budget in the mock is evenly prorated for display only; the API recommendation is a budget PACE LINE at sub-period grains. Sub-period actuals are new backend work (GLSummary is period-grain; transaction-level querying required). Both are flagged in the Step 4 doc's Sign-off Readiness table.
+
+Full definitions, the availability matrix, and the API guidance (one endpoint, window + grain + asOf, bucket shape with partial flags and the budgetDerived flag): see `Time Window Module.md`.
+
+---
+
+## 2026-07-27 — Final (v2) COMPLETE, tagged v2.0, Jo design
+
+The Final Check tab's Final (v2) build of this widget is complete and signed off by the project owner. Version badge set to v2.0; title badges: "Final (v2)" and "Jo design". Summary of what shipped:
+
+**Composition (per the confirmed composition sheet):** ported from Jo Lopez's Widget Container Demo bgt block: scope chip (Income accounts / Expense accounts / Special report with the two-step report-then-line modal), single KPI variance headline (big $ with +/- sign, favourability pill with type-aware flip and neutral grey for mixed report lines, info tooltip, small % of budget), Bar/Line/Table views (bar default, two purples, hover cards, sortable table with "Total, posted so far" footer), no-budget and skeleton states, Glance card, and the two-panel layout at Detail size. The old 4-tile KPI strip (YTD Budget/Actual/Variance/%Used) and the Account Type/Fiscal Year/Period View dropdowns were removed, replaced by the scope chip and the Time Window Module.
+
+**Owner decisions layered on Jo's design (v2 deltas):** three sizes only per Rule 12, named and ordered Glance, Explore, Detail (her demo's SIZE_LABEL mapping, confirmed by the owner after an initial reversed reading); the Time Window Module (see `Time Window Module.md`, reusable across widgets): five windows (This month / This period / This quarter rolling 3 months / This year rolling 12 months / This fiscal year YTD), grains D W M P Q Y with the 2-to-31-points availability law, smallest-available grain as each window's default (API contract), period always ordered before quarter; Glance made interactive (scope chip and window picker clickable); line view given dynamic label thinning and nearest-point hover; Weekly-as-special-case retired in favour of grain-by-window.
+
+**Notable fixes during the build:** stale-popover first-click no-op; compressed control rows letting the chart paint over the chips; a CSS comment containing an embedded */ that silently killed the modal backdrop rule in real browsers (the reason earlier Node-shim tests passed while the browser failed); the page's global .ph rule restyling modal placeholders.
+
+**Verification:** 159-assertion Node driver (window math, exact posted-total footers, full constrain matrix, rolling cross-FY budgets, day-grain determinism, label thinning, hover, empty states, 816-render em-dash sweep clean), 34/34 full-flow modal test with the real listeners, CSS parse check (0 dropped rules), final-check-rules.py 0 HIGH, node --check clean, Dashboard tab and options A/B/C byte-identical throughout.
+
+**Still open (unchanged, tracked in the Step 4 doc's Sign-off Readiness):** consolidated-rollup Modern API fix; sub-period actuals + cross-FY budget lookup backend work for Day/Week grains and rolling windows (pace-line recommendation); Weekly feasibility row is superseded by the module's grain-by-window approach.

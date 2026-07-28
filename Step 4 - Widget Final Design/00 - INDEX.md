@@ -30,6 +30,8 @@
 
 **One caution:** almost every file in this folder currently says `**Status:** 🟢 Final design — locked` in its own header — that line is not a reliable signal on its own (it's been true even for widgets later found to be stale against the real build). Treat the status column in this index as the one to trust, not the line inside each file. As of the 2026-07-27 upgrade, each doc's own `## Sign-off Readiness` table is the second signal to check: a "locked" header with open rows in that table is not actually sign-off-ready.
 
+**Locked-doc rule (added 2026-07-27, per direct instruction):** a locked doc's body may only be modified by **version-tagged updates** — blocks explicitly marked `[v2 — YYYY-MM-DD]` (then v3, and so on) recording a built Final's changes. No untagged edits to a locked doc, ever. Version-tagged updates never delete v1 text: superseded passages stay in place marked *(v1, superseded)*, so the doc reads as its full history. W01 is the reference example (v2, 2026-07-27, built Final from Jo's design).
+
 ---
 
 ## Widget status

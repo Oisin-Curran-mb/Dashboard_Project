@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Payroll Distributions — Pay Type Breakdown Analysis</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 14px; color: #172B4D; background: #fff; max-width: 1000px; margin: 36px auto; padding: 0 24px 60px; line-height: 1.6; }
+  h1 { font-size: 26px; font-weight: 700; color: #0052CC; margin-bottom: 4px; }
+  .subtitle { color: #5E6C84; font-size: 13px; margin-bottom: 32px; }
+  h2 { font-size: 18px; font-weight: 600; color: #0052CC; border-bottom: 2px solid #DEEBFF; padding-bottom: 6px; margin: 36px 0 14px; }
+  h3 { font-size: 14px; font-weight: 600; color: #172B4D; margin: 20px 0 8px; }
+  p { margin-bottom: 10px; }
+  ul { padding-left: 20px; margin-bottom: 14px; }
+  li { margin-bottom: 6px; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0 20px; font-size: 13px; }
+  th { background: #DEEBFF; color: #0052CC; font-weight: 600; text-align: left; padding: 8px 10px; border: 1px solid #B3D4FF; }
+  td { padding: 7px 10px; border: 1px solid #DFE1E6; vertical-align: top; }
+  tr:nth-child(even) td { background: #F4F5F7; }
+  code { background: #F4F5F7; border: 1px solid #DFE1E6; border-radius: 3px; padding: 1px 5px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 12px; }
+  pre { background: #0B1F3A; color: #A8C4E5; border-radius: 6px; padding: 16px 20px; overflow-x: auto; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 12.5px; line-height: 1.7; margin: 10px 0 20px; }
+  pre .k  { color: #79C0FF; }
+  pre .s  { color: #A5D6FF; }
+  pre .n  { color: #FFA657; }
+  pre .c  { color: #6E8E9B; font-style: italic; }
+  .badge     { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+  .badge-yes { background: #E3FCEF; color: #006644; border: 1px solid #ABF5D1; }
+  .badge-no  { background: #FFEBE6; color: #BF2600; border: 1px solid #FFBDAD; }
+  .badge-new { background: #EAE6FF; color: #403294; border: 1px solid #C0B6F2; }
+  .tip-box  { background: #E3FCEF; border: 1px solid #ABF5D1; border-radius: 5px; padding: 10px 14px; margin: 14px 0; font-size: 13px; }
+  .warn-box { background: #FFFAE6; border: 1px solid #FFE380; border-radius: 5px; padding: 10px 14px; margin: 14px 0; font-size: 13px; }
+  .info-box { background: #DEEBFF; border: 1px solid #B3D4FF; border-radius: 5px; padding: 12px 16px; margin: 14px 0; font-size: 13px; }
+  hr { border: none; border-top: 1px solid #DFE1E6; margin: 36px 0; }
+  .diagram-container { width: 100%; overflow-x: auto; margin: 20px 0; background: #FAFBFC; border: 1px solid #DFE1E6; border-radius: 8px; padding: 16px; }
+  .subtype-pill { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; margin: 2px; }
+  .st-reg   { background: #DEEBFF; color: #0052CC; }
+  .st-ot    { background: #FFEBE6; color: #BF2600; }
+  .st-dt    { background: #FFF0B3; color: #974F0C; }
+  .st-hol   { background: #E3FCEF; color: #006644; }
+  .st-vac   { background: #EAE6FF; color: #403294; }
+  .st-sick  { background: #F4F5F7; color: #5E6C84; border: 1px solid #DFE1E6; }
+  .st-pers  { background: #E6FCFF; color: #006884; }
+  .st-misc  { background: #F0F0F0; color: #444; }
+  .st-other { background: #FFF4E5; color: #7A4100; }
+</style>
+</head>
+<body>
+
+<h1>Payroll Distributions — Pay Type Breakdown</h1>
+<p class="subtitle">Technical Analysis &nbsp;·&nbsp; Shelby Financials &nbsp;·&nbsp; July 2026</p>
+
+<div class="tip-box">
+  <strong>Bottom line up front:</strong> Yes — a full breakdown of distribution amounts by pay type (Regular, Overtime, Sick, etc.) down to individual employee checks is supported by the underlying database. Every field needed already exists in a single table. The current widget only surfaces the top-level totals. A drill-down endpoint can be built without any schema changes.
+</div>
+
+<!-- ── HOW THE HIERARCHY WORKS ─────────────────────────────────────────── -->
+<h2>1. How the Data Hierarchy Works</h2>
+
+<p>The question is essentially: given a distribution like "Administration Staff" with a total of $4,530.63, can we see who received that money and in what form? The answer is yes, and here is how each level maps to the database:</p>
+
+<table>
+  <thead><tr><th>Level</th><th>What it represents</th><th>Database table(s)</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>1 — Total</strong></td>
+      <td>Combined payroll distribution amount across all distributions for the selected date range</td>
+      <td><code>PR_HistoryCompensation</code> — SUM of all <code>Amount</code></td>
+    </tr>
+    <tr>
+      <td><strong>2 — Per Distribution</strong></td>
+      <td>Amount allocated to a named distribution category (e.g. AA Aid, Administration Staff)</td>
+      <td><code>PR_HistoryCompensation</code> → <code>PR_CompensationDistribution.Name</code></td>
+    </tr>
+    <tr>
+      <td><strong>3 — Per Employee / Per Check</strong></td>
+      <td>Individual payroll check for one employee — who received it, when, total hours, total amount</td>
+      <td><code>PR_History</code> (the check) + <code>PR_Employee</code> (the person)</td>
+    </tr>
+    <tr>
+      <td><strong>4 — Pay Type Breakdown</strong></td>
+      <td>How each check breaks down: Regular hrs at $X/hr, Overtime hrs at $Y/hr, Sick hrs, Holiday, etc.</td>
+      <td><code>PR_HistoryCompensation</code> — <code>SubType</code> + <code>Hours</code> + <code>Rate</code> + <code>Amount</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<p>The key insight is that levels 2 and 4 both come from the same table — <code>PR_HistoryCompensation</code>. Each row in that table is one compensation line on one paycheck. It already stores the distribution it belongs to AND the pay type, hours, and rate. The current widget only reads the <code>Amount</code> and <code>CompensationDistributionID</code> columns — it ignores the rest.</p>
+
+<!-- ── WORKFLOW DIAGRAM ──────────────────────────────────────────────────── -->
+<h2>2. Data Flow — From Total to Pay Type Detail</h2>
+
+<div class="diagram-container">
+<svg width="920" height="430" viewBox="0 0 920 430" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#93B8D8"/>
+    </marker>
+  </defs>
+
+  <!-- Column headers -->
+  <text x="70"  y="22" font-size="10" fill="#5E6C84" text-anchor="middle" font-weight="600" font-family="system-ui">TOTAL</text>
+  <text x="220" y="22" font-size="10" fill="#5E6C84" text-anchor="middle" font-weight="600" font-family="system-ui">PER DISTRIBUTION</text>
+  <text x="430" y="22" font-size="10" fill="#5E6C84" text-anchor="middle" font-weight="600" font-family="system-ui">PER EMPLOYEE / CHECK</text>
+  <text x="720" y="22" font-size="10" fill="#5E6C84" text-anchor="middle" font-weight="600" font-family="system-ui">PAY TYPE BREAKDOWN</text>
+
+  <!-- ── LEVEL 1 ── -->
+  <rect x="10" y="50" width="120" height="56" rx="8" fill="#0052CC" stroke="#003884" stroke-width="2"/>
+  <text x="70" y="72"  font-size="12" fill="white" text-anchor="middle" font-weight="700" font-family="system-ui">Payroll</text>
+  <text x="70" y="88"  font-size="12" fill="white" text-anchor="middle" font-weight="700" font-family="system-ui">Distributions</text>
+  <text x="70" y="100" font-size="9"  fill="#A8C4E5" text-anchor="middle" font-family="system-ui">PR_History</text>
+
+  <!-- L1 → L2 -->
+  <line x1="130" y1="78" x2="150" y2="78" stroke="#93B8D8" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="130" y1="78" x2="140" y2="78" stroke="#93B8D8" stroke-width="1"/>
+  <line x1="140" y1="148" x2="150" y2="148" stroke="#93B8D8" stroke-width="1" marker-end="url(#arr)" stroke-dasharray="4,2"/>
+  <line x1="140" y1="78" x2="140" y2="218" stroke="#93B8D8" stroke-width="1"/>
+  <line x1="140" y1="218" x2="150" y2="218" stroke="#93B8D8" stroke-width="1" marker-end="url(#arr)" stroke-dasharray="4,2"/>
+
+  <!-- ── LEVEL 2 ── -->
+  <!-- AA Aid -->
+  <rect x="150" y="52" width="120" height="44" rx="6" fill="#E3FCEF" stroke="#006644" stroke-width="1.5"/>
+  <text x="210" y="71" font-size="11" fill="#006644" text-anchor="middle" font-weight="600" font-family="system-ui">AA Aid</text>
+  <text x="210" y="87" font-size="9"  fill="#006644" text-anchor="middle" font-family="system-ui">$560.00  ·  2 employees</text>
+
+  <!-- Administration Staff -->
+  <rect x="150" y="122" width="120" height="44" rx="6" fill="#E3FCEF" stroke="#006644" stroke-width="1.5"/>
+  <text x="210" y="141" font-size="11" fill="#006644" text-anchor="middle" font-weight="600" font-family="system-ui">Administration</text>
+  <text x="210" y="156" font-size="9"  fill="#006644" text-anchor="middle" font-family="system-ui">$4,530.63  ·  3 employees</text>
+
+  <!-- Other dist -->
+  <rect x="150" y="192" width="120" height="44" rx="6" fill="#E3FCEF" stroke="#006644" stroke-width="1.5"/>
+  <text x="210" y="211" font-size="11" fill="#006644" text-anchor="middle" font-weight="600" font-family="system-ui">New Distribution</text>
+  <text x="210" y="226" font-size="9"  fill="#006644" text-anchor="middle" font-family="system-ui">…</text>
+
+  <!-- L2 → L3 (from Administration only, shown fully) -->
+  <line x1="270" y1="144" x2="300" y2="124" stroke="#93B8D8" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="270" y1="144" x2="300" y2="194" stroke="#93B8D8" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="270" y1="144" x2="300" y2="264" stroke="#93B8D8" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- ── LEVEL 3 ── -->
+  <!-- Employee 1 -->
+  <rect x="300" y="104" width="165" height="50" rx="6" fill="#FFFAE6" stroke="#974F0C" stroke-width="1.5"/>
+  <text x="382" y="122" font-size="11" fill="#974F0C" text-anchor="middle" font-weight="600" font-family="system-ui">Aarons, Mike</text>
+  <text x="382" y="136" font-size="9"  fill="#974F0C" text-anchor="middle" font-family="system-ui">07/22/2026  ·  Salary  ·  $1,442.31</text>
+  <text x="382" y="148" font-size="9"  fill="#974F0C" text-anchor="middle" font-family="system-ui">8.00 hrs total</text>
+
+  <!-- Employee 2 -->
+  <rect x="300" y="174" width="165" height="50" rx="6" fill="#FFFAE6" stroke="#974F0C" stroke-width="1.5"/>
+  <text x="382" y="192" font-size="11" fill="#974F0C" text-anchor="middle" font-weight="600" font-family="system-ui">Smith, Jane</text>
+  <text x="382" y="206" font-size="9"  fill="#974F0C" text-anchor="middle" font-family="system-ui">07/22/2026  ·  Hourly  ·  $1,200.00</text>
+  <text x="382" y="218" font-size="9"  fill="#974F0C" text-anchor="middle" font-family="system-ui">40.00 hrs total</text>
+
+  <!-- Employee 3 -->
+  <rect x="300" y="244" width="165" height="50" rx="6" fill="#FFFAE6" stroke="#974F0C" stroke-width="1.5"/>
+  <text x="382" y="262" font-size="11" fill="#974F0C" text-anchor="middle" font-weight="600" font-family="system-ui">Brown, Tom</text>
+  <text x="382" y="276" font-size="9"  fill="#974F0C" text-anchor="middle" font-family="system-ui">07/22/2026  ·  Hourly  ·  $888.32</text>
+  <text x="382" y="288" font-size="9"  fill="#974F0C" text-anchor="middle" font-family="system-ui">36.00 hrs total</text>
+
+  <!-- L3 → L4 (from Employee 1 only shown fully) -->
+  <line x1="465" y1="129" x2="500" y2="108" stroke="#93B8D8" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="465" y1="129" x2="500" y2="158" stroke="#93B8D8" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="465" y1="129" x2="500" y2="208" stroke="#93B8D8" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="465" y1="129" x2="500" y2="258" stroke="#93B8D8" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- ── LEVEL 4 ── -->
+  <!-- Regular -->
+  <rect x="500" y="90" width="200" height="36" rx="6" fill="#DEEBFF" stroke="#0052CC" stroke-width="1.5"/>
+  <text x="515" y="105" font-size="10" fill="#0052CC" font-weight="700" font-family="system-ui">Regular</text>
+  <text x="515" y="119" font-size="9"  fill="#0052CC" font-family="system-ui">8.00 hrs  ·  $180.29/hr  →  $1,442.31</text>
+
+  <!-- Overtime -->
+  <rect x="500" y="140" width="200" height="36" rx="6" fill="#FFEBE6" stroke="#BF2600" stroke-width="1.5"/>
+  <text x="515" y="155" font-size="10" fill="#BF2600" font-weight="700" font-family="system-ui">Overtime</text>
+  <text x="515" y="169" font-size="9"  fill="#BF2600" font-family="system-ui">0.00 hrs  ·  $0.00</text>
+
+  <!-- Vacation -->
+  <rect x="500" y="190" width="200" height="36" rx="6" fill="#EAE6FF" stroke="#403294" stroke-width="1.5"/>
+  <text x="515" y="205" font-size="10" fill="#403294" font-weight="700" font-family="system-ui">Vacation</text>
+  <text x="515" y="219" font-size="9"  fill="#403294" font-family="system-ui">0.00 hrs  ·  $0.00</text>
+
+  <!-- Other types -->
+  <rect x="500" y="240" width="200" height="36" rx="6" fill="#F4F5F7" stroke="#5E6C84" stroke-width="1.5"/>
+  <text x="515" y="255" font-size="10" fill="#5E6C84" font-weight="700" font-family="system-ui">Sick / Holiday / Personal…</text>
+  <text x="515" y="269" font-size="9"  fill="#5E6C84" font-family="system-ui">0.00 hrs each  ·  $0.00</text>
+
+  <!-- DB legend at bottom -->
+  <rect x="10"  y="360" width="120" height="24" rx="4" fill="#F4F5F7" stroke="#DFE1E6"/>
+  <text x="70"  y="376" font-size="9" fill="#5E6C84" text-anchor="middle" font-family="system-ui">PR_History</text>
+
+  <rect x="148" y="360" width="122" height="24" rx="4" fill="#F4F5F7" stroke="#DFE1E6"/>
+  <text x="209" y="376" font-size="9" fill="#5E6C84" text-anchor="middle" font-family="system-ui">PR_CompensationDistribution</text>
+
+  <rect x="298" y="360" width="168" height="24" rx="4" fill="#F4F5F7" stroke="#DFE1E6"/>
+  <text x="382" y="376" font-size="9" fill="#5E6C84" text-anchor="middle" font-family="system-ui">PR_History + PR_Employee</text>
+
+  <rect x="498" y="360" width="204" height="24" rx="4" fill="#F4F5F7" stroke="#DFE1E6"/>
+  <text x="600" y="376" font-size="9" fill="#5E6C84" text-anchor="middle" font-family="system-ui">PR_HistoryCompensation (SubType, Hours, Rate)</text>
+
+  <!-- Key note -->
+  <rect x="715" y="350" width="198" height="60" rx="6" fill="#0052CC"/>
+  <text x="814" y="368" font-size="10" fill="white" text-anchor="middle" font-weight="700" font-family="system-ui">All detail lives in one table:</text>
+  <text x="814" y="384" font-size="10" fill="#A8C4E5" text-anchor="middle" font-family="system-ui">PR_HistoryCompensation</text>
+  <text x="814" y="400" font-size="9"  fill="#A8C4E5" text-anchor="middle" font-family="system-ui">SubType · Hours · Rate · Amount</text>
+</svg>
+</div>
+
+<!-- ── THE KEY TABLE ──────────────────────────────────────────────────────── -->
+<h2>3. The Key Table: <code>PR_HistoryCompensation</code></h2>
+
+<p>Every compensation line for every payroll check runs through this table. One row = one pay-type entry on one check for one employee against one distribution. Here is the full field breakdown:</p>
+
+<table>
+  <thead><tr><th>Column</th><th>Type</th><th>What it stores</th><th>Used in widget today?</th></tr></thead>
+  <tbody>
+    <tr><td><code>HistoryCompensationID</code></td><td>GUID</td><td>Row identifier</td><td>—</td></tr>
+    <tr><td><code>HistoryID</code></td><td>GUID</td><td>Joins to <code>PR_History</code> — the paycheck record (check date, check number)</td><td><span class="badge badge-yes">Yes — filtered by</span></td></tr>
+    <tr><td><code>CompensationDistributionID</code></td><td>GUID</td><td>Joins to <code>PR_CompensationDistribution.Name</code> (the distribution label)</td><td><span class="badge badge-yes">Yes — grouped by</span></td></tr>
+    <tr><td><code>Amount</code></td><td>decimal</td><td>Total dollar value for this line (hours × rate for hourly; salary amount for salaried)</td><td><span class="badge badge-yes">Yes — summed</span></td></tr>
+    <tr><td><code>Hours</code></td><td>float</td><td>Hours worked for this specific pay type on this check</td><td><span class="badge badge-no">Not exposed</span></td></tr>
+    <tr><td><code>Rate</code></td><td>decimal</td><td>Pay rate — hourly rate for hourly workers, per-period salary amount for salaried</td><td><span class="badge badge-no">Not exposed</span></td></tr>
+    <tr><td><code>SubType</code></td><td>smallint (1–10)</td><td>Pay type code — Regular, Overtime, Double Time, Holiday, Vacation, Sick, etc.</td><td><span class="badge badge-no">Not exposed</span></td></tr>
+    <tr><td><code>PayCycle</code></td><td>smallint</td><td>Pay periods per year (52 = weekly, 26 = bi-weekly, 12 = monthly, 24 = semi-monthly)</td><td><span class="badge badge-no">Not exposed</span></td></tr>
+    <tr><td><code>EmployeeCompensationID</code></td><td>GUID</td><td>Links to the employee's compensation setup record</td><td><span class="badge badge-no">Not exposed</span></td></tr>
+    <tr><td><code>WorkersCompID</code></td><td>GUID</td><td>Workers' compensation classification for this line</td><td><span class="badge badge-no">Not exposed</span></td></tr>
+    <tr><td><code>ProjectID</code></td><td>GUID</td><td>Project allocation — if the organisation uses project-based payroll coding</td><td><span class="badge badge-no">Not exposed</span></td></tr>
+  </tbody>
+</table>
+
+<!-- ── SUBTYPE CODES ──────────────────────────────────────────────────────── -->
+<h2>4. Pay Type Codes — <code>SubType</code> Field</h2>
+
+<p>This is the field that answers "what kind of pay was this?". These are the same options visible in the payroll check entry screen (Regular, Overtime, Double Time, etc.):</p>
+
+<table>
+  <thead><tr><th>Code</th><th>Short name</th><th>Full name</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td><strong>1</strong></td><td><span class="subtype-pill st-reg">Reg</span></td><td>Regular</td><td>Standard hours/pay. Salary workers log their standard hours here; hourly workers log actual hours worked.</td></tr>
+    <tr><td><strong>2</strong></td><td><span class="subtype-pill st-ot">OT</span></td><td>OverTime</td><td>Hours beyond the normal working week — typically paid at 1.5× the regular rate.</td></tr>
+    <tr><td><strong>3</strong></td><td><span class="subtype-pill st-dt">DT</span></td><td>DoubleTime</td><td>Hours at 2× rate — applicable in certain circumstances depending on employment terms.</td></tr>
+    <tr><td><strong>4</strong></td><td><span class="subtype-pill st-hol">Hol</span></td><td>Holiday</td><td>Hours or lump amounts paid for recognised holidays.</td></tr>
+    <tr><td><strong>5</strong></td><td><span class="subtype-pill st-other">Other</span></td><td>Other</td><td>Catch-all for additional hours-based pay that doesn't fit the standard types.</td></tr>
+    <tr><td><strong>6</strong></td><td><span class="subtype-pill st-vac">Vac</span></td><td>Vacation</td><td>Name is configurable per organisation — some use different labels (e.g. "Annual Leave").</td></tr>
+    <tr><td><strong>7</strong></td><td><span class="subtype-pill st-sick">Sick</span></td><td>Sick</td><td>Name is configurable per organisation.</td></tr>
+    <tr><td><strong>8</strong></td><td><span class="subtype-pill st-pers">Pers</span></td><td>Personal</td><td>Name is configurable per organisation.</td></tr>
+    <tr><td><strong>9</strong></td><td><span class="subtype-pill st-misc">Misc</span></td><td>Misc.</td><td>Name is configurable per organisation.</td></tr>
+    <tr><td><strong>10</strong></td><td><span class="subtype-pill st-other">Other Pay</span></td><td>Other Pay</td><td>Typically non-hours-based supplementary payments.</td></tr>
+  </tbody>
+</table>
+
+<div class="info-box">
+  <strong>Hourly vs. Salaried:</strong> The system distinguishes between the two via a <code>Classification</code> field on the employee's compensation record. For hourly workers, <code>Amount = Hours × Rate</code> and both fields are directly meaningful. For salaried workers, <code>Amount</code> is the period salary, and <code>Rate</code> holds the same value — <code>Hours</code> may still carry a standard hours figure for reference (as shown in the legacy payroll entry screen at 8.00 hrs for a salaried employee).
+</div>
+
+<!-- ── WHAT EXISTS NOW vs WHAT WAS ASKED ─────────────────────────────────── -->
+<h2>5. Current State vs. The Requested Breakdown</h2>
+
+<table>
+  <thead><tr><th>Level of detail</th><th>Current widget</th><th>Requested</th><th>Buildable?</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>Total distribution amount for the period</td>
+      <td>✅ Shown</td>
+      <td>Same</td>
+      <td><span class="badge badge-yes">Already there</span></td>
+    </tr>
+    <tr>
+      <td>Amount per named distribution</td>
+      <td>✅ Shown (AA Aid, Administration Staff, etc.)</td>
+      <td>Same + employee count per distribution</td>
+      <td><span class="badge badge-yes">Mostly there — employee count is a small addition</span></td>
+    </tr>
+    <tr>
+      <td>Per-employee, per-check detail within a distribution</td>
+      <td>❌ Not shown</td>
+      <td>Employee name, check date, check number, classification (salary/hourly), total hours, total amount</td>
+      <td><span class="badge badge-new">New endpoint required</span></td>
+    </tr>
+    <tr>
+      <td>Pay type breakdown per check</td>
+      <td>❌ Not shown</td>
+      <td>Regular hrs/rate/amount, OT hrs/rate/amount, Sick hrs, Holiday hrs, etc.</td>
+      <td><span class="badge badge-new">New endpoint required — data exists in DB</span></td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ── SAMPLE RESPONSE ────────────────────────────────────────────────────── -->
+<h2>6. What the Drill-Down API Response Would Look Like</h2>
+
+<p>This is the proposed response shape for a new breakdown endpoint — triggered when someone clicks on a distribution row to drill into it:</p>
+
+<pre>
+<span class="c">// GET /api/dashboard/payroll-distributions/breakdown</span>
+<span class="c">//     ?distributionName=Administration+Staff&startDate=2026-07-01&endDate=2026-07-22</span>
+{
+  <span class="n">"distributionName"</span>: <span class="s">"Administration Staff"</span>,
+  <span class="n">"dateRange"</span>: { <span class="n">"from"</span>: <span class="s">"2026-07-01"</span>, <span class="n">"to"</span>: <span class="s">"2026-07-22"</span> },
+  <span class="n">"totalAmount"</span>: <span class="k">4530.63</span>,
+  <span class="n">"totalHours"</span>: <span class="k">94.0</span>,
+  <span class="n">"employeeCount"</span>: <span class="k">3</span>,
+  <span class="n">"employees"</span>: [
+    {
+      <span class="n">"employeeName"</span>: <span class="s">"Aarons, Mike"</span>,
+      <span class="n">"checkDate"</span>: <span class="s">"2026-07-22"</span>,
+      <span class="n">"checkNumber"</span>: <span class="k">1234</span>,
+      <span class="n">"classification"</span>: <span class="s">"Salaried"</span>,
+      <span class="n">"totalAmount"</span>: <span class="k">1442.31</span>,
+      <span class="n">"totalHours"</span>: <span class="k">8.0</span>,
+      <span class="n">"payBreakdown"</span>: [
+        { <span class="n">"payType"</span>: <span class="s">"Regular"</span>,  <span class="n">"subType"</span>: <span class="k">1</span>, <span class="n">"hours"</span>: <span class="k">8.0</span>,  <span class="n">"rate"</span>: <span class="k">180.29</span>, <span class="n">"amount"</span>: <span class="k">1442.31</span> },
+        { <span class="n">"payType"</span>: <span class="s">"Overtime"</span>, <span class="n">"subType"</span>: <span class="k">2</span>, <span class="n">"hours"</span>: <span class="k">0.0</span>,  <span class="n">"rate"</span>: <span class="k">0.0</span>,   <span class="n">"amount"</span>: <span class="k">0.0</span>    },
+        { <span class="n">"payType"</span>: <span class="s">"Vacation"</span>, <span class="n">"subType"</span>: <span class="k">6</span>, <span class="n">"hours"</span>: <span class="k">0.0</span>,  <span class="n">"rate"</span>: <span class="k">0.0</span>,   <span class="n">"amount"</span>: <span class="k">0.0</span>    }
+      ]
+    },
+    {
+      <span class="n">"employeeName"</span>: <span class="s">"Smith, Jane"</span>,
+      <span class="n">"checkDate"</span>: <span class="s">"2026-07-22"</span>,
+      <span class="n">"checkNumber"</span>: <span class="k">1235</span>,
+      <span class="n">"classification"</span>: <span class="s">"Hourly"</span>,
+      <span class="n">"totalAmount"</span>: <span class="k">1200.00</span>,
+      <span class="n">"totalHours"</span>: <span class="k">40.0</span>,
+      <span class="n">"payBreakdown"</span>: [
+        { <span class="n">"payType"</span>: <span class="s">"Regular"</span>,  <span class="n">"subType"</span>: <span class="k">1</span>, <span class="n">"hours"</span>: <span class="k">36.0</span>, <span class="n">"rate"</span>: <span class="k">28.50</span>, <span class="n">"amount"</span>: <span class="k">1026.00</span> },
+        { <span class="n">"payType"</span>: <span class="s">"Overtime"</span>, <span class="n">"subType"</span>: <span class="k">2</span>, <span class="n">"hours"</span>: <span class="k">4.0</span>,  <span class="n">"rate"</span>: <span class="k">43.50</span>, <span class="n">"amount"</span>: <span class="k">174.00</span>  }
+      ]
+    }
+  ]
+}
+</pre>
+
+<!-- ── ADDITIONAL FINDINGS ─────────────────────────────────────────────────── -->
+<h2>7. Additional Findings Worth Knowing</h2>
+
+<ul>
+  <li><strong>Pay type names are organisation-configurable.</strong> SubTypes 6–9 (Vacation, Sick, Personal, Misc) do not have fixed names — each organisation sets its own labels in the <code>PR_Company</code> settings. So "Vacation" might be labelled "Annual Leave" or "PTO" depending on the client. The API would need to resolve these names from the company configuration at query time.</li>
+  <li><strong>Non-cash compensations are separate.</strong> Benefit items like health insurance contributions, car allowances, and similar non-cash pay flow through a different table (<code>PR_HistoryNonCash</code>). These are <em>not</em> included in the distribution totals and would not appear in the breakdown — the widget is strictly about cash compensation.</li>
+  <li><strong>Voided checks are already excluded.</strong> The current widget filters out voided checks (<code>VoidJournalID IS NULL</code>). Any drill-down would maintain this same filter, so reversed/voided pay does not appear.</li>
+  <li><strong>Manual checks (CheckType = 2) are excluded.</strong> The current widget also excludes manual check type 2. This is intentional and should be maintained in any drill-down to keep the numbers consistent with what the top-level widget shows.</li>
+  <li><strong>Project coding is available.</strong> For organisations that code payroll to projects, each compensation line has an optional <code>ProjectID</code>. This means the drill-down could eventually support a project-level breakdown as well if that becomes a requirement.</li>
+  <li><strong>Workers' Comp classification is per line.</strong> Each compensation row has a <code>WorkersCompID</code> which identifies the workers' comp insurance category for that specific type of pay. Not relevant for the immediate request but available if the need arises.</li>
+</ul>
+
+<div class="warn-box">
+  <strong>On the "how much per hour" question specifically:</strong> For hourly employees, the per-hour rate is directly available in the <code>Rate</code> column on each <code>PR_HistoryCompensation</code> row. For salaried employees, the <code>Rate</code> stores the per-period salary amount — not an hourly rate — because salaried pay is a fixed amount regardless of hours. To derive an implied hourly rate for a salaried employee, you would divide their period salary by their standard hours, but this is a calculation rather than a stored value.
+</div>
+
+<!-- ── WHAT NEEDS TO BE BUILT ─────────────────────────────────────────────── -->
+<h2>8. What Would Need to Be Built</h2>
+
+<p>No database changes are needed — all the data exists. The work is entirely on the API and UI side:</p>
+
+<table>
+  <thead><tr><th>Component</th><th>Change needed</th><th>Complexity</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>Modern API — entity</td>
+      <td>Extend <code>PRHistoryCompensation</code> to map <code>Hours</code>, <code>Rate</code>, <code>SubType</code>, and join to <code>PR_Employee</code> via <code>PR_History</code> for employee name</td>
+      <td>Low</td>
+    </tr>
+    <tr>
+      <td>Modern API — DTOs</td>
+      <td>New <code>PayrollDistributionBreakdownDto</code> with nested employee → pay type structure</td>
+      <td>Low</td>
+    </tr>
+    <tr>
+      <td>Modern API — service method</td>
+      <td>New <code>GetPayrollDistributionBreakdownAsync(distributionName, startDate, endDate)</code> — queries <code>PR_HistoryCompensation</code> with <code>SubType</code>, <code>Hours</code>, <code>Rate</code>, and joins to employee for name</td>
+      <td>Medium</td>
+    </tr>
+    <tr>
+      <td>Modern API — controller</td>
+      <td>New endpoint: <code>GET /api/dashboard/payroll-distributions/breakdown</code></td>
+      <td>Low</td>
+    </tr>
+    <tr>
+      <td>UI — drill-down view</td>
+      <td>Clickable distribution rows that open a detail panel showing the per-employee, per-pay-type breakdown table</td>
+      <td>Medium</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ── SUMMARY ──────────────────────────────────────────────────────────────── -->
+<h2>9. Summary</h2>
+
+<table>
+  <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+  <tbody>
+    <tr><td>Is the breakdown data in the database?</td><td><strong>Yes — completely. Hours, Rate, SubType, and classification are all stored in <code>PR_HistoryCompensation</code>.</strong></td></tr>
+    <tr><td>Can the system tell if a worker is hourly or salaried?</td><td><strong>Yes</strong> — <code>Classification</code> field on the employee compensation record.</td></tr>
+    <tr><td>Can hours per pay type per employee per check be retrieved?</td><td><strong>Yes</strong> — <code>Hours + SubType + HistoryID</code> give this exactly.</td></tr>
+    <tr><td>Can the hourly rate be retrieved?</td><td><strong>Yes for hourly workers</strong> — the <code>Rate</code> column stores it. For salaried, <code>Rate</code> is the period salary amount, not an hourly figure.</td></tr>
+    <tr><td>Does the current widget expose this?</td><td><strong>No</strong> — it only reads <code>Amount</code> and <code>CompensationDistributionID</code>.</td></tr>
+    <tr><td>Can it be built?</td><td><strong>Yes</strong> — no schema changes needed. New API endpoint + UI drill-down, medium overall effort.</td></tr>
+  </tbody>
+</table>
+
+<hr />
+<p style="color:#5E6C84; font-size:12px; text-align:center;">Shelby Financials · Payroll Distributions Pay Type Breakdown Analysis · July 2026</p>
+
+</body>
+</html>
