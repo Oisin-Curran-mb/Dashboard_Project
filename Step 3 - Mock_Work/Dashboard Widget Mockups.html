@@ -428,6 +428,21 @@ body{font-family:'Red Hat Text',sans-serif;background:#fafafa;color:#202020;}
 #fc-widget-4 .fc-szhd-f{display:none;}
 #fc-widget-4.fc-fmode .fc-szhd-f{display:inline;}
 #fc-widget-4.fc-fmode .fc-szhd-abc{display:none;}
+/* W05 Final three-size model (2026-07-28): same fc-fmode mechanism as W01-W04 above, scoped to
+   #fc-widget-5. Jo's Accounts Receivable design has exactly three tiers (Glance, Explore, Detail), so the
+   Small card and every per-card Small size button hide while opt 'F' shows, and the three remaining cards
+   take her tier proportions (glance 288x176, explore 592x496, detail 1200x560). Like W02-W04, the cards sit
+   in the generic .opts 3-column grid, so heights switch to aspect-ratio and the Detail card widens to the
+   full row. Switching back to A/B/C drops .fc-fmode and restores the shared grid sizing untouched. */
+#fc-widget-5.fc-fmode #fc-opt-5-s{display:none;}
+#fc-widget-5.fc-fmode .wc-sz-btn[data-fc-sz="s"]{display:none;}
+#fc-widget-5.fc-fmode .opt.sz-k{height:auto;aspect-ratio:288/176;}
+#fc-widget-5.fc-fmode .opt.sz-m{height:auto;aspect-ratio:592/496;}
+#fc-widget-5.fc-fmode .opt.sz-l{grid-column:1/-1;height:auto;aspect-ratio:1200/560;}
+#fc-widget-5.fc-fmode .opt.sz-k .opt-v{padding:2px 8px 6px;display:flex;flex-direction:column;justify-content:center;}
+#fc-widget-5 .fc-szhd-f{display:none;}
+#fc-widget-5.fc-fmode .fc-szhd-f{display:inline;}
+#fc-widget-5.fc-fmode .fc-szhd-abc{display:none;}
 .fc-purpose{background:#eef2fb;border-left:3px solid #4b6ec3;border-radius:0 6px 6px 0;padding:12px 16px;font-size:14px;line-height:20px;color:#333;max-width:820px;}
 .fc-source{display:flex;gap:10px;align-items:flex-start;background:#fff;border:.5px solid #d2d2d2;border-radius:8px;padding:12px 16px;max-width:820px;}
 .fc-source-name{font-size:13px;font-weight:600;}
@@ -1321,6 +1336,231 @@ body{font-family:'Red Hat Text',sans-serif;background:#fafafa;color:#202020;}
 .remf-mb .rem-tab-empty{display:flex;align-items:center;gap:8px;justify-content:center;padding:20px;color:var(--txt-subtle);font-size:13px;}
 .remf-mb .rem-tab-empty .material-symbols-rounded{font-size:18px;}
 @media(max-width:560px){.remf-mb .rem-sum{grid-template-columns:repeat(2,minmax(0,1fr));}}
+/* ================================================================================
+   W05 FINAL, added 2026-07-28: Jo Lopez's Accounts Receivable design (her ar block)
+   ported 1-to-1 from her Widget Container Demo. Every rule is scoped under .arf-root,
+   the wrapper class the F branch of WRENDER[5] renders; the revenue-center / source
+   popover and the invoice-detail drill modal (which live on document.body) also carry
+   .arf-root so they inherit the same tokens. Jo's original class names (ar-, dep-, vt,
+   mi, filter-chip, bank-pill, delta-pill, bgt-pop, wt-row) are kept for 1:1
+   traceability. Nothing outside .arf-root uses these selectors, so nothing can leak.
+   Design tokens are inlined from her demo root (amethyst ramp, warm neutrals). Lesson
+   kept from the W01 modal fix: no star-slash sequences inside CSS comment text, ever. */
+.arf-root{
+  --wn-0:#fefefd;--wn-100:#fbfaf8;--wn-200:#f7f5f3;--wn-250:#f3f0ec;--wn-300:#eeebe6;--wn-400:#d4cfc8;--wn-750:#87827b;--wn-950:#292724;
+  --brand-70:#6e8bd4;--brand-90:#5475c6;--brand-100:#4b6ec3;--brand-400:#345499;
+  --red-10:#faefef;--red-100:#b03a3a;--green-10:#edf6f0;--green-120:#1f602e;--pos-100:#1f7a34;
+  --txt-primary:#202020;--txt-secondary:#484848;--txt-subtle:#606060;--txt-pos:var(--green-120);
+  --surface-canvas:var(--wn-250);--surface-widget:var(--wn-0);--surface-header:var(--wn-200);--stroke-widget:var(--wn-300);
+  --am-700:#463f7f;--am-600:#4f4890;--am-500:#5951a0;--am-400:#7a72ba;--am-300:#9c95cf;--am-200:#c3bee6;--am-100:#e8e6f5;--am-50:#f4f2fa;
+  --dur:150ms;--dur2:300ms;--ease:cubic-bezier(.4,0,.2,1);--dec:cubic-bezier(0,0,.2,1);--r:12px;
+  font-family:'Red Hat Text',sans-serif;color:var(--txt-primary);
+}
+.arf-root.arf-w{height:100%;display:flex;flex-direction:column;min-height:0;overflow:hidden;}
+/* -- shared shell components (subset of Jo's demo, scoped) -- */
+.arf-root .btn{display:inline-flex;align-items:center;gap:8px;font-family:inherit;font-size:14px;font-weight:500;border:1px solid transparent;border-radius:8px;padding:9px 13px;cursor:pointer;background:var(--wn-200);color:var(--txt-primary);}
+.arf-root .btn .material-symbols-rounded{font-size:18px;}
+.arf-root .btn.primary{background:var(--brand-100);color:#fff;}.arf-root .btn.primary:hover{background:var(--brand-90);}
+.arf-root .btn.outlined{border-color:var(--wn-750);}.arf-root .btn.outlined:hover{background:var(--wn-200);}
+.arf-root .btn.naked{color:var(--txt-secondary);background:transparent;}.arf-root .btn.naked:hover{background:var(--wn-200);}
+.arf-root .btn.sm{padding:7px 10px;font-size:13px;}.arf-root .btn.sm .material-symbols-rounded{font-size:16px;}
+.arf-root .iconbtn{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border:0;background:transparent;color:var(--txt-subtle);border-radius:8px;cursor:pointer;}
+.arf-root .iconbtn:hover{background:var(--wn-200);color:var(--wn-950);}
+.arf-root .iconbtn .material-symbols-rounded{font-size:20px;}
+.arf-root .metric-value{font-family:'Red Hat Display',sans-serif;font-weight:700;font-size:26px;line-height:1.1;font-variant-numeric:tabular-nums;}
+.arf-root .kpi-row{display:flex;align-items:stretch;gap:14px;padding:12px 16px;flex:1;min-height:0;}
+.arf-root .kpi-num{display:flex;flex-direction:column;align-items:flex-start;gap:4px;flex:1 1 auto;min-width:0;justify-content:center;}
+.arf-root .kpi-num .metric-value{font-size:22px;line-height:1.1;}
+.arf-root .gl-sub{display:flex;align-items:center;gap:5px;flex-wrap:wrap;font-size:11px;color:var(--txt-subtle);margin:0;}
+.arf-root .bgt-caption{color:var(--txt-subtle);font-weight:400;font-size:11px;}
+.arf-root .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
+/* -- header (Explore/Detail): Jo's two-row dep-hd grid via display:contents -- */
+.arf-root .dep-hd{display:grid;grid-template-columns:1fr auto;align-items:start;column-gap:12px;row-gap:14px;padding:14px 16px 16px;flex-shrink:0;}
+.arf-root .dep-hd-top,.arf-root .dep-hd-num{display:contents;}
+.arf-root .dep-hd-toggle{display:flex;justify-content:flex-end;align-self:center;}
+.arf-root .dep-hd-num>*:first-child{grid-column:1;justify-self:start;}
+.arf-root .dep-hd-kpigrp{display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-width:0;}
+.arf-root .dep-hd-num .metric-value{font-size:22px;line-height:1.1;}
+.arf-root .vtoggle{display:inline-flex;background:var(--surface-header);border-radius:8px;padding:2px;}
+.arf-root .vt{display:inline-flex;align-items:center;gap:4px;border:none;background:transparent;font-family:inherit;font-size:11px;font-weight:500;padding:4px 9px;border-radius:6px;cursor:pointer;color:var(--txt-secondary);}
+.arf-root .vt .material-symbols-rounded{font-size:15px;}
+.arf-root .vt.on{background:var(--surface-widget);color:var(--txt-primary);box-shadow:0 1px 2px rgba(41,39,36,.12);}
+.arf-root .filter-chip{display:inline-flex;align-items:center;gap:2px;font-family:inherit;font-size:12px;font-weight:500;color:var(--txt-primary);background:transparent;border:1px solid var(--stroke-widget);border-radius:8px;padding:4px 6px 4px 10px;cursor:pointer;max-width:260px;}
+.arf-root .filter-chip:hover{background:var(--wn-200);color:var(--txt-primary);}
+.arf-root .filter-chip .material-symbols-rounded{font-size:16px;}
+.arf-root .fc-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.arf-root .filter-chip[data-arf]{background:var(--wn-200);border-color:var(--wn-300);color:var(--txt-primary);}
+.arf-root .filter-chip[data-arf]:hover{background:var(--wn-300);border-color:var(--wn-400);}
+.arf-root .filter-chip[data-arf]::before{font-family:'Material Symbols Rounded';content:'filter_list';font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 20;font-size:16px;line-height:1;color:var(--txt-subtle);flex:0 0 auto;margin-right:1px;}
+.arf-root .bank-pill{display:inline-flex;align-items:center;gap:3px;font-size:12px;font-weight:600;color:var(--txt-secondary);background:var(--wn-200);border-radius:999px;padding:2px 9px 2px 7px;font-variant-numeric:tabular-nums;}
+.arf-root .bank-pill .material-symbols-rounded{font-size:15px;color:var(--txt-subtle);}
+.arf-root .delta-pill{display:inline-flex;align-items:center;gap:1px;font-size:12px;font-weight:600;color:var(--txt-pos);background:var(--green-10);border-radius:999px;padding:2px 8px 2px 6px;font-variant-numeric:tabular-nums;}
+.arf-root .delta-pill .material-symbols-rounded{font-size:14px;font-variation-settings:'wght' 500;}
+/* -- states + skeleton -- */
+.arf-root .state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;color:var(--txt-secondary);padding:12px;}
+.arf-root .state>.material-symbols-rounded{font-size:26px;color:var(--am-500);}
+.arf-root .state-title{font-size:13px;font-weight:600;}
+.arf-root .state-sub{font-size:12px;color:var(--txt-subtle);max-width:360px;}
+.arf-root .sk{border-radius:4px;background:linear-gradient(90deg,#f1efec 25%,#f8f6f3 37%,#f1efec 63%);background-size:400% 100%;animation:arfsk 1.4s linear infinite;display:inline-block;}
+@keyframes arfsk{from{background-position:100% 0;}to{background-position:0 0;}}
+.arf-root .bgt-spin{display:inline-block;width:13px;height:13px;border-radius:50%;border:2px solid var(--am-200);border-top-color:var(--am-600);animation:arfspin .7s linear infinite;flex:0 0 auto;vertical-align:middle;}
+@keyframes arfspin{to{transform:rotate(360deg);}}
+.arf-root .bgt-skel-cap{display:flex;align-items:center;gap:8px;justify-content:center;padding-top:12px;font-size:12px;color:var(--txt-subtle);}
+@media(prefers-reduced-motion:reduce){.arf-root .sk,.arf-root .bgt-spin{animation:none!important;}}
+/* -- report table shell used by the drill modal -- */
+.arf-root .wt-row{display:flex;align-items:center;gap:12px;padding:7px 14px;border-bottom:1px solid var(--stroke-widget);font-size:13px;}
+.arf-root .wt-head{position:sticky;top:0;background:var(--surface-widget);font-size:11px;font-weight:600;text-transform:none;letter-spacing:0;color:var(--txt-subtle);}
+.arf-root .dep-total{display:flex;justify-content:space-between;gap:12px;padding:9px 14px;border-top:1.5px solid var(--stroke-widget);font-size:13px;font-weight:700;}
+/* -- popover option-list bits (revenue center / source) -- */
+.arf-root .mi{display:flex;align-items:center;gap:8px;width:100%;border:none;background:transparent;font-family:inherit;font-size:13px;text-align:left;padding:9px 10px;border-radius:7px;cursor:pointer;color:var(--txt-primary);}
+.arf-root .mi:hover{background:var(--wn-200);}
+.arf-root .mi .material-symbols-rounded{font-size:18px;color:var(--txt-subtle);}
+.arf-root .mi.check .material-symbols-rounded{color:var(--am-600);}
+.arf-root .mi-gap{flex:0 0 18px;}
+.arf-root .cap{font-size:11px;font-weight:600;letter-spacing:0;text-transform:none;color:var(--txt-subtle);padding:8px 10px 3px;}
+/* -- AR-specific rules (Jo's ar block, scoped verbatim under .arf-root) -- */
+/* ---- Header control row (left of the two-row .dep-hd grid) ---- */
+.arf-root .ar-ctlrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0;}
+.arf-root .ar-ctlrow .ar-chip{min-width:0;flex:0 1 auto;}          /* chips sized to their label */
+.arf-root .ar-numwrap{display:flex;flex-direction:column;gap:3px;min-width:0;}
+.arf-root .ar-ctx{font-size:11.5px;font-weight:400;color:var(--txt-subtle);line-height:1.4;max-width:64ch;}
+/* ---- Glance: compact aging read under the KPI ---- */
+.arf-root .ar-glance-read{display:flex;flex-direction:column;gap:7px;margin-top:9px;min-width:0;}
+.arf-root .ar-stack{display:flex;height:9px;border-radius:5px;overflow:hidden;background:var(--wn-200);}
+.arf-root .ar-seg{display:block;min-width:3px;height:100%;}
+.arf-root .ar-glance-cap{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--txt-secondary);min-width:0;}
+.arf-root .ar-glance-cap .material-symbols-rounded{font-size:15px;flex:0 0 auto;}
+.arf-root .ar-cap-ok, .arf-root .ar-cap-ok .material-symbols-rounded{color:var(--txt-pos);}
+.arf-root .ar-sevdot{width:9px;height:9px;border-radius:2px;flex:0 0 auto;display:inline-block;align-self:center;}
+.arf-root .ar-allset{color:var(--txt-pos);display:inline-flex;align-items:center;gap:7px;font-size:20px;}
+.arf-root .ar-allset .material-symbols-rounded{font-size:22px;color:var(--txt-pos);}
+/* ---- Body layouts ---- */
+/* Detail (wide): the ordered severity ladder is the full-width hero. */
+.arf-root .ar-body{padding:2px 16px 16px;min-width:0;}
+.arf-root .ar-body .ar-bars{gap:14px;}
+.arf-root .ar-body .ar-barrow{padding:8px 6px;}
+/* Explore (xwide): aging + top debtors side by side, each a quiet-headed panel. */
+.arf-root .ar-explore{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px;padding:2px 16px 16px;align-items:start;}
+.arf-root .ar-panel{min-width:0;display:flex;flex-direction:column;gap:9px;}
+.arf-root .ar-panel-h{margin:0;font-size:12px;font-weight:600;color:var(--txt-secondary);display:flex;align-items:center;gap:6px;}
+.arf-root .ar-panel-h .material-symbols-rounded{font-size:16px;color:var(--txt-subtle);}
+/* ---- Ordered severity ladder (the hero read). Amethyst gradient, no red. ---- */
+.arf-root .ar-bars{display:flex;flex-direction:column;gap:10px;padding:4px 2px 2px;}
+.arf-root .ar-barrow{display:grid;grid-template-columns:122px 1fr auto;align-items:center;gap:10px;border-radius:8px;padding:5px 6px;}
+.arf-root .ar-barrow.ar-clickable{cursor:pointer;}
+.arf-root .ar-barrow.ar-clickable:hover{background:var(--wn-100);}
+.arf-root .ar-barrow.ar-clickable:hover .ar-bartrack{background:var(--wn-300);}
+.arf-root .ar-barrow.ar-clickable:hover .ar-barfill{filter:brightness(.92);}
+.arf-root .ar-barrow.ar-clickable:focus-visible{outline:2px solid var(--am-400);outline-offset:-1px;}
+.arf-root .ar-barlbl{display:flex;flex-direction:column;min-width:0;}
+.arf-root .ar-barlbl-nm{font-size:12px;font-weight:600;color:var(--txt-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.arf-root .ar-barlbl-sub{font-size:10.5px;color:var(--txt-subtle);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.arf-root .ar-bartrack{position:relative;height:18px;border-radius:5px;background:var(--wn-200);overflow:hidden;transition:background var(--dur,.15s);}
+.arf-root .ar-barfill{height:100%;border-radius:5px;min-width:2px;transition:filter var(--dur,.15s);}
+.arf-root .ar-barval{text-align:right;font-variant-numeric:tabular-nums;display:flex;flex-direction:column;line-height:1.2;}
+.arf-root .ar-barval-amt{font-size:12.5px;font-weight:600;color:var(--txt-primary);}
+.arf-root .ar-barval-cnt{font-size:10.5px;color:var(--txt-subtle);}
+/* De-emphasised empty buckets, collapsed to one quiet line rather than a sparse zero row. */
+.arf-root .ar-zeroline{display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--txt-subtle);padding:8px 8px 0;line-height:1.4;}
+.arf-root .ar-zeroline .material-symbols-rounded{font-size:16px;color:var(--txt-subtle);flex:0 0 auto;}
+/* ---- Loading skeleton (data-fetch only) ---- */
+.arf-root .ar-skel{padding:16px;display:flex;flex-direction:column;gap:12px;}
+.arf-root .ar-skel-bars{display:flex;flex-direction:column;gap:11px;}
+.arf-root .ar-sk-row{display:flex;align-items:center;gap:12px;}
+.arf-root .ar-sk-bar{height:16px;border-radius:5px;}
+/* ---- Positive empty state (shared .state; a touch of positive colour) ---- */
+.arf-root .ar-empty>.material-symbols-rounded{color:var(--txt-pos);}
+/* ---- Drill-to-detail focus overlay ---- */
+.arf-root .ar-detail-modal{max-width:1040px;}
+.arf-root .ar-detail-modal .modal-b{display:block;overflow:auto;padding:0 18px 6px;}
+.arf-root .ar-detail-h{align-items:center;}
+.arf-root .ar-dsub{font-size:12px;font-weight:600;color:var(--txt-secondary);background:var(--wn-200);border-radius:999px;padding:2px 10px;margin-left:10px;white-space:nowrap;}
+.arf-root .ar-dh-spacer{flex:1;}
+.arf-root .ar-detail-scroll{border:1px solid var(--stroke-widget);border-radius:10px;overflow:hidden;}
+.arf-root .ar-dhead, .arf-root .ar-drow{display:flex;align-items:center;gap:12px;}
+.arf-root .ar-dexp{flex:0 0 22px;display:inline-flex;align-items:center;justify-content:center;color:var(--txt-subtle);}
+.arf-root .ar-dexp .material-symbols-rounded{font-size:18px;}
+.arf-root .ar-dc{flex:1 1 0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--txt-secondary);}
+.arf-root .ar-dhead .ar-dc{font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--txt-subtle);}
+.arf-root .ar-dc0, .arf-root .ar-dc1{flex:1.6 1 0;color:var(--txt-primary);font-weight:500;}
+.arf-root .ar-dc4{flex:0 0 96px;}
+.arf-root .ar-dc-amt{flex:0 0 100px;text-align:right;font-weight:700;color:var(--txt-primary);}
+.arf-root .ar-drow{cursor:pointer;}
+.arf-root .ar-drow:hover{background:var(--wn-100);}
+.arf-root .ar-drow:focus-visible{outline:2px solid var(--am-400);outline-offset:-2px;}
+.arf-root .ar-drow.open{background:var(--wn-100);position:sticky;top:0;z-index:1;}
+.arf-root .ar-drawer{background:var(--wn-100);border-bottom:1px solid var(--stroke-widget);padding:10px 14px 14px 34px;}
+/* Expandable tabs (Details / Attachments / Note / Payments) */
+.arf-root .ar-tabbar{display:inline-flex;gap:2px;background:var(--surface-header);border-radius:8px;padding:2px;margin-bottom:10px;}
+.arf-root .ar-tab{border:none;background:transparent;font-family:inherit;font-size:12px;font-weight:500;color:var(--txt-secondary);padding:5px 10px;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;}
+.arf-root .ar-tab .material-symbols-rounded{font-size:15px;}
+.arf-root .ar-tab.on{background:var(--surface-widget);color:var(--txt-primary);box-shadow:0 1px 2px rgba(41,39,36,.12);}
+.arf-root .ar-tabpanel{font-size:12.5px;color:var(--txt-secondary);}
+.arf-root .ar-tab-empty{display:flex;align-items:center;gap:8px;color:var(--txt-subtle);padding:12px 2px;}
+.arf-root .ar-tab-empty .material-symbols-rounded{font-size:18px;}
+.arf-root .ar-lines, .arf-root .ar-pays{border:1px solid var(--stroke-widget);border-radius:8px;overflow:hidden;background:var(--surface-widget);}
+.arf-root .ar-lrow, .arf-root .ar-prow{display:flex;align-items:center;gap:10px;padding:6px 12px;border-bottom:1px solid var(--stroke-widget);font-variant-numeric:tabular-nums;}
+.arf-root .ar-lrow:last-child, .arf-root .ar-prow:last-child{border-bottom:none;}
+.arf-root .ar-lhead, .arf-root .ar-phead{font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--txt-subtle);background:var(--wn-100);}
+.arf-root .ar-ld{flex:1 1 0;min-width:0;color:var(--txt-primary);}
+.arf-root .ar-lq{flex:0 0 44px;text-align:right;}
+.arf-root .ar-lu{flex:0 0 84px;text-align:right;}
+.arf-root .ar-la{flex:0 0 96px;text-align:right;font-weight:600;color:var(--txt-primary);}
+.arf-root .ar-prow>span:first-child{flex:0 0 120px;}
+.arf-root .ar-prow>span:nth-child(2){flex:1 1 0;min-width:0;}
+.arf-root .ar-pa{flex:0 0 100px;text-align:right;font-weight:600;color:var(--txt-primary);}
+.arf-root .ar-atts{display:flex;flex-direction:column;gap:6px;}
+.arf-root .ar-att{display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid var(--stroke-widget);border-radius:8px;background:var(--surface-widget);}
+.arf-root .ar-att .material-symbols-rounded{font-size:18px;color:var(--txt-subtle);}
+.arf-root .ar-att-nm{flex:1 1 0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--txt-primary);}
+.arf-root .ar-att-sz{color:var(--txt-subtle);font-size:11.5px;font-variant-numeric:tabular-nums;}
+.arf-root .ar-note{background:var(--surface-widget);border:1px solid var(--stroke-widget);border-radius:8px;padding:10px 12px;line-height:1.5;color:var(--txt-primary);}
+.arf-root .ar-dtotal{border-top:none;margin-top:2px;}
+/* Collection next-step actions in the expanded drawer */
+.arf-root .ar-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+@media(max-width:560px){.arf-root .ar-explore{grid-template-columns:1fr;}}
+/* -- fit overrides so Jo's flowing content fills the fixed fc card -- */
+.arf-root .ar-body{flex:1;min-height:0;overflow:auto;}
+.arf-root .ar-explore{flex:1;min-height:0;overflow:auto;}
+/* -- revenue-center / source popover (body-appended, arf-scoped) -- */
+.arf-root.arf-pop{position:fixed;z-index:3000;background:var(--surface-widget);border:1px solid var(--stroke-widget);border-radius:10px;box-shadow:0 14px 40px rgba(41,39,36,.20);padding:6px;min-width:220px;max-width:280px;}
+.arf-root .sep{height:1px;background:var(--stroke-widget);margin:5px 4px;}
+/* -- drill focus overlay (Jo's ar detail modal; the backdrop is the .arf-mb mount wrapper) -- */
+.arf-root.arf-mb{position:fixed;inset:0;z-index:3500;background:rgba(41,39,36,.40);display:flex;align-items:center;justify-content:center;padding:24px;}
+.arf-mb .modal{background:var(--surface-widget);border-radius:14px;box-shadow:0 24px 60px rgba(41,39,36,.32);max-width:390px;width:100%;overflow:hidden;}
+.arf-mb .modal.modal-wide{max-width:1040px;width:94vw;max-height:86vh;display:flex;flex-direction:column;overflow:hidden;}
+.arf-mb .modal-h{display:flex;align-items:center;gap:8px;padding:16px 12px 6px 18px;position:relative;}
+.arf-mb .modal-title{flex:0 0 auto;font-family:'Red Hat Display',sans-serif;font-weight:700;font-size:16px;line-height:22px;color:var(--txt-primary);}
+.arf-mb .modal-b{padding:0 18px 16px;font-size:13px;line-height:1.55;color:var(--txt-secondary);}
+.arf-mb .modal.modal-wide .modal-b{flex:1;min-height:0;}
+.arf-mb .modal-f{display:flex;justify-content:flex-end;gap:8px;padding:0 16px 16px;}
+/* -- ENHANCEMENT (owner-specified, dev-intent): per-row select checkbox + always-enabled Confirm and its
+      inline "Move to unposted transactions" note. Pathway/Jo tokens only, scoped under .arf-root so nothing
+      leaks. A signal of intended action, not a finished workflow. -- */
+.arf-root .arf-check-sp{flex:0 0 20px;display:inline-block;}
+.arf-root .arf-check{flex:0 0 20px;width:18px;height:18px;padding:0;display:inline-flex;align-items:center;justify-content:center;border:1.5px solid var(--wn-750);border-radius:5px;background:var(--surface-widget);cursor:pointer;transition:background var(--dur,.15s),border-color var(--dur,.15s);}
+.arf-root .arf-check:hover{border-color:var(--brand-100);}
+.arf-root .arf-check.on{background:var(--brand-100);border-color:var(--brand-100);}
+.arf-root .arf-check .material-symbols-rounded{font-size:14px;color:#fff;}
+.arf-root .arf-check:focus-visible{outline:2px solid var(--am-400);outline-offset:1px;}
+.arf-mb .modal-f.arf-modal-f{justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
+.arf-root .arf-f-spacer{flex:1 1 auto;}
+.arf-root .arf-f-btns{display:inline-flex;gap:8px;flex:0 0 auto;}
+.arf-root .arf-confirm-note{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1 1 auto;}
+.arf-root .arf-confirm-primary{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--brand-300);}
+.arf-root .arf-confirm-primary .material-symbols-rounded{font-size:17px;color:var(--brand-100);}
+.arf-root .arf-confirm-sub{font-size:11px;color:var(--txt-subtle);}
+/* -- bar hover card (Jo's bgt-pop, standalone, arf-scoped) -- */
+.arf-pop-card{position:fixed;z-index:4000;background:#fefefd;border:1px solid #eeebe6;border-radius:10px;box-shadow:0 12px 32px rgba(41,39,36,.22),0 2px 8px rgba(41,39,36,.12);padding:10px 12px;min-width:190px;pointer-events:none;font-family:'Red Hat Text',sans-serif;font-size:12px;color:#202020;}
+.arf-pop-card .bgt-pop-h{font-weight:600;font-size:12px;color:#202020;margin-bottom:7px;}
+.arf-pop-card .bgt-pop-r{display:flex;align-items:center;gap:8px;line-height:1.9;color:#484848;}
+.arf-pop-card .bgt-pop-lbl{flex:1;min-width:0;}
+.arf-pop-card .bgt-pop-v{font-weight:600;font-variant-numeric:tabular-nums;color:#202020;}
+.arf-pop-card .bgt-pop-div{height:1px;background:#eeebe6;margin:7px 0;}
+.arf-pop-card .bgt-pop-var{display:flex;align-items:baseline;justify-content:space-between;gap:10px;}
+.arf-pop-card .bgt-pop-var .bgt-pop-lbl{font-weight:600;color:#202020;}
+.arf-pop-card .bgt-pop-fav{font-weight:600;color:#1f602e;font-variant-numeric:tabular-nums;}
+.arf-pop-card .bgt-pop-fav.neutral{color:#484848;}
 
 </style>
 </head>
@@ -2168,11 +2408,21 @@ body{font-family:'Red Hat Text',sans-serif;background:#fafafa;color:#202020;}
   <span class="fc-version-badge" id="fc-version-5"></span>
   <div class="w-hdr" style="margin-bottom:20px">
     <div class="w-bc">Final Check</div>
-    <h1 class="w-title">W05 — Receivable Invoices Outstanding <span class="badge b-a" style="margin-left:8px">Final design — locked (see note)</span></h1>
-    <p class="w-desc">Visual proof that this widget's locked design matches what's actually rendered. <strong>Note:</strong> the doc's actual default view — 4 KPI tiles above a 5-bucket aging bar chart — isn't implemented as a single option in the render (see Logic below); this preview uses the closest available option, Bar by Age Band, flagged rather than guessed at.</p>
+    <h1 class="w-title">W05 — Receivable Invoices Outstanding <span class="badge b-g" style="margin-left:8px">Final</span> <span class="badge b-g" style="margin-left:4px">Jo design</span></h1>
+    <p class="w-desc">Visual proof that this widget's final design matches what's actually rendered: the real widget card, chrome and all, shown at Glance, Explore and Detail using the same live renderer as the Dashboard tab, not a static mock. <strong>Built 2026-07-28:</strong> the Final shown by default is Jo Lopez's Widget Container Demo Accounts Receivable build (her total-owed header with an overdue badge, revenue-center and source filter chips, an ordered amethyst severity bar by aging, a top overdue customers cut, and an invoice-detail drill), copied 1-to-1. The earlier A/B/C options stay reachable from the design-option switch below.</p>
   </div>
 
-  <div class="sec-hd">KPI Card — shown as a header bar</div>
+  <!-- Design-option switch (2026-07-28): Final is the default render; A/B/C stay reachable
+       for comparison. Wired to fcSetOpt, which just flips FC_STATE[5].opt and re-renders. -->
+  <div class="fc-optsw" id="fc-optsw-5" role="group" aria-label="Design option switch">
+    <span class="fc-optsw-lbl">Design option:</span>
+    <button class="fc-optsw-btn is-current" data-fc-opt="F" onclick="fcSetOpt(5,'F',event)">Final</button>
+    <button class="fc-optsw-btn" data-fc-opt="A" onclick="fcSetOpt(5,'A',event)">A</button>
+    <button class="fc-optsw-btn" data-fc-opt="B" onclick="fcSetOpt(5,'B',event)">B</button>
+    <button class="fc-optsw-btn" data-fc-opt="C" onclick="fcSetOpt(5,'C',event)">C</button>
+  </div>
+
+  <div class="sec-hd"><span class="fc-szhd-abc">KPI Card — shown as a header bar</span><span class="fc-szhd-f">Glance Card, shown as a header bar (Jo's KPI size)</span></div>
   <div class="opt sz-k" id="fc-opt-5-k">
     <div class="opt-chrome">
       <div class="opt-chrome-left">
@@ -2186,9 +2436,9 @@ body{font-family:'Red Hat Text',sans-serif;background:#fafafa;color:#202020;}
             <div class="wc-dd-lbl">Widget size</div>
             <div class="wc-dd-size">
               <button class="wc-sz-btn" data-fc-sz="s" onclick="fcSetSize(5,'k','s',event)"><span class="material-symbols-rounded">crop_square</span><span class="wc-sz-label">Small</span></button>
-              <button class="wc-sz-btn" data-fc-sz="m" onclick="fcSetSize(5,'k','m',event)"><span class="material-symbols-rounded">crop_landscape</span><span class="wc-sz-label">Medium</span></button>
-              <button class="wc-sz-btn" data-fc-sz="l" onclick="fcSetSize(5,'k','l',event)"><span class="material-symbols-rounded">crop_free</span><span class="wc-sz-label">Large</span></button>
-              <button class="wc-sz-btn" data-fc-sz="k" onclick="fcSetSize(5,'k','k',event)"><span class="material-symbols-rounded">crop_7_5</span><span class="wc-sz-label">KPI</span></button>
+              <button class="wc-sz-btn" data-fc-sz="m" onclick="fcSetSize(5,'k','m',event)"><span class="material-symbols-rounded">crop_landscape</span><span class="wc-sz-label"><span class="fc-szhd-abc">Medium</span><span class="fc-szhd-f">Explore</span></span></button>
+              <button class="wc-sz-btn" data-fc-sz="l" onclick="fcSetSize(5,'k','l',event)"><span class="material-symbols-rounded">crop_free</span><span class="wc-sz-label"><span class="fc-szhd-abc">Large</span><span class="fc-szhd-f">Detail</span></span></button>
+              <button class="wc-sz-btn" data-fc-sz="k" onclick="fcSetSize(5,'k','k',event)"><span class="material-symbols-rounded">crop_7_5</span><span class="wc-sz-label"><span class="fc-szhd-abc">KPI</span><span class="fc-szhd-f">Glance</span></span></button>
             </div>
           </div>
         </div>
@@ -2198,7 +2448,7 @@ body{font-family:'Red Hat Text',sans-serif;background:#fafafa;color:#202020;}
   </div>
   <p style="font-size:11px;color:#888;margin:-8px 0 20px">No filters at KPI size — doc: "No filter, no download, no switch."</p>
 
-  <div class="sec-hd" style="margin-top:4px">Small &middot; Medium &middot; Large — side by side</div>
+  <div class="sec-hd" style="margin-top:4px"><span class="fc-szhd-abc">Small &middot; Medium &middot; Large — side by side</span><span class="fc-szhd-f">Explore &middot; Detail, side by side (Glance card above; Jo's three-size model, no Small)</span></div>
   <div class="opts">
     <div class="opt sz-s" id="fc-opt-5-s">
       <div class="opt-chrome">
@@ -2250,9 +2500,9 @@ body{font-family:'Red Hat Text',sans-serif;background:#fafafa;color:#202020;}
               <div class="wc-dd-lbl">Widget size</div>
               <div class="wc-dd-size">
                 <button class="wc-sz-btn" data-fc-sz="s" onclick="fcSetSize(5,'m','s',event)"><span class="material-symbols-rounded">crop_square</span><span class="wc-sz-label">Small</span></button>
-                <button class="wc-sz-btn" data-fc-sz="m" onclick="fcSetSize(5,'m','m',event)"><span class="material-symbols-rounded">crop_landscape</span><span class="wc-sz-label">Medium</span></button>
-                <button class="wc-sz-btn" data-fc-sz="l" onclick="fcSetSize(5,'m','l',event)"><span class="material-symbols-rounded">crop_free</span><span class="wc-sz-label">Large</span></button>
-                <button class="wc-sz-btn" data-fc-sz="k" onclick="fcSetSize(5,'m','k',event)"><span class="material-symbols-rounded">crop_7_5</span><span class="wc-sz-label">KPI</span></button>
+                <button class="wc-sz-btn" data-fc-sz="m" onclick="fcSetSize(5,'m','m',event)"><span class="material-symbols-rounded">crop_landscape</span><span class="wc-sz-label"><span class="fc-szhd-abc">Medium</span><span class="fc-szhd-f">Explore</span></span></button>
+                <button class="wc-sz-btn" data-fc-sz="l" onclick="fcSetSize(5,'m','l',event)"><span class="material-symbols-rounded">crop_free</span><span class="wc-sz-label"><span class="fc-szhd-abc">Large</span><span class="fc-szhd-f">Detail</span></span></button>
+                <button class="wc-sz-btn" data-fc-sz="k" onclick="fcSetSize(5,'m','k',event)"><span class="material-symbols-rounded">crop_7_5</span><span class="wc-sz-label"><span class="fc-szhd-abc">KPI</span><span class="fc-szhd-f">Glance</span></span></button>
               </div>
             </div>
           </div>
@@ -2283,9 +2533,9 @@ body{font-family:'Red Hat Text',sans-serif;background:#fafafa;color:#202020;}
               <div class="wc-dd-lbl">Widget size</div>
               <div class="wc-dd-size">
                 <button class="wc-sz-btn" data-fc-sz="s" onclick="fcSetSize(5,'l','s',event)"><span class="material-symbols-rounded">crop_square</span><span class="wc-sz-label">Small</span></button>
-                <button class="wc-sz-btn" data-fc-sz="m" onclick="fcSetSize(5,'l','m',event)"><span class="material-symbols-rounded">crop_landscape</span><span class="wc-sz-label">Medium</span></button>
-                <button class="wc-sz-btn" data-fc-sz="l" onclick="fcSetSize(5,'l','l',event)"><span class="material-symbols-rounded">crop_free</span><span class="wc-sz-label">Large</span></button>
-                <button class="wc-sz-btn" data-fc-sz="k" onclick="fcSetSize(5,'l','k',event)"><span class="material-symbols-rounded">crop_7_5</span><span class="wc-sz-label">KPI</span></button>
+                <button class="wc-sz-btn" data-fc-sz="m" onclick="fcSetSize(5,'l','m',event)"><span class="material-symbols-rounded">crop_landscape</span><span class="wc-sz-label"><span class="fc-szhd-abc">Medium</span><span class="fc-szhd-f">Explore</span></span></button>
+                <button class="wc-sz-btn" data-fc-sz="l" onclick="fcSetSize(5,'l','l',event)"><span class="material-symbols-rounded">crop_free</span><span class="wc-sz-label"><span class="fc-szhd-abc">Large</span><span class="fc-szhd-f">Detail</span></span></button>
+                <button class="wc-sz-btn" data-fc-sz="k" onclick="fcSetSize(5,'l','k',event)"><span class="material-symbols-rounded">crop_7_5</span><span class="wc-sz-label"><span class="fc-szhd-abc">KPI</span><span class="fc-szhd-f">Glance</span></span></button>
               </div>
             </div>
           </div>
@@ -2313,6 +2563,7 @@ body{font-family:'Red Hat Text',sans-serif;background:#fafafa;color:#202020;}
     <p><strong>Flag — the doc's actual default view isn't fully built.</strong> The locked doc's View 1 is "KPI Tiles + Aging Bars": four tiles (Total Outstanding, Overdue, Current, Oldest Invoice) above a 5-bucket bar chart. What exists in the render is three separate options that each cover part of that: Option A is the aging bars alone, Option C ("KPI Cards + Table") has a 2-tile KPI strip (Total Outstanding, Overdue 30+) but pairs it with a table, not bars, and has no "Current" or "Oldest Invoice" tile — that last figure also doesn't exist anywhere in the current mock data. This page shows Option A since the bar chart is the more heavily-emphasised finding in the research (the pie-was-wrong point), but it is not the full default view the doc describes. Combining the two properly, and deciding what "Oldest Invoice" should even mean here, needs your input rather than a guess.</p>
     <p>Separately: the age bands themselves don't match either — the doc specifies 5 (0-30/31-60/61-90/91-120/121+, with 121+ always red and 91-120 amber); the render only has 4 (0-30/31-60/61-90/90+). Splitting that last bucket touches the mock data and the colour rule together, so it's flagged rather than changed tonight.</p>
     <p>Two fixes made, both safe/cosmetic since neither field is read anywhere in the render: the "Account" filter (Main/Secondary Account — not a real thing in the doc) was replaced with the doc's actual Revenue Center and Source filters; and a dead "Year" filter was removed, matching the doc's "no Fiscal Year filter" note. The KPI-size card also wasn't implemented — added, using the doc's exact "Total Outstanding ($)" headline, which is at least unambiguous regardless of how the S/M/L question above gets resolved.</p>
+    <p><strong>Final build (2026-07-28).</strong> Built as the Final from Jo Lopez's Widget Container Demo Accounts Receivable widget (her <code>ar</code> block), per direct instruction, as a new additive <code>opt==='F'</code> branch in <code>WRENDER[5]</code>; the A/B/C branches above stay untouched and reachable from the design-option switch at the top of this section, with Final as the default. It is a 1-to-1 copy of her design: her total-owed header with the overdue / All current pill, her revenue-center and source filter chips (each chip change is the ONLY fetch, showing her 800ms chip spinner and skeleton, while group-by, sort, drill, tab and expand are instant client re-renders), her five real aging buckets (Current, 31-60, 61-90, 91-120, 121+ days) plotted as the ordered amethyst severity ladder with empty buckets collapsed into one quiet "No balance in" line, her Aging / Customers group toggle and the side-by-side aging + top-overdue-customers Explore layout at Detail, her Glance card with the compact stacked severity read, her "Nothing outstanding" empty state, her bar-hover card, and her drill-to-detail modal ("Receivable Invoices Outstanding: Detail", the aging-bucket / customer sub-pill, the Customer / Bill To / Due Date / Invoice # / Days Past Due / Outstanding columns, each row expanding into Details / Attachments / Note / Payments tabs, the "N invoices / total" footer, the Export to Excel action, and the Close button). Her real sample numbers carry over verbatim in standalone <code>ARF_</code> constants next to <code>WRENDER[5]</code> (not <code>MOCK_DATA</code>, so <code>mock-data.master.js</code> needs no re-sync; the A/B/C mock series are untouched): eight invoices totalling $33,530, with the oldest 121+ days bucket holding Cornerstone Academy INV-2903 (due Feb 28 2026, 145 days, $9,650) and Legacy Insurance Group / Legacy HR Dept INV-2890 (due Mar 1 2026, 144 days, $6,300) for a bucket total of $15,950. Sizing follows Jo's three-tier model via the same generic fc-fmode mechanism as W01-W04 (no Small under Final; Glance / Explore / Detail wording and her tier proportions, KPI = Glance, Explore = her wide, Detail = her xwide), and the KPI card title reflects the widget's own scope through the existing FC_KPI_HEADLINE plumbing. <code>FC_VERSION[5]</code> = 2.0. <strong>PLUS one owner-specified enhancement to the drill detail modal ONLY (per direct instruction, a developer-intent signal, NOT a finished feature or final copy):</strong> a select checkbox at the start of each invoice row (row checkboxes only, no select-all header box; toggling one is modal-scoped, never expands the row or closes the modal), a Confirm button beside Close in the footer that is ALWAYS enabled regardless of how many rows are checked, and on Confirm an INLINE note near the footer reading exactly "Move to unposted transactions" with a muted sub-line reporting the selection count. That inline note is a developer-facing signal that the selected invoices are intended to move to unposted transactions to begin processing; it is deliberately not wired to any backend, is not a toast or a new page, and is not final copy. Everything else in the modal (Export to Excel, the "N invoices / total" footer) stays 1-to-1 with Jo's build. No em dashes in any new user-facing string.</p>
   </div>
   </div><!-- /fc-widget-5 -->
 
@@ -7777,6 +8028,368 @@ WRENDER[4]=function(opt,wid,sz){
   }
 };
 
+
+/* ========================================================================
+   W05 FINAL (arF), added 2026-07-28: Jo Lopez's Accounts Receivable design
+   (her ar block: data + render + handlers + bar-hover), ported 1-to-1 from
+   her Widget Container Demo as this widget's Final. Everything here is
+   arF-/ARF_-prefixed; WRENDER[5]'s A/B/C branches below are deliberately
+   untouched. Standalone ARF_ constants (not MOCK_DATA), so
+   mock-data.master.js needs no re-sync. Shared-helper calls (money, ICON,
+   find, render, pop, modal, setStatus, timers) are ported as small
+   arF-prefixed adapters the way penF/remF did; a single delegated click
+   listener behind ARF_WIRED reacts to data-arf attributes; the popover,
+   drill modal and bar-hover card live on document.body and carry .arf-root
+   so they inherit Jo's tokens. Jo's three tiers map to fc sizes: KPI (k/xk)
+   = Glance, Small/Medium = Explore (her wide), Large/Expanded (l/x) = Detail
+   (her xwide). No em dashes in any user-facing string. */
+
+/* (1) DATA (Jo's AR_* renamed ARF_*) ------------------------------------ */
+var ARF_BUCKETS=[
+  {key:"cur",label:"Current",sub:"not yet overdue",hi:30,sev:0},
+  {key:"b1",label:"31-60 days",sub:"1 to 2 months over",hi:60,sev:1},
+  {key:"b2",label:"61-90 days",sub:"2 to 3 months over",hi:90,sev:2},
+  {key:"b3",label:"91-120 days",sub:"3 to 4 months over",hi:120,sev:3},
+  {key:"b4",label:"121+ days",sub:"over 4 months over",hi:Infinity,sev:4}
+];
+var ARF_SEV_COLORS=["--am-200","--am-300","--am-400","--am-500","--am-700"];
+var ARF_RC=["All","Church","Insurance Billing","Pension Billing","School"];
+var ARF_SOURCE=["All","Insurance Billing","Pension Billing"];
+var ARF_INV=[
+  {inv:"INV-3001",customer:"Northside Community Church",billTo:"Northside Community Church",due:"2026-07-18",days:5,amount:1250,rc:"Church",source:"",
+    lines:[{desc:"Facility use, June",qty:1,unit:900},{desc:"AV support",qty:2,unit:175}],
+    attachments:[{name:"INV-3001.pdf",size:"88 KB"}],note:"Treasurer requested a copy by email.",payments:[{date:"2026-07-05",method:"Check #4021",amount:0}]},
+  {inv:"INV-3002",customer:"Grace Fellowship",billTo:"Grace Fellowship (Accounts)",due:"2026-07-02",days:21,amount:860,rc:"Church",source:"",
+    lines:[{desc:"Curriculum materials",qty:4,unit:215}],attachments:[],note:"",payments:[]},
+  {inv:"INV-2988",customer:"Redeemer School",billTo:"Redeemer School Business Office",due:"2026-06-20",days:33,amount:4200,rc:"School",source:"",
+    lines:[{desc:"Spring tuition balance",qty:1,unit:4200}],attachments:[{name:"statement-Q2.pdf",size:"142 KB"}],note:"Second reminder sent 07/10.",payments:[{date:"2026-06-01",method:"ACH",amount:1800}]},
+  {inv:"INV-2971",customer:"Havenwood Insurance Plan",billTo:"Havenwood HR",due:"2026-06-05",days:48,amount:2750,rc:"Insurance Billing",source:"Insurance Billing",
+    lines:[{desc:"Group premium, May",qty:1,unit:2750}],attachments:[{name:"premium-may.pdf",size:"64 KB"}],note:"",payments:[]},
+  {inv:"INV-2954",customer:"St. Mark Parish",billTo:"St. Mark Parish",due:"2026-05-02",days:82,amount:5400,rc:"Church",source:"",
+    lines:[{desc:"Assessment, Q2",qty:1,unit:5400}],attachments:[],note:"Left voicemail with parish office 07/12.",payments:[]},
+  {inv:"INV-2948",customer:"Diocese Pension Office",billTo:"Diocese Pension Office",due:"2026-05-15",days:69,amount:3120,rc:"Pension Billing",source:"Pension Billing",
+    lines:[{desc:"Pension contribution, April",qty:1,unit:3120}],attachments:[{name:"pension-apr.pdf",size:"51 KB"}],note:"",payments:[{date:"2026-05-20",method:"Wire",amount:0}]},
+  {inv:"INV-2903",customer:"Cornerstone Academy",billTo:"Cornerstone Academy",due:"2026-02-28",days:145,amount:9650,rc:"School",source:"",
+    lines:[{desc:"Annual tuition balance",qty:1,unit:8200},{desc:"Technology fee",qty:1,unit:900},{desc:"Late fee",qty:1,unit:550}],
+    attachments:[{name:"tuition-agreement.pdf",size:"220 KB"},{name:"reminder-3.pdf",size:"41 KB"}],note:"Escalated to collections review. Payment plan proposed.",payments:[]},
+  {inv:"INV-2890",customer:"Legacy Insurance Group",billTo:"Legacy HR Dept",due:"2026-03-01",days:144,amount:6300,rc:"Insurance Billing",source:"Insurance Billing",
+    lines:[{desc:"Group premium, Feb",qty:1,unit:6300}],attachments:[],note:"",payments:[{date:"2026-03-10",method:"Check #1180",amount:0}]}
+];
+var ARF_INV_CURRENT=[
+  {inv:"INV-3101",customer:"Trinity Chapel",billTo:"Trinity Chapel",due:"2026-07-20",days:3,amount:1400,rc:"Church",source:"",lines:[{desc:"Facility use",qty:1,unit:1400}],attachments:[],note:"",payments:[]},
+  {inv:"INV-3102",customer:"Faith Center",billTo:"Faith Center",due:"2026-07-11",days:12,amount:2200,rc:"Church",source:"",lines:[{desc:"Event services",qty:1,unit:2200}],attachments:[{name:"INV-3102.pdf",size:"70 KB"}],note:"On track to pay this week.",payments:[]},
+  {inv:"INV-3103",customer:"Hope Academy",billTo:"Hope Academy Office",due:"2026-06-26",days:27,amount:980,rc:"School",source:"",lines:[{desc:"Supplies",qty:2,unit:490}],attachments:[],note:"",payments:[]}
+];
+var ARF_INV_SINGLE=[
+  {inv:"INV-2777",customer:"Emmanuel Church",billTo:"Emmanuel Church",due:"2026-04-14",days:100,amount:3300,rc:"Church",source:"",lines:[{desc:"Assessment balance",qty:1,unit:3300}],attachments:[],note:"",payments:[]},
+  {inv:"INV-2778",customer:"Shepherd School",billTo:"Shepherd School Office",due:"2026-04-02",days:112,amount:5100,rc:"School",source:"",lines:[{desc:"Tuition balance",qty:1,unit:5100}],attachments:[{name:"stmt.pdf",size:"110 KB"}],note:"Payment plan under discussion.",payments:[{date:"2026-04-20",method:"ACH",amount:0}]},
+  {inv:"INV-2779",customer:"Covenant Insurance",billTo:"Covenant HR",due:"2026-04-19",days:95,amount:2400,rc:"Insurance Billing",source:"Insurance Billing",lines:[{desc:"Group premium",qty:1,unit:2400}],attachments:[],note:"",payments:[]}
+];
+
+/* State + globals (single-widget adapters for Jo's cur().widgets model) */
+var ARF_STATE={id:'5F',size:'wide',arRc:'All',arSource:'All',arGroup:'aging',arSort:'total-desc',arloading:false,dataset:null,state:null};
+var ARF_POP=null,ARF_MODAL=null,ARF_MODAL_MOUNTED=false,ARF_TIMER=null;
+function arFRerender(){ if(typeof FC_STATE!=='undefined'&&FC_STATE[5]&&FC_STATE[5].opt==='F'&&typeof fcRenderWidget==='function') fcRenderWidget(5); }
+/* Loading ONLY on a data fetch (revenue center / source change): transient
+   arloading + skeleton for 800ms. Group by, drill, tab, expand are instant. */
+function arFLoad(w){w.arloading=true;if(ARF_TIMER)clearTimeout(ARF_TIMER);ARF_TIMER=setTimeout(function(){w.arloading=false;ARF_TIMER=null;arFRerender();},800);}
+
+/* (2) RENDER (Jo's ar functions, renamed) ------------------------------- */
+function arFIcon(n){return '<span class="material-symbols-rounded" aria-hidden="true">'+n+'</span>';}
+function arFMoney(n){return "$"+Math.round(n).toLocaleString("en-US");}
+function arFEsc(s){return String(s).replace(/"/g,"&quot;");}
+function arFFmtDate(iso){var M=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];var p=String(iso).split("-");if(p.length!==3)return iso;return M[(+p[1])-1]+" "+(+p[2])+", "+p[0];}
+function arFDataset(w){if(w.dataset==="current")return ARF_INV_CURRENT;if(w.dataset==="single")return ARF_INV_SINGLE;return ARF_INV;}
+function arFFiltered(w){var rc=w.arRc||"All",src=w.arSource||"All";return arFDataset(w).filter(function(x){return (rc==="All"||x.rc===rc)&&(src==="All"||x.source===src);});}
+function arFSevOf(days){for(var i=0;i<ARF_BUCKETS.length;i++){if(days<=ARF_BUCKETS[i].hi)return ARF_BUCKETS[i].sev;}return 4;}
+function arFBucketOf(days){for(var i=0;i<ARF_BUCKETS.length;i++){if(days<=ARF_BUCKETS[i].hi)return ARF_BUCKETS[i].key;}return "b4";}
+function arFBucketLabel(key){for(var i=0;i<ARF_BUCKETS.length;i++)if(ARF_BUCKETS[i].key===key)return ARF_BUCKETS[i].label;return key;}
+function arFBuckets(w){
+  var inv=arFFiltered(w),m={};ARF_BUCKETS.forEach(function(b){m[b.key]={count:0,total:0};});
+  inv.forEach(function(x){var k=arFBucketOf(x.days);m[k].count++;m[k].total+=x.amount;});
+  return ARF_BUCKETS.map(function(b){return {key:b.key,label:b.label,sub:b.sub,sev:b.sev,color:ARF_SEV_COLORS[b.sev],count:m[b.key].count,total:m[b.key].total};});
+}
+function arFTotal(w){return arFFiltered(w).reduce(function(s,x){return s+x.amount;},0);}
+function arFCount(w){return arFFiltered(w).length;}
+function arFOverdue(w){return arFFiltered(w).filter(function(x){return x.days>30;}).reduce(function(s,x){return s+x.amount;},0);}
+function arFOverdueCount(w){return arFFiltered(w).filter(function(x){return x.days>30;}).length;}
+function arFWorstBucket(w){var nz=arFBuckets(w).filter(function(r){return r.total>0;});return nz.length?nz[nz.length-1]:null;}
+function arFCustomers(w){
+  var inv=arFFiltered(w),m={},order=[];
+  inv.forEach(function(x){if(!m[x.customer]){m[x.customer]={customer:x.customer,total:0,count:0,worst:0};order.push(x.customer);}var g=m[x.customer];g.total+=x.amount;g.count++;var sev=arFSevOf(x.days);if(sev>g.worst)g.worst=sev;});
+  var rows=order.map(function(c){return m[c];});
+  var sk=(w.arSort||"total-desc").split("-"),key=sk[0],dir=sk[1]==="asc"?1:-1;
+  rows.sort(function(a,b){if(key==="customer")return dir*a.customer.localeCompare(b.customer);return dir*(a.total-b.total);});
+  return rows;
+}
+function arFDetailInvoices(w,mode,key){
+  var inv=arFFiltered(w);
+  var out=(mode==="customer")?inv.filter(function(x){return x.customer===key;}):inv.filter(function(x){return arFBucketOf(x.days)===key;});
+  return out.sort(function(a,b){return b.days-a.days;});
+}
+/* Filter chips: secondary-fill + leading filter glyph (via .filter-chip[data-arf]) + trailing chevron. */
+function arFRcChip(w){var rc=w.arRc||"All",spin=w.arloading?'<span class="bgt-spin" aria-hidden="true"></span>':"";return '<button class="filter-chip ar-chip" data-arf="ar-rc" aria-haspopup="listbox" aria-label="Revenue center, tap to change">'+spin+'<span class="fc-label">'+(rc==="All"?"All revenue centers":rc)+'</span>'+arFIcon("expand_more")+'</button>';}
+function arFSourceChip(w){var s=w.arSource||"All";return '<button class="filter-chip ar-chip" data-arf="ar-source" aria-haspopup="listbox" aria-label="Source, tap to change"><span class="fc-label">'+(s==="All"?"All sources":s)+'</span>'+arFIcon("expand_more")+'</button>';}
+function arFGroupToggle(w){var g=w.arGroup||"aging";return '<div class="vtoggle" role="group" aria-label="Group by"><button class="vt'+(g==="aging"?" on":"")+'" data-arf="ar-group" data-v="aging" aria-pressed="'+(g==="aging")+'">'+arFIcon("stacked_bar_chart")+'Aging</button><button class="vt'+(g==="customer"?" on":"")+'" data-arf="ar-group" data-v="customer" aria-pressed="'+(g==="customer")+'">'+arFIcon("groups")+'Customers</button></div>';}
+function arFStackBar(w){
+  var tot=arFTotal(w);if(tot<=0)return "";
+  var segs=arFBuckets(w).filter(function(r){return r.total>0;});
+  var inner=segs.map(function(r){var pct=r.total/tot*100;return '<span class="ar-seg" style="flex-basis:'+pct.toFixed(2)+'%;background:var('+r.color+')" title="'+arFEsc(r.label+": "+arFMoney(r.total))+'"></span>';}).join("");
+  return '<div class="ar-stack" aria-hidden="true">'+inner+'</div>';
+}
+function arFAgeSr(w){var b=arFBuckets(w);return 'Outstanding by age: '+b.map(function(r){return r.label+" "+arFMoney(r.total);}).join(", ")+'.';}
+function arFOverduePill(w){
+  var tot=arFTotal(w),over=arFOverdue(w),oc=arFOverdueCount(w),pct=tot>0?Math.round(over/tot*100):0;
+  if(over>0)return '<span class="bank-pill" title="'+arFEsc(arFMoney(over)+" across "+oc+" invoice"+(oc>1?"s":"")+" is more than 30 days past due, that is "+pct+"% of the outstanding balance.")+'">'+arFIcon("schedule")+arFMoney(over)+' overdue ('+pct+'%)</span>';
+  return '<span class="delta-pill" title="Every outstanding invoice is still current, 30 days or less past due.">'+arFIcon("check")+'All current</span>';
+}
+function arFGlance(w){
+  var tot=arFTotal(w),n=arFCount(w),worst=arFWorstBucket(w),over=arFOverdue(w);
+  var read="";
+  if(tot>0){
+    var call=(over>0&&worst&&worst.key!=="cur")
+      ?'<span class="ar-glance-cap"><span class="ar-sevdot" style="background:var('+worst.color+')"></span>'+arFMoney(worst.total)+' in '+worst.label+', the oldest with a balance</span>'
+      :'<span class="ar-glance-cap ar-cap-ok">'+arFIcon("check")+'Every invoice is still current</span>';
+    read='<div class="ar-glance-read">'+arFStackBar(w)+call+'</div>';
+  }
+  return '<div class="kpi-row"><div class="kpi-num">'+
+    '<div class="dep-hd-kpigrp"><span class="metric-value">'+arFMoney(tot)+'</span>'+arFOverduePill(w)+'</div>'+
+    '<div class="gl-sub"><span class="bgt-caption">owed to you across '+n+' unpaid invoice'+(n===1?"":"s")+'</span></div>'+
+    read+
+    '<span class="sr-only">'+arFAgeSr(w)+'</span>'+
+  '</div></div>';
+}
+function arFEmpty(w){
+  if(w.size==="kpi")return '<div class="kpi-row"><div class="kpi-num"><div class="dep-hd-kpigrp"><span class="metric-value ar-allset">'+arFIcon("check_circle")+'All settled</span></div><div class="gl-sub"><span class="bgt-caption">nothing outstanding right now</span></div></div></div>';
+  return '<div class="state ar-empty" data-kind="empty">'+arFIcon("task_alt")+'<div class="state-title">Nothing outstanding</div><div class="state-sub">Every invoice has been paid. There is nothing to chase right now.</div></div>';
+}
+function arFHeaderBlock(w,mode){
+  var loading=(mode==="loading");
+  var numInner;
+  if(loading){numInner='<div class="dep-hd-kpigrp"><span class="sk" style="width:120px;height:22px;border-radius:6px"></span><span class="sk" style="width:120px;height:20px;border-radius:999px"></span></div>';}
+  else{numInner='<div class="dep-hd-kpigrp"><span class="metric-value">'+arFMoney(arFTotal(w))+'</span>'+arFOverduePill(w)+'</div>';}
+  var ctx='Owed to you, oldest balances first.';
+  var toggle=(w.size==="xwide")?"":arFGroupToggle(w);
+  return '<div class="dep-hd">'+
+    '<div class="dep-hd-top"><div class="ar-ctlrow">'+arFRcChip(w)+arFSourceChip(w)+'</div><div class="dep-hd-toggle">'+toggle+'</div></div>'+
+    '<div class="dep-hd-num"><div class="ar-numwrap">'+numInner+'<div class="ar-ctx">'+ctx+'</div></div></div>'+
+  '</div>';
+}
+function arFBar(w,forceGroup){
+  var group=forceGroup||(w.arGroup||"aging"),cust=(group==="customer");
+  var rows,zeros=[];
+  if(cust){
+    rows=arFCustomers(w).slice(0,w.size==="xwide"?7:6).map(function(r){return {key:r.customer,label:r.customer,sub:r.count+" invoice"+(r.count>1?"s":""),color:ARF_SEV_COLORS[r.worst],count:r.count,total:r.total};});
+  } else {
+    var all=arFBuckets(w);
+    rows=all.filter(function(r){return r.total>0;});
+    zeros=all.filter(function(r){return r.total<=0;});
+  }
+  var totAll=arFTotal(w),max=1;rows.forEach(function(r){max=Math.max(max,r.total);});
+  var bars=rows.map(function(r){
+    var pct=max?Math.round(r.total/max*100):0,share=totAll?Math.round(r.total/totAll*100):0;
+    var attr=' data-arf="ar-open" data-mode="'+(cust?"customer":"aging")+'" data-key="'+arFEsc(r.key)+'" role="button" tabindex="0" aria-label="'+arFEsc(r.label+", "+arFMoney(r.total)+", "+r.count+" invoice"+(r.count>1?"s":"")+", open the invoices behind this")+'"';
+    var arpop=[r.label,r.total,r.count,share].join("|");
+    return '<div class="ar-barrow ar-clickable"'+attr+' data-arpop="'+arFEsc(arpop)+'">'+
+      '<div class="ar-barlbl"><span class="ar-barlbl-nm">'+r.label+'</span><span class="ar-barlbl-sub">'+r.sub+'</span></div>'+
+      '<div class="ar-bartrack"><div class="ar-barfill" style="width:'+Math.max(3,pct)+'%;background:var('+r.color+')"></div></div>'+
+      '<div class="ar-barval"><span class="ar-barval-amt">'+arFMoney(r.total)+'</span><span class="ar-barval-cnt">'+r.count+' inv</span></div>'+
+      '<span class="sr-only">'+r.label+': '+arFMoney(r.total)+', '+r.count+' invoices, '+share+'% of the outstanding balance.</span>'+
+    '</div>';
+  }).join("");
+  var zline=(!cust&&zeros.length)?'<div class="ar-zeroline">'+arFIcon("done")+'No balance in '+zeros.map(function(z){return z.label;}).join(", ")+'</div>':"";
+  var body=rows.length?bars:'<div class="ar-zeroline">'+arFIcon("info")+'Nothing to show for this selection.</div>';
+  return '<div class="ar-bars" role="img" aria-label="Outstanding balance by '+(cust?"customer, worst overdue first":"aging bucket, current to most overdue")+'">'+body+'</div>'+zline;
+}
+function arFSkeleton(){var bars="";[90,64,48,34,22].forEach(function(wd){bars+='<div class="ar-sk-row"><span class="sk" style="width:70px;height:12px;border-radius:4px"></span><span class="sk ar-sk-bar" style="width:'+wd+'%"></span></div>';});return '<div class="ar-skel"><div class="ar-skel-bars">'+bars+'</div><div class="bgt-skel-cap"><span class="bgt-spin"></span>Loading</div></div>';}
+function arFContent(w){
+  if(w.state==="empty")return arFEmpty(w);
+  if(w.size==="kpi")return arFGlance(w);
+  if(w.arloading)return arFHeaderBlock(w,"loading")+arFSkeleton();
+  var mh=arFHeaderBlock(w);
+  if(w.size==="xwide")return mh+'<div class="ar-explore">'+
+    '<section class="ar-panel"><h4 class="ar-panel-h">'+arFIcon("stacked_bar_chart")+'By aging</h4>'+arFBar(w,"aging")+'</section>'+
+    '<section class="ar-panel"><h4 class="ar-panel-h">'+arFIcon("groups")+'Top overdue customers</h4>'+arFBar(w,"customer")+'</section>'+
+  '</div>';
+  return mh+'<div class="ar-body">'+arFBar(w)+'</div>';
+}
+/* Entry point for WRENDER[5]'s F branch. Maps fc sizes onto Jo's three tiers. */
+function arFRender(wid,sz){
+  var tier=(sz==='k'||sz==='xk')?'kpi':((sz==='l'||sz==='x')?'xwide':'wide');
+  ARF_STATE.size=tier;
+  return '<div class="arf-root arf-w" data-tier="'+tier+'">'+arFContent(ARF_STATE)+'</div>';
+}
+
+/* Drill-to-detail focus overlay (Jo's arDetailTabs / arDetailModalHTML) */
+function arFDetailTabs(x){
+  var tab=(ARF_MODAL&&ARF_MODAL.tab)||"details";
+  var tabs=[["details","Details","list_alt"],["attachments","Attachments","attach_file"],["note","Note","sticky_note_2"],["payments","Payments","payments"]];
+  var bar=tabs.map(function(tb){return '<button class="ar-tab'+(tab===tb[0]?" on":"")+'" role="tab" data-arf="ar-tab" data-tab="'+tb[0]+'" aria-selected="'+(tab===tb[0])+'">'+arFIcon(tb[2])+tb[1]+'</button>';}).join("");
+  var panel;
+  if(tab==="details"){
+    var lines=x.lines||[];
+    panel=lines.length
+      ?'<div class="ar-lines"><div class="ar-lrow ar-lhead"><span class="ar-ld">Description</span><span class="ar-lq">Qty</span><span class="ar-lu">Unit</span><span class="ar-la">Amount</span></div>'+lines.map(function(l){return '<div class="ar-lrow"><span class="ar-ld">'+l.desc+'</span><span class="ar-lq">'+l.qty+'</span><span class="ar-lu">'+arFMoney(l.unit)+'</span><span class="ar-la">'+arFMoney(l.qty*l.unit)+'</span></div>';}).join("")+'</div>'
+      :'<div class="ar-tab-empty">'+arFIcon("list_alt")+'No line items on this invoice.</div>';
+  } else if(tab==="attachments"){
+    var at=x.attachments||[];
+    panel=at.length
+      ?'<div class="ar-atts">'+at.map(function(f){return '<div class="ar-att">'+arFIcon("description")+'<span class="ar-att-nm">'+f.name+'</span><span class="ar-att-sz">'+f.size+'</span></div>';}).join("")+'</div>'
+      :'<div class="ar-tab-empty">'+arFIcon("attach_file")+'No attachments on this invoice.</div>';
+  } else if(tab==="note"){
+    panel=x.note?'<div class="ar-note">'+x.note+'</div>':'<div class="ar-tab-empty">'+arFIcon("sticky_note_2")+'No note added.</div>';
+  } else {
+    var pm=(x.payments||[]).filter(function(p){return p.amount>0;});
+    panel=pm.length
+      ?'<div class="ar-pays"><div class="ar-prow ar-phead"><span>Date</span><span>Method</span><span class="ar-pa">Amount</span></div>'+pm.map(function(p){return '<div class="ar-prow"><span>'+arFFmtDate(p.date)+'</span><span>'+p.method+'</span><span class="ar-pa">'+arFMoney(p.amount)+'</span></div>';}).join("")+'</div>'
+      :'<div class="ar-tab-empty">'+arFIcon("payments")+'No payments recorded yet.</div>';
+  }
+  return '<div class="ar-tabbar" role="tablist">'+bar+'</div><div class="ar-tabpanel" role="tabpanel">'+panel+'</div>';
+}
+function arFDrawerActions(w,x){
+  return '<div class="ar-actions"><button class="btn outlined sm" data-arf="ar-open-invoice" data-inv="'+arFEsc(x.inv)+'">'+arFIcon("open_in_new")+'Open invoice</button>'+
+    '<button class="btn naked sm" data-arf="ar-followup" data-inv="'+arFEsc(x.inv)+'">'+arFIcon("event_note")+'Record a follow-up</button></div>';
+}
+function arFDetailModalHTML(){
+  var w=ARF_STATE;if(!ARF_MODAL)return "";
+  var mode=ARF_MODAL.mode,key=ARF_MODAL.key;
+  var invs=arFDetailInvoices(w,mode,key);
+  var subj=(mode==="customer")?key:arFBucketLabel(key);
+  var cols=["Customer","Bill To","Due Date","Invoice #","Days Past Due","Outstanding"];
+  var head='<div class="wt-row wt-head ar-dhead"><span class="arf-check-sp" aria-hidden="true"></span><span class="ar-dexp"></span>'+cols.map(function(c,i){return '<span class="ar-dc ar-dc'+i+'">'+c+'</span>';}).join("")+'</div>';
+  var body;
+  if(invs.length){
+    body=invs.map(function(x){
+      var open=(ARF_MODAL.exp===x.inv),dpd=x.days>0?(x.days+" days"):"Not due";
+      var checked=!!(ARF_MODAL.sel&&ARF_MODAL.sel[x.inv]);
+      /* ENHANCEMENT (owner-specified, dev-intent signal): per-row select checkbox at the START of each
+         invoice row. It carries its OWN data-arf="ar-selrow", so the delegated listener's
+         closest('[data-arf]') resolves to the checkbox itself, never the row's ar-exp; toggling a box
+         therefore neither expands/drills the row nor closes the modal. No select-all header checkbox. */
+      var row='<div class="wt-row ar-drow'+(open?" open":"")+'" data-arf="ar-exp" data-inv="'+arFEsc(x.inv)+'" role="button" tabindex="0" aria-expanded="'+open+'">'+
+        '<button type="button" class="arf-check'+(checked?" on":"")+'" data-arf="ar-selrow" data-inv="'+arFEsc(x.inv)+'" role="checkbox" aria-checked="'+checked+'" aria-label="Select invoice '+arFEsc(x.inv)+'">'+(checked?arFIcon("check"):"")+'</button>'+
+        '<span class="ar-dexp">'+arFIcon(open?"expand_more":"chevron_right")+'</span>'+
+        '<span class="ar-dc ar-dc0">'+x.customer+'</span>'+
+        '<span class="ar-dc ar-dc1">'+x.billTo+'</span>'+
+        '<span class="ar-dc ar-dc2">'+arFFmtDate(x.due)+'</span>'+
+        '<span class="ar-dc ar-dc3">'+x.inv+'</span>'+
+        '<span class="ar-dc ar-dc4">'+dpd+'</span>'+
+        '<span class="ar-dc ar-dc5 ar-dc-amt">'+arFMoney(x.amount)+'</span></div>';
+      if(open)row+='<div class="ar-drawer">'+arFDetailTabs(x)+arFDrawerActions(w,x)+'</div>';
+      return row;
+    }).join("");
+  } else {
+    body='<div class="state" data-kind="empty">'+arFIcon("inbox")+'<div class="state-title">No invoices to display</div><div class="state-sub">Nothing matches this selection.</div></div>';
+  }
+  var totalOut=invs.reduce(function(s,x){return s+x.amount;},0);
+  var foot=invs.length?'<div class="dep-total ar-dtotal"><span>'+invs.length+' invoice'+(invs.length>1?"s":"")+'</span><span>'+arFMoney(totalOut)+'</span></div>':'';
+  /* ENHANCEMENT (owner-specified, dev-intent signal, NOT a finished workflow or final copy): a Confirm
+     button sits beside Close in the footer and is ALWAYS enabled regardless of how many rows are checked.
+     On Confirm the modal shows an INLINE note (below/left of the footer buttons) whose primary line reads
+     exactly "Move to unposted transactions"; a muted sub-line reports the selection for developer clarity.
+     This inline note is a developer-facing signal that the selected invoices are intended to move to
+     unposted transactions to begin processing; it is NOT a wired-up action, toast, or final wording.
+     Selection is modal-scoped (ARF_MODAL.sel), reset on open and close. Export to Excel and the
+     "N invoices / total" footer stay exactly as Jo has them. */
+  var selCount=ARF_MODAL.sel?Object.keys(ARF_MODAL.sel).length:0;
+  var confirmNote=(ARF_MODAL&&ARF_MODAL.confirmed)
+    ?'<div class="arf-confirm-note" role="status"><span class="arf-confirm-primary"><span class="material-symbols-rounded" aria-hidden="true">arrow_forward</span><span class="arf-confirm-txt">Move to unposted transactions</span></span><span class="arf-confirm-sub">('+(selCount>0?selCount+' invoice'+(selCount===1?'':'s')+' selected':'no invoices selected')+')</span></div>'
+    :'<span class="arf-f-spacer"></span>';
+  return '<div class="modal modal-wide ar-detail-modal" data-arf="stop" role="dialog" aria-modal="true" aria-label="Receivable invoices outstanding, detail">'+
+    '<div class="modal-h ar-detail-h"><span class="modal-title"><span class="material-symbols-rounded" aria-hidden="true" style="font-size:19px;vertical-align:-4px;margin-right:7px;color:var(--txt-subtle)">receipt_long</span>Receivable Invoices Outstanding: Detail</span><span class="ar-dsub">'+subj+'</span><span class="ar-dh-spacer"></span><button class="btn naked sm" data-arf="ar-export">'+arFIcon("download")+'Export to Excel</button><button class="iconbtn" data-arf="ar-detail-close" aria-label="Close">'+arFIcon("close")+'</button></div>'+
+    '<div class="modal-b ar-detail-b"><div class="ar-detail-scroll">'+head+body+'</div>'+foot+'</div>'+
+    '<div class="modal-f arf-modal-f">'+confirmNote+'<div class="arf-f-btns"><button class="btn outlined sm" data-arf="ar-confirm">Confirm</button><button class="btn primary sm" data-arf="ar-detail-close">Close</button></div></div></div>';
+}
+function arFRenderModal(){
+  var mr=document.getElementById('arfModalRoot');
+  if(!mr){mr=document.createElement('div');mr.id='arfModalRoot';document.body.appendChild(mr);}
+  if(!ARF_MODAL){mr.innerHTML='';ARF_MODAL_MOUNTED=false;try{document.body.style.overflow='';}catch(e){}return;}
+  try{document.body.style.overflow='hidden';}catch(e2){}
+  mr.innerHTML='<div class="arf-root arf-mb" data-arf="ar-detail-close">'+arFDetailModalHTML()+'</div>';
+  ARF_MODAL_MOUNTED=true;
+}
+
+/* Revenue-center / source popover (body-appended, arf-scoped) */
+function arFPopContent(){
+  if(!ARF_POP)return "";
+  var w=ARF_STATE;
+  if(ARF_POP.type==="ar-rc"){var cur=w.arRc||"All";return '<div class="cap">Revenue center</div>'+ARF_RC.map(function(o){var on=cur===o;return '<button class="mi'+(on?" check":"")+'" role="option" aria-selected="'+on+'" data-arf="ar-set-rc" data-v="'+arFEsc(o)+'">'+(on?arFIcon("check"):'<span class="mi-gap"></span>')+(o==="All"?"All revenue centers":o)+'</button>';}).join("");}
+  if(ARF_POP.type==="ar-source"){var cs=w.arSource||"All";return '<div class="cap">Source</div>'+ARF_SOURCE.map(function(o){var on=cs===o;return '<button class="mi'+(on?" check":"")+'" role="option" aria-selected="'+on+'" data-arf="ar-set-source" data-v="'+arFEsc(o)+'">'+(on?arFIcon("check"):'<span class="mi-gap"></span>')+(o==="All"?"All sources":o)+'</button>';}).join("");}
+  return "";
+}
+function arFOpenPop(anchor,type){
+  ARF_POP={type:type};
+  var el=document.getElementById('arfPop');
+  if(!el){el=document.createElement('div');el.id='arfPop';document.body.appendChild(el);}
+  el.setAttribute('data-arf','stop');
+  el.className='arf-root arf-pop';
+  el.innerHTML=arFPopContent();
+  var r=anchor.getBoundingClientRect(),M=8;
+  el.style.visibility='hidden';el.style.left='0px';el.style.top='0px';
+  var bw=el.offsetWidth,bh=el.offsetHeight;
+  var left=Math.min(Math.max(M,r.left),window.innerWidth-bw-M);
+  var top=r.bottom+6;if(top+bh>window.innerHeight-M)top=Math.max(M,r.top-bh-6);
+  el.style.left=left+'px';el.style.top=top+'px';el.style.visibility='';
+}
+function arFClosePop(){ARF_POP=null;var el=document.getElementById('arfPop');if(el)el.remove();}
+
+/* Bar hover card (Jo's arShowPop; standalone .arf-pop-card on body) */
+var arfPopEl=null;
+function arFHidePop(){if(arfPopEl){arfPopEl.remove();arfPopEl=null;}}
+function arFShowPop(row,mx,my){
+  var raw=row.getAttribute("data-arpop");if(!raw)return;var p=raw.split("|");
+  var label=p[0],total=+p[1],count=+p[2],share=+p[3];
+  if(!arfPopEl){arfPopEl=document.createElement("div");arfPopEl.className="arf-pop-card";document.body.appendChild(arfPopEl);}
+  arfPopEl.innerHTML='<div class="bgt-pop-h">'+label+'</div>'+
+    '<div class="bgt-pop-r"><span class="bgt-pop-lbl">Outstanding</span><span class="bgt-pop-v">'+arFMoney(total)+'</span></div>'+
+    '<div class="bgt-pop-r"><span class="bgt-pop-lbl">Invoices</span><span class="bgt-pop-v">'+count+'</span></div>'+
+    '<div class="bgt-pop-div"></div><div class="bgt-pop-var"><span class="bgt-pop-lbl">Share of outstanding</span><span class="bgt-pop-fav neutral">'+share+'%</span></div>';
+  var bw=arfPopEl.offsetWidth,bh=arfPopEl.offsetHeight,M=10;
+  var left=mx+14,top=my-bh-10;if(left+bw>window.innerWidth-M)left=mx-bw-14;if(top<M)top=my+16;
+  arfPopEl.style.left=left+"px";arfPopEl.style.top=top+"px";
+}
+
+/* (3) DELEGATED HANDLERS (Jo's arHandleClick, adapted to ARF_STATE + data-arf) */
+function arFOnClick(e){
+  var t=e.target.closest?e.target.closest('[data-arf]'):null;
+  if(!t){ if(ARF_POP&&!(e.target.closest&&e.target.closest('#arfPop')))arFClosePop(); return; }
+  if(!t.closest('.arf-root'))return;
+  var a=t.getAttribute('data-arf'),w=ARF_STATE;
+  if(a==='ar-rc'){ if(ARF_POP&&ARF_POP.type==='ar-rc'&&document.getElementById('arfPop')){arFClosePop();}else{arFOpenPop(t,'ar-rc');} return; }
+  if(a==='ar-source'){ if(ARF_POP&&ARF_POP.type==='ar-source'&&document.getElementById('arfPop')){arFClosePop();}else{arFOpenPop(t,'ar-source');} return; }
+  if(a==='ar-set-rc'){var nv=t.getAttribute('data-v');if((w.arRc||'All')!==nv){w.arRc=nv;arFLoad(w);}arFClosePop();arFRerender();return;}
+  if(a==='ar-set-source'){var sv=t.getAttribute('data-v');if((w.arSource||'All')!==sv){w.arSource=sv;arFLoad(w);}arFClosePop();arFRerender();return;}
+  if(a==='ar-group'){w.arGroup=t.getAttribute('data-v');arFClosePop();arFRerender();return;}
+  if(a==='ar-open'){ARF_MODAL={mode:t.getAttribute('data-mode'),key:t.getAttribute('data-key'),tab:'details',exp:null,sel:{},confirmed:false};ARF_MODAL_MOUNTED=false;arFClosePop();arFRenderModal();return;}
+  if(a==='ar-detail-close'){ARF_MODAL=null;arFRenderModal();return;}
+  /* ENHANCEMENT (dev-intent): toggle one row's selection (modal-scoped set on ARF_MODAL.sel). Re-renders
+     the modal in place so it never closes and never triggers the row's ar-exp drill. */
+  if(a==='ar-selrow'){if(ARF_MODAL){var siv=t.getAttribute('data-inv');if(!ARF_MODAL.sel)ARF_MODAL.sel={};if(ARF_MODAL.sel[siv])delete ARF_MODAL.sel[siv];else ARF_MODAL.sel[siv]=true;}arFRenderModal();return;}
+  /* ENHANCEMENT (dev-intent): always-enabled Confirm. Surfaces the inline "Move to unposted transactions"
+     note (a developer-facing signal of the intended action, not a finished workflow). */
+  if(a==='ar-confirm'){if(ARF_MODAL)ARF_MODAL.confirmed=true;arFRenderModal();return;}
+  if(a==='ar-exp'){if(ARF_MODAL){var iv=t.getAttribute('data-inv');ARF_MODAL.exp=(ARF_MODAL.exp===iv)?null:iv;ARF_MODAL.tab='details';}arFRenderModal();return;}
+  if(a==='ar-tab'){if(ARF_MODAL)ARF_MODAL.tab=t.getAttribute('data-tab');arFRenderModal();return;}
+  if(a==='ar-export'){if(typeof showToast==='function')showToast('Exporting the detail list to Excel (stub, no export backend in this mock)');return;}
+  if(a==='ar-open-invoice'){if(typeof showToast==='function')showToast('Opening invoice '+t.getAttribute('data-inv')+' in Accounts Receivable (stub)');return;}
+  if(a==='ar-followup'){if(typeof showToast==='function')showToast('Follow-up noted for invoice '+t.getAttribute('data-inv')+'.');return;}
+  /* 'stop' and anything unmatched: no-op on purpose */
+}
+var ARF_WIRED=false;
+(function(){
+  if(ARF_WIRED)return;ARF_WIRED=true;
+  document.addEventListener('click',arFOnClick);
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape'){if(ARF_MODAL){ARF_MODAL=null;arFRenderModal();}else if(ARF_POP){arFClosePop();}return;}
+    if((e.key==='Enter'||e.key===' ')&&e.target&&e.target.getAttribute&&(e.target.getAttribute('data-arf')==='ar-open'||e.target.getAttribute('data-arf')==='ar-exp')&&e.target.closest&&e.target.closest('.arf-root')&&e.target.tagName!=='BUTTON'){e.preventDefault();e.target.click();}
+  });
+  document.addEventListener('mousemove',function(e){
+    var row=e.target.closest&&e.target.closest('.ar-barrow[data-arpop]');
+    if(!row||!(row.closest&&row.closest('.arf-root'))){arFHidePop();return;}
+    arFShowPop(row,e.clientX,e.clientY);
+  });
+})();
+
 // W5 — AR Invoices Outstanding
 // Rebuilt 2026-07-23 under Rules 8-11 (create-mock-designs). Full rationale in
 // Widget_Specs/W05-Receivable-Invoices-Outstanding.md, "2026-07-23 — Rebuild under Rules 8-11" entry.
@@ -7795,6 +8408,11 @@ WRENDER[4]=function(opt,wid,sz){
 //       confirmation" in Widget_Specs only — no TBD/placeholder is rendered anywhere below. The 5-bucket aging
 //       structure itself IS confirmed (Step 1 legacy + Punch List Age Band available), so it carries no caveat.
 WRENDER[5]=function(opt,wid,sz){
+  /* FINAL, 2026-07-28: Jo Lopez's Accounts Receivable design, ported 1-to-1 (see the
+     arF block above), her views/filters/aging/drill/states kept as-is. Additive branch;
+     the A/B/C branches below are deliberately untouched (the Dashboard tab still renders
+     them, and they stay reachable from the design-option switch). */
+  if(opt==='F') return arFRender(wid,sz);
   sz=sz||getSz(wid,opt);
   var view=sv(wid,opt);
   var fk=wid+'-'+opt; // Rule 8: per-option filter-state key for this widget only
@@ -9545,7 +10163,14 @@ FC_KPI_HEADLINE[4]=function(){
   }
   return 'Progress Bars';
 };
-fcInitState(5,'A');
+FC_KPI_HEADLINE[5]=function(){
+  if(FC_STATE[5]&&FC_STATE[5].opt==='F'&&typeof arFOverdue==='function'){
+    var over=arFOverdue(ARF_STATE);
+    return 'Total Outstanding, '+(over>0?arFMoney(over)+' overdue':'all current');
+  }
+  return 'Bar by Age Band';
+};
+fcInitState(5,'F');
 fcInitState(6,'A');
 fcInitState(7,'A');
 // KPI/Small card title now reflects the active Account Type filter too (2026-07-13 fix — both used to always
@@ -9590,8 +10215,12 @@ fcInitState(17,'A');
 // recomposed with Version A's report table (default view) + Version B's pacing bars (toggle) + a
 // 4-step pacing colour scale (owner decision), receipts-through date as the only filter. See the
 // fc-widget-4 Logic note of the same date.
+// W05 bumped 0.1 -> 2.0 (2026-07-28): Final build, Jo Lopez Accounts Receivable design port (opt 'F'
+// branch), a 1-to-1 copy of her Widget Container Demo ar widget (aging/customers views, revenue-center
+// and source filter chips, ordered amethyst severity bars, invoice-detail drill modal, empty/loading
+// states), three-size model (Glance/Explore/Detail). See the fc-widget-5 Logic note of the same date.
 var FC_VERSION = {
-  1:'2.0', 2:'2.0', 3:'2.0', 4:'2.0', 5:'0.1', 6:'0.1', 7:'0.8',
+  1:'2.0', 2:'2.0', 3:'2.0', 4:'2.0', 5:'2.0', 6:'0.1', 7:'0.8',
   9:'0.1', 10:'0.1', 11:'0.1', 13:'0.1', 15:'0.1', 16:'0.1', 17:'0.1'
 };
 Object.keys(FC_VERSION).forEach(function(wid){

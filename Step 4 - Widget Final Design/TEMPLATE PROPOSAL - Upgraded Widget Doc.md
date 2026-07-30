@@ -192,12 +192,23 @@ header says locked but whose table has rows is telling the truth about itself.
 Dated changelog, unchanged — this is already the strongest part of the current
 template. "Per direct instruction" entries remain the highest-authority signal.
 
-### Locked-doc rule (added 2026-07-27)
+### Locked-doc rule (added 2026-07-27; structure refined 2026-07-28)
 
-Once a doc is locked, its body may only be modified by **version-tagged update
-blocks** (`[v2 — YYYY-MM-DD]`, then v3...) recording a built Final's changes —
-never by untagged edits. Superseded v1 text stays in place marked
-*(v1, superseded)*; nothing is deleted. W01 is the reference example.
+Once a doc is locked, it may only be changed by version-tagged updates recording a
+built Final's changes (never untagged edits), and nothing is ever deleted. The doc
+is split into two parts:
+
+- **`# Final Design (current)`** at the top: every section describes ONLY the
+  current shipped design, read cleanly with no superseded content interleaved.
+- **`# Design History (superseded — kept for the record)`** at the very end: when a
+  version update supersedes earlier content, that content is MOVED here (not left in
+  the live body), dated, and written as a timeline (what existed → what was designed
+  and tested → what was dropped → superseded by the Final).
+
+This replaces the earlier mechanic of layering `[v2]` blocks over kept
+`(v1, superseded)` blocks inside each section, which mixed original and final
+thinking in the same body and was hard to read. W05 is the reference example of the
+refined structure.
 
 ---
 

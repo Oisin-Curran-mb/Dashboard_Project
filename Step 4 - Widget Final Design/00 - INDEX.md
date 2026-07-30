@@ -30,7 +30,15 @@
 
 **One caution:** almost every file in this folder currently says `**Status:** 🟢 Final design — locked` in its own header — that line is not a reliable signal on its own (it's been true even for widgets later found to be stale against the real build). Treat the status column in this index as the one to trust, not the line inside each file. As of the 2026-07-27 upgrade, each doc's own `## Sign-off Readiness` table is the second signal to check: a "locked" header with open rows in that table is not actually sign-off-ready.
 
-**Locked-doc rule (added 2026-07-27, per direct instruction):** a locked doc's body may only be modified by **version-tagged updates** — blocks explicitly marked `[v2 — YYYY-MM-DD]` (then v3, and so on) recording a built Final's changes. No untagged edits to a locked doc, ever. Version-tagged updates never delete v1 text: superseded passages stay in place marked *(v1, superseded)*, so the doc reads as its full history. W01 is the reference example (v2, 2026-07-27, built Final from Jo's design).
+**Locked-doc rule (added 2026-07-27; structure refined 2026-07-28, per direct instruction):** a locked doc may only be changed by **version-tagged updates** recording a built Final's changes (no untagged edits, ever), and **nothing is ever deleted**. The refined structure keeps the live spec readable:
+
+- The doc splits into two parts: a **`# Final Design (current)`** part at the top whose body describes ONLY the current shipped design, and a **`# Design History (superseded — kept for the record)`** part at the very end.
+- When a version-tagged update supersedes earlier content, that earlier content is **moved into the dated Design History section**, not left interleaved in the live body. Each history entry is dated and reads as a timeline (what existed → what was designed and tested → what was dropped → superseded by the Final).
+- Do not interleave `[v2]` blocks over kept `(v1, superseded)` blocks inside the live sections (the earlier, now-retired mechanic). The live section shows the current design cleanly; its superseded predecessor lives in Design History.
+
+W05 is the reference example of this refined structure (2026-07-28). W01–W04 were tagged under the earlier interleaved mechanic and can be restructured to match when next touched; they are not wrong, just the older shape. (Owner reviewed both 2026-07-28 and finds the interleaved W01–W04 style readable, so those stay as-is; W05 keeps the two-part structure.)
+
+**Built Finals (2026-07-28):** W01, W02, W03, W04, and W05 now have built Final versions in `Step 3 - Mock_Work/Dashboard Widget Mockups.html`'s Final Check tab (Jo-design, tagged v2.0), and each of their docs here carries a version-tagged update recording that build. The per-widget **status column below is tracker-sourced (2026-07-20/21) and still shows W04/W05 as "In progress"** — it has not caught up with the built Finals because `Dashboard Tracker.xlsx` is pending a re-sync (it was open in Excel). Trust the version-tagged content inside each doc as the current reality until the tracker column is re-synced.
 
 ---
 
