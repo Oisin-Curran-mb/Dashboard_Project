@@ -4,7 +4,7 @@
 
 **Source:** `Step 6 - Sign off document/Payroll Distrubution/Payroll+Distributions.doc` — Section 11 ("Review of the proposed redesign, Widget Mockups v3, W03") and Section 12 ("Gaps and prioritized improvements"), management's live audit dated 15 Jul 2026.
 **Compiled:** 2026-07-21
-**Status:** 🔴 Nothing below has been actioned yet in Steps 1–5 — this file records what needs to happen, it doesn't do it.
+**Status:** 🔴 Nothing below has been actioned yet in Steps 1–5 — this file records what needs to happen, it doesn't do it. *(Update 2026-07-27: of the 4 contradictions below, finding 1 is now resolved with evidence; see its status line. Findings 2, 3 and 4 remain open.)*
 
 ## How to use this
 
@@ -24,7 +24,7 @@ Each finding below is one row in the chain that management's review either confi
 
 **Recommended action:** Rewrite Step 4's Purpose section to describe categories as org-defined distribution names, dropping the specific nine-item list (or keeping it only as a "may look like this" illustration, clearly labeled as such). Step 5's illustrative example can stay as an illustration but should say explicitly that the label set is arbitrary per org, not drawn from a real confirmed list.
 
-**Status:** ⚪ Not yet actioned.
+**Status:** ⚪ Not yet actioned. → ✅ **Resolved with evidence, 2026-07-27:** both claims true at different data levels. Jo's live audit saw `PR_CompensationDistribution.Name` (org-defined distribution labels, level 2); the project's pay-type list is the fixed `PR_HistoryCompensation.SubType` codes (level 4). See `Step 5 - API documents/Payroll Distributions/Payroll Distributions - Pay Type Breakdown Analysis (proof).html`. No schema changes needed for the breakdown.
 
 ---
 
@@ -106,7 +106,7 @@ None of these are marked with a per-item status here since they're additions, no
 
 | # | Finding | Steps affected | Status |
 |---|---|---|---|
-| 1 | Pay-type list is invented, not real | Step 4 (Purpose), Step 5 (illustrative example wording) | ⚪ Not actioned |
+| 1 | Pay-type list is invented, not real | Step 4 (Purpose), Step 5 (illustrative example wording) | ✅ Resolved with evidence, 2026-07-27 (both true at different levels; see finding 1's status) |
 | 2 | Comparison rejected entirely | Step 4 (Views), Step 5 (response shape) | ⚪ Not actioned — needs a decision first |
 | 3 | Drill-through should be in-widget, not a link out | Step 3, Step 4 (Drill-Through), Step 5 (needs a real endpoint) | ⚪ Not actioned |
 | 4 | Top-N trimming needs amount-sort | Step 3, Step 4 (Data Table Sort) | ⚪ Not actioned |

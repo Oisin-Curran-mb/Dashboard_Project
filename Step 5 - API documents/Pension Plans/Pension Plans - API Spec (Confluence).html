@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Pension Plans — API Spec</title>
+<style>
+body { font-family: -apple-system, Helvetica, Arial, sans-serif; max-width: 900px; margin: 30px auto; line-height: 1.5; color: #172B4D; }
+h1 { font-size: 24px; }
+h2 { font-size: 19px; border-bottom: 1px solid #DFE1E6; padding-bottom: 6px; margin-top: 32px; }
+h3 { font-size: 16px; margin-top: 20px; }
+table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+th, td { border: 1px solid #DFE1E6; padding: 6px 10px; text-align: left; vertical-align: top; }
+th { background: #F4F5F7; }
+code { background: #F4F5F7; padding: 1px 5px; border-radius: 3px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 90%; }
+pre { background: #F4F5F7; padding: 12px; border-radius: 4px; overflow-x: auto; }
+pre code { background: none; padding: 0; }
+.status { background: #FFF0B3; display: inline-block; padding: 3px 10px; border-radius: 3px; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<h1>Pension Plans — API Spec</h1>
+<p><span class="status">Status: DRAFT — not final</span></p>
+<h2>Overview</h2>
+<p>The widget is a snapshot of the conference's annual clergy-pension obligation: every ACTIVE pension appointment (person active, plan started, not yet ended), summed per plan, filterable by church district. This spec is deliberately 1-to-1 with the existing pension-plans endpoints; the only new field is <code>AppointeeCount</code> on the grid rows. The four endpoints that exist today (filters, grid, chart, details) keep their exact shapes and paths. The table, pie, grouped bar, KPI headline, share-of-total, and every total the widget shows are computed client-side from the grid data; nothing else is asked of the backend.</p>
+<p><strong>There is no time axis.</strong> Contributions are annual figures attached to appointments that are active as of today; the source data has no sub-year breakdown and no year scoping. This spec therefore has none of the Time Window Module machinery: no <code>window</code>, no <code>grain</code>, no <code>asOf</code>. Do not copy those parameters over from the Budget Compared to Actual spec; they do not exist here.</p>
+<p>Grouping is by PLAN (PlanID plus its display name, e.g. UMPIP, CRSP-DC, CPP): plan names are org-configured strings, not a fixed enum. There is no "Defined Benefit / Defined Contribution / 403(b)" category field anywhere in either codebase (see Not in scope).</p>
+<h2>Tables</h2>
+<table>
+<thead>
+<tr>
+<th>Table</th>
+<th>Fields used</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PB_Appointment</code></td>
+<td><code>Active</code>, <code>DateStart</code>, <code>DateEnd</code>, <code>DistrictID</code>: the active-appointment predicate and the district scope</td>
+</tr>
+<tr>
+<td><code>PB_AppointmentPlan</code></td>
+<td><code>AppointmentPlanID</code>, <code>PlanID</code>, plan <code>Name</code>, <code>AnnualPlanAmount</code>: the rows being grouped and summed</td>
+</tr>
+<tr>
+<td><code>PB_ControlTable</code></td>
+<td>Districts (<code>Type=0</code>, <code>CompanyID</code>): the district dropdown</td>
+</tr>
+<tr>
+<td><code>PBCharge</code></td>
+<td>The appointee's church/organisation name for drill rows (via <code>CorePerson</code> name; returns an empty string today, a pre-existing defect)</td>
+</tr>
+</tbody>
+</table>
+<p>No new tables and no new queries are needed. The one addition, <code>AppointeeCount</code>, is a <code>COUNT(*)</code> over the exact same rows the grid endpoint already groups and sums: <code>[PB_Appointment] WHERE Active=1 AND DateStart&lt;=today AND (DateEnd IS NULL OR DateEnd&gt;=today)</code> joined to <code>[PB_AppointmentPlan]</code>, grouped by <code>PlanID</code>+<code>Name</code>, <code>SUM(AnnualPlanAmount)</code>. That also answers the sign-off dossier's open question ("are appointee counts available?"): yes, no new data required beyond adding the count to the SELECT.</p>
+<p>The one genuinely absent piece of data is a plan CATEGORY. The old design's "Plan Type" grouping (Defined Benefit / Defined Contribution / 403(b)) has no backing field in the legacy tables or the modern API; the built Final groups by plan name instead, so nothing in this contract needs it.</p>
+<h2>Old vs. new</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Old (live today)</th>
+<th>New (this contract)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Grid endpoint</td>
+<td><code>GET /api/dashboard/pension-plans/grid?districtId={guid}</code> returns <code>List&lt;PensionPlanGridRowDto&gt;</code> <code>{PlanId, Name, Amount}</code></td>
+<td>Same endpoint, same shape, plus ONE new field: <code>AppointeeCount</code> (int) on each row, giving <code>{PlanId, Name, Amount, AppointeeCount}</code>. This is the only new data in this spec</td>
+</tr>
+<tr>
+<td>Chart endpoint</td>
+<td><code>GET /api/dashboard/pension-plans/chart?districtId={guid}</code> returns <code>List&lt;PensionPlanChartItemDto&gt;</code> <code>{Name, Amount}</code></td>
+<td>Unchanged. The widget renders the pie and the bars from the grid data client-side, so it does not depend on this endpoint gaining counts</td>
+</tr>
+<tr>
+<td>All-districts scope</td>
+<td>Prior audit finding: Grid/Chart return ONE district at a time with no aggregate all-districts shape. The comparison doc's data panel reads "optional WHERE DistrictID", which conflicts; unresolved</td>
+<td>Preferred path: if the "optional WHERE" reading is correct, calling grid WITHOUT <code>districtId</code> already returns the all-districts aggregate (needs a one-line dev confirmation). Guaranteed fallback: the client calls grid once per district from the filters list and merges; zero backend work, and the call count is bounded by the org's district count (small)</td>
+</tr>
+<tr>
+<td>Appointee counts</td>
+<td>Amounts only, in both codebases</td>
+<td><code>AppointeeCount</code> on grid rows, a <code>COUNT(*)</code> over the same rows already being summed</td>
+</tr>
+<tr>
+<td>District x plan matrix (grouped bar)</td>
+<td>Nothing: legacy pie and the modern chart endpoint are plan-only, one district at a time</td>
+<td>NO new endpoint. The client assembles the matrix from the same per-district grid calls used for the all-districts fallback; results are cacheable for the life of the widget load</td>
+</tr>
+<tr>
+<td>Appointee drill</td>
+<td>Exists: <code>GET /api/dashboard/pension-plans/{planId}/details?districtId={guid}</code> returns <code>List&lt;PensionPlanDetailDto&gt;</code> <code>{AppointmentPlanId, Appointee, Charge, AnnualAmount, DistrictId}</code>. <code>Charge</code> (the church/organisation, via <code>PBCharge</code> CorePerson name) returns an empty string today. Legacy drill grid was Appointee / Charge / Annual Amount / District</td>
+<td>Same endpoint, same shape, unchanged. District names are resolved client-side from the filters list; the footer total is a client-side sum of the rows. The only backend item is fixing the pre-existing <code>Charge</code> empty-string defect, which currently leaves the drill's Church/organisation column blank</td>
+</tr>
+<tr>
+<td>Totals and KPI</td>
+<td>No total objects anywhere</td>
+<td>Still none. The KPI headline (total annual contribution, active appointee count) and every table total are client-side sums of the grid rows</td>
+</tr>
+<tr>
+<td>Active-appointment predicate</td>
+<td><code>Active=true AND DateStart&lt;=today AND (DateEnd=null OR DateEnd&gt;=today)</code>, identical in legacy and modern (confirmed matching in the comparison doc)</td>
+<td>Unchanged. It IS the definition of the snapshot</td>
+</tr>
+<tr>
+<td>Time axis</td>
+<td>None. The legacy widget was always an as-of-today snapshot</td>
+<td>Still none. No Time Window Module params, ever, on this widget</td>
+</tr>
+<tr>
+<td>Export</td>
+<td>Legacy generated Excel in the detail view only, and exported appointee detail even from the main view (a scope mismatch flagged in the live audit). The modern API has no export endpoints</td>
+<td>Undecided; see Still needs sign-off. Client-side generation from the JSON the widget already holds is the zero-backend option</td>
+</tr>
+<tr>
+<td>District preference</td>
+<td>Legacy saved the user's last <code>DistrictID</code></td>
+<td>Not in the modern API; client-managed unless decided otherwise, see Still needs sign-off</td>
+</tr>
+</tbody>
+</table>
+<h2>Endpoints</h2>
+<p>All endpoints are <code>GET</code>, company-scoped, and belong to the Pension Billing module (module field <code>PensionBenefits</code>, legacy <code>/PensionBilling</code>). All four exist today; none are added, renamed, or reshaped.</p>
+<h3>District filter list (exists today, unchanged)</h3>
+<pre><code>GET /api/dashboard/pension-plans/filters
+</code></pre>
+<p>No parameters beyond company context. Returns the district dropdown list (<code>[PB_ControlTable] WHERE Type=0 AND CompanyID=ctx</code>) with "All Districts" prepended, as built. This list is also the client's key for resolving <code>DistrictId</code> guids to display names in the drill and the grouped bar.</p>
+<h3>Grid (exists today; the one changed endpoint)</h3>
+<pre><code>GET /api/dashboard/pension-plans/grid?districtId={guid}
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>districtId</code></td>
+<td>guid</td>
+<td>no</td>
+<td>any district id from the filters endpoint</td>
+<td>omitted</td>
+<td>Narrows the snapshot to one district. Whether omitting it returns the all-districts aggregate is the open "optional WHERE" question (see Still needs sign-off); if it does not, the client assembles all-districts by fan-out (below)</td>
+</tr>
+</tbody>
+</table>
+<p>The single dataset behind the whole widget. Each row gains <code>AppointeeCount</code> (int), a <code>COUNT(*)</code> over the same active-appointment rows already being summed into <code>Amount</code>. The table, pie, grouped bar, KPI, and share-of-total all render from this data client-side.</p>
+<p><strong>All-districts and the grouped bar (client-side assembly).</strong> If omitting <code>districtId</code> does not return the aggregate, the client calls this endpoint once per district from the filters list and merges by <code>PlanId</code>. The same per-district responses ARE the district x plan matrix for the grouped bar, so no extra endpoint is needed either way. The call count is bounded by the org's district count (districts are few) and the responses are cacheable for the widget load.</p>
+<h3>Chart (exists today, unchanged)</h3>
+<pre><code>GET /api/dashboard/pension-plans/chart?districtId={guid}
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>districtId</code></td>
+<td>guid</td>
+<td>no</td>
+<td>any district id from the filters endpoint</td>
+<td>omitted</td>
+<td>Same scoping behaviour as grid</td>
+</tr>
+</tbody>
+</table>
+<p>Returns <code>List&lt;PensionPlanChartItemDto&gt;</code> <code>{Name, Amount}</code>. Amounts-only and unchanged: the widget takes its chart counts from the grid data, so this endpoint needs nothing.</p>
+<h3>Appointee detail drill (exists today, unchanged)</h3>
+<pre><code>GET /api/dashboard/pension-plans/{planId}/details?districtId={guid}
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>planId</code></td>
+<td>guid</td>
+<td>yes (path)</td>
+<td>any <code>PlanId</code> returned by grid</td>
+<td>none</td>
+<td>The plan being drilled</td>
+</tr>
+<tr>
+<td><code>districtId</code></td>
+<td>guid</td>
+<td>no</td>
+<td>any district id from the filters endpoint</td>
+<td>omitted</td>
+<td>Carries the widget's active district filter into the drill, matching the live behaviour</td>
+</tr>
+</tbody>
+</table>
+<p>Shape unchanged. The drill's district column resolves <code>DistrictId</code> to a name client-side via the filters list; the footer total is a client-side sum of <code>AnnualAmount</code>. The <code>Charge</code> field returns an empty string today (pre-existing defect, see Still needs sign-off).</p>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/pension-plans/filters
+GET /api/dashboard/pension-plans/grid
+GET /api/dashboard/pension-plans/grid?districtId=3b8f2d6c-9a1e-4f7b-8d2c-5e9a3c7f1b42
+GET /api/dashboard/pension-plans/a1f3c5e7-2b4d-4f6a-8c9e-0d1f2a3b4c5d/details?districtId=7d9e4c1a-2b5f-4e8a-9c3d-1f6b8a2e4d70
+</code></pre>
+<h2>Validation rules</h2>
+<p>No new parameters means no new validation. The existing endpoints' behaviour stands unchanged:</p>
+<ul>
+<li><code>districtId</code> and <code>planId</code> values are always taken from the API's own prior responses (the filters list and the grid rows), so the widget never fabricates an id. Whatever the existing endpoints do today with an unknown or foreign guid is unchanged by this spec.</li>
+<li>The one behaviour that needs a written answer is what grid and chart return when <code>districtId</code> is OMITTED: the all-districts aggregate (the "optional WHERE DistrictID" reading) or an error/empty result. See Still needs sign-off; the client fan-out fallback works either way.</li>
+<li>There are no time parameters to validate: <code>window</code>, <code>grain</code>, and <code>asOf</code> do not exist on this widget.</li>
+</ul>
+<h2>Response schema</h2>
+<p>All four endpoints return their existing DTOs. Field names below are the DTO property names as they exist in the modern codebase.</p>
+<h3>Grid: <code>List&lt;PensionPlanGridRowDto&gt;</code></h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PlanId</code></td>
+<td>guid</td>
+<td>The plan's id (<code>PB_AppointmentPlan.PlanID</code> grouping key); the drill key</td>
+</tr>
+<tr>
+<td><code>Name</code></td>
+<td>string</td>
+<td>The plan's display name; org-configured data, not an enum</td>
+</tr>
+<tr>
+<td><code>Amount</code></td>
+<td>number</td>
+<td><code>SUM(AnnualPlanAmount)</code> over the scope's active appointments on this plan</td>
+</tr>
+<tr>
+<td><code>AppointeeCount</code></td>
+<td>int</td>
+<td><strong>NEW, the only addition in this spec.</strong> <code>COUNT(*)</code> over the exact same rows summed into <code>Amount</code></td>
+</tr>
+</tbody>
+</table>
+<h3>Chart: <code>List&lt;PensionPlanChartItemDto&gt;</code> (unchanged)</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Name</code></td>
+<td>string</td>
+<td>The plan's display name</td>
+</tr>
+<tr>
+<td><code>Amount</code></td>
+<td>number</td>
+<td>Same aggregation as the grid's <code>Amount</code></td>
+</tr>
+</tbody>
+</table>
+<h3>Details: <code>List&lt;PensionPlanDetailDto&gt;</code> (unchanged)</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>AppointmentPlanId</code></td>
+<td>guid</td>
+<td><code>PB_AppointmentPlan.AppointmentPlanID</code>, the row's stable key</td>
+</tr>
+<tr>
+<td><code>Appointee</code></td>
+<td>string</td>
+<td>The appointee's (clergy) display name</td>
+</tr>
+<tr>
+<td><code>Charge</code></td>
+<td>string</td>
+<td>The church/organisation the appointee is charged to (via <code>PBCharge</code> CorePerson name). Returns an empty string today: a pre-existing defect, not a schema change. Once fixed, the same field carries the name</td>
+</tr>
+<tr>
+<td><code>AnnualAmount</code></td>
+<td>number</td>
+<td>The appointment's <code>AnnualPlanAmount</code></td>
+</tr>
+<tr>
+<td><code>DistrictId</code></td>
+<td>guid</td>
+<td>The appointment's district; the client resolves the display name from the filters list</td>
+</tr>
+</tbody>
+</table>
+<p>Notes:</p>
+<ul>
+<li>Amounts are plain decimal numbers, no currency formatting; currency symbol and locale are client concerns (the live audit's pound-sign-on-US-data defect is a frontend localisation bug, not an API field).</li>
+<li>There are no envelope objects, no echo headers, no <code>generatedAt</code> stamps, and no server-computed totals anywhere: the responses are the bare lists the endpoints return today.</li>
+<li>Share of total is a client division; totals are client sums; the district x plan matrix is a client merge. All of it derives from grid rows.</li>
+</ul>
+<h2>Examples</h2>
+<p>All figures below are MOCK data shaped like production: the Final build's dataset of 10 appointees across 3 districts and 5 plans, totalling 48,252.43. They are not live-verified production values; the shapes and the arithmetic reconciliation are the contract, not the amounts.</p>
+<h3>Example 1: grid, all districts (the default view)</h3>
+<p>Assuming the "optional WHERE" reading is confirmed, omitting <code>districtId</code> returns the aggregate. Amounts sum to 48,252.43 and counts to 10; the KPI headline is the client-side sum of exactly these rows.</p>
+<pre><code>GET /api/dashboard/pension-plans/grid
+</code></pre>
+<pre><code>[
+  { &quot;PlanId&quot;: &quot;a1f3c5e7-2b4d-4f6a-8c9e-0d1f2a3b4c5d&quot;, &quot;Name&quot;: &quot;Employee Before Tax-UMPIP&quot;, &quot;Amount&quot;: 24000.00, &quot;AppointeeCount&quot;: 3 },
+  { &quot;PlanId&quot;: &quot;b2e4d6f8-3c5a-4a7b-9d0e-1f2a3b4c5d6e&quot;, &quot;Name&quot;: &quot;CRSP-DB-%&quot;, &quot;Amount&quot;: 7532.56, &quot;AppointeeCount&quot;: 2 },
+  { &quot;PlanId&quot;: &quot;c3d5e7f9-4b6a-4b8c-a0e1-2f3a4b5c6d7e&quot;, &quot;Name&quot;: &quot;CRSP-DC&quot;, &quot;Amount&quot;: 7037.31, &quot;AppointeeCount&quot;: 2 },
+  { &quot;PlanId&quot;: &quot;d4c6f8a0-5e7b-4c9d-b1f2-3a4b5c6d7e8f&quot;, &quot;Name&quot;: &quot;CPP&quot;, &quot;Amount&quot;: 6682.56, &quot;AppointeeCount&quot;: 2 },
+  { &quot;PlanId&quot;: &quot;e5b7a9c1-6f8d-4dea-82e3-4b5c6d7e8f90&quot;, &quot;Name&quot;: &quot;Flat CRSP-DB&quot;, &quot;Amount&quot;: 3000.00, &quot;AppointeeCount&quot;: 1 }
+]
+</code></pre>
+<p>If the confirmation comes back negative, the client produces this identical dataset by merging the three per-district responses in Example 2 (same rows, keyed by <code>PlanId</code>, amounts and counts added).</p>
+<h3>Example 2: per-district grid calls and the client-assembled matrix (grouped bar)</h3>
+<p>Three calls, one per district from the filters list. District totals (22,873.84 + 12,859.94 + 12,518.65) sum to the all-districts 48,252.43, appointee counts (4 + 3 + 3) to 10, and each plan's cells sum to its Example 1 row (e.g. CRSP-DC: 3,518.66 + 3,518.65 = 7,037.31). A plan with no active appointee in a district simply has no row there; the client renders those cells as zero-height bars.</p>
+<pre><code>GET /api/dashboard/pension-plans/grid?districtId=7d9e4c1a-2b5f-4e8a-9c3d-1f6b8a2e4d70
+</code></pre>
+<pre><code>[
+  { &quot;PlanId&quot;: &quot;a1f3c5e7-2b4d-4f6a-8c9e-0d1f2a3b4c5d&quot;, &quot;Name&quot;: &quot;Employee Before Tax-UMPIP&quot;, &quot;Amount&quot;: 12000.00, &quot;AppointeeCount&quot;: 1 },
+  { &quot;PlanId&quot;: &quot;b2e4d6f8-3c5a-4a7b-9d0e-1f2a3b4c5d6e&quot;, &quot;Name&quot;: &quot;CRSP-DB-%&quot;, &quot;Amount&quot;: 4532.56, &quot;AppointeeCount&quot;: 1 },
+  { &quot;PlanId&quot;: &quot;d4c6f8a0-5e7b-4c9d-b1f2-3a4b5c6d7e8f&quot;, &quot;Name&quot;: &quot;CPP&quot;, &quot;Amount&quot;: 3341.28, &quot;AppointeeCount&quot;: 1 },
+  { &quot;PlanId&quot;: &quot;e5b7a9c1-6f8d-4dea-82e3-4b5c6d7e8f90&quot;, &quot;Name&quot;: &quot;Flat CRSP-DB&quot;, &quot;Amount&quot;: 3000.00, &quot;AppointeeCount&quot;: 1 }
+]
+</code></pre>
+<pre><code>GET /api/dashboard/pension-plans/grid?districtId=3b8f2d6c-9a1e-4f7b-8d2c-5e9a3c7f1b42
+</code></pre>
+<pre><code>[
+  { &quot;PlanId&quot;: &quot;a1f3c5e7-2b4d-4f6a-8c9e-0d1f2a3b4c5d&quot;, &quot;Name&quot;: &quot;Employee Before Tax-UMPIP&quot;, &quot;Amount&quot;: 6000.00, &quot;AppointeeCount&quot;: 1 },
+  { &quot;PlanId&quot;: &quot;c3d5e7f9-4b6a-4b8c-a0e1-2f3a4b5c6d7e&quot;, &quot;Name&quot;: &quot;CRSP-DC&quot;, &quot;Amount&quot;: 3518.66, &quot;AppointeeCount&quot;: 1 },
+  { &quot;PlanId&quot;: &quot;d4c6f8a0-5e7b-4c9d-b1f2-3a4b5c6d7e8f&quot;, &quot;Name&quot;: &quot;CPP&quot;, &quot;Amount&quot;: 3341.28, &quot;AppointeeCount&quot;: 1 }
+]
+</code></pre>
+<pre><code>GET /api/dashboard/pension-plans/grid?districtId=9c4a7e2f-1d6b-4a9e-b3f8-2c5d7e9a4f16
+</code></pre>
+<pre><code>[
+  { &quot;PlanId&quot;: &quot;a1f3c5e7-2b4d-4f6a-8c9e-0d1f2a3b4c5d&quot;, &quot;Name&quot;: &quot;Employee Before Tax-UMPIP&quot;, &quot;Amount&quot;: 6000.00, &quot;AppointeeCount&quot;: 1 },
+  { &quot;PlanId&quot;: &quot;b2e4d6f8-3c5a-4a7b-9d0e-1f2a3b4c5d6e&quot;, &quot;Name&quot;: &quot;CRSP-DB-%&quot;, &quot;Amount&quot;: 3000.00, &quot;AppointeeCount&quot;: 1 },
+  { &quot;PlanId&quot;: &quot;c3d5e7f9-4b6a-4b8c-a0e1-2f3a4b5c6d7e&quot;, &quot;Name&quot;: &quot;CRSP-DC&quot;, &quot;Amount&quot;: 3518.65, &quot;AppointeeCount&quot;: 1 }
+]
+</code></pre>
+<p>The widget merges those responses into the structure below. This is CLIENT-ASSEMBLED, NOT AN API RESPONSE; it is shown only so frontend and backend agree on what the merge produces. District names come from the filters list, totals are client sums.</p>
+<pre><code>{
+  &quot;clientAssembled&quot;: true,
+  &quot;districts&quot;: [
+    {
+      &quot;districtId&quot;: &quot;7d9e4c1a-2b5f-4e8a-9c3d-1f6b8a2e4d70&quot;,
+      &quot;name&quot;: &quot;District 1&quot;,
+      &quot;totalAmount&quot;: 22873.84,
+      &quot;totalAppointees&quot;: 4,
+      &quot;cells&quot;: [
+        { &quot;planId&quot;: &quot;a1f3c5e7-2b4d-4f6a-8c9e-0d1f2a3b4c5d&quot;, &quot;amount&quot;: 12000.00, &quot;appointeeCount&quot;: 1 },
+        { &quot;planId&quot;: &quot;b2e4d6f8-3c5a-4a7b-9d0e-1f2a3b4c5d6e&quot;, &quot;amount&quot;: 4532.56, &quot;appointeeCount&quot;: 1 },
+        { &quot;planId&quot;: &quot;d4c6f8a0-5e7b-4c9d-b1f2-3a4b5c6d7e8f&quot;, &quot;amount&quot;: 3341.28, &quot;appointeeCount&quot;: 1 },
+        { &quot;planId&quot;: &quot;e5b7a9c1-6f8d-4dea-82e3-4b5c6d7e8f90&quot;, &quot;amount&quot;: 3000.00, &quot;appointeeCount&quot;: 1 }
+      ]
+    },
+    {
+      &quot;districtId&quot;: &quot;3b8f2d6c-9a1e-4f7b-8d2c-5e9a3c7f1b42&quot;,
+      &quot;name&quot;: &quot;District 2&quot;,
+      &quot;totalAmount&quot;: 12859.94,
+      &quot;totalAppointees&quot;: 3,
+      &quot;cells&quot;: [
+        { &quot;planId&quot;: &quot;a1f3c5e7-2b4d-4f6a-8c9e-0d1f2a3b4c5d&quot;, &quot;amount&quot;: 6000.00, &quot;appointeeCount&quot;: 1 },
+        { &quot;planId&quot;: &quot;c3d5e7f9-4b6a-4b8c-a0e1-2f3a4b5c6d7e&quot;, &quot;amount&quot;: 3518.66, &quot;appointeeCount&quot;: 1 },
+        { &quot;planId&quot;: &quot;d4c6f8a0-5e7b-4c9d-b1f2-3a4b5c6d7e8f&quot;, &quot;amount&quot;: 3341.28, &quot;appointeeCount&quot;: 1 }
+      ]
+    },
+    {
+      &quot;districtId&quot;: &quot;9c4a7e2f-1d6b-4a9e-b3f8-2c5d7e9a4f16&quot;,
+      &quot;name&quot;: &quot;District 3&quot;,
+      &quot;totalAmount&quot;: 12518.65,
+      &quot;totalAppointees&quot;: 3,
+      &quot;cells&quot;: [
+        { &quot;planId&quot;: &quot;a1f3c5e7-2b4d-4f6a-8c9e-0d1f2a3b4c5d&quot;, &quot;amount&quot;: 6000.00, &quot;appointeeCount&quot;: 1 },
+        { &quot;planId&quot;: &quot;b2e4d6f8-3c5a-4a7b-9d0e-1f2a3b4c5d6e&quot;, &quot;amount&quot;: 3000.00, &quot;appointeeCount&quot;: 1 },
+        { &quot;planId&quot;: &quot;c3d5e7f9-4b6a-4b8c-a0e1-2f3a4b5c6d7e&quot;, &quot;amount&quot;: 3518.65, &quot;appointeeCount&quot;: 1 }
+      ]
+    }
+  ]
+}
+</code></pre>
+<h3>Example 3: appointee detail drill (UMPIP, all districts), unchanged shape</h3>
+<p>The existing response, exactly as it comes back today: a bare list, no envelope, no total. The client sums <code>AnnualAmount</code> for the footer (12,000.00 + 6,000.00 + 6,000.00 = 24,000.00, matching Example 1's UMPIP row) and resolves each <code>DistrictId</code> to a name via the filters list. <code>Charge</code> is shown as it actually returns today, an empty string: the pre-existing defect that leaves the Church/organisation column blank until fixed (see Still needs sign-off).</p>
+<pre><code>GET /api/dashboard/pension-plans/a1f3c5e7-2b4d-4f6a-8c9e-0d1f2a3b4c5d/details
+</code></pre>
+<pre><code>[
+  { &quot;AppointmentPlanId&quot;: &quot;f6a8b0c2-7e9d-4eab-93f4-5c6d7e8f9a01&quot;, &quot;Appointee&quot;: &quot;Rev. Jonathan Pierce&quot;, &quot;Charge&quot;: &quot;&quot;, &quot;AnnualAmount&quot;: 12000.00, &quot;DistrictId&quot;: &quot;7d9e4c1a-2b5f-4e8a-9c3d-1f6b8a2e4d70&quot; },
+  { &quot;AppointmentPlanId&quot;: &quot;a7b9c1d3-8f0e-4fbc-a4f5-6d7e8f9a0b12&quot;, &quot;Appointee&quot;: &quot;Rev. Naomi Adler&quot;, &quot;Charge&quot;: &quot;&quot;, &quot;AnnualAmount&quot;: 6000.00, &quot;DistrictId&quot;: &quot;3b8f2d6c-9a1e-4f7b-8d2c-5e9a3c7f1b42&quot; },
+  { &quot;AppointmentPlanId&quot;: &quot;b8c0d2e4-9a1f-4acd-b5f6-7e8f9a0b1c23&quot;, &quot;Appointee&quot;: &quot;Rev. Caleb Monroe&quot;, &quot;Charge&quot;: &quot;&quot;, &quot;AnnualAmount&quot;: 6000.00, &quot;DistrictId&quot;: &quot;9c4a7e2f-1d6b-4a9e-b3f8-2c5d7e9a4f16&quot; }
+]
+</code></pre>
+<h2>Snapshot semantics (no time axis)</h2>
+<ul>
+<li>The snapshot is defined entirely by the active-appointment predicate evaluated at request time: <code>Active=true AND DateStart&lt;=today AND (DateEnd=null OR DateEnd&gt;=today)</code>, both boundary dates inclusive. This is the existing predicate, confirmed identical in legacy and modern; every endpoint applies it, unchanged.</li>
+<li>"Data as of" is simply the request moment; the existing responses carry no server timestamp and this spec does not add one. Refresh is a plain re-request.</li>
+<li>There is no <code>asOf</code> and no historical reproduction: yesterday's snapshot is not reconstructable from this API, by design.</li>
+<li>When the client assembles all-districts by fan-out, the per-district calls happen close together but are not a single transaction; an appointment changing mid-fan-out could skew a total by one row. Accepted as a snapshot-widget non-issue, noted so nobody discovers it later.</li>
+</ul>
+<h2>Sorting and aggregation boundaries</h2>
+<ul>
+<li>Response ordering is whatever the existing endpoints return today; it is not part of this contract. The widget's sort orders (amount descending in the table, appointee name ascending in the drill) are client-side re-orders of the returned arrays.</li>
+<li>Share of total is a client division; the KPI headline and all table/footer totals are client sums; the district x plan matrix is a client merge keyed by <code>PlanId</code>. No share, percentage, or total fields are returned by any endpoint.</li>
+<li>The fan-out for all-districts and the grouped bar is bounded by the org's district count (from the filters endpoint) and the responses are cacheable for the life of the widget load: one set of grid calls feeds the table, pie, bars, and KPI.</li>
+<li>Amounts must be exact decimals end to end (money types, not floats), and the client must sum them with decimal-safe arithmetic: the dataset deliberately contains a cent split (3,518.66 + 3,518.65 = 7,037.31) that float arithmetic gets wrong.</li>
+</ul>
+<h2>Edge cases</h2>
+<ol>
+<li><strong>Org with no active appointments:</strong> grid returns an empty list; the frontend renders its purposeful empty state from zero rows. Not an error.</li>
+<li><strong>District with no active appointments:</strong> empty grid list for that district; in the client-assembled matrix the district still appears (it came from the filters list) with zero-height bars.</li>
+<li><strong>Plan active in some districts only:</strong> that district's grid response simply has no row for the plan; the client merge fills the cell as zero. Zero-filled rows are never sent.</li>
+<li><strong>Known <code>planId</code>, empty scope on details:</strong> a valid plan whose requested district has no active appointees returns an empty list, not an error, matching today's behaviour.</li>
+<li><strong>Partial fan-out failure:</strong> if one per-district grid call fails during the all-districts merge, the client must not silently render a partial total; it shows the widget's error/retry state instead. Entirely a client rule; no backend change.</li>
+<li><strong>Boundary dates:</strong> an appointment starting today or ending today is ACTIVE (both comparisons inclusive, matching the existing predicate exactly).</li>
+<li><strong><code>Charge</code> empty string:</strong> until the pre-existing <code>PBCharge</code> defect is fixed, <code>Charge</code> comes back <code>""</code> and the drill's Church/organisation column renders blank. The client treats <code>""</code> as "not available" for display; no schema change is involved.</li>
+<li><strong>Duplicate plan display names:</strong> grid rows are keyed by <code>PlanId</code>; two distinct plans with the same display name stay separate rows. The client merge for the matrix MUST key on <code>PlanId</code>, never <code>Name</code>, for exactly this reason.</li>
+<li><strong>No module rights:</strong> what the API returns for a user without the Pension Billing module (<code>PensionBenefits</code>) is the existing endpoints' current behaviour; whether that is an explicit 403 or an empty 200 needs confirmation (see Still needs sign-off).</li>
+<li><strong>District deleted between requests:</strong> districts are customer-configured (<code>PB_ControlTable</code>), so a remembered <code>districtId</code> can stop existing; the client refetches filters and drops the stale selection. Server behaviour for the stale guid is today's behaviour, unchanged.</li>
+</ol>
+<h2>Not in scope</h2>
+<ul>
+<li><strong>No new endpoints, envelopes, or server-computed fields.</strong> No aggregate endpoint, no matrix endpoint, no total objects, no echo headers, no timestamps. The contract is the four existing endpoints plus one integer field.</li>
+<li><strong>No Time Window Module.</strong> No <code>window</code>, <code>grain</code>, or <code>asOf</code> parameters, no buckets, no partial flags. This is stated as scope, not an omission: the widget is a snapshot.</li>
+<li><strong>No billing/payment status.</strong> The sign-off dossier floats connecting the obligation to whether it is being billed/paid (remittance/billing); that is a phased, cross-widget idea, not part of this contract.</li>
+<li><strong>No plan-type categorisation.</strong> No Defined Benefit / Defined Contribution / 403(b) field exists to expose; grouping is by plan name only. If that grouping ever returns, it is new schema, not a new query.</li>
+<li><strong>Export file generation is not specced here.</strong> The export row sets are defined by the grid and details data the widget already holds; whether files are generated client-side or server-side is an open decision, see Still needs sign-off.</li>
+<li><strong>The Pension Billing deep link</strong> (a real page link out of the widget) is frontend navigation with no confirmed target page; tracked in Still needs sign-off, nothing for this API.</li>
+<li><strong>Currency and locale formatting.</strong> The API returns plain numbers; the live audit's pound-symbol-on-US-data defect is a client localisation bug, listed here so nobody specs a currency field to fix it.</li>
+</ul>
+<h2>Still needs sign-off</h2>
+<ul>
+<li><strong>All-districts behaviour of grid/chart when <code>districtId</code> is omitted.</strong> The two prior claims conflict: the audit found the endpoints return one district at a time with no aggregate shape, while the comparison doc's data panel reads "optional WHERE DistrictID=ctx", which could mean all-districts-when-omitted. One line from a backend dev settles it. If omitted-means-aggregate is confirmed, the widget's default view is a single call; if not, the client fan-out fallback in this spec covers it with zero backend work. Nothing is blocked either way.</li>
+<li><strong><code>AppointeeCount</code> on the grid rows: the one change in this spec.</strong> A <code>COUNT(*)</code> added to the SELECT the grid endpoint already runs, surfacing as one new int per row. Needs backend agreement that the field lands on <code>PensionPlanGridRowDto</code>.</li>
+<li><strong><code>Charge</code> empty-string fix: a pre-existing defect, not new data.</strong> The details endpoint's <code>Charge</code> field (church/organisation via <code>PBCharge</code> CorePerson name) returns <code>""</code> today, leaving the drill's Church/organisation column blank. The fix is populating the existing field; no schema change.</li>
+<li><strong>Export decision.</strong> The built Final assumes an active-view export (CSV/Excel/PDF) and an appointee-detail export from the drill. No export endpoints exist in the modern API, and legacy only ever generated Excel of the appointee detail (even from the main view, the scope mismatch flagged in the live audit). Decide whether files are generated client-side from the JSON the widget already holds (zero backend work) or server-side (new endpoints).</li>
+<li><strong>District preference persistence.</strong> Legacy saved each user's last <code>DistrictID</code>; the modern API has no equivalent. Decide whether that returns (new preference-storage work) or client-managed state is acceptable permanently, mirroring the same open question on Budget Compared to Actual.</li>
+<li><strong>Entitlement behaviour.</strong> The sign-off dossier flags "no Pension Billing module / no rights" as hidden-or-explicit-no-access to confirm. Confirm what the existing endpoints return for an unentitled user (explicit 403 recommended over an empty 200 that reads as "no pension data") and that the module check is <code>PensionBenefits</code>.</li>
+<li><strong>Drill-through/deep-link target to the Pension Billing module.</strong> Confirmed needed in Step 4, still has no target page/URL; open item carried from the design doc (its Sign-off Readiness table, item 1). Frontend navigation only; nothing for this API.</li>
+</ul>
+
+</body>
+</html>

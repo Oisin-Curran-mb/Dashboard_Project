@@ -1,15 +1,18 @@
 # W01 — Budget Compared to Actual
 
 **Module:** Finance
-**Status:** 🟢 Final design — locked
+**Status:** 🟢 Final design — locked · **v2 (2026-07-27): built Final, Jo design, tagged v2.0 in the build.** Locked-doc rule: only version-tagged updates (v2, v3...) may modify this doc.
 **Full history / rejected ideas:** [Widget_Specs/W01-Budget-Compared-to-Actual.md](../Step%203%20-%20Mock_Work/Widget_Specs/W01-Budget-Compared-to-Actual.md)
 **Data source & formulas:** [Step 1 - Dashboard Research/01 - Budget Compared to Actual.md](../Step 1 - Dashboard Research/01%20-%20Budget%20Compared%20to%20Actual.md)
 **Confluence dossier:** none yet
-**Last verified against build:** 2026-07-21 via widget-final-check-audit
+**Last verified against build:** 2026-07-27 via build-final-widget (Final v2, Jo design: 159-assertion Node driver + final-check-rules.py + full-flow modal test). Previous: 2026-07-21 via widget-final-check-audit.
 
 **Evidence key:** `[LIVE]` verified in beta1/test1 on a stated date · `[SME]` interview-sourced (name + date) · `[RESEARCH]` desktop/market research · `[BUILD]` true of the mockup build · `[DOC]` backed by a named written source · `[TO CONFIRM]` assumed, with a named owner to confirm. Marks appear only on the sections added in the 2026-07-27 template upgrade; pre-existing text is intentionally unmarked.
 
 ## Purpose
+
+> **[v2 — 2026-07-27]** The built Final is Jo Lopez's Widget Container Demo design (its bgt block) with owner deltas layered on top; a single variance headline replaces the earlier 4-tile KPI strip. The purpose statement below is unchanged and still holds.
+
 Shows how the organisation's actual income or spending compares to what was budgeted, across each period of the financial year — both period-by-period and as a running year-to-date total — so users can quickly see where they're ahead of or behind plan.
 
 ## How Other Companies Fulfil This Purpose
@@ -49,15 +52,28 @@ Rounding, currency, and locale rules: *Not yet specified — needs a pass.*
 | State | Behaviour |
 |---|---|
 | No module rights / entitlement | *Not yet specified* |
-| Empty (org has no data at all) | *Not yet specified* |
-| Partial (some periods/accounts missing) | The in-progress fiscal year carries a partial current month (Budget stays a normal full-month figure, Actual is honestly low) and the quarterly rollup sums real months (see Fine-Tuning Notes entries 2026-07-09) [BUILD]. Consolidated/master orgs currently come back empty from the Modern API, agreed as a must-fix regression (see Filters, Consolidated rollup note) [TO CONFIRM, owner TBD] |
-| Loading | *Not yet specified* |
+| Empty (org has no data at all) | **[v2 — 2026-07-27]** No-budget empty state: an icon, one line of explanation, and a "Set up budget" CTA. The widget never renders a fake "100% over budget" reading when no budget exists. [BUILD] |
+| Partial (some periods/accounts missing) | The in-progress fiscal year carries a partial current month (Budget stays a normal full-month figure, Actual is honestly low) and the quarterly rollup sums real months (see Fine-Tuning Notes entries 2026-07-09) [BUILD]. Consolidated/master orgs currently come back empty from the Modern API, agreed as a must-fix regression (see Filters, Consolidated rollup note) [TO CONFIRM, owner TBD] **[v2 — 2026-07-27]** Partial buckets are flagged visually: partial first/last weeks at Week grain and in-progress periods carry a partial marker. [BUILD] |
+| Loading | **[v2 — 2026-07-27]** Shimmer skeleton, about 850ms, triggered only by scope, window, or special-report changes; grain and view changes re-render instantly (that data is already in hand). Reduced motion preference is respected. [BUILD] |
+| Insufficient points for a trend (line view) **[v2 — 2026-07-27]** | **[v2 — 2026-07-27]** With fewer than 2 points the line view shows a "No trend to show" guard and falls back to a bar/summary rendering rather than an empty chart. [BUILD] |
 | Error / API failure | *Not yet specified* |
 | Stale data | Refresh icon is present at every size including KPI (see Refresh section) [BUILD]; what refresh actually does, and any "data as of" signal: *Not yet specified* |
 
 ## Interaction Spec
 
 *(Added 2026-07-27, template upgrade. Pointers only; the original Fine-Tuning Notes entries remain the source entries.)*
+
+> **[v2 — 2026-07-27] This section is superseded by the built Final (v2), Jo design.** The v2 interactions:
+> - **Scope chip:** opens a scope popover (Income accounts / Expense accounts / Special report).
+> - **Special-report modal:** two-step flow, report then line; the line dropdown is disabled until a report is picked; a preview sentence shows the pending selection; Apply is gated until both are chosen; after Apply a context line appears under the headline; reopening the modal comes prefilled with the current selection. Closes on Escape and backdrop click.
+> - **Window picker and grain toggle:** constrain each other. Unavailable grains render greyed and disabled; changing the window snaps an invalid grain to the new window's default (its smallest available grain); changing the grain never changes the window.
+> - **Bar hover:** popover card showing Budget, Actual, and Variance (marked favourable or unfavourable), with a partial note on partial buckets.
+> - **Line hover:** nearest-point readout with a dashed vertical guide, same card content as the bars.
+> - **Table:** every header sortable; click toggles ascending/descending; numeric columns default to descending.
+> - **Glance is interactive:** its scope chip and window picker are clickable, opening the same popovers as the bigger sizes.
+> - **Headline:** signed $ variance plus a favourability pill (type-aware flip: over budget reads favourable on income lines, unfavourable on expense lines; neutral grey for mixed report lines), a keyboard-focusable info tooltip, and a small % of the window's budget.
+
+*(v1, superseded by the v2 block above — kept for history:)*
 
 - Switch View toggle: persists per widget instance, not shared globally (see Fine-Tuning Notes, first entry). [BUILD]
 - KPI sparkline hover: shows that period's label and its variance dollar amount, e.g. "Jan: +$4k", implemented via a `title` attribute, the same mechanism as the grouped-bar hovers (see Fine-Tuning Notes entry 2026-07-09). [BUILD]
@@ -67,6 +83,15 @@ Rounding, currency, and locale rules: *Not yet specified — needs a pass.*
 - Keyboard / focus behaviour for interactive controls: *Not yet specified — needs a pass.*
 
 ## Filters
+
+> **[v2 — 2026-07-27] This section is superseded by the built Final (v2), Jo design.** v2 has two controls, not three dropdowns:
+> 1. **Scope chip:** Income accounts / Expense accounts / Special report. Special report opens a two-step modal: pick the report, then the report line (the line dropdown is disabled until a report is picked).
+> 2. **Time Window Module** (reusable spec: [Time Window Module.md](../Step%203%20-%20Mock_Work/Widget_Specs/Time%20Window%20Module.md)): five windows (This month, This period, This quarter (rolling 3 months), This year (rolling 12 months), This fiscal year (YTD)) and six grains, the toggle always reading D W M P Q Y (smallest first, period always before quarter). A grain is offered when it yields 2 to 31 data points for the window (the availability law, with the module's stated summary exceptions); each window's default is its smallest available grain, stated in the module as an API contract requirement.
+>
+> The Account Type / Fiscal Year / Period View dropdowns are removed. The Weekly-as-special-case question below (Period View row) is superseded by the module's grain-by-window model: Week is simply a grain, available wherever the 2-to-31 law allows it. The consolidated/master rollup must-fix below remains in force, unchanged.
+
+*(v1, superseded by the v2 block above — kept for history:)*
+
 | Filter | Values |
 |--------|--------|
 | Account Type | Income Accounts · Expense Accounts · Custom Report |
@@ -84,6 +109,10 @@ KPI size shows Fiscal Year only, no download, no view switch.
 **Consolidated/master company rollup:** when viewing a consolidated organisation, this widget must combine figures from all child accounts automatically, matching legacy behaviour exactly. **Decided: reinstate this** — the Modern API currently returns an empty result for master companies (CompanyNumber=0), which is a regression, not an acceptable simplification. This is a must-fix, not an open question.
 
 ## Data Table Sort
+
+> **[v2 — 2026-07-27] This section is superseded by the built Final (v2), Jo design.** The v2 table shows Period / Budget / Actual / Variance. Every header is sortable (click toggles ascending/descending; numeric columns default to descending), and a "Total, posted so far" footer totals the posted periods in the selected window only.
+
+*(v1, superseded by the v2 block above — kept for history:)*
 Fixed chronological — Period ascending. Not user-sortable (Finance-domain default).
 
 ## Drill-Through
@@ -95,6 +124,23 @@ Standalone icon, present at every size including KPI.
 ---
 
 ## Views (Switch View)
+
+> **[v2 — 2026-07-27] This section is superseded by the built Final (v2), Jo design.** v2 ships three views:
+> - **Bar (default):** two purples (--am-200 budget, --am-600 actual), a signed per-period variance row on the x-axis, a hover popover card per bar pair, and horizontal scroll when the series overflows the card.
+> - **Line:** dynamic x-axis label thinning (density computed from width and point count) and nearest-point hover with a dashed vertical guide.
+> - **Table:** sortable Period / Budget / Actual / Variance with the "Total, posted so far" footer (see Data Table Sort above).
+>
+> **Detail size is two independent panels**, each with its own grain and view.
+>
+> **Size behaviour (v2):** three sizes only, per General Widget Design Rules Rule 12 (12-column grid, 48px rows, 16px gaps). Small is removed for the Final; the mock's A/B/C design options keep their old sizes.
+>
+> | Size | Proportions | Behaviour |
+> |---|---|---|
+> | **Glance** | 3 columns × 176px | Headline card; interactive (scope chip and window picker are clickable) |
+> | **Explore** | 6 columns × 496px | Single panel: headline, scope chip, window picker, grain toggle, active view |
+> | **Detail** | 12 columns × 560px | Two independent panels, each with its own grain and view |
+
+*(v1, superseded by the v2 block above — kept for history:)*
 
 One widget, two views reachable through the elevated Switch View control — Variance Bar and Data Table, both reading the same underlying dataset, swapped for different questions rather than competing as separate designs. A third view, Waterfall, was designed and its render logic still exists in `Dashboard Widget Mockups.html`, but it's **cut, not shipping** — see "What Got Cut" below for why.
 
@@ -123,11 +169,22 @@ Period · Budget · Actual · Variance · Cumulative Variance. Fixed sort: Perio
 
 *(Added 2026-07-27, template upgrade.)*
 
+> **[v2 — 2026-07-27]** Filled by the built Final (v2), Jo design:
+> - Chart values exist as text: each bar and line point carries an sr-only text equivalent in the DOM.
+> - Aria labels on chart groups, the view and grain toggles, and the scope chip; the special-report modal uses role="dialog".
+> - The headline info icon is keyboard focusable.
+> - Colour is never the sole signal: the variance sign and the favourability pill label are always paired with the colour.
+
+*(v1, superseded by the v2 block above — kept for history:)*
+
 - Colour is never the only signal: the green/red favourability convention is defined and implemented (see Fine-Tuning Notes, colour-logic fix), and variance values are always also shown as $ and % text [BUILD], but an explicit non-colour pairing rule (sign or label alongside the colour) is *Not yet specified — needs a pass.*
 - Chart values as text in the DOM: the Data Table view exposes every figure as text [BUILD]; sr-only or text equivalents for the chart views themselves are *Not yet specified — needs a pass.*
 - Table semantics (`th`/scope) and keyboard reachability of interactive controls: *Not yet specified — needs a pass.*
 
 ## What Got Cut (and why)
+- **[v2 — 2026-07-27] 4-tile KPI strip (YTD Budget / YTD Actual / Variance / % Used), cut in the Final (v2) build, per direct instruction.** Replaced by the single variance headline (signed $, favourability pill, info tooltip, small % of window budget).
+- **[v2 — 2026-07-27] Account Type / Fiscal Year / Period View dropdowns, cut in the Final (v2) build.** Replaced by the scope chip plus the Time Window Module (see Filters, v2 block).
+- **[v2 — 2026-07-27] Jo's span presets (Last fiscal year / Last fiscal period / All time), cut in the Final (v2) build.** Replaced by the owner's 5-window model (This month, This period, This quarter rolling 3 months, This year rolling 12 months, This fiscal year YTD).
 - **Waterfall view — cut 2026-07-21, per direct instruction.** Its render logic was already built (the old Option C branch in `Dashboard Widget Mockups.html`) and the chart-research case for it was solid — a near-exact match for this widget's ~12-period series. **Reason for cutting: not a design or quality problem, simply not enough time to take it further right now.** The code is left in place, unreferenced, in case it's picked back up later; it is not wired into the Switch Chart Type menu and should not be treated as a live feature. The widget now ships with two views only: Variance Bar and Data Table.
 - **Dual-figure KPI ("YTD Actual + YTD Budget" shown together)** — dropped in favour of a single Variance ($) headline at KPI size. Competitor research consistently points to variance as the one number that matters most at a glance; showing two raw totals side by side needed a fit-test that a single clear figure doesn't.
 - **"KPI + Bars / Bars Only" toggle** — the KPI tiles are no longer a switchable alternative to the bar chart; they're a permanent header strip shown above whichever view is active, since the research treats KPI cards as a layer on top of a chart, not a competing view.
@@ -141,8 +198,11 @@ Period · Budget · Actual · Variance · Cumulative Variance. Fixed sort: Perio
 |---|---|---|---|---|
 | 1 | Weekly Period View: kept in the design pending developer feasibility confirmation; no confirmed weekly transaction grain in GL data today (see Filters, Period View row) | field / data grain | TBD | Blocks the Weekly option only; per this doc's own wording it "needs a dev call before build, not a design change" |
 | 2 | Consolidated/master company rollup: Modern API returns an empty result for master companies (CompanyNumber=0); reinstating legacy combine-all-children behaviour is agreed (see Filters, Consolidated rollup note) | math / backend fix | TBD | Yes for consolidated orgs; this doc calls it "a must-fix, not an open question" |
+| 3 | Sub-period grains (Day/Week) and rolling windows (This quarter, This year) need backend support: transaction-level actuals (GLSummary is period-grain) and cross-FY budget lookup; budget at sub-period grain recommended as pace line, mock uses proration for display | field / data grain | TBD | Blocks the Day/Week grains and rolling windows only; per Time Window Module.md |
 
-This doc has 2 open items; it is not sign-off-ready until this table is empty or every row is explicitly accepted as a known risk. (The per-org Fiscal Year variation is decided and carried forward to Step 5, so it is not listed as open here: see Filters, Fiscal Year note.)
+**[v2 — 2026-07-27]** Rows 1 and 2 were waived for the v2 mock build per direct instruction (2026-07-27); both remain open for production.
+
+This doc has 3 open items; it is not sign-off-ready until this table is empty or every row is explicitly accepted as a known risk. (The per-org Fiscal Year variation is decided and carried forward to Step 5, so it is not listed as open here: see Filters, Fiscal Year note.)
 
 ## Fine-Tuning Notes
 - View toggle persists per widget instance, not shared globally
@@ -160,6 +220,7 @@ This doc has 2 open items; it is not sign-off-ready until this table is empty or
 - **Closed (2026-07-21), per direct instruction:** Line Description's source question is closed — treated the same as Special Report Title (a customer-created list elsewhere), not left open pending a separate backend answer.
 - **Process note (2026-07-21), corrected per direct instruction:** `Step 3 - Mock_Work/Dashboard Widget Mockups.html` is the source of truth, not this doc — matching the project's standing rule that the HTML is the only live source. Decisions get logged here, then built forward into the mock (as with the KPI sparkline above); once built, the mock is what's authoritative.
 - **Cut (2026-07-21), per direct instruction — Waterfall view:** found via `widget-final-check-audit` to be designed and coded but never wired into the live Switch Chart Type menu. Rather than build it in, the decision was made to cut it — not enough time to consider it further right now, not a rejection on the merits. The widget ships with Variance Bar and Data Table only. See "What Got Cut" above.
+- **[v2 — 2026-07-27] Built as the Final (v2), Jo design:** composed from Jo Lopez's Widget Container Demo design (its bgt block) with the owner deltas recorded in this doc's v2 blocks, tagged v2.0 in the build with "Final (v2)" and "Jo design" title badges. Verification: 159 assertions in the per-widget Node DOM-shim driver (window math, exact posted-total footers, full constrain matrix, rolling cross-FY budgets, day-grain determinism, label thinning, hover, empty states), 34/34 on the full-flow special-report modal test with the real listeners, and a browser-faithful CSS parse check (0 dropped rules). Full detail (composition sheet, owner deltas, notable fixes, still-open items): see the 2026-07-27 "Final (v2) COMPLETE, tagged v2.0, Jo design" entry in [Widget_Specs/W01-Budget-Compared-to-Actual.md](../Step%203%20-%20Mock_Work/Widget_Specs/W01-Budget-Compared-to-Actual.md).
 
 ---
 

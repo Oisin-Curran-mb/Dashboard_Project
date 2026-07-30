@@ -8,8 +8,6 @@ body { font-family: -apple-system, Helvetica, Arial, sans-serif; max-width: 900p
 h1 { font-size: 24px; }
 h2 { font-size: 19px; border-bottom: 1px solid #DFE1E6; padding-bottom: 6px; margin-top: 32px; }
 h3 { font-size: 16px; margin-top: 20px; }
-.release { background: #0052CC; color: #fff; font-size: 20px; padding: 8px 14px; border-radius: 4px; margin-top: 40px; }
-.release.v2 { background: #403294; }
 table { border-collapse: collapse; width: 100%; margin: 12px 0; }
 th, td { border: 1px solid #DFE1E6; padding: 6px 10px; text-align: left; vertical-align: top; }
 th { background: #F4F5F7; }
@@ -17,193 +15,382 @@ code { background: #F4F5F7; padding: 1px 5px; border-radius: 3px; font-family: '
 pre { background: #F4F5F7; padding: 12px; border-radius: 4px; overflow-x: auto; }
 pre code { background: none; padding: 0; }
 .status { background: #FFF0B3; display: inline-block; padding: 3px 10px; border-radius: 3px; font-weight: 600; }
-.resolved { background: #E3FCEF; color: #006644; padding: 1px 6px; border-radius: 3px; font-weight: 600; }
-.info-box { background: #DEEBFF; border: 1px solid #B3D4FF; border-radius: 5px; padding: 12px 16px; margin: 14px 0; }
 </style>
 </head>
 <body>
 
 <h1>Payroll Distributions — API Spec</h1>
-<p><strong>Status: DRAFT — not final</strong> <em>(restructured 2026-07-23, per direct instruction, into two releases. Version 1 is the distribution-level view that is buildable today and matches the locked design. Version 2 is a planned second-round improvement — the pay-type composition drill-down — added here so its data source and shape are documented now, even though it is <strong>not</strong> part of the current locked design. The old "pay-type breakdown has no confirmed data source" flag is now resolved; see Version 2.)</em></p>
-
-<div class="info-box">
-<strong>How to read this spec.</strong> This widget is documented as two releases.
-<ul>
-<li><strong>Version 1 — first release.</strong> What actually gets built now: total payroll paid over a period, broken down by distribution name (the org's own compensation-distribution labels), with period control, an optional department scoping filter, prior-period comparison, and a link out to Payroll History. Buildable today on the two tables the current API already queries.</li>
-<li><strong>Version 2 — planned improvement (round two).</strong> A drill-down <em>inside</em> a distribution showing what <strong>pay types</strong> make up that number — Regular, Overtime, Holiday, Vacation, Sick, etc. — as aggregated totals, so a user can answer "is overtime creeping up?" or "why did this go up this period?". This is <strong>not</strong> in the Version 1 build or the locked Step 4 design. It is documented here because its data source is now confirmed (see the Pay Type Breakdown analysis, July 2026).</li>
-</ul>
-</div>
-
-<p class="release">Version 1 — First Release (buildable today)</p>
-
+<p><span class="status">Status: DRAFT — not final</span></p>
+<h2>Overview</h2>
+<p>The widget shows total cash payroll paid over a chosen time window, grouped by the org's own compensation-distribution labels, in three scopes: all distributions, by pay type, and one distribution. Time selection is a window picker only: a <code>window</code> enum (<code>this_month</code>, <code>this_period</code>, <code>this_quarter</code>, <code>this_year</code>, <code>all_time</code>) plus an always-available custom from/to range and an <code>asOf</code> anchor. The window scopes the aggregation and nothing more: there is NO <code>grain</code>, NO bucketed series, and NO prior-period comparison anywhere in this contract (sign-off finding F3 explicitly rejected comparison for this widget, so no <code>prior</code>/<code>diffAmount</code>/<code>diffPct</code> fields may be added back).</p>
+<p>This spec is deliberately 1-to-1 with the existing payroll-distributions endpoint, following the same minimal philosophy as the Pension Plans spec: the endpoint keeps its path and its flat-rows shape, the only genuinely new data is the pay-type dimension, and everything computable client-side (grand total, per-row percent of total, sorting) stays client-side. The central open question that reopened this spec on 2026-07-21 (is the grouping field a Department dimension or a pay-type Category dimension?) is now resolved with evidence: per <code>Payroll Distributions - Pay Type Breakdown Analysis (proof).html</code> (this folder), the grouping is the org-defined distribution labels, AND a full pay-type breakdown is supported by columns that already exist, with no schema changes.</p>
+<p><strong>Zero personal data (owner decision, 2026-07-27).</strong> This contract returns no employee names, no check numbers, no hours, and no rates, at any scope. The breakdown stops at distribution by pay type, amounts only. The deeper per-employee drill remains technically evidenced possible (see the proof file) but is deliberately not part of this contract and is not planned.</p>
 <h2>Tables</h2>
 <table>
-<thead><tr><th>Table</th><th>Fields used</th></tr></thead>
+<thead>
+<tr>
+<th>Table</th>
+<th>Fields used</th>
+</tr>
+</thead>
 <tbody>
-<tr><td><code>PR_History</code></td><td>(via <code>PREmployee</code>) CompanyID, CheckDate, CheckType, VoidJournalID</td></tr>
-<tr><td><code>PR_HistoryCompensation</code></td><td>CompensationDistributionID, Name, Amount</td></tr>
+<tr>
+<td><code>PR_HistoryCompensation</code></td>
+<td><code>HistoryCompensationID</code> (row id), <code>HistoryID</code> (joins to <code>PR_History</code>, the paycheck), <code>CompensationDistributionID</code> (joins to <code>PR_CompensationDistribution.Name</code>), <code>Amount</code> (dollar value of the line), <code>SubType</code> (pay-type code 1-10). <code>Hours</code>, <code>Rate</code>, <code>PayCycle</code>, <code>EmployeeCompensationID</code>, <code>WorkersCompID</code>, <code>ProjectID</code> exist on the same rows but are NOT read by this contract (zero personal data, amounts only)</td>
+</tr>
+<tr>
+<td><code>PR_CompensationDistribution</code></td>
+<td><code>Name</code>: the org-defined distribution label the widget groups by</td>
+</tr>
+<tr>
+<td><code>PR_History</code></td>
+<td>The check record, used ONLY for filtering: <code>CheckDate</code> (the window filter), <code>CheckType</code>, <code>VoidJournalID</code>. No check numbers or employee links are exposed</td>
+</tr>
 </tbody>
 </table>
-<p>No new tables are needed for Version 1 — it is the same two tables the current API already queries.</p>
-
+<p><strong>Resolved (2026-07-21 reopening question closed).</strong> The previous spec flagged that the only confirmed field (<code>PR_CompensationDistribution.Name</code> via <code>CompensationDistributionID</code>) did not establish whether the widget's grouping was a Department dimension or a pay-type Category dimension. Per <code>Payroll Distributions - Pay Type Breakdown Analysis (proof).html</code>, both dimensions exist and both live in <code>PR_HistoryCompensation</code>: every compensation line on every paycheck is one row there, carrying the org-defined distribution it belongs to (<code>CompensationDistributionID</code>, level 2 of the proof's hierarchy) AND the fixed pay-type code (<code>SubType</code>, level 4). There is no separate "Department" dimension to confirm: the widget's distribution grouping IS the org-defined labels, and the pay-type breakdown is a second grouping over the same rows, no schema changes needed. (The proof also evidences deeper per-employee detail on the same rows; this contract deliberately does not use it: zero personal data.)</p>
+<p><strong>Consistency filters (unchanged from today, applied to every scope so all views reconcile):</strong> voided checks excluded (<code>VoidJournalID IS NULL</code>), manual checks excluded (<code>CheckType = 2</code>), non-cash compensation excluded (benefit items flow through <code>PR_HistoryNonCash</code> and are never part of distribution totals). All per the proof file's Additional Findings.</p>
 <h2>Old vs. new</h2>
 <table>
-<thead><tr><th></th><th>Old (live today)</th><th>New (Version 1)</th></tr></thead>
+<thead>
+<tr>
+<th></th>
+<th>Old (live today)</th>
+<th>New (this contract)</th>
+</tr>
+</thead>
 <tbody>
-<tr><td>Endpoint</td><td><code>GET /api/dashboard/payroll-distributions/data?startDate&amp;endDate</code> — one call, fixed date range</td><td>Same shape, but <code>startDate</code>+<code>period</code> (Weekly/Bi-Weekly/Monthly/Custom) instead of raw <code>startDate</code>/<code>endDate</code></td></tr>
-<tr><td>Rows</td><td>Flat list, one row per Distribution Name, current period only</td><td>Same — one row per Distribution Name. Optionally scoped to one department (see Department filter)</td></tr>
-<tr><td>Comparison</td><td>None</td><td>Every row carries current + prior period amounts, with <code>diffAmount</code>/<code>diffPct</code> pre-computed, shown as a ▲/▼ badge per Step 4's Fine-Tuning Notes</td></tr>
-<tr><td>Department filter</td><td>None</td><td>"All Departments" (default) or one specific value — narrows which distributions are included</td></tr>
-<tr><td>Sort</td><td>Fixed alphabetical by Name</td><td>Alphabetical (default) or Amount descending — user-toggled</td></tr>
+<tr>
+<td>Endpoint</td>
+<td><code>GET /api/dashboard/payroll-distributions/data?startDate&amp;endDate</code>: one call, fixed date range, flat list, one row per distribution name</td>
+<td>Same endpoint. <code>window</code>/<code>from</code>/<code>to</code>/<code>asOf</code> replace the raw date pair; two scope params (<code>distributionId</code>, <code>byPayType</code>) added</td>
+</tr>
+<tr>
+<td>Distribution totals</td>
+<td>Already exist: the flat per-distribution rows are what the endpoint returns today</td>
+<td>Same rows; each gains <code>distributionId</code> (the <code>CompensationDistributionID</code> guid) as a stable key, since names are org-editable</td>
+</tr>
+<tr>
+<td>Pay-type scope</td>
+<td>Nothing: <code>SubType</code> is an unread column on the same rows</td>
+<td>NEW: <code>byPayType=true</code> groups the same rows by <code>SubType</code> within each distribution, amounts only. SELECT additions on existing rows, no schema change, per <code>Payroll Distributions - Pay Type Breakdown Analysis (proof).html</code></td>
+</tr>
+<tr>
+<td>Time selection</td>
+<td>Raw <code>startDate</code>/<code>endDate</code> only</td>
+<td><code>window</code> enum + custom <code>from</code>/<code>to</code> (custom range always available, per SME) + <code>asOf</code> anchor. Scope-only aggregation: no grain, no buckets</td>
+</tr>
+<tr>
+<td>Comparison</td>
+<td>None</td>
+<td>Still none. Sign-off finding F3 rejected prior-period comparison for this widget: no <code>prior</code>, <code>diffAmount</code>, or <code>diffPct</code> fields, ever. Devs must not re-add them</td>
+</tr>
+<tr>
+<td>Totals and percent of total</td>
+<td>Not returned</td>
+<td>Still not returned: grand total and per-row percent of total are client-side sums and divisions over the returned rows</td>
+</tr>
+<tr>
+<td>Sort</td>
+<td>Fixed order</td>
+<td>Client-side re-order of the returned rows; no sort params</td>
+</tr>
+<tr>
+<td>Employee/check drill</td>
+<td>None</td>
+<td>Still none, by owner decision (2026-07-27): zero personal data in this contract. The breakdown stops at distribution by pay type, amounts only. (Deeper detail remains evidenced possible per the proof file, but it is not planned)</td>
+</tr>
 </tbody>
 </table>
-<p><strong>Cut from this version, and why:</strong> the previous spec fully specified a "per-distribution period mode" (each distribution running its own date range) plus a <code>recurring</code> flag. Step 4's own Filters section calls both of those mockup-only — "not wired to any real scheduling logic" — so Version 1 doesn't build API surface for a frontend feature that isn't confirmed real yet. If Step 4 later confirms either one, that's a real addition to make then.</p>
-
-<h2>Request params</h2>
-<p>One shared period for the whole widget:</p>
-<table>
-<thead><tr><th>Param</th><th>Type</th><th>Required</th><th>Default</th><th>Notes</th></tr></thead>
-<tbody>
-<tr><td><code>startDate</code></td><td>date</td><td>yes</td><td>—</td><td></td></tr>
-<tr><td><code>period</code></td><td>enum</td><td>yes</td><td><code>Weekly</code></td><td><code>Weekly</code>, <code>Bi-Weekly</code>, <code>Monthly</code>, <code>Custom</code> — end date is derived from <code>startDate</code> + period length, except <code>Custom</code></td></tr>
-<tr><td><code>endDate</code></td><td>date</td><td>only if <code>period=Custom</code></td><td>—</td><td></td></tr>
-<tr><td><code>department</code></td><td>string</td><td>no</td><td><em>(all)</em></td><td>Filters to one department/distribution value. Values come from whatever <code>Distribution</code> names the org actually has today — <strong>not</strong> the fixed five-item list in Step 4's Filters table (All Departments · Finance · Admin · Ministry · Facilities), which would need to become dynamic per org rather than staying hardcoded</td></tr>
-<tr><td><code>sort</code></td><td>enum</td><td>no</td><td><code>alphabetical</code></td><td><code>alphabetical</code>, <code>amount</code></td></tr>
-</tbody>
-</table>
-<p>Example requests:</p>
-<pre><code>GET /api/dashboard/payroll-distributions/data?startDate=2026-07-14&amp;period=Weekly
-GET /api/dashboard/payroll-distributions/data?startDate=2026-07-14&amp;period=Weekly&amp;department=Finance&amp;sort=amount
+<h2>Endpoint</h2>
+<pre><code>GET /api/dashboard/payroll-distributions/data
 </code></pre>
-<p><strong>Prior period is not a separate param.</strong> Server computes it as the immediately preceding period of equal length. This definition is assumed, not confirmed — see sign-off list.</p>
-
-<h2>Response shape</h2>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>window</code></td>
+<td>enum</td>
+<td>yes</td>
+<td><code>this_month</code> | <code>this_period</code> | <code>this_quarter</code> | <code>this_year</code> | <code>all_time</code> | <code>custom</code></td>
+<td>none</td>
+<td>this_month = calendar month containing <code>asOf</code>; this_period = the org's current fiscal period containing <code>asOf</code>; this_quarter = ROLLING, last 3 months back from <code>asOf</code>; this_year = ROLLING, last 12 months back from <code>asOf</code>; all_time = no lower bound, everything through <code>asOf</code>; custom = the <code>from</code>/<code>to</code> pair</td>
+</tr>
+<tr>
+<td><code>from</code></td>
+<td>date</td>
+<td>only when <code>window=custom</code></td>
+<td>any valid date</td>
+<td>none</td>
+<td>Inclusive range start. Custom ranges are always available regardless of the preset list (SME point)</td>
+</tr>
+<tr>
+<td><code>to</code></td>
+<td>date</td>
+<td>only when <code>window=custom</code></td>
+<td>any valid date, <code>&gt;= from</code></td>
+<td>none</td>
+<td>Inclusive range end</td>
+</tr>
+<tr>
+<td><code>asOf</code></td>
+<td>date</td>
+<td>no</td>
+<td>any valid date</td>
+<td>today (server date)</td>
+<td>Anchors the five preset windows; ignored when <code>window=custom</code>. A historical <code>asOf</code> reproduces a past reading exactly</td>
+</tr>
+<tr>
+<td><code>distributionId</code></td>
+<td>guid</td>
+<td>no</td>
+<td>any <code>distributionId</code> returned by this endpoint</td>
+<td>omitted (all distributions)</td>
+<td>Scopes to one distribution</td>
+</tr>
+<tr>
+<td><code>byPayType</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>true</code> | <code>false</code></td>
+<td><code>false</code></td>
+<td>Groups rows by pay type (<code>SubType</code>) within each distribution in scope. Combine with <code>distributionId</code> for one distribution's pay-type mix</td>
+</tr>
+</tbody>
+</table>
+<p>The three built scopes map as: all distributions (neither scope param), by pay type (<code>byPayType=true</code>), one distribution (<code>distributionId=...</code>). Rows are selected by <code>PR_History.CheckDate</code> falling inside the resolved window, with the consistency filters above always applied.</p>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/payroll-distributions/data?window=this_month
+GET /api/dashboard/payroll-distributions/data?window=this_month&amp;distributionId=6f2a9c41-8b3d-4e7a-9c1f-2d5b8e0a3f74&amp;byPayType=true
+GET /api/dashboard/payroll-distributions/data?window=custom&amp;from=2025-07-01&amp;to=2026-06-30&amp;byPayType=true
+GET /api/dashboard/payroll-distributions/data?window=this_year&amp;asOf=2026-07-27
+</code></pre>
+<h2>Validation rules</h2>
+<ul>
+<li>Custom is expressed as <code>window=custom</code>, not as a silent override: <code>from</code> and <code>to</code> are required together when <code>window=custom</code>, and are rejected (HTTP 400) when present with any other window value. The server never silently ignores a date pair.</li>
+<li><code>from &lt;= to</code> is required; a reversed pair is HTTP 400, never silently swapped.</li>
+<li><code>asOf</code> is ignored when <code>window=custom</code> (the pair is absolute); it applies to all five preset windows.</li>
+<li>There is no <code>grain</code> parameter and no bucketing parameter of any kind. If a request carries one, it is unknown-parameter noise, not a feature: the response is always one flat aggregation over the whole window.</li>
+<li>An unknown <code>distributionId</code> returns an empty list rather than an error (matching the empty-window behaviour); see Still needs sign-off for confirmation.</li>
+</ul>
+<p>Error body convention, matching the Budget Compared to Actual spec:</p>
 <pre><code>{
-  &quot;period&quot;: { &quot;range&quot;: &quot;Jul 14–20, 2026&quot; },
-  &quot;total&quot;: { &quot;current&quot;: 154200, &quot;prior&quot;: 148900, &quot;diffAmount&quot;: 5300, &quot;diffPct&quot;: 4 },
-  &quot;rows&quot;: [
-    { &quot;label&quot;: &quot;Finance&quot;, &quot;current&quot;: 44680, &quot;prior&quot;: 43060, &quot;diffAmount&quot;: 1620, &quot;diffPct&quot;: 4 },
-    { &quot;label&quot;: &quot;Administration Staff&quot;, &quot;current&quot;: 38950, &quot;prior&quot;: 40100, &quot;diffAmount&quot;: -1150, &quot;diffPct&quot;: -3 },
-    { &quot;label&quot;: &quot;Facilities&quot;, &quot;current&quot;: 21300, &quot;prior&quot;: 19800, &quot;diffAmount&quot;: 1500, &quot;diffPct&quot;: 8 }
-  ]
+  &quot;error&quot;: &quot;invalidCustomRange&quot;,
+  &quot;message&quot;: &quot;window=custom requires both from and to, with from &lt;= to&quot;
 }
 </code></pre>
-<p><code>diffAmount</code>/<code>diffPct</code> are pre-computed server-side, same convention as the rest of this project's specs — never raw current/prior for the client to subtract. <code>total</code> is the sum across every row in the current filtered scope, current and prior both.</p>
-
-<h2>Sort</h2>
-<p>Default alphabetical by <code>label</code>. <code>sort=amount</code> switches to amount descending. Two states only — not open column sorting.</p>
-
-<h2>Drill-through</h2>
-<p>A link out to the Payroll History module, filtered to the same date range. Plain link built from <code>startDate</code>/<code>endDate</code> on the frontend, not a new API call — no transaction-level detail endpoint needed for Version 1.</p>
-
-<h2>Edge cases to confirm</h2>
+<h2>Response schema</h2>
+<p>The response stays what it is today: a bare flat list, no envelope, no server-computed totals, no timestamps. Grand total is the client-side sum of the returned rows; percent of total is a client-side division; sorting is a client-side re-order. The two row shapes:</p>
+<h3>Distribution rows (<code>byPayType=false</code>, the default)</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>distributionId</code></td>
+<td>guid</td>
+<td><code>CompensationDistributionID</code>: the stable key (names are org-editable) and the future drill key</td>
+</tr>
+<tr>
+<td><code>distributionName</code></td>
+<td>string</td>
+<td><code>PR_CompensationDistribution.Name</code>, the org-defined label, resolved at query time</td>
+</tr>
+<tr>
+<td><code>amount</code></td>
+<td>number</td>
+<td><code>SUM(Amount)</code> over the scope's compensation lines in the window</td>
+</tr>
+</tbody>
+</table>
+<h3>Pay-type rows (<code>byPayType=true</code>)</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>distributionId</code></td>
+<td>guid</td>
+<td>As above</td>
+</tr>
+<tr>
+<td><code>distributionName</code></td>
+<td>string</td>
+<td>As above</td>
+</tr>
+<tr>
+<td><code>subType</code></td>
+<td>int</td>
+<td>Pay-type code 1-10 from <code>PR_HistoryCompensation.SubType</code> (fixed codes, per the proof file)</td>
+</tr>
+<tr>
+<td><code>subTypeName</code></td>
+<td>string</td>
+<td>Display name for the code. Codes 6-9 are org-configurable labels resolved from <code>PR_Company</code> settings at query time; the server resolves them, the client never hardcodes them</td>
+</tr>
+<tr>
+<td><code>amount</code></td>
+<td>number</td>
+<td><code>SUM(Amount)</code> over that pay type's lines within that distribution in the window</td>
+</tr>
+</tbody>
+</table>
+<p>One row per (distribution, pay type) pair that has data; zero rows are never sent. A distribution's pay-type rows always sum exactly to its distribution-scope <code>amount</code> for the same window, because both groupings read the same filtered rows (per <code>Payroll Distributions - Pay Type Breakdown Analysis (proof).html</code>, levels 2 and 4 are the same table).</p>
+<h3>Pay-type code map (<code>SubType</code>, per the proof file)</h3>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Name</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Regular</td>
+<td>Standard hours/pay; salaried workers log standard hours here</td>
+</tr>
+<tr>
+<td>2</td>
+<td>OverTime</td>
+<td>Beyond the normal week, typically 1.5x</td>
+</tr>
+<tr>
+<td>3</td>
+<td>DoubleTime</td>
+<td>2x rate</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Holiday</td>
+<td>Recognised holidays</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Other</td>
+<td>Catch-all, hours-based</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Vacation</td>
+<td>Org-configurable label (e.g. "Annual Leave", "PTO")</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Sick</td>
+<td>Org-configurable label</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Personal</td>
+<td>Org-configurable label</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Misc.</td>
+<td>Org-configurable label</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Other Pay</td>
+<td>Typically non-hours-based supplementary pay</td>
+</tr>
+</tbody>
+</table>
+<p><code>Hours</code> and <code>Rate</code> are never returned by this contract, at any scope, per the owner's zero-personal-data decision (2026-07-27). The pay-type breakdown is amounts only.</p>
+<h2>Examples</h2>
+<p>All figures are mock data shaped like production (the proof file's Administration Staff total of 4,530.63 is reused so the examples and the evidence tell one story). The shapes and the arithmetic reconciliation are the contract, not the amounts.</p>
+<h3>Example 1: all distributions, this_month</h3>
+<pre><code>GET /api/dashboard/payroll-distributions/data?window=this_month&amp;asOf=2026-07-27
+</code></pre>
+<pre><code>[
+  { &quot;distributionId&quot;: &quot;1a7c3e59-4b2d-4f8a-9e6c-0d3f5a7b9c1e&quot;, &quot;distributionName&quot;: &quot;AA Aid&quot;, &quot;amount&quot;: 560.00 },
+  { &quot;distributionId&quot;: &quot;6f2a9c41-8b3d-4e7a-9c1f-2d5b8e0a3f74&quot;, &quot;distributionName&quot;: &quot;Administration Staff&quot;, &quot;amount&quot;: 4530.63 },
+  { &quot;distributionId&quot;: &quot;3c5e7a90-1d2f-4b6c-8a4e-9f0b2c4d6e81&quot;, &quot;distributionName&quot;: &quot;Facilities&quot;, &quot;amount&quot;: 2118.75 },
+  { &quot;distributionId&quot;: &quot;8d0f2b46-3a5c-4d7e-b1f9-4c6e8a0b2d53&quot;, &quot;distributionName&quot;: &quot;Pastoral Staff&quot;, &quot;amount&quot;: 6240.00 }
+]
+</code></pre>
+<p>Client-side: grand total 13,449.38 (560.00 + 4,530.63 + 2,118.75 + 6,240.00); Administration Staff's share of total is 4,530.63 / 13,449.38, about 33.7%.</p>
+<h3>Example 2: by pay type, one distribution</h3>
+<p>Same window; the rows sum exactly to Example 1's Administration Staff amount.</p>
+<pre><code>GET /api/dashboard/payroll-distributions/data?window=this_month&amp;asOf=2026-07-27&amp;distributionId=6f2a9c41-8b3d-4e7a-9c1f-2d5b8e0a3f74&amp;byPayType=true
+</code></pre>
+<pre><code>[
+  { &quot;distributionId&quot;: &quot;6f2a9c41-8b3d-4e7a-9c1f-2d5b8e0a3f74&quot;, &quot;distributionName&quot;: &quot;Administration Staff&quot;, &quot;subType&quot;: 1, &quot;subTypeName&quot;: &quot;Regular&quot;,  &quot;amount&quot;: 4199.27 },
+  { &quot;distributionId&quot;: &quot;6f2a9c41-8b3d-4e7a-9c1f-2d5b8e0a3f74&quot;, &quot;distributionName&quot;: &quot;Administration Staff&quot;, &quot;subType&quot;: 2, &quot;subTypeName&quot;: &quot;OverTime&quot;, &quot;amount&quot;: 174.00 },
+  { &quot;distributionId&quot;: &quot;6f2a9c41-8b3d-4e7a-9c1f-2d5b8e0a3f74&quot;, &quot;distributionName&quot;: &quot;Administration Staff&quot;, &quot;subType&quot;: 6, &quot;subTypeName&quot;: &quot;Vacation&quot;, &quot;amount&quot;: 157.36 }
+]
+</code></pre>
+<p>Reconciliation: 4,199.27 + 174.00 + 157.36 = 4,530.63, matching Example 1's row. Pay types with no lines in the window (Holiday, Sick, etc.) simply have no row.</p>
+<h3>Example 3: custom range spanning years, by pay type across all distributions</h3>
+<pre><code>GET /api/dashboard/payroll-distributions/data?window=custom&amp;from=2025-07-01&amp;to=2026-06-30&amp;byPayType=true
+</code></pre>
+<pre><code>[
+  { &quot;distributionId&quot;: &quot;1a7c3e59-4b2d-4f8a-9e6c-0d3f5a7b9c1e&quot;, &quot;distributionName&quot;: &quot;AA Aid&quot;, &quot;subType&quot;: 1, &quot;subTypeName&quot;: &quot;Regular&quot;, &quot;amount&quot;: 6720.00 },
+  { &quot;distributionId&quot;: &quot;6f2a9c41-8b3d-4e7a-9c1f-2d5b8e0a3f74&quot;, &quot;distributionName&quot;: &quot;Administration Staff&quot;, &quot;subType&quot;: 1, &quot;subTypeName&quot;: &quot;Regular&quot;,  &quot;amount&quot;: 45600.00 },
+  { &quot;distributionId&quot;: &quot;6f2a9c41-8b3d-4e7a-9c1f-2d5b8e0a3f74&quot;, &quot;distributionName&quot;: &quot;Administration Staff&quot;, &quot;subType&quot;: 2, &quot;subTypeName&quot;: &quot;OverTime&quot;, &quot;amount&quot;: 6487.56 },
+  { &quot;distributionId&quot;: &quot;6f2a9c41-8b3d-4e7a-9c1f-2d5b8e0a3f74&quot;, &quot;distributionName&quot;: &quot;Administration Staff&quot;, &quot;subType&quot;: 6, &quot;subTypeName&quot;: &quot;Vacation&quot;, &quot;amount&quot;: 2280.00 },
+  { &quot;distributionId&quot;: &quot;3c5e7a90-1d2f-4b6c-8a4e-9f0b2c4d6e81&quot;, &quot;distributionName&quot;: &quot;Facilities&quot;, &quot;subType&quot;: 1, &quot;subTypeName&quot;: &quot;Regular&quot;, &quot;amount&quot;: 24150.00 },
+  { &quot;distributionId&quot;: &quot;3c5e7a90-1d2f-4b6c-8a4e-9f0b2c4d6e81&quot;, &quot;distributionName&quot;: &quot;Facilities&quot;, &quot;subType&quot;: 4, &quot;subTypeName&quot;: &quot;Holiday&quot;, &quot;amount&quot;: 1275.00 }
+]
+</code></pre>
+<p>Client-side regroup by <code>distributionId</code>: AA Aid 6,720.00; Administration Staff 54,367.56 (45,600.00 + 6,487.56 + 2,280.00); Facilities 25,425.00 (24,150.00 + 1,275.00). Grand total 86,512.56. The range crosses a calendar-year boundary with no special handling: selection is by <code>CheckDate</code> only.</p>
+<p>There is no fourth example: no drill endpoint exists in this contract, and no response anywhere carries employee names, check numbers, hours, or rates (owner decision, 2026-07-27).</p>
+<h2>Edge cases</h2>
 <ol>
-<li><strong>No payroll runs in range</strong> — empty <code>rows[]</code> and zeroed <code>total</code>, or an explicit empty/error response?</li>
-<li><strong>Division by zero in <code>diffPct</code></strong> — a department with <code>prior: 0</code>. Return <code>null</code> instead of a percent?</li>
-<li><strong>New department/distribution with no prior period</strong> — exists this period but didn't last period. Row still appears with <code>prior: 0</code>?</li>
-<li><strong><code>endDate</code> before <code>startDate</code></strong> (Custom period only) — reject with an error, or silently swap?</li>
-<li><strong><code>department</code> value that doesn't match any real Distribution name for that org</strong> — empty result, or an error?</li>
+<li><strong>Empty window (no payroll runs in range):</strong> empty list, not an error. The frontend renders its empty state from zero rows; the client-side grand total is 0.</li>
+<li><strong>Custom range spanning years:</strong> no special handling. Selection is by <code>CheckDate</code> inside the inclusive <code>from</code>/<code>to</code> pair; there is no fiscal-year machinery on this widget (see Example 3).</li>
+<li><strong>Distribution renamed by the org:</strong> <code>distributionName</code> is resolved from <code>PR_CompensationDistribution.Name</code> at query time, so historical rows report under the CURRENT label. <code>distributionId</code> is the stable key; the client never keys on the name.</li>
+<li><strong>Distribution deleted by the org:</strong> historical <code>PR_HistoryCompensation</code> rows still carry the <code>CompensationDistributionID</code>. The row must still be returned (the money was really paid); the label behaviour for an orphaned id needs a dev answer (see Still needs sign-off).</li>
+<li><strong>PayCycle variations:</strong> employees on different cycles (52, 26, 24, 12 checks per year) contribute different numbers of checks to the same window. Amounts are plain sums of the checks dated inside the window, with no per-cycle normalisation; a window shorter than an employee's cycle can legitimately contain zero of their checks.</li>
+<li><strong>Reversed custom pair (<code>from &gt; to</code>):</strong> HTTP 400, never silently swapped.</li>
+<li><strong>Unknown <code>distributionId</code>:</strong> empty list expected (matching the empty-window behaviour) rather than an error; needs confirmation.</li>
+<li><strong>Three-paycheck months:</strong> a weekly or bi-weekly cycle gives some calendar months an extra check. The window reports what was actually paid; this is exactly why F3 rejected naive prior-period comparison, and why no comparison fields exist to misread it.</li>
 </ol>
-
-<h2>Not in scope for Version 1</h2>
+<h2>Not in scope</h2>
 <ul>
-<li>No pay-type composition (Regular/Overtime/Vacation/etc.) — that is Version 2 below.</li>
-<li>No per-employee or per-transaction breakdown — rows are grouped by distribution name, never down to an individual paycheck or a named person.</li>
-<li>"Make this recurring" and setting the Pay Period separately per department — Step 4 marks both mockup-only; no backend work until they're confirmed real.</li>
+<li><strong>No comparison, ever.</strong> No prior-period figures, no <code>diffAmount</code>/<code>diffPct</code>, no trend or delta fields. Sign-off finding F3 rejected comparison for this widget; this is a contract boundary, not an omission.</li>
+<li><strong>No grain and no buckets.</strong> The window is scope-only aggregation: one flat result per request, never a time series.</li>
+<li><strong>No personal data, anywhere, ever (owner decision, 2026-07-27).</strong> No employee names, no check numbers, no hours, no rates, at any scope. The breakdown stops at distribution by pay type, amounts only. The deeper per-employee drill is evidenced possible (proof file) but is deliberately excluded and not planned.</li>
+<li><strong>No project or workers'-comp breakdowns.</strong> <code>ProjectID</code> and <code>WorkersCompID</code> exist on the same rows (per the proof file) but nothing in the built Final needs them.</li>
+<li><strong>No employee-count field on distribution rows.</strong> The proof file notes it would be a small addition; the built Final does not display it, so it is not specced.</li>
+<li><strong>No server-side totals, percent-of-total, or sort params.</strong> All client-side over the returned rows.</li>
+<li><strong>"Make this recurring" and per-distribution period modes</strong> remain mockup-only per Step 4; no backend surface until confirmed real.</li>
+<li><strong>Link out to Payroll History</strong> stays a frontend-built link from the resolved date range; no API involvement.</li>
 </ul>
-
-<p class="release v2">Version 2 — Planned Improvement (round two, not in the locked design)</p>
-
-<p><strong>Scope of this improvement:</strong> when a user clicks a distribution row, drill <em>into</em> it and show the <strong>pay-type composition</strong> of that distribution's total — Regular vs Overtime vs Holiday vs Vacation vs Sick, etc. — as aggregated totals (hours and amount per pay type). The purpose is diagnostic: seeing the <em>mix</em> is what tells a user whether overtime is climbing, or why a number moved period-over-period.</p>
-
-<p><strong>Deliberately excluded from this improvement:</strong></p>
-<ul>
-<li><strong>No employee names.</strong> The breakdown is by pay type, not by person.</li>
-<li><strong>No individual check / transaction detail.</strong> Rows are pay-type totals within the distribution, never a per-paycheck list.</li>
-</ul>
-<p>This keeps the improvement free of PII and consistent with Version 1's grouping approach — one more level of <em>category</em> depth, not a jump to transaction data.</p>
-
-<h2>Data source — now confirmed</h2>
-<p>The old flag ("pay-type breakdown has no confirmed data source") is <span class="resolved">RESOLVED</span>. Per the Pay Type Breakdown analysis (July 2026), the pay-type data already lives in the same table Version 1 already reads — <code>PR_HistoryCompensation</code>. Each row in that table is one compensation line on one paycheck and already carries the pay type, hours, and rate. The current widget simply ignores those columns.</p>
-<table>
-<thead><tr><th>Table</th><th>Fields used (new for V2)</th><th>What it gives</th></tr></thead>
-<tbody>
-<tr><td><code>PR_HistoryCompensation</code></td><td><code>SubType</code></td><td>The pay-type code (1–10) — Regular, Overtime, etc. This is the field that answers "what kind of pay was this?"</td></tr>
-<tr><td><code>PR_HistoryCompensation</code></td><td><code>Hours</code></td><td>Hours for that pay type within the distribution (aggregated)</td></tr>
-<tr><td><code>PR_HistoryCompensation</code></td><td><code>Rate</code></td><td>Pay rate — informational; not required for the composition view</td></tr>
-</tbody>
-</table>
-<p><strong>No schema changes are needed</strong> — the data exists today; it is an API + UI exposure task, not a data-model change.</p>
-
-<h2>Pay-type codes — <code>SubType</code> field</h2>
-<table>
-<thead><tr><th>Code</th><th>Pay type</th><th>Notes</th></tr></thead>
-<tbody>
-<tr><td>1</td><td>Regular</td><td>Standard hours/pay</td></tr>
-<tr><td>2</td><td>OverTime</td><td>Beyond normal week, typically 1.5×</td></tr>
-<tr><td>3</td><td>DoubleTime</td><td>2× rate</td></tr>
-<tr><td>4</td><td>Holiday</td><td>Recognised holidays</td></tr>
-<tr><td>5</td><td>Other</td><td>Catch-all, hours-based</td></tr>
-<tr><td>6</td><td>Vacation</td><td><strong>Org-configurable label</strong></td></tr>
-<tr><td>7</td><td>Sick</td><td><strong>Org-configurable label</strong></td></tr>
-<tr><td>8</td><td>Personal</td><td><strong>Org-configurable label</strong></td></tr>
-<tr><td>9</td><td>Misc.</td><td><strong>Org-configurable label</strong></td></tr>
-<tr><td>10</td><td>Other Pay</td><td>Typically non-hours-based supplementary pay</td></tr>
-</tbody>
-</table>
-<p><strong>Label caveat:</strong> SubTypes 6–9 do not have fixed names — each org sets its own labels in <code>PR_Company</code> settings (e.g. "Vacation" may be "Annual Leave" or "PTO"). The API must resolve these names from company config at query time, rather than hardcoding them. This is the same variable-label rule that already applies to distribution names.</p>
-
-<h2>Proposed endpoint and response shape (V2)</h2>
-<p>Triggered when a user drills into one distribution. Aggregated by pay type — no <code>employees</code> array, no check rows.</p>
-<pre><code>GET /api/dashboard/payroll-distributions/breakdown
-    ?distributionName=Administration+Staff&amp;startDate=2026-07-14&amp;period=Weekly</code></pre>
-<pre><code>{
-  &quot;period&quot;: { &quot;range&quot;: &quot;Jul 14–20, 2026&quot; },
-  &quot;distributionName&quot;: &quot;Administration Staff&quot;,
-  &quot;total&quot;: { &quot;current&quot;: 4530.63, &quot;prior&quot;: 4200.00, &quot;diffAmount&quot;: 330.63, &quot;diffPct&quot;: 8 },
-  &quot;payTypes&quot;: [
-    { &quot;label&quot;: &quot;Regular&quot;,  &quot;subType&quot;: 1, &quot;hours&quot;: 120.0, &quot;current&quot;: 3800.00, &quot;prior&quot;: 3700.00, &quot;diffAmount&quot;: 100.00, &quot;diffPct&quot;: 3 },
-    { &quot;label&quot;: &quot;Overtime&quot;, &quot;subType&quot;: 2, &quot;hours&quot;: 12.0,  &quot;current&quot;: 540.63,  &quot;prior&quot;: 300.00,  &quot;diffAmount&quot;: 240.63, &quot;diffPct&quot;: 80 },
-    { &quot;label&quot;: &quot;Vacation&quot;, &quot;subType&quot;: 6, &quot;hours&quot;: 8.0,   &quot;current&quot;: 190.00,  &quot;prior&quot;: 200.00,  &quot;diffAmount&quot;: -10.00, &quot;diffPct&quot;: -5 }
-  ]
-}
-</code></pre>
-<p>The Overtime row in this example (+80%) is exactly the kind of movement this view is meant to surface at a glance. <code>diffAmount</code>/<code>diffPct</code> follow the same server-side pre-computed convention as Version 1.</p>
-
-<h2>Consistency filters carried over from Version 1</h2>
-<p>So the pay-type totals reconcile exactly to the Version 1 distribution total:</p>
-<ul>
-<li><strong>Voided checks excluded</strong> (<code>VoidJournalID IS NULL</code>) — same as today.</li>
-<li><strong>Manual checks excluded</strong> (<code>CheckType = 2</code>) — same as today.</li>
-<li><strong>Non-cash compensation excluded</strong> — benefit items (health contributions, car allowances, etc.) flow through a separate table (<code>PR_HistoryNonCash</code>) and are not part of the distribution totals, so they do not appear here either.</li>
-</ul>
-
-<h2>What would need to be built (V2)</h2>
-<p>No database changes. Work is API + UI only:</p>
-<table>
-<thead><tr><th>Component</th><th>Change</th><th>Complexity</th></tr></thead>
-<tbody>
-<tr><td>Modern API — entity</td><td>Map <code>SubType</code>, <code>Hours</code>, <code>Rate</code> on <code>PR_HistoryCompensation</code> (already mapped for <code>Amount</code>)</td><td>Low</td></tr>
-<tr><td>Modern API — DTO</td><td>New <code>PayrollDistributionBreakdownDto</code> — pay-type rows only, no employee nesting</td><td>Low</td></tr>
-<tr><td>Modern API — service</td><td><code>GetPayrollDistributionBreakdownAsync(distributionName, startDate, period)</code> — group by <code>SubType</code>, resolve labels from company config</td><td>Medium</td></tr>
-<tr><td>Modern API — controller</td><td>New endpoint <code>GET /api/dashboard/payroll-distributions/breakdown</code></td><td>Low</td></tr>
-<tr><td>UI — drill-in</td><td>Clickable distribution rows open an in-widget panel showing the pay-type composition</td><td>Medium</td></tr>
-</tbody>
-</table>
-
-<h2>Not in scope even for Version 2</h2>
-<ul>
-<li>Per-employee and per-check detail (names, check numbers) — explicitly excluded per instruction.</li>
-<li>Project-level and Workers'-Comp breakdowns — <code>ProjectID</code> and <code>WorkersCompID</code> exist on the line but are out of scope unless a future need arises.</li>
-<li>Implied hourly rate for salaried staff — <code>Rate</code> holds a per-period salary for salaried workers, not an hourly figure; deriving an hourly rate is a calculation, not a stored value, and isn't part of this composition view.</li>
-</ul>
-
 <h2>Still needs sign-off</h2>
 <ul>
-<li><strong>Where does pay-type data come from — <span class="resolved">RESOLVED</span>.</strong> Confirmed as <code>PR_HistoryCompensation.SubType</code> (+ <code>Hours</code>/<code>Rate</code>) via the Pay Type Breakdown analysis (July 2026). No schema work needed. Carried here only to close the item.</li>
-<li><strong>Is "Department" the same field as "Distribution"</strong> — today's one confirmed grouping field — or a genuinely separate concept that would need its own confirmed source (e.g. <code>PREmployee</code>'s own department field, unconfirmed and unchecked in this pass)? Affects the Version 1 <code>department</code> filter.</li>
-<li><strong>"Prior period" definition</strong> — immediately preceding period of equal length, as assumed above, or something else (e.g. same period last year)? Applies to both versions.</li>
-<li><strong>Org-configurable pay-type label resolution (V2)</strong> — confirm the <code>PR_Company</code> settings that map SubTypes 6–9 to org labels can be read at query time.</li>
+<li><strong>RESOLVED, kept for the record: the Department-vs-Category grouping question</strong> (the item that reopened this spec on 2026-07-21) was closed on 2026-07-27 by <code>Payroll Distributions - Pay Type Breakdown Analysis (proof).html</code>: the grouping is the org-defined distribution labels in <code>PR_CompensationDistribution.Name</code>, and the pay-type dimension is <code>PR_HistoryCompensation.SubType</code> on the same rows. No schema change; no separate Department source exists or is needed.</li>
+<li><strong>CLOSED by F3: prior-period definition.</strong> The old spec's open question about how "prior period" is computed is moot: sign-off finding F3 rejected comparison for this widget outright, so no prior-period semantics exist to define.</li>
+<li><strong>SubType exposure work confirmation:</strong> backend agreement that mapping <code>SubType</code> on the <code>PR_HistoryCompensation</code> entity plus the <code>byPayType</code> grouping lands as specced: a SELECT-level addition on existing rows, no schema change, per the proof file. (<code>Hours</code>/<code>Rate</code> are NOT to be mapped for this contract: zero personal data.)</li>
+<li><strong>Org-configurable pay-type labels (codes 6-9):</strong> confirm the <code>PR_Company</code> settings that hold the org's labels can be resolved server-side at query time into <code>subTypeName</code>.</li>
+<li><strong>CLOSED by owner decision (2026-07-27): employee/check drill.</strong> No drill endpoint, no personal data in this contract, breakdown stops at distribution by pay type. Kept for the record: the drill remains evidenced possible with no schema change (proof file, levels 3 and 4) should the decision ever be revisited.</li>
+<li><strong>Orphaned <code>CompensationDistributionID</code> label behaviour:</strong> what <code>distributionName</code> is returned when the org has deleted the distribution record (fallback label vs empty string).</li>
+<li><strong>Unknown <code>distributionId</code> behaviour:</strong> confirm empty list, not an error.</li>
+<li><strong>Window param validation details:</strong> confirm <code>asOf</code> bounds (future dates, dates before any payroll data), the exact anchoring of the rolling windows (calendar-month blocks vs day-precise offsets, mirroring the same open item on Budget Compared to Actual), and whether <code>this_period</code> should mean the org's fiscal period (as specced, matching the shared picker) or the latest pay period, given <code>PayCycle</code> varies per employee.</li>
+<li><strong>Export endpoints:</strong> no export endpoint exists in the modern API. Decide whether export is client-side generation from the JSON the widget already holds (zero backend work, the Pension Plans default) or a server endpoint.</li>
+<li><strong>Parallel sign-off-aligned spec:</strong> a second Payroll Distributions API spec exists in <code>Step 6 - Sign off document/Payroll Distrubution/</code>, written against the sign-off dossier. It is deliberately untouched by this update; reconciling the two documents into one remains open.</li>
 </ul>
 
 </body>

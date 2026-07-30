@@ -124,3 +124,24 @@ Ran the `create-mock-designs` skill against W05 as part of the approved batch. T
 ### Self-check result
 
 `python3 check-rules.py "Dashboard Widget Mockups.html" --widget 5` → **0 HIGH, 0 MED, 0 LOW** (exit 0). Both inline `<script>` blocks pass `node --check`. The Final Check tab (`id="fc-widget-5"`) was not touched and still shows its "Final design — locked (see note)" badge; no other widget's `WRENDER` was modified.
+
+## 2026-07-28 — Final COMPLETE, tagged v2.0, Jo design
+
+The Final Check tab's Final build of this widget is complete and signed off by the project owner. Version badge set to v2.0 (`FC_VERSION[5]`); title badges: "Final" and "Jo design". The Final renders by default; the earlier A/B/C options (Restyled Original / Competitor Match / Collections Priority) stay reachable from the section's design-option switch. Summary of what shipped:
+
+**Composition (Jo's design, carried 1-to-1):** the Final is Jo Lopez's Accounts Receivable widget carried into the Final Check tab as a one-to-one copy (the additive `arF` block beside `WRENDER[5]` in `Dashboard Widget Mockups.html`; the A/B/C branches are byte-untouched), PLUS one owner-added enhancement to the drill modal (below). Everything else is Jo's build as-is:
+- The aging-bucket ladder (Current / 31-60 / 61-90 / 91-120 / 121+).
+- Revenue Center and Source filter chips, each committed as a fetch (~800ms skeleton); sort and drill are instant client re-renders, never a fetch.
+- The Customers cut (Jo's customer grouping).
+- The KPI headline (total owed plus an overdue pill).
+- The drill detail modal titled "Receivable Invoices Outstanding: Detail", columns Customer / Bill To / Due Date / Invoice # / Days Past Due / Outstanding, a footer reading "N invoices / total", an Export to Excel button, and a Close button.
+
+**Sample data:** 8 invoices totalling $33,530. The 121+ bucket is Cornerstone Academy INV-2903 (due Feb 28 2026, 145 days past due, $9,650) plus Legacy Insurance Group / Legacy HR Dept INV-2890 (due Mar 1 2026, 144 days past due, $6,300), so the 121+ bucket totals $15,950. Bill To is a known pre-existing empty-field gap in the Modern API (the `BillToDisplay` field is always empty today); the column is kept but reads empty for that reason.
+
+**Enhancement (owner-specified, in the drill modal only), flagged as a DEVELOPER-INTENT SIGNAL, not a finished workflow or final copy:** each invoice row in the detail modal carries a checkbox (row-level only, there is NO select-all), and a "Confirm" button sits beside Close (always enabled). On Confirm an INLINE note appears in the modal footer reading exactly "Move to unposted transactions" plus a muted "(N invoices selected)". The intent this signals is that the selected invoices are meant to move to the system's unposted-transactions queue to begin processing; it is a direction-of-travel marker for the developers, not finished workflow behaviour and not final wording.
+
+**Sizes (Rule 12):** the three-size model Glance / Explore / Detail, no Small, via the `fc-fmode` mechanism, mapping Jo's kpi / wide / xwide layouts.
+
+**Verification:** ~95-assertion per-widget Node DOM-shim driver, 0 failures. It asserts the exact "Move to unposted transactions" footer string, that toggling a row checkbox keeps the modal open (no re-fetch, no close), and that the live selected count updates (1 to 2 as a second row is checked); plus the aging ladder, the Revenue Center / Source chip fetch with skeleton, the KPI headline and overdue pill, and the drill modal columns / footer / Export / Close. Browser-faithful CSS parse: 0 dropped rules. `final-check-rules.py --widget 5`: 0 HIGH. W01/W02/W03/W04 Final regressions green; the A/B/C options still render at every size and the Dashboard tab is byte-identical before and after. `FC_VERSION[5]` = 2.0.
+
+**Backend confirmed from codebase (2026-07-28):** a codebase trace of what the Confirm action would drive is captured in `Step 5 - API documents/Receivable Invoices Outstanding/Move to Unposted Transactions - Logic Notes.md`. In short: the widget is display-only today; the unposted-to-posted machinery already exists and is reusable (`ARInvoiceRepository.FinalizePost` with select-by-`SelectedIDs`, an Undo path, and a GL interface), `PaymentProcessing` is the likely "process an outstanding invoice" path, and the modern side is greenfield. **One open question (not resolved here):** the exact transaction type the Confirm action creates (the move-to-unposted target) is the single open SME/API question for this widget; it is left to the API doc / SME and recorded in that logic-notes file, not decided in this spec.

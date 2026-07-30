@@ -21,6 +21,8 @@ pre code { background: none; padding: 0; }
 
 <h1>Budget Compared to Actual — API Spec</h1>
 <p><span class="status">Status: DRAFT — not final</span></p>
+<h2>Overview</h2>
+<p>The widget compares budgeted amounts against posted actuals for a chosen scope: Income Accounts, Expense Accounts, or a single Special Report Line. Time selection follows the <a href="../../Step%203%20-%20Mock_Work/Widget_Specs/Time%20Window%20Module.md">Time Window Module</a> contract: a <code>window</code> (the slice of time shown), a <code>grain</code> (what each bucket represents), and an optional <code>asOf</code> anchor date. One endpoint serves every window and grain, returning a chronological array of <code>{start, end, budget, actual, partial}</code> buckets plus a pre-computed <code>total</code> for the window. The Time Window Module document is the authority for all time logic in this spec.</p>
 <h2>Tables</h2>
 <table>
 <thead>
@@ -40,7 +42,7 @@ pre code { background: none; padding: 0; }
 </tr>
 <tr>
 <td><code>GLPeriod</code></td>
-<td>Period, YearID — fiscal periods for the year, excluding any period named <code>"Audit"</code></td>
+<td>Period, YearID, fiscal periods for the year, excluding any period named <code>"Audit"</code></td>
 </tr>
 <tr>
 <td><code>GLAccount</code></td>
@@ -52,12 +54,16 @@ pre code { background: none; padding: 0; }
 </tr>
 <tr>
 <td><code>GL_SpecialReportLine</code></td>
-<td>LineNumber, Name/description, low/high <code>AccountNumber</code> range — the "Special Report Line" dropdown within a selected report</td>
+<td>LineNumber, Name/description, low/high <code>AccountNumber</code> range (the "Special Report Line" dropdown within a selected report)</td>
+</tr>
+<tr>
+<td><code>SSUserTenantPreferenceRepository</code></td>
+<td>Legacy per-user preference store (<code>UserPreferences.WidgetBudgetComparedToActual</code>); see "Still needs sign-off"</td>
 </tr>
 </tbody>
 </table>
-<p>No new tables. Everything below is new queries and new response fields against the same tables the legacy and modern widgets already use.</p>
-<p><strong>Correction — "Line Description" is the existing Special Report Line dropdown, not an unconfirmed field.</strong> <code>Step 4</code>'s design doc originally left "Line Description" open with a guess that it might be a fixed, hard-coded list. It isn't — the legacy widget's Special Report Filter UI is two dropdowns (Special Report Title, then Special Report Line <em>within</em> that report, ordered by <code>LineNumber</code>), and the modern API already has a matching endpoint (<code>GET /special-report-lines?specialReportId={guid}</code>, returns <code>List&lt;DropDownItem&gt;</code>). "Line Description" is this second dropdown's label text — a real, already-built field, not a separate open question.</p>
+<p>No new tables are needed for month, period, quarter, and year buckets: those are new queries against the same tables the legacy and modern widgets already use. The sub-period grains are different. <code>GLSummary</code> is period-grain, so Day and Week ACTUALS cannot come from it: they require transaction-level querying (or a new day-grain rollup), which is genuinely new backend work, not just a new query. <code>GLBudgetDetail</code> has no budget rows below period grain either, so sub-period BUDGET figures are derived, never stored (see <code>budgetDerived</code> in the Response schema).</p>
+<p><strong>"Line Description" is the existing Special Report Line dropdown, not an unconfirmed field.</strong> The Step 4 design doc originally left "Line Description" open with a guess that it might be a fixed, hard-coded list. It isn't: the legacy widget's Special Report Filter UI is two dropdowns (Special Report Title, then Special Report Line within that report, ordered by <code>LineNumber</code>), and the modern API already has a matching endpoint (<code>GET /special-report-lines?specialReportId={guid}</code>, returns <code>List&lt;DropDownItem&gt;</code>). "Line Description" is this second dropdown's label text: a real, already-built field, not a separate open question. The redesign's special-report modal keeps this exact two-step structure (report, then line), so both dropdown endpoints are unchanged in concept. One addition: the data response for <code>accountType=2</code> must now carry the line's own account type as <code>lineType</code> (income, expense, or mixed), because the headline flips favourability by line type and renders mixed lines neutral. See Response schema.</p>
 <h2>Old vs. new</h2>
 <table>
 <thead>
@@ -70,138 +76,393 @@ pre code { background: none; padding: 0; }
 <tbody>
 <tr>
 <td>Endpoint</td>
-<td><code>GET /api/dashboard/budget-vs-actual/data?accountType={0\|1\|2}&amp;specialReportLineId={guid}</code> returns <code>List&lt;BudgetVsActualPeriodDto&gt;</code> — no variance, no totals</td>
-<td>Same endpoint, response extended with pre-computed per-period variance and a top-level <code>total</code> object for the fiscal year</td>
+<td><code>GET /api/dashboard/budget-vs-actual/data?accountType={0\|1\|2}&amp;specialReportLineId={guid}</code> returns <code>List&lt;BudgetVsActualPeriodDto&gt;</code>, monthly rows only, no variance, no totals</td>
+<td>Same endpoint. Adds the Time Window Module params <code>window</code>, <code>grain</code>, <code>asOf</code>; response becomes a <code>buckets[]</code> array plus <code>generatedAt</code>, a <code>total</code> object for the window, <code>budgetDerived</code> at sub-period grains, and <code>lineType</code> when <code>accountType=2</code></td>
+</tr>
+<tr>
+<td>Time axis</td>
+<td>Monthly only (one row per <code>GLPeriod</code>), fiscal year picked via <code>X-Year-ID</code> header</td>
+<td>Five windows (this_month, this_period, this_quarter, this_year, this_fiscal_year) crossed with six grains (day, week, month, period, quarter, year), validated server-side by the 2-to-31-points rule; the fiscal year is derived from <code>window</code> + <code>asOf</code> and the org's own fiscal calendar, not from a year header</td>
+</tr>
+<tr>
+<td>Rolling windows</td>
+<td>Nothing ever crossed a fiscal-year boundary</td>
+<td>this_quarter (last 3 months from <code>asOf</code>) and this_year (last 12 months from <code>asOf</code>) are rolling and can cross the FY boundary, so budget lookup must span two fiscal years in one request</td>
+</tr>
+<tr>
+<td>Sub-period grains</td>
+<td>Did not exist</td>
+<td>Day and Week actuals are new backend work (transaction-level querying; <code>GLSummary</code> is period-grain); sub-period budgets are derived, pace line recommended (see <code>budgetDerived</code>)</td>
+</tr>
+<tr>
+<td>Variance</td>
+<td>Not returned: legacy and modern both leave <code>Actual - Budget</code> for the caller to compute</td>
+<td><code>total</code> carries pre-computed <code>variance</code>/<code>variancePercent</code> for the window; per-bucket variance is a client subtraction of the returned <code>budget</code>/<code>actual</code> (no per-bucket variance fields in the response)</td>
 </tr>
 <tr>
 <td>Master company (consolidated)</td>
 <td><strong>Broken.</strong> Modern API returns an empty list for <code>CompanyNumber=0</code>. Legacy joined child accounts via <code>GLAccount.MasterAccountID</code></td>
-<td><strong>Must fix</strong> — reinstate the <code>MasterAccountID</code> join so consolidated orgs return combined figures, matching legacy</td>
+<td><strong>Must fix</strong>: reinstate the <code>MasterAccountID</code> join so consolidated orgs return combined figures, matching legacy</td>
 </tr>
 <tr>
 <td>User preference persistence</td>
 <td>Legacy saved each user's last Account Type + Special Report Line via <code>SSUserTenantPreferenceRepository</code> (<code>UserPreferences.WidgetBudgetComparedToActual</code>)</td>
-<td>Not implemented in the modern API — client currently manages this state itself. Flagged below, not silently accepted</td>
+<td>Not implemented in the modern API; the client manages this state, flagged in "Still needs sign-off"</td>
 </tr>
 <tr>
 <td>Excel/CSV export</td>
 <td>Legacy generated XLSX directly in a button handler (<code>buttonExportToExcel_Click</code>)</td>
-<td>No export endpoint exists yet. The redesigned widget's menu already includes "Download as Excel"/"Download as CSV" at every size except KPI — flagged below</td>
-</tr>
-<tr>
-<td>Period grain</td>
-<td>Monthly only (one row per <code>GLPeriod</code>)</td>
-<td>Monthly unchanged; Quarterly is a client-side sum of 3 consecutive monthly rows — no new endpoint or param needed. Weekly has no day-level GL grain anywhere today — see "Still needs sign-off"</td>
-</tr>
-<tr>
-<td>Variance</td>
-<td>Not returned — legacy and modern both leave <code>Actual - Budget</code> for the caller to compute</td>
-<td>Server pre-computes <code>variance</code>/<code>variancePercent</code> per period, plus once more for the fiscal-year <code>total</code>, matching the pre-computed-diff pattern used in every other spec in this folder</td>
+<td>No export endpoint exists yet, flagged in "Still needs sign-off"</td>
 </tr>
 </tbody>
 </table>
-<h2>Request params</h2>
+<h2>Endpoint</h2>
+<pre><code>GET /api/dashboard/budget-vs-actual/data
+</code></pre>
+<h3>Parameters</h3>
 <table>
 <thead>
 <tr>
-<th>Param</th>
+<th>Name</th>
 <th>Type</th>
 <th>Required</th>
+<th>Allowed values</th>
 <th>Default</th>
-<th>Notes</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td><code>accountType</code></td>
-<td>enum <code>0\|1\|2</code></td>
+<td>enum</td>
 <td>yes</td>
-<td>—</td>
-<td><code>0</code> = Income Accounts, <code>1</code> = Expense Accounts, <code>2</code> = Special Report Line (the redesign's "Custom Report")</td>
+<td><code>0</code> | <code>1</code> | <code>2</code></td>
+<td>none</td>
+<td><code>0</code> = Income Accounts, <code>1</code> = Expense Accounts, <code>2</code> = Special Report Line</td>
 </tr>
 <tr>
 <td><code>specialReportLineId</code></td>
 <td>guid</td>
-<td>only if <code>accountType=2</code></td>
-<td>—</td>
-<td>One Special Report Line, from <code>GET /special-report-lines?specialReportId={guid}</code></td>
+<td>only when <code>accountType=2</code></td>
+<td>any line id from <code>GET /special-report-lines?specialReportId={guid}</code></td>
+<td>none</td>
+<td>One Special Report Line, chosen via the report-then-line flow</td>
+</tr>
+<tr>
+<td><code>window</code></td>
+<td>enum</td>
+<td>yes</td>
+<td><code>this_month</code> | <code>this_period</code> | <code>this_quarter</code> | <code>this_year</code> | <code>this_fiscal_year</code></td>
+<td>none</td>
+<td>this_month = current calendar month; this_period = current fiscal period; this_quarter = ROLLING, last 3 months back from <code>asOf</code>; this_year = ROLLING, last 12 months back from <code>asOf</code>; this_fiscal_year = fiscal year to date</td>
+</tr>
+<tr>
+<td><code>grain</code></td>
+<td>enum</td>
+<td>no</td>
+<td><code>day</code> | <code>week</code> | <code>month</code> | <code>period</code> | <code>quarter</code> | <code>year</code></td>
+<td>smallest allowed grain for the window</td>
+<td>Validated against the window by the 2-to-31-points rule (see Validation rules)</td>
+</tr>
+<tr>
+<td><code>asOf</code></td>
+<td>date</td>
+<td>no</td>
+<td>today (server date)</td>
+<td>any valid date</td>
+<td>Anchors the two rolling windows; passing a historical <code>asOf</code> reproduces a past report exactly</td>
 </tr>
 </tbody>
 </table>
-<p>Fiscal year is chosen via the existing <code>X-Year-ID</code> header (set from the Fiscal Year filter — FY 2026/FY 2025/FY 2024), and company via <code>X-Company-ID</code> — neither is a new param. <strong>Being able to change Fiscal Year in the filter is the only actual new function here</strong>, and it's a per-request choice, not a global account-wide setting — one request still returns exactly one year's data. This is not a comparison feature like Deposit Accounts' <code>compareTo</code>; it never returns two years side by side.</p>
-<p>Example requests:</p>
-<pre><code>GET /api/dashboard/budget-vs-actual/data?accountType=0
-GET /api/dashboard/budget-vs-actual/data?accountType=2&amp;specialReportLineId=3fa85f64-5717-4562-b3fc-2c963f66afa6
+<p><strong>Default grain is an API contract, not a convenience.</strong> When <code>grain</code> is omitted, the server resolves it to the window's SMALLEST allowed grain: Day, Day, Week, Month, Month for the five windows in order (this_month, this_period, this_quarter, this_year, this_fiscal_year). The frontend's snap behaviour (changing window snaps an invalid grain to the new window's default) assumes the server resolves an omitted grain by exactly this rule, so the two must never disagree.</p>
+<p><strong>Headers.</strong> Company is <code>X-Company-ID</code>. There is no fiscal-year header: the server derives the fiscal year(s) from <code>window</code> + <code>asOf</code> and the org's own fiscal calendar (<code>GLPeriod</code>). Because the two rolling windows can cross a fiscal-year boundary, one request may need budget rows from two fiscal years.</p>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/budget-vs-actual/data?accountType=0&amp;window=this_month
+GET /api/dashboard/budget-vs-actual/data?accountType=1&amp;window=this_year&amp;grain=month&amp;asOf=2026-07-27
+GET /api/dashboard/budget-vs-actual/data?accountType=2&amp;specialReportLineId=3fa85f64-5717-4562-b3fc-2c963f66afa6&amp;window=this_fiscal_year&amp;grain=month
 </code></pre>
-<h2>Response shape</h2>
+<h2>Validation rules</h2>
+<p>A grain is valid for a window when it yields 2 to 31 data points at the window's full extent, plus two summary exceptions: Month on this_month and this_period (a single budget/actual pair for the whole window), and Year on this_fiscal_year (a single-pair year-to-date summary).</p>
+<h3>Allowed grains per window</h3>
+<table>
+<thead>
+<tr>
+<th>Window</th>
+<th>Day</th>
+<th>Week</th>
+<th>Month</th>
+<th>Period</th>
+<th>Quarter</th>
+<th>Year</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>this_month</td>
+<td>allowed</td>
+<td>allowed</td>
+<td>allowed (summary exception, single pair)</td>
+<td>blocked</td>
+<td>blocked</td>
+<td>blocked</td>
+</tr>
+<tr>
+<td>this_period</td>
+<td>allowed</td>
+<td>allowed</td>
+<td>allowed (summary exception, single pair)</td>
+<td>blocked</td>
+<td>blocked</td>
+<td>blocked</td>
+</tr>
+<tr>
+<td>this_quarter</td>
+<td>blocked (about 92 points)</td>
+<td>allowed (about 14)</td>
+<td>allowed (3)</td>
+<td>allowed (3)</td>
+<td>blocked (1)</td>
+<td>blocked (1)</td>
+</tr>
+<tr>
+<td>this_year</td>
+<td>blocked (365)</td>
+<td>blocked (up to 53)</td>
+<td>allowed (12)</td>
+<td>allowed (12)</td>
+<td>allowed (up to 5)</td>
+<td>allowed (2, crosses the FY boundary)</td>
+</tr>
+<tr>
+<td>this_fiscal_year</td>
+<td>blocked</td>
+<td>blocked (a full year runs to 53 weeks)</td>
+<td>allowed (up to 12)</td>
+<td>allowed (up to 12)</td>
+<td>allowed (up to 4)</td>
+<td>allowed (summary exception, year-to-date single pair)</td>
+</tr>
+</tbody>
+</table>
+<p>An invalid combination is rejected with HTTP 400 and an error body listing the allowed grains for that window; the server must never silently substitute a different grain:</p>
+<pre><code>{
+  &quot;error&quot;: &quot;invalidGrain&quot;,
+  &quot;message&quot;: &quot;grain 'day' is not available for window 'this_year'&quot;,
+  &quot;allowedGrains&quot;: [&quot;month&quot;, &quot;period&quot;, &quot;quarter&quot;, &quot;year&quot;]
+}
+</code></pre>
+<h2>Response schema</h2>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>accountType</code></td>
+<td>int</td>
+<td>Echo of the request's <code>accountType</code></td>
+</tr>
+<tr>
+<td><code>window</code></td>
+<td>string</td>
+<td>Echo of the resolved window</td>
+</tr>
+<tr>
+<td><code>grain</code></td>
+<td>string</td>
+<td>The resolved grain (the default when the request omitted <code>grain</code>)</td>
+</tr>
+<tr>
+<td><code>asOf</code></td>
+<td>date</td>
+<td>The resolved anchor date (today when the request omitted <code>asOf</code>)</td>
+</tr>
+<tr>
+<td><code>generatedAt</code></td>
+<td>datetime (UTC)</td>
+<td>Server generation stamp</td>
+</tr>
+<tr>
+<td><code>total</code></td>
+<td>object</td>
+<td>Window totals: <code>budget</code>, <code>actual</code>, <code>variance</code>, <code>variancePercent</code>, all pre-computed server-side</td>
+</tr>
+<tr>
+<td><code>total.budget</code></td>
+<td>number</td>
+<td>The window's budget. At sub-period grains with <code>budgetDerived: "paceLine"</code> this is the budget-to-date pace at <code>asOf</code>, not the full-window budget; at period-and-above grains it sums every bucket's budget</td>
+</tr>
+<tr>
+<td><code>total.actual</code></td>
+<td>number</td>
+<td>Sum of the posted buckets' actuals</td>
+</tr>
+<tr>
+<td><code>total.variance</code></td>
+<td>number</td>
+<td><code>total.actual - total.budget</code>, signed</td>
+</tr>
+<tr>
+<td><code>total.variancePercent</code></td>
+<td>number</td>
+<td><code>total.variance</code> as a rounded percent of <code>total.budget</code></td>
+</tr>
+<tr>
+<td><code>budgetDerived</code></td>
+<td>string</td>
+<td>Present whenever <code>grain</code> is <code>day</code> or <code>week</code>: how sub-period budget figures were produced. Values: <code>"paceLine"</code> (recommended), <code>"prorated"</code>, <code>"native"</code> (a budget actually entered at that grain). The pace line (budget-to-date, a cumulative expected-spend reading) is recommended over even proration because proration invents a daily/weekly budget nobody entered and makes ordinary calendar lumpiness (payroll days, gift Sundays) read as variance</td>
+</tr>
+<tr>
+<td><code>lineType</code></td>
+<td>string</td>
+<td>Present only when <code>accountType=2</code>: <code>"income"</code>, <code>"expense"</code>, or <code>"mixed"</code>, the Special Report Line's own account type, derived from the accounts in its low/high <code>AccountNumber</code> range (all <code>StatementType=I</code> is income, all <code>E</code> is expense, otherwise mixed). Required because the headline flips favourability by line type and renders mixed lines neutral</td>
+</tr>
+<tr>
+<td><code>buckets[]</code></td>
+<td>array</td>
+<td>Always chronological. One entry per grain unit in the window</td>
+</tr>
+<tr>
+<td><code>buckets[].start</code></td>
+<td>date</td>
+<td>Bucket's inclusive range start</td>
+</tr>
+<tr>
+<td><code>buckets[].end</code></td>
+<td>date</td>
+<td>Bucket's inclusive range end</td>
+</tr>
+<tr>
+<td><code>buckets[].budget</code></td>
+<td>number</td>
+<td>The bucket's budget figure</td>
+</tr>
+<tr>
+<td><code>buckets[].actual</code></td>
+<td>number or null</td>
+<td>The bucket's posted actual. <code>null</code> for unposted buckets, never <code>0</code>: a zero would be a fake reading, <code>null</code> means nothing posted yet</td>
+</tr>
+<tr>
+<td><code>buckets[].partial</code></td>
+<td>boolean</td>
+<td><code>true</code> on in-progress buckets: the current period/month, first/last weeks cut by the window edge, and a rolling window's edge quarter/year. The frontend flags these visually</td>
+</tr>
+</tbody>
+</table>
+<p>Notes:</p>
+<ul>
+<li>Per-bucket <code>variance</code>/<code>variancePercent</code> are not returned. The bucket shape is the module's <code>{start, end, budget, actual, partial}</code>; the client computes each bucket's variance from the two returned figures. The pre-computed pair lives in <code>total</code> only.</li>
+<li>Amounts are already sign-adjusted per the existing Income x -1 / Expense x +1 / Special-Report-Line <code>ReverseSign</code> convention, which is unchanged and confirmed correct. Favourability (which sign is "good") remains a client decision, driven by <code>accountType</code>/<code>lineType</code>.</li>
+</ul>
+<h2>Examples</h2>
+<h3>Example 1: this_fiscal_year, grain=month</h3>
+<p>This org's fiscal year happens to be calendar-aligned (starts January); fiscal calendars vary per org, so the buckets follow the org's own <code>GLPeriod</code> calendar, never a hardcoded January or July. The in-progress month keeps its normal full-month budget with an honestly-low posted actual, and is flagged partial.</p>
+<pre><code>GET /api/dashboard/budget-vs-actual/data?accountType=0&amp;window=this_fiscal_year&amp;grain=month&amp;asOf=2026-07-27
+</code></pre>
 <pre><code>{
   &quot;accountType&quot;: 0,
+  &quot;window&quot;: &quot;this_fiscal_year&quot;,
+  &quot;grain&quot;: &quot;month&quot;,
+  &quot;asOf&quot;: &quot;2026-07-27&quot;,
+  &quot;generatedAt&quot;: &quot;2026-07-27T14:05:00Z&quot;,
   &quot;total&quot;: {
-    &quot;budget&quot;: 248000,
-    &quot;actual&quot;: 245800,
-    &quot;variance&quot;: -2200,
-    &quot;variancePercent&quot;: -1
+    &quot;budget&quot;: 336000,
+    &quot;actual&quot;: 341900,
+    &quot;variance&quot;: 5900,
+    &quot;variancePercent&quot;: 2
   },
-  &quot;periods&quot;: [
-    {
-      &quot;periodId&quot;: 101,
-      &quot;period&quot;: &quot;Jul&quot;,
-      &quot;displayValue&quot;: &quot;Jul 2025&quot;,
-      &quot;actual&quot;: 79500,
-      &quot;budget&quot;: 82000,
-      &quot;variance&quot;: -2500,
-      &quot;variancePercent&quot;: -3
-    },
-    {
-      &quot;periodId&quot;: 102,
-      &quot;period&quot;: &quot;Aug&quot;,
-      &quot;displayValue&quot;: &quot;Aug 2025&quot;,
-      &quot;actual&quot;: 85100,
-      &quot;budget&quot;: 82000,
-      &quot;variance&quot;: 3100,
-      &quot;variancePercent&quot;: 4
-    },
-    {
-      &quot;periodId&quot;: 103,
-      &quot;period&quot;: &quot;Sep&quot;,
-      &quot;displayValue&quot;: &quot;Sep 2025&quot;,
-      &quot;actual&quot;: 81200,
-      &quot;budget&quot;: 84000,
-      &quot;variance&quot;: -2800,
-      &quot;variancePercent&quot;: -3
-    }
+  &quot;buckets&quot;: [
+    { &quot;start&quot;: &quot;2026-01-01&quot;, &quot;end&quot;: &quot;2026-01-31&quot;, &quot;budget&quot;: 48000, &quot;actual&quot;: 52100, &quot;partial&quot;: false },
+    { &quot;start&quot;: &quot;2026-02-01&quot;, &quot;end&quot;: &quot;2026-02-28&quot;, &quot;budget&quot;: 48000, &quot;actual&quot;: 46800, &quot;partial&quot;: false },
+    { &quot;start&quot;: &quot;2026-03-01&quot;, &quot;end&quot;: &quot;2026-03-31&quot;, &quot;budget&quot;: 48000, &quot;actual&quot;: 49500, &quot;partial&quot;: false },
+    { &quot;start&quot;: &quot;2026-04-01&quot;, &quot;end&quot;: &quot;2026-04-30&quot;, &quot;budget&quot;: 48000, &quot;actual&quot;: 47300, &quot;partial&quot;: false },
+    { &quot;start&quot;: &quot;2026-05-01&quot;, &quot;end&quot;: &quot;2026-05-31&quot;, &quot;budget&quot;: 48000, &quot;actual&quot;: 50200, &quot;partial&quot;: false },
+    { &quot;start&quot;: &quot;2026-06-01&quot;, &quot;end&quot;: &quot;2026-06-30&quot;, &quot;budget&quot;: 48000, &quot;actual&quot;: 51641, &quot;partial&quot;: false },
+    { &quot;start&quot;: &quot;2026-07-01&quot;, &quot;end&quot;: &quot;2026-07-31&quot;, &quot;budget&quot;: 48000, &quot;actual&quot;: 44359, &quot;partial&quot;: true }
   ]
 }
 </code></pre>
+<h3>Example 2: this_month, grain=week, with a partial week</h3>
+<p>July 2026, <code>asOf</code> 2026-07-27. Weeks start Monday; the first and last weeks are cut by the month boundary, so they are partial. The current week has nothing posted yet, so its <code>actual</code> is <code>null</code>. <code>total.budget</code> is the pace at <code>asOf</code> (40,259), not the full-month 48,000, because <code>budgetDerived</code> is <code>"paceLine"</code>.</p>
+<pre><code>GET /api/dashboard/budget-vs-actual/data?accountType=0&amp;window=this_month&amp;grain=week&amp;asOf=2026-07-27
+</code></pre>
+<pre><code>{
+  &quot;accountType&quot;: 0,
+  &quot;window&quot;: &quot;this_month&quot;,
+  &quot;grain&quot;: &quot;week&quot;,
+  &quot;asOf&quot;: &quot;2026-07-27&quot;,
+  &quot;generatedAt&quot;: &quot;2026-07-27T14:05:00Z&quot;,
+  &quot;budgetDerived&quot;: &quot;paceLine&quot;,
+  &quot;total&quot;: {
+    &quot;budget&quot;: 40259,
+    &quot;actual&quot;: 44359,
+    &quot;variance&quot;: 4100,
+    &quot;variancePercent&quot;: 10
+  },
+  &quot;buckets&quot;: [
+    { &quot;start&quot;: &quot;2026-07-01&quot;, &quot;end&quot;: &quot;2026-07-05&quot;, &quot;budget&quot;: 7742, &quot;actual&quot;: 8355, &quot;partial&quot;: true },
+    { &quot;start&quot;: &quot;2026-07-06&quot;, &quot;end&quot;: &quot;2026-07-12&quot;, &quot;budget&quot;: 10839, &quot;actual&quot;: 11600, &quot;partial&quot;: false },
+    { &quot;start&quot;: &quot;2026-07-13&quot;, &quot;end&quot;: &quot;2026-07-19&quot;, &quot;budget&quot;: 10839, &quot;actual&quot;: 12404, &quot;partial&quot;: false },
+    { &quot;start&quot;: &quot;2026-07-20&quot;, &quot;end&quot;: &quot;2026-07-26&quot;, &quot;budget&quot;: 10839, &quot;actual&quot;: 12000, &quot;partial&quot;: false },
+    { &quot;start&quot;: &quot;2026-07-27&quot;, &quot;end&quot;: &quot;2026-07-31&quot;, &quot;budget&quot;: 7742, &quot;actual&quot;: null, &quot;partial&quot;: true }
+  ]
+}
+</code></pre>
+<h3>Example 3: invalid window and grain combination</h3>
+<p>Day grain is blocked on the rolling year (365 points, far past the 31-point ceiling). The server rejects it and lists what is allowed; it never substitutes a grain silently.</p>
+<pre><code>GET /api/dashboard/budget-vs-actual/data?accountType=1&amp;window=this_year&amp;grain=day
+</code></pre>
+<p>HTTP 400:</p>
+<pre><code>{
+  &quot;error&quot;: &quot;invalidGrain&quot;,
+  &quot;message&quot;: &quot;grain 'day' is not available for window 'this_year'&quot;,
+  &quot;allowedGrains&quot;: [&quot;month&quot;, &quot;period&quot;, &quot;quarter&quot;, &quot;year&quot;]
+}
+</code></pre>
+<h2>Rolling windows and fiscal boundaries</h2>
 <ul>
-<li><code>total</code> comes first — it's the fiscal-year-to-date sum of <code>actual</code>/<code>budget</code>/<code>variance</code> across every period in <code>periods[]</code>, placed at the top so the KPI header strip (YTD Budget, YTD Actual, Variance, % Used) reads one object without waiting on the array.</li>
-<li>Each period only carries that period's own <code>actual</code>/<code>budget</code>/<code>variance</code>/<code>variancePercent</code> — no running/YTD fields per row. Anything cumulative lives in <code>total</code> only.</li>
-<li><code>variance</code> = <code>actual - budget</code> (already sign-adjusted per the existing Income ×−1 / Expense ×+1 / Special-Report-Line <code>ReverseSign</code> convention, which is unchanged and confirmed correct). Positive doesn't always mean "favourable" — that flip is Account-Type-dependent and is a frontend colour decision, not something this endpoint decides.</li>
-<li><code>variancePercent</code> = <code>variance</code> as a rounded percent of the matching <code>budget</code> (per-period against that period's <code>budget</code>; for <code>total</code> against the summed <code>budget</code>).</li>
+<li><code>this_quarter</code> is the last 3 months back from <code>asOf</code>, and <code>this_year</code> is the last 12 months back from <code>asOf</code>. Neither is the calendar or fiscal quarter/year containing today.</li>
+<li>Rolling windows are indifferent to fiscal boundaries: when one crosses a fiscal-year boundary, the budget lookup spans two fiscal years in one request (for example, a rolling year of Aug 2025 through Jul 2026 needs FY2025 and FY2026 budgets), and quarter/year bucket grouping keys each month to its own FY.</li>
+<li>Fiscal calendars vary per org: <code>GLPeriod</code> is per-company, per-year, not a hardcoded calendar range, so the FY crossing point is per-org, not a fixed June/July seam.</li>
+<li>Windows and fiscal-year resolution are computed from <code>asOf</code>, not from today, so a historical <code>asOf</code> reproduces that past report exactly.</li>
 </ul>
-<h2>Sort</h2>
-<p>Fixed — <code>periods[]</code> in <code>GLPeriod</code> order (chronological, "Audit" excluded). Not user-sortable, matches the Finance-domain default.</p>
-<h2>Edge cases to confirm</h2>
+<h2>Sorting and aggregation boundaries</h2>
+<ul>
+<li><code>buckets[]</code> always comes back chronological, with <code>"Audit"</code> periods excluded. There are no sort parameters.</li>
+<li>The widget's table sorting (every header sortable) and its "Total, posted so far" footer (a sum over the posted buckets in the window) are client-side operations over the returned array. No footer field and no other server work is needed beyond the chronological bucket order.</li>
+</ul>
+<h2>Edge cases</h2>
 <ol>
-<li><strong>Empty year</strong> — a fiscal year with no <code>GLBudgetDetail</code> rows at all (never budgeted). Empty <code>periods[]</code> and a zeroed <code>total</code>, or an explicit error?</li>
-<li><strong>Division by zero in <code>variancePercent</code></strong> — a period with <code>budget: 0</code>. Return <code>null</code> instead of a percent, consistent with how the other specs in this folder handle it.</li>
-<li><strong>Special Report Line with no accounts in range</strong> — a <code>GL_SpecialReportLine</code> whose low/high <code>AccountNumber</code> range matches nothing this year. Empty <code>periods[]</code>, or an error?</li>
-<li><strong>Master company with zero child accounts</strong> — a consolidated company with no linked entities yet. Same shape as a normal empty result, or distinguishable somehow?</li>
-<li><strong><code>specialReportLineId</code> provided without <code>accountType=2</code></strong> — conflicting params. Ignore <code>specialReportLineId</code>, or reject the request?</li>
+<li><strong>No-budget window:</strong> every bucket's budget is 0 or absent (a window the org never budgeted). Return the buckets honestly, budget <code>0</code> (or <code>null</code> where genuinely absent) with real actuals, not an error: the frontend renders its "Set up budget" state from this, and the API must never fake a figure that makes an unbudgeted org read as 100% over.</li>
+<li><strong>Unposted buckets:</strong> <code>actual</code> is <code>null</code>, never <code>0</code>. <code>total.actual</code> sums posted buckets only.</li>
+<li><strong><code>asOf</code> in a prior fiscal year:</strong> windows and fiscal-year resolution must be computed from <code>asOf</code>, not from today, so a historical <code>asOf</code> reproduces that past report exactly.</li>
+<li><strong>Rolling window crossing the FY boundary:</strong> budget lookup spans two fiscal years in one request, and quarter/year bucket grouping keys each month to its own FY. The crossing point is per-org (fiscal calendars vary), not a fixed seam.</li>
+<li><strong>Master company (consolidated) rollup:</strong> known must-fix. The modern API returns an empty list for <code>CompanyNumber=0</code>; the <code>GLAccount.MasterAccountID</code> join must be reinstated so consolidated orgs return combined figures, matching legacy. A consolidated company with no linked entities yet should return the same shape as a normal empty result.</li>
+<li><strong>Special Report Line deleted or renamed by the customer:</strong> every special-report value is customer-configured, so a saved <code>specialReportLineId</code> can stop existing between requests. Needs an explicit behaviour (404-style error vs empty result) rather than a silent empty payload.</li>
+<li><strong>Special Report Line with no accounts in range:</strong> a <code>GL_SpecialReportLine</code> whose low/high <code>AccountNumber</code> range matches nothing in the window. Empty <code>buckets[]</code> or honest zero/null buckets, not an error.</li>
+<li><strong><code>specialReportLineId</code> provided without <code>accountType=2</code>:</strong> conflicting params. Ignore <code>specialReportLineId</code>, or reject the request? Needs a dev decision.</li>
+<li><strong>Division by zero in <code>variancePercent</code>:</strong> <code>total.budget</code> of 0. Return <code>null</code> instead of a percent, consistent with how the other specs in this folder handle it.</li>
 </ol>
 <h2>Not in scope</h2>
 <ul>
-<li><strong>Weekly-grain data</strong> — not being built against real data right now; see "Still needs sign-off."</li>
-<li>No per-transaction or per-account breakdown — this stays at period-level aggregation only, same as today.</li>
+<li>The response stays bucket-level aggregation only. Even though sub-period actuals require transaction-level querying under the hood, no per-transaction or per-account rows are ever returned, and there is no drill-through endpoint.</li>
+<li>User preference persistence and Excel/CSV export are carried unchanged from today (client-managed state, no export endpoint); both are tracked in "Still needs sign-off", not silently accepted.</li>
 </ul>
 <h2>Still needs sign-off</h2>
 <ul>
-<li><strong>Custom Report (Special Report Line) is the one to worry about most.</strong> Every value here is customer-configured — each org defines its own Special Reports and Special Report Lines, with its own low/high <code>AccountNumber</code> ranges — so there's no single fixed shape to test against. The new <code>variance</code>/<code>total</code> fields and the master-company fix below both need explicit testing against real customer-configured reports, not just verified against the fixed Income/Expense paths.</li>
-<li><strong>Master company (<code>CompanyNumber=0</code>) rollup</strong> — confirmed broken (returns empty today). Needs the <code>MasterAccountID</code> join reinstated; exact dedupe/aggregation logic across child accounts still needs a dev answer.</li>
-<li><strong>Weekly Period View</strong> — no confirmed day-level GL transaction grain exists in <code>GLSummary</code>/<code>GLBudgetDetail</code> today. This needs a real feasibility answer, not just a confirmation — there's no partial support to build on.</li>
-<li><strong>Excel/CSV export endpoint</strong> — the redesigned widget's menu already assumes this exists (Download as Excel/CSV, every size except KPI). No backend endpoint has been built. Needs a decision on whether/when to build it before this ships.</li>
-<li><strong>User preference persistence</strong> — legacy remembered each user's last Account Type + Special Report Line. Decide whether the modern API should regain this (new preference-storage work) or whether client-managed state is acceptable permanently.</li>
-<li><strong>Fiscal year varying by organisation</strong> — confirm the existing <code>X-Year-ID</code>/<code>X-Company-ID</code> header scoping (<code>GLPeriod</code> is per-company, per-year, not a hardcoded calendar range) already returns correct data for orgs whose fiscal year isn't July–June. Not a new feature to build, just needs a straight yes/no from backend.</li>
+<li><strong>Special Report list endpoint confirmation:</strong> the two-dropdown flow (<code>GLSpecialReport</code> titles, then <code>GET /special-report-lines?specialReportId={guid}</code>) is already built, but every value is customer-configured (each org defines its own reports, lines, and low/high <code>AccountNumber</code> ranges), so the new <code>total</code> fields, <code>lineType</code>, and the master-company fix all need explicit testing against real customer-configured reports, not just the fixed Income/Expense paths.</li>
+<li><strong>Master company (<code>CompanyNumber=0</code>) rollup fix:</strong> confirmed broken (returns empty today). Needs the <code>MasterAccountID</code> join reinstated; exact dedupe/aggregation logic across child accounts still needs a dev answer.</li>
+<li><strong>Sub-period actuals feasibility:</strong> Day and Week ACTUALS cannot come from <code>GLSummary</code> (it is period-grain); they require transaction-level querying or a new day-grain rollup. Genuinely new backend work that needs a real feasibility answer before the day/week grains ship against live data.</li>
+<li><strong>Pace line vs proration for sub-period budgets:</strong> the recommendation is a budget PACE LINE (budget-to-date), not even proration: proration invents a daily/weekly budget nobody entered and turns ordinary calendar lumpiness (payroll days, gift Sundays) into fake variance. Backend must decide which to implement and report it honestly via <code>budgetDerived</code>.</li>
+<li><strong>Cross-FY budget lookup:</strong> the rolling windows (this_quarter, this_year) can span two fiscal years in one request. Confirm the <code>GLBudgetDetail</code> lookup (including <code>RevisionStartingPeriodID</code> handling) works across the FY seam, and that quarter/year bucket grouping keys each month to its own FY.</li>
+<li><strong>Rolling-window <code>asOf</code> semantics:</strong> confirm the exact anchoring of "last 3 months / last 12 months back from <code>asOf</code>" (calendar-month blocks vs day-precise offsets), and the validation rules for <code>asOf</code> itself (future dates, dates before any GL data exist).</li>
+<li><strong>Per-org fiscal calendars:</strong> confirm the fiscal-year derivation from <code>window</code> + <code>asOf</code> + <code>GLPeriod</code> returns correct data for orgs whose fiscal year isn't July to June (<code>GLPeriod</code> is per-company, per-year). Not a new feature to build, just needs a straight yes/no from backend.</li>
+<li><strong>Excel/CSV export endpoint:</strong> the redesigned widget's menu already assumes this exists (Download as Excel/CSV at every size except KPI). No backend endpoint has been built. Needs a decision on whether/when to build it before this ships.</li>
+<li><strong>User preference persistence:</strong> legacy remembered each user's last Account Type + Special Report Line (<code>SSUserTenantPreferenceRepository</code>). Decide whether the modern API should regain this (new preference-storage work) or whether client-managed state is acceptable permanently.</li>
 </ul>
 
 </body>

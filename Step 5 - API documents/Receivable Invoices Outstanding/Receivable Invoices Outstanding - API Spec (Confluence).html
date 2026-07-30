@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Receivable Invoices Outstanding — API Spec</title>
+<style>
+body { font-family: -apple-system, Helvetica, Arial, sans-serif; max-width: 900px; margin: 30px auto; line-height: 1.5; color: #172B4D; }
+h1 { font-size: 24px; }
+h2 { font-size: 19px; border-bottom: 1px solid #DFE1E6; padding-bottom: 6px; margin-top: 32px; }
+h3 { font-size: 16px; margin-top: 20px; }
+table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+th, td { border: 1px solid #DFE1E6; padding: 6px 10px; text-align: left; vertical-align: top; }
+th { background: #F4F5F7; }
+code { background: #F4F5F7; padding: 1px 5px; border-radius: 3px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 90%; }
+pre { background: #F4F5F7; padding: 12px; border-radius: 4px; overflow-x: auto; }
+pre code { background: none; padding: 0; }
+.status { background: #FFF0B3; display: inline-block; padding: 3px 10px; border-radius: 3px; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<h1>Receivable Invoices Outstanding — API Spec</h1>
+<p><span class="status">Status: DRAFT — not final</span></p>
+<h2>Overview</h2>
+<p>The widget shows how much money is currently owed to the organisation in posted-but-unpaid invoices, grouped into five aging buckets by how far past due each invoice is. The built Final drills from the aging summary into a per-bucket invoice list, and from each invoice row into its full line-item detail. It also adds one owner-requested action: ticking invoices in the bucket list and pressing Confirm to process payment against the selected outstanding invoices, moving them toward paid.</p>
+<p>This spec is structured as <strong>three APIs</strong>, owner-confirmed:</p>
+<ul>
+<li><strong>API 1, Widget (aging summary).</strong> The existing aging read, with one addition: an invoice count per bucket alongside the existing per-bucket outstanding dollar total. Read-only.</li>
+<li><strong>API 2, Pop-up (bucket invoice list + Confirm action).</strong> A read that returns the invoice rows for one selected bucket, and a write that processes payment against the selected invoices (creating or staging an unposted payment). The write is the one open part of this contract (see below). This is the project's first mutation.</li>
+<li><strong>API 3, Drill-in detail (per invoice).</strong> The deep detail behind a single invoice row's expand arrow: line items, attachments, note, payments. Read-only.</li>
+</ul>
+<p>API 1 and API 3 are read-only and fully specifiable now. API 2's read side is specifiable now; its write side (the Confirm action) reuses the AR payment machinery that is confirmed to exist in the codebase (<code>ARPayment</code> / Payment Processing / <code>ProcessPayments</code>). The mechanism is settled; the one open item is a product nuance (whether Confirm creates the payment outright, full or partial, or stages the invoices into the payment-entry screen). See "Still needs sign-off" and the logic-notes file <code>Move to Unposted Transactions - Logic Notes.md</code> (section 9) in this folder.</p>
+<p>The write action stages an unposted payment for a later, separate post step in Payment Processing. It does not commit anything to the general ledger by itself. The widget's invoices are posted invoices awaiting payment, NOT records from the AR unposted-invoices queue.</p>
+<p>Everything computable client-side stays client-side, per the project's minimal philosophy: percent-of-total per bucket, grand-total aggregation, table sorting, and the pie/stacked-bar chart are all client operations over the returned figures. No server-side percentages or sort parameters.</p>
+<h2>Tables</h2>
+<p>Shared across all three APIs. No new tables are needed; the redesign is new queries against the same tables the legacy <code>ReceivableInvoices : DataPanelControl</code> already uses, plus reuse of the existing AR posting repository for the write action.</p>
+<table>
+<thead>
+<tr>
+<th>Table / repository</th>
+<th>Fields and members used</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ARInvoice</code></td>
+<td><code>Posted</code>, <code>UndoJournalID</code>, <code>TotalAmount</code>, <code>SalesTax</code>, <code>Payments</code>, <code>Discounts</code>, <code>WriteOffs</code> (the Outstanding formula), <code>DueDate</code> (aging), customer name, <code>BillToDisplay</code> (the Bill To name, see the gap note), invoice number</td>
+</tr>
+<tr>
+<td><code>ARInvoiceDetail</code></td>
+<td>Invoice line items: item name and amount (API 3 detail). Confirmed source for line items</td>
+</tr>
+<tr>
+<td><code>ARRevenueCenterRepository</code></td>
+<td>Supplies the Revenue Center dropdown list, dynamically populated from the data (not a fixed list)</td>
+</tr>
+<tr>
+<td><code>ARSourceRepository</code></td>
+<td>Supplies the Source dropdown list, dynamically populated from the data (not a fixed list)</td>
+</tr>
+<tr>
+<td><code>ARPayment</code> / <code>ARPaymentDetail</code></td>
+<td>The write action feeds these: a payment (<code>ARPayment</code>, with a <code>Posted</code> flag) whose <code>ARPaymentDetail</code> rows each apply to a specific <code>ARInvoice</code>. Unposted payments (<code>Posted = false</code>) sit in the Payment Processing queue.</td>
+</tr>
+<tr>
+<td><code>ARPaymentRepository</code></td>
+<td>The write action reuses this: <code>GetAllCurrentContextByFilters(posted:false, ...)</code> (lists unposted payments), select-by-<code>SelectedIDs</code> (PaymentID), <code>ProcessPayments(blobID, postingDate)</code> (posts them), fiscal-year validation <code>CheckTransactionsAgainstCurrentYear</code>, unapplied-cash handling</td>
+</tr>
+<tr>
+<td><code>ARCompany</code></td>
+<td><code>InterfaceGL</code>: gates whether posting the payment also writes GL journal detail</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Invoice filter (confirmed, applied to every read):</strong> <code>Posted = true AND UndoJournalID = null AND Outstanding != 0</code>. Voided invoices are excluded. Every invoice the widget shows is already posted.</p>
+<p><strong>Outstanding (confirmed):</strong> <code>Outstanding = TotalAmount + SalesTax - Payments - Discounts - WriteOffs</code>.</p>
+<p><strong>Aging buckets (confirmed):</strong> <code>Age = Today - DueDate</code> in days, assigned to Current (&lt; 31), 31-60, 61-90, 91-120, 121+. The aging read is an as-of-today snapshot.</p>
+<p><strong>Bill To gap (known, unresolved).</strong> <code>BillToDisplay</code> (the "Bill To" name shown in the pop-up detail list) returns empty in the modern API today. This is a pre-existing gap, not introduced by the redesign. It is specced below as a field that must be populated, and the current empty-field state is flagged in "Still needs sign-off".</p>
+<h2>API 1 - Widget (aging summary)</h2>
+<p>Returns the five aging buckets, each carrying its outstanding dollar total and its invoice count, plus a grand total. This is the existing aging read with exactly one new field: <code>invoiceCount</code> (the "amount of invoices") per bucket and in the total. Everything else is the read that already exists.</p>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/receivable-invoices/aging
+</code></pre>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>revenueCenterId</code></td>
+<td>guid</td>
+<td>no</td>
+<td>any id from the Revenue Center list (<code>ARRevenueCenterRepository</code>)</td>
+<td>omitted (All Revenue Centers)</td>
+<td>Narrows to one revenue center</td>
+</tr>
+<tr>
+<td><code>sourceId</code></td>
+<td>guid</td>
+<td>no</td>
+<td>any id from the Source list (<code>ARSourceRepository</code>)</td>
+<td>omitted (All Sources)</td>
+<td>Narrows to one source. Combinable with <code>revenueCenterId</code>; both filters narrow the same result together</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Headers.</strong> Company is <code>X-Company-ID</code>. Both filter dropdowns are dynamically populated from the data via their repositories; the lists themselves are served by companion list endpoints (see "Still needs sign-off").</p>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/receivable-invoices/aging
+GET /api/dashboard/receivable-invoices/aging?revenueCenterId=2f8b1c94-3d5e-4a7f-9b0c-1d2e3f4a5b6c
+GET /api/dashboard/receivable-invoices/aging?revenueCenterId=2f8b1c94-3d5e-4a7f-9b0c-1d2e3f4a5b6c&amp;sourceId=7a3c9e15-4b6d-4f8a-9c1e-2d5b8f0a3e74
+</code></pre>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>revenueCenterId</code></td>
+<td>guid or null</td>
+<td>Echo of the applied revenue center filter, <code>null</code> when All</td>
+</tr>
+<tr>
+<td><code>sourceId</code></td>
+<td>guid or null</td>
+<td>Echo of the applied source filter, <code>null</code> when All</td>
+</tr>
+<tr>
+<td><code>asOfDate</code></td>
+<td>date</td>
+<td>The snapshot date the aging was computed against (<code>Today</code> in <code>Age = Today - DueDate</code>)</td>
+</tr>
+<tr>
+<td><code>generatedAt</code></td>
+<td>datetime (UTC)</td>
+<td>Server generation stamp</td>
+</tr>
+<tr>
+<td><code>buckets[]</code></td>
+<td>array</td>
+<td>Always the five buckets in aging order, even when a bucket is empty</td>
+</tr>
+<tr>
+<td><code>buckets[].bucket</code></td>
+<td>string</td>
+<td>Bucket key: <code>current</code>, <code>31-60</code>, <code>61-90</code>, <code>91-120</code>, <code>121+</code></td>
+</tr>
+<tr>
+<td><code>buckets[].label</code></td>
+<td>string</td>
+<td>Display label: <code>Current</code>, <code>31-60 days</code>, <code>61-90 days</code>, <code>91-120 days</code>, <code>121+ days</code></td>
+</tr>
+<tr>
+<td><code>buckets[].outstanding</code></td>
+<td>number</td>
+<td>Sum of <code>Outstanding</code> for the invoices in this bucket. The existing per-bucket figure</td>
+</tr>
+<tr>
+<td><code>buckets[].invoiceCount</code></td>
+<td>int</td>
+<td><strong>New field.</strong> Count of invoices in this bucket. This is the only addition versus the legacy widget</td>
+</tr>
+<tr>
+<td><code>total</code></td>
+<td>object</td>
+<td>Grand total across all buckets</td>
+</tr>
+<tr>
+<td><code>total.outstanding</code></td>
+<td>number</td>
+<td>Sum of every bucket's <code>outstanding</code></td>
+</tr>
+<tr>
+<td><code>total.invoiceCount</code></td>
+<td>int</td>
+<td>Sum of every bucket's <code>invoiceCount</code></td>
+</tr>
+</tbody>
+</table>
+<p>Percent-of-total per bucket is a client-side division of <code>buckets[].outstanding</code> by <code>total.outstanding</code>; it is not returned.</p>
+<h3>Example: all revenue centers, all sources</h3>
+<pre><code>GET /api/dashboard/receivable-invoices/aging
+</code></pre>
+<pre><code>{
+  &quot;revenueCenterId&quot;: null,
+  &quot;sourceId&quot;: null,
+  &quot;asOfDate&quot;: &quot;2026-07-30&quot;,
+  &quot;generatedAt&quot;: &quot;2026-07-30T14:05:00Z&quot;,
+  &quot;buckets&quot;: [
+    { &quot;bucket&quot;: &quot;current&quot;, &quot;label&quot;: &quot;Current&quot;,     &quot;outstanding&quot;: 2110,  &quot;invoiceCount&quot;: 2 },
+    { &quot;bucket&quot;: &quot;31-60&quot;,   &quot;label&quot;: &quot;31-60 days&quot;,   &quot;outstanding&quot;: 6950,  &quot;invoiceCount&quot;: 2 },
+    { &quot;bucket&quot;: &quot;61-90&quot;,   &quot;label&quot;: &quot;61-90 days&quot;,   &quot;outstanding&quot;: 8520,  &quot;invoiceCount&quot;: 2 },
+    { &quot;bucket&quot;: &quot;91-120&quot;,  &quot;label&quot;: &quot;91-120 days&quot;,  &quot;outstanding&quot;: 0,     &quot;invoiceCount&quot;: 0 },
+    { &quot;bucket&quot;: &quot;121+&quot;,    &quot;label&quot;: &quot;121+ days&quot;,    &quot;outstanding&quot;: 15950, &quot;invoiceCount&quot;: 2 }
+  ],
+  &quot;total&quot;: { &quot;outstanding&quot;: 33530, &quot;invoiceCount&quot;: 8 }
+}
+</code></pre>
+<p>Reconciliation: 2,110 + 6,950 + 8,520 + 0 + 15,950 = 33,530 outstanding; 2 + 2 + 2 + 0 + 2 = 8 invoices. The 91-120 bucket is genuinely empty and is returned with zero values, not omitted.</p>
+<h2>API 2 - Pop-up (bucket invoice list + Confirm action)</h2>
+<p>Two operations serve the detail modal for a selected bucket. A <strong>read</strong> returns the invoice rows and footer totals shown in the modal. A <strong>write</strong> (the Confirm action) moves the selected invoices to unposted transactions.</p>
+<h3>2a. READ - bucket invoice list</h3>
+<h4>Endpoint</h4>
+<pre><code>GET /api/dashboard/receivable-invoices/bucket
+</code></pre>
+<h4>Parameters</h4>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>bucket</code></td>
+<td>enum</td>
+<td>yes</td>
+<td><code>current</code> | <code>31-60</code> | <code>61-90</code> | <code>91-120</code> | <code>121+</code></td>
+<td>none</td>
+<td>The aging bucket to expand. URL-encode <code>121+</code> as <code>121%2B</code></td>
+</tr>
+<tr>
+<td><code>revenueCenterId</code></td>
+<td>guid</td>
+<td>no</td>
+<td>any id from the Revenue Center list</td>
+<td>omitted (All)</td>
+<td>Same active filter as API 1; the modal reflects the same narrowing as the summary</td>
+</tr>
+<tr>
+<td><code>sourceId</code></td>
+<td>guid</td>
+<td>no</td>
+<td>any id from the Source list</td>
+<td>omitted (All)</td>
+<td>Same active filter as API 1</td>
+</tr>
+</tbody>
+</table>
+<p>Headers: <code>X-Company-ID</code>.</p>
+<h4>Response schema</h4>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>bucket</code></td>
+<td>string</td>
+<td>Echo of the requested bucket key</td>
+</tr>
+<tr>
+<td><code>label</code></td>
+<td>string</td>
+<td>The bucket's display label</td>
+</tr>
+<tr>
+<td><code>revenueCenterId</code></td>
+<td>guid or null</td>
+<td>Echo of the applied filter</td>
+</tr>
+<tr>
+<td><code>sourceId</code></td>
+<td>guid or null</td>
+<td>Echo of the applied filter</td>
+</tr>
+<tr>
+<td><code>asOfDate</code></td>
+<td>date</td>
+<td>Snapshot date (same basis as API 1)</td>
+</tr>
+<tr>
+<td><code>invoices[]</code></td>
+<td>array</td>
+<td>The invoice rows for this bucket under the active filters</td>
+</tr>
+<tr>
+<td><code>invoices[].invoiceId</code></td>
+<td>guid</td>
+<td>Stable invoice id, the key for API 3 and for the Confirm action</td>
+</tr>
+<tr>
+<td><code>invoices[].customer</code></td>
+<td>string</td>
+<td>Customer name</td>
+</tr>
+<tr>
+<td><code>invoices[].billTo</code></td>
+<td>string</td>
+<td>Bill To name (<code>ARInvoice.BillToDisplay</code>). <strong>Must be populated</strong>; empty in the modern API today, see the gap note and "Still needs sign-off"</td>
+</tr>
+<tr>
+<td><code>invoices[].dueDate</code></td>
+<td>date</td>
+<td>Invoice due date</td>
+</tr>
+<tr>
+<td><code>invoices[].invoiceNumber</code></td>
+<td>string</td>
+<td>Invoice number</td>
+</tr>
+<tr>
+<td><code>invoices[].daysPastDue</code></td>
+<td>int</td>
+<td><code>Today - DueDate</code> in days for this invoice</td>
+</tr>
+<tr>
+<td><code>invoices[].outstanding</code></td>
+<td>number</td>
+<td>This invoice's Outstanding, per the confirmed formula</td>
+</tr>
+<tr>
+<td><code>totals</code></td>
+<td>object</td>
+<td>Footer totals for the modal</td>
+</tr>
+<tr>
+<td><code>totals.invoiceCount</code></td>
+<td>int</td>
+<td>Count of rows in <code>invoices[]</code>. Matches this bucket's <code>invoiceCount</code> from API 1 under the same filters</td>
+</tr>
+<tr>
+<td><code>totals.outstanding</code></td>
+<td>number</td>
+<td>Sum of the rows' <code>outstanding</code>. Matches this bucket's <code>outstanding</code> from API 1 under the same filters</td>
+</tr>
+</tbody>
+</table>
+<h4>Example: the 121+ bucket</h4>
+<pre><code>GET /api/dashboard/receivable-invoices/bucket?bucket=121%2B
+</code></pre>
+<pre><code>{
+  &quot;bucket&quot;: &quot;121+&quot;,
+  &quot;label&quot;: &quot;121+ days&quot;,
+  &quot;revenueCenterId&quot;: null,
+  &quot;sourceId&quot;: null,
+  &quot;asOfDate&quot;: &quot;2026-07-30&quot;,
+  &quot;invoices&quot;: [
+    {
+      &quot;invoiceId&quot;: &quot;7c2e9a41-3b5d-4f8a-9c1e-2d6b8f0a3e75&quot;,
+      &quot;customer&quot;: &quot;Cornerstone Academy&quot;,
+      &quot;billTo&quot;: &quot;Cornerstone Academy&quot;,
+      &quot;dueDate&quot;: &quot;2026-02-28&quot;,
+      &quot;invoiceNumber&quot;: &quot;INV-2903&quot;,
+      &quot;daysPastDue&quot;: 145,
+      &quot;outstanding&quot;: 9650
+    },
+    {
+      &quot;invoiceId&quot;: &quot;9d4f1b62-5c7e-4a9b-8d2f-3e7c9a1b4f86&quot;,
+      &quot;customer&quot;: &quot;Legacy Insurance Group&quot;,
+      &quot;billTo&quot;: &quot;Legacy HR Dept&quot;,
+      &quot;dueDate&quot;: &quot;2026-03-01&quot;,
+      &quot;invoiceNumber&quot;: &quot;INV-2890&quot;,
+      &quot;daysPastDue&quot;: 144,
+      &quot;outstanding&quot;: 6300
+    }
+  ],
+  &quot;totals&quot;: { &quot;invoiceCount&quot;: 2, &quot;outstanding&quot;: 15950 }
+}
+</code></pre>
+<p>Reconciliation: 9,650 + 6,300 = 15,950, matching the 121+ bucket in API 1's <code>total</code>. <code>billTo</code> is shown populated here as the required end state; it is empty in the modern API today (gap flagged below).</p>
+<h3>2b. WRITE - Confirm (process payment against the selected outstanding invoices)</h3>
+<p><strong>This is a mutation, the project's first.</strong> APIs 1 and 3, and the read above, are all read-only; this is the one write in the contract. The widget's invoices are posted and awaiting payment; Confirm takes the invoice ids the user ticked and moves them toward paid by way of the payment lifecycle. The unposted transaction it produces is a <strong>payment</strong>, not an unposted invoice. It stages an unposted payment for a later, separate post step; it does not commit anything to the general ledger by itself, and the unposted payment remains editable and reversible until a human posts it in Payment Processing. (The mock's inline label "Move to unposted transactions" is a dev-intent marker; the unposted transaction it refers to is the payment.)</p>
+<p><strong>What is confirmed from the codebase trace</strong> (see <code>Move to Unposted Transactions - Logic Notes.md</code>, section 9): the machinery already exists and is reused, not built new. A payment is an <code>ARPayment</code> (with a <code>Posted</code> flag, false then true) whose <code>ARPaymentDetail</code> rows each apply to a specific <code>ARInvoice</code>. Unposted payments (<code>Posted = false</code>) are listed in Payment Processing via <code>ARPaymentRepository.GetAllCurrentContextByFilters(posted:false, ...)</code>, selected by the <code>SelectedIDs</code> (PaymentID) preference (the row-checkbox selection maps onto this pattern), and posted by <code>ARPaymentRepository.ProcessPayments(blobID, postingDate)</code> with <code>CheckTransactionsAgainstCurrentYear</code> fiscal-year validation and unapplied-cash handling. GL journal detail is written on post only when <code>ARCompany.InterfaceGL</code> is enabled. Posting a payment reduces the invoice's Outstanding (the Outstanding formula subtracts Payments); when Outstanding reaches 0 the invoice is fully paid and drops out of the widget.</p>
+<p><strong>What is OPEN (Q1, the one open item).</strong> Not the mechanism (that is the payment / Payment Processing path above), but the product nuance: does Confirm <strong>create</strong> the <code>ARPayment</code> / <code>ARPaymentDetail</code> records outright (and if so, full Outstanding per invoice or a partial amount?), or does it <strong>stage</strong> the selected invoices into the existing payment-entry screen for a person to key the payment? Both feed the same <code>ARPayment</code> + Payment Processing machinery. This is an SME/product call and is deliberately not invented here; the request shape below is what is known, the response and created-record shape are marked pending Q1.</p>
+<h4>Endpoint</h4>
+<pre><code>POST /api/dashboard/receivable-invoices/move-to-unposted
+</code></pre>
+<h4>Request body (known shape)</h4>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>invoiceIds</code></td>
+<td>guid[]</td>
+<td>yes</td>
+<td>The invoices the user ticked in the modal. Maps onto the legacy <code>SelectedIDs</code> list</td>
+</tr>
+<tr>
+<td><code>companyId</code></td>
+<td>guid</td>
+<td>yes</td>
+<td>Company context (also carried in <code>X-Company-ID</code>); posting validates fiscal year against this company's calendar</td>
+</tr>
+</tbody>
+</table>
+<pre><code>{
+  &quot;invoiceIds&quot;: [
+    &quot;7c2e9a41-3b5d-4f8a-9c1e-2d6b8f0a3e75&quot;,
+    &quot;9d4f1b62-5c7e-4a9b-8d2f-3e7c9a1b4f86&quot;
+  ],
+  &quot;companyId&quot;: &quot;5a2c8e13-4d6f-4b9a-a1c3-7e9d2f4b6a80&quot;
+}
+</code></pre>
+<p>Whether Confirm applies the full Outstanding per invoice or a partial amount (and whether it creates the payment or just stages it for keying) is the open SME nuance above; the request would gain a per-invoice amount field if partial payments are in scope.</p>
+<h4>Response (PENDING Q1, not final)</h4>
+<p>The response and created-record shape cannot be finalised until the create-vs-stage / amount nuance (Q1) is settled. Once settled, the response is expected to carry the created unposted payment id(s), a link to the Payment Processing queue so the user can finish posting, and a per-invoice applied / could-not-apply list (concurrency: the aging view is an as-of-today snapshot and may be stale by the time Confirm runs). The shape below is illustrative of that intent, not a committed contract:</p>
+<pre><code>{
+  &quot;status&quot;: &quot;PENDING_Q1_PAYMENT_NUANCE&quot;,
+  &quot;note&quot;: &quot;Response and created-record shape are not final until the create-vs-stage and full-vs-partial-amount nuance is confirmed by SME. The mechanism is the ARPayment / Payment Processing path. See 'Still needs sign-off' Q1 and Move to Unposted Transactions - Logic Notes.md section 9.&quot;
+}
+</code></pre>
+<h2>API 3 - Drill-in detail (per invoice)</h2>
+<p>The deep detail behind a single invoice row's expand arrow. Read-only.</p>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/receivable-invoices/invoice/{invoiceId}
+</code></pre>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>invoiceId</code></td>
+<td>guid (path)</td>
+<td>yes</td>
+<td>The invoice to expand, from <code>invoices[].invoiceId</code> in API 2a</td>
+</tr>
+</tbody>
+</table>
+<p>Headers: <code>X-Company-ID</code>.</p>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>invoiceId</code></td>
+<td>guid</td>
+<td>Echo of the requested invoice</td>
+</tr>
+<tr>
+<td><code>invoiceNumber</code></td>
+<td>string</td>
+<td>Invoice number</td>
+</tr>
+<tr>
+<td><code>customer</code></td>
+<td>string</td>
+<td>Customer name</td>
+</tr>
+<tr>
+<td><code>lineItems[]</code></td>
+<td>array</td>
+<td>The invoice's line items from <code>ARInvoiceDetail</code>. Confirmed source</td>
+</tr>
+<tr>
+<td><code>lineItems[].description</code></td>
+<td>string</td>
+<td>Item name</td>
+</tr>
+<tr>
+<td><code>lineItems[].amount</code></td>
+<td>number</td>
+<td>Line amount</td>
+</tr>
+<tr>
+<td><code>attachments[]</code></td>
+<td>array</td>
+<td>Files attached to the invoice. Data source NOT yet verified (see note)</td>
+</tr>
+<tr>
+<td><code>attachments[].name</code></td>
+<td>string</td>
+<td>File name</td>
+</tr>
+<tr>
+<td><code>attachments[].size</code></td>
+<td>string</td>
+<td>Human-readable size</td>
+</tr>
+<tr>
+<td><code>note</code></td>
+<td>string</td>
+<td>Free-text note recorded against the invoice. Data source NOT yet verified</td>
+</tr>
+<tr>
+<td><code>payments[]</code></td>
+<td>array</td>
+<td>Payment history against the invoice. Data source NOT yet verified</td>
+</tr>
+<tr>
+<td><code>payments[].date</code></td>
+<td>date</td>
+<td>Payment date</td>
+</tr>
+<tr>
+<td><code>payments[].method</code></td>
+<td>string</td>
+<td>Payment method / reference</td>
+</tr>
+<tr>
+<td><code>payments[].amount</code></td>
+<td>number</td>
+<td>Payment amount</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Open note.</strong> Line items are confirmed to come from <code>ARInvoiceDetail</code>. The Attachments, Note, and Payments data sources are not yet verified in the codebase. If they cannot be sourced cleanly, the modal should route these tabs to the existing "View full invoice" page rather than the API inventing fields. Flagged in "Still needs sign-off".</p>
+<h3>Example: INV-2903 (Cornerstone Academy)</h3>
+<pre><code>GET /api/dashboard/receivable-invoices/invoice/7c2e9a41-3b5d-4f8a-9c1e-2d6b8f0a3e75
+</code></pre>
+<pre><code>{
+  &quot;invoiceId&quot;: &quot;7c2e9a41-3b5d-4f8a-9c1e-2d6b8f0a3e75&quot;,
+  &quot;invoiceNumber&quot;: &quot;INV-2903&quot;,
+  &quot;customer&quot;: &quot;Cornerstone Academy&quot;,
+  &quot;lineItems&quot;: [
+    { &quot;description&quot;: &quot;Annual tuition balance&quot;, &quot;amount&quot;: 8200 },
+    { &quot;description&quot;: &quot;Technology fee&quot;, &quot;amount&quot;: 900 },
+    { &quot;description&quot;: &quot;Late fee&quot;, &quot;amount&quot;: 550 }
+  ],
+  &quot;attachments&quot;: [
+    { &quot;name&quot;: &quot;tuition-agreement.pdf&quot;, &quot;size&quot;: &quot;220 KB&quot; },
+    { &quot;name&quot;: &quot;reminder-3.pdf&quot;, &quot;size&quot;: &quot;41 KB&quot; }
+  ],
+  &quot;note&quot;: &quot;Escalated to collections review. Payment plan proposed.&quot;,
+  &quot;payments&quot;: []
+}
+</code></pre>
+<p>Reconciliation: line items 8,200 + 900 + 550 = 9,650, matching INV-2903's <code>outstanding</code> in API 2a and its contribution to the 121+ bucket.</p>
+<h2>Edge cases</h2>
+<ol>
+<li><strong>Empty bucket (API 1):</strong> a bucket with no invoices is returned with <code>outstanding: 0</code> and <code>invoiceCount: 0</code>, never omitted, so the five buckets are always present in order (the 91-120 bucket in the example).</li>
+<li><strong>Nothing outstanding at all (API 1):</strong> every bucket zero and <code>total</code> zero. The frontend renders its "all settled" state from this; not an error.</li>
+<li><strong>Filter combination yields no invoices (API 1 and 2a):</strong> a <code>revenueCenterId</code> + <code>sourceId</code> pair that matches nothing returns zero buckets/rows honestly, not an error.</li>
+<li><strong>Bucket requested that is empty (API 2a):</strong> empty <code>invoices[]</code> with <code>totals</code> zero. The legacy widget disables clicking a zero-value bucket row; the API still answers cleanly if called.</li>
+<li><strong>Bill To empty (API 2a):</strong> <code>billTo</code> comes back empty today (<code>BillToDisplay</code> gap). The field must be populated; behaviour when it is genuinely absent (fall back to customer name vs empty string) needs a dev decision.</li>
+<li><strong>Unknown or non-outstanding <code>invoiceId</code> (API 3, 2b):</strong> an id that is no longer outstanding (paid, voided, or reversed since the snapshot) or does not exist. Needs an explicit behaviour (404-style vs empty) rather than a silent empty payload.</li>
+<li><strong>Stale snapshot on Confirm (API 2b):</strong> the aging view is as-of-today; an invoice may have been paid or already moved by another user before Confirm runs. The write must guard against double-processing and report per-invoice which ids could not be moved (concurrency, Q7 in the logic notes).</li>
+<li><strong>Attachments / Note / Payments unavailable (API 3):</strong> if a source is not yet wired, return an empty array / empty string for that section rather than failing the whole detail call, and route to "View full invoice" as the fallback.</li>
+</ol>
+<h2>Not in scope</h2>
+<ul>
+<li><strong>The payment's ledger posting.</strong> Confirm stages an unposted payment only. The later, separate <code>ProcessPayments</code> post step (and its reversal) lives on the Payment Processing page, not in this widget's API.</li>
+<li><strong>Partial-amount payments</strong>, unless the Q1 nuance confirms them. The request shape assumes full Outstanding per invoice.</li>
+<li><strong>Select-all in the modal.</strong> The built Final has row-level checkboxes only; no bulk select-all is specced.</li>
+<li><strong>Cross-dashboard global filters.</strong> Whether this widget responds to any dashboard-wide filter is unconfirmed (Step 1 open question) and is not part of this contract.</li>
+<li><strong>Export.</strong> The legacy detail panel had Export to Excel; no export endpoint exists in the modern API. Treated as client-side generation from data the widget already holds unless a server endpoint is decided (see "Still needs sign-off").</li>
+<li><strong>Server-side percent-of-total, grand-total aggregation, or sort params.</strong> All client-side over the returned figures.</li>
+</ul>
+<h2>Still needs sign-off</h2>
+<ul>
+<li><strong>Q1, the payment create-vs-stage nuance (the one open item).</strong> The mechanism is settled: Confirm feeds the AR payment path (<code>ARPayment</code> / <code>ARPaymentDetail</code> applied to the invoices, into Payment Processing, posted by <code>ProcessPayments</code>). What is open is the product nuance: does Confirm create the payment records outright (full Outstanding, or a partial amount?), or stage the selected invoices into the payment-entry screen for a person to key? This is an SME/product decision, and the API 2b response and created-record shape depend on it. See <code>Move to Unposted Transactions - Logic Notes.md</code> (section 9) in this folder.</li>
+<li><strong>API 2b response and created-record shape.</strong> Cannot be finalised until the Q1 nuance is settled: the created unposted payment id(s), the Payment Processing link returned to the user, and the per-invoice applied / could-not-apply list.</li>
+<li><strong>Double-processing guard and permission for the write.</strong> What stops a payment being created twice for the same invoice or created while another unposted payment already references it (idempotency), and which permission gates the action (the Payment Processing / post right). Q4 in the logic notes.</li>
+<li><strong>Bill To empty-field gap.</strong> <code>ARInvoice.BillToDisplay</code> returns empty in the modern API today. Needs to be populated for API 2a, and a defined fallback when it is genuinely absent.</li>
+<li><strong>Attachments / Note / Payments sources (API 3).</strong> Line items from <code>ARInvoiceDetail</code> are confirmed; the other three tabs' data sources are not yet verified. Confirm the sources or route those tabs to "View full invoice".</li>
+<li><strong>Aging-band reconciliation vs the Modern API <code>ap-ar-aging</code> boundaries.</strong> Confirm the five bucket boundaries used here (Current &lt; 31 / 31-60 / 61-90 / 91-120 / 121+) match whatever the modern <code>ap-ar-aging</code> surface uses, so the widget and any shared aging endpoint do not disagree at the band edges.</li>
+<li><strong>Revenue Center and Source list endpoints.</strong> The two dropdowns are dynamically populated from <code>ARRevenueCenterRepository</code> / <code>ARSourceRepository</code>. Confirm the companion list endpoints that feed them (id + display name), since API 1 and 2a take the ids as filter params.</li>
+<li><strong>Export endpoint.</strong> The legacy detail panel exported to Excel. Decide whether export is client-side generation from the JSON the widget already holds (zero backend work) or a server endpoint.</li>
+</ul>
+
+</body>
+</html>

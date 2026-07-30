@@ -133,6 +133,15 @@ item counts, overflow behaviour at real volumes (50 accounts, not 5), truncation
 rules, and which-N tie-breaks. A row like "top 3 plans" is incomplete without "by
 what, and what happens to the rest".
 
+**Size vocabulary (Rule 12, added 2026-07-27):** once a widget has a built Final
+version, its Size behaviour table uses Jo's three-size model and terms, always in
+her order: **Glance** (KPI size, 3 cols × 176px), **Explore** (mid, 6 cols × 496px),
+**Detail** (largest, 12 cols × 560px) — no Small, and no other ordering. This
+matches her demo's own SIZE_LABEL mapping, confirmed by the project owner
+2026-07-27. Docs describing only the A/B/C mock options keep the
+Small/Medium/Large/KPI vocabulary; the two models coexist deliberately (see
+`Step 3 - Mock_Work/Widget_Specs/General Widget Design Rules.md`, Rule 12).
+
 ### ## Accessibility (NEW)
 
 Minimum three commitments, stated per widget, not globally assumed:
@@ -182,6 +191,24 @@ header says locked but whose table has rows is telling the truth about itself.
 
 Dated changelog, unchanged — this is already the strongest part of the current
 template. "Per direct instruction" entries remain the highest-authority signal.
+
+### Locked-doc rule (added 2026-07-27; structure refined 2026-07-28)
+
+Once a doc is locked, it may only be changed by version-tagged updates recording a
+built Final's changes (never untagged edits), and nothing is ever deleted. The doc
+is split into two parts:
+
+- **`# Final Design (current)`** at the top: every section describes ONLY the
+  current shipped design, read cleanly with no superseded content interleaved.
+- **`# Design History (superseded — kept for the record)`** at the very end: when a
+  version update supersedes earlier content, that content is MOVED here (not left in
+  the live body), dated, and written as a timeline (what existed → what was designed
+  and tested → what was dropped → superseded by the Final).
+
+This replaces the earlier mechanic of layering `[v2]` blocks over kept
+`(v1, superseded)` blocks inside each section, which mixed original and final
+thinking in the same body and was hard to read. W05 is the reference example of the
+refined structure.
 
 ---
 

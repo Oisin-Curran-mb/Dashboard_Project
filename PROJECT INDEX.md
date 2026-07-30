@@ -4,6 +4,22 @@
 
 **Keep this file current.** Every time a widget's status changes in any Step folder, or a folder gets renamed/added, this file should be updated in the same pass — that's the whole point of rewriting it now instead of letting it go stale again.
 
+## Build-phase update (2026-07-28)
+
+Since this file was last synced, the biggest change is that the `build-final-widget` skill has actually produced **five built Final versions**, each a Jo-design build in `Step 3 - Mock_Work/Dashboard Widget Mockups.html`'s **Final Check tab** (a new `opt==='F'` branch per widget, A/B/C options untouched, tagged v2.0 with "Final" + "Jo design" badges):
+
+- **W01 Budget Compared to Actual** — Jo's budget widget + the Time Window Module (5 windows, D W M P Q Y grains).
+- **W02 Pension Plans** — Jo's pension widget + a new grouped-bar-by-district view.
+- **W03 Payroll Distributions** — Jo's payroll widget + This month/period/quarter/year/all-time + Custom period picker; zero personal data.
+- **W04 Remittance Pledges** — Jo's remittance look with Version A table content + Version B pacing bars, day-based ahead/behind colour scale, per-pledge-term pacing.
+- **W05 Receivable Invoices Outstanding** — Jo's AR widget 1-to-1 + a drill-modal checkbox/Confirm enhancement (the "move to unposted"/payment-processing action, dev-intent signal).
+
+Each has: a dated completion entry in its `Step 3 - Mock_Work/Widget_Specs/WNN-Name.md`; a version-updated Step 4 doc (W05 uses the refined Final-Design/Design-History structure, the reference example; W01-W04 use the earlier interleaved v2-tag mechanic — both accepted, see Step 4's index for the locked-doc rule); and a drafted Step 5 API spec. **Six widgets now have Step 5 draft specs: W01, W02, W03, W04, W05, W07.**
+
+New this phase: `Step 3 - Mock_Work/final-check-rules.py` (the Final-build static gate) and the `build-final-widget` skill; a Pathway-based **Figma** of the four W01-W04 Finals (`4js4qkoUtuBrDcMkw2FaM2`, link doc in `Aditya Folder/`); and the MBAccounting codebase was traced for W05's payment-processing logic (recorded in Step 1's W05 §8 and the Step 5 logic-notes file).
+
+**Caveat:** the "What to work on next" and "Widget pipeline position" tables below are still tracker-sourced from 2026-07-20/21 and do NOT yet reflect these Finals (the tracker `Dashboard Tracker.xlsx` is pending a re-sync — it was open in Excel). Treat this build-phase note as the current reality where it disagrees with those tables.
+
 ## What to work on next (priority)
 
 Pulled from `Dashboard Tracker.xlsx`'s actual Priority column (F, on the "Dashboard Tracker" sheet) — a straight 1–17 rank, 1 = work on first. (An earlier draft of this table used P0–P3 priority buckets from a project-level screenshot you shared; those buckets don't exist in the live spreadsheet, which only has the 1–17 rank below, so this table now matches the real file instead.) Every widget in the project is listed here — a widget with no priority set in the tracker would show `N/A` rather than being dropped, and a widget is still listed even if its Step 4 link doesn't resolve (that hasn't happened for any row below, but the table is built to degrade that way rather than silently omit a row).
