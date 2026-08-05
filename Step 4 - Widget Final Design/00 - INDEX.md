@@ -38,7 +38,7 @@
 
 W05 is the reference example of this refined structure (2026-07-28). W01–W04 were tagged under the earlier interleaved mechanic and can be restructured to match when next touched; they are not wrong, just the older shape. (Owner reviewed both 2026-07-28 and finds the interleaved W01–W04 style readable, so those stay as-is; W05 keeps the two-part structure.)
 
-**Built Finals (2026-07-28):** W01, W02, W03, W04, and W05 now have built Final versions in `Step 3 - Mock_Work/Dashboard Widget Mockups.html`'s Final Check tab (Jo-design, tagged v2.0), and each of their docs here carries a version-tagged update recording that build. The per-widget **status column below is tracker-sourced (2026-07-20/21) and still shows W04/W05 as "In progress"** — it has not caught up with the built Finals because `Dashboard Tracker.xlsx` is pending a re-sync (it was open in Excel). Trust the version-tagged content inside each doc as the current reality until the tracker column is re-synced.
+**Built Finals (updated 2026-08-04):** W01, W02, W03, W04, W05, W06, and W07 all have built Final versions in `Step 3 - Mock_Work/Dashboard Widget Mockups.html`'s Final Check tab (Jo-design, tagged v2.0), each verified via the `build-final-widget` verify phase (`final-check-rules.py` + a per-widget Node DOM-shim driver), and each doc here carries a version-tagged update recording that build. **As of 2026-08-04 all seven are Complete through Step 5** across every index and `Dashboard Tracker.xlsx`; the Status and Tracker-status columns below now read ✅ Done / ✅ Complete for W01-W07 (W06 was the last to flip, once its Final was built and its Step 4 doc tagged). The earlier "tracker pending re-sync" caveat no longer applies to these seven rows.
 
 ---
 
@@ -51,9 +51,9 @@ W05 is the reference example of this refined structure (2026-07-28). W01–W04 w
 | 01 | Budget Compared to Actual | Finance | [W01](W01%20-%20Budget%20Compared%20to%20Actual.md) | ✅ Done | ✅ Complete |
 | 02 | Pension Plans | Finance | [W02](W02%20-%20Pension%20Plans.md) | ✅ Done | ✅ Complete |
 | 03 | Payroll Distributions | Payroll | [W03](W03%20-%20Payroll%20Distributions.md) | ✅ Done | ✅ Complete |
-| 04 | Remittance Pledges | Finance | [W04](W04%20-%20Remittance%20Pledges.md) | 🔵 In progress | ⚪ Not started |
-| 05 | Receivable Invoices Outstanding | Finance | [W05](W05%20-%20Receivable%20Invoices%20Outstanding.md) | 🔵 In progress | ⚪ Not started |
-| 06 | Insurance Billing Plans | HR | [W06](W06%20-%20Insurance%20Billing%20Plans.md) | 🔵 In progress | ⚪ Not started |
+| 04 | Remittance Pledges | Finance | [W04](W04%20-%20Remittance%20Pledges.md) | ✅ Done | ✅ Complete |
+| 05 | Receivable Invoices Outstanding | Finance | [W05](W05%20-%20Receivable%20Invoices%20Outstanding.md) | ✅ Done | ✅ Complete |
+| 06 | Insurance Billing Plans | HR | [W06](W06%20-%20Insurance%20Billing%20Plans.md) | ✅ Done | ✅ Complete |
 | 07 | Deposit Accounts | Finance | [W07](W07%20-%20Deposit%20Accounts.md) | ✅ Done | ✅ Complete |
 | 08 | My Status | Other | — (no file yet) | ⚪ Not started — deferred | ⚪ Not started |
 | 09 | Payroll Scheduled Time Off | Payroll | [W09](W09%20-%20Payroll%20Scheduled%20Time%20Off.md) | 🔵 In progress | ⚪ Not started |

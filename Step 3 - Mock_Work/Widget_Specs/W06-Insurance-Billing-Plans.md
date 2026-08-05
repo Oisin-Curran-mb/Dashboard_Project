@@ -201,3 +201,33 @@ Both now match `MOCK_DATA.options[6]`'s `title` field for B and C exactly, per t
 **Data used:** `cost` (Employer $ monthly, per plan) — already in `MOCK_DATA.series[6]`, unchanged, no new field added, no mirror re-sync needed (confirmed `mock-data.master.js` still matches the live HTML's `options[6]`/`series[6]` blocks byte-for-byte). Its real-backend-availability caveat from the earlier Rule 11 entry above still applies unchanged — nothing about this pass resolves or worsens that open question.
 
 **Scope confirmed:** `check-rules.py --widget 6` → 0 HIGH/MED/LOW. Every other widget's `WRENDER[n]` confirmed byte-identical to before this edit. `openFilter`/`_renderFltBody`/`applyFilter`/`gs`/`fv`/`sv`/`setView` all confirmed unchanged from their state after the earlier Rule 8 pass — `setChartMetric` was added as a new function, not by editing any of those. `#fc-widget-6` (Final Check tab) confirmed byte-identical, untouched.
+
+---
+
+## 2026-07-30 — Final COMPLETE, tagged v2.0, Jo design
+
+The Final Check tab's Final build of this widget is complete. Version badge set to v2.0 (`FC_VERSION[6]`); title badges: "Final" and "Jo design". The Final renders by default; the earlier A/B/C options (Table + Pie by Plan / Donut by Plan + Cost Watch / Enrollment Spotlight + Pending Flag) stay reachable from the section's design-option switch. Summary of what shipped:
+
+**Composition (Jo's design, carried 1-to-1):** the Final is Jo Lopez's Insurance widget carried into the Final Check tab as a one-to-one copy (the additive `insF` block beside `WRENDER[6]` in `Dashboard Widget Mockups.html`; the A/B/C branches are byte-untouched), PLUS owner-directed enhancements (below). Jo's base design is a dense, scannable table, carried as-is:
+- A Glance KPI card: total enrolled plus a plan-count pill plus an "employees and dependents" caption.
+- A sortable table of plans.
+- An insurance-type filter chip, committed as the ONLY fetch (~800ms skeleton); sort is instant, never a fetch.
+- Inline amethyst Share bars (share = plan enrolled / total enrolled).
+- A "Total enrolled" footer.
+- Empty ("No insurance plans yet") and loading states.
+- No donut, no drill modal.
+
+**Sample data (Jo's real sample set):** Medical Base 128, Medical Buy Up 54, Delta Dental 96, Vision 71, Building 0, for 349 total enrolled.
+
+**Owner enhancements (beyond Jo's count-only 1-to-1):**
+1. **Expandable Type -> Plan nested table** in BOTH Explore and Detail views (Detail-only first, then extended to Explore per direct instruction). Insurance TYPE rows are parents (Medical, Dental, Vision, Property) carrying subtotals; clicking a type expands its plan sub-rows (Medical -> Base, Buy Up). Collapsed by default; the toggle is instant with no fetch; keyboard-operable (`role="button"`, `aria-expanded`).
+2. **Cost total column.** Each row carries a Cost = enrolled x per-enrollee rate, modelling the real derivation cost-per-plan = SUM of `IBEmployeePlan.Rate` (confirmed in the codebase trace). Mock rates are illustrative (Rule 11). It cross-foots: Medical 182 / $91,080, Dental 96 / $3,648, Vision 71 / $639, Property 0 / $0; grand total 349 enrolled / $95,367.
+3. **Jo's Share column kept alongside Cost** (share = enrolled / grand total), on both parent and child rows: Medical type 52%, Medical Base 37%, Medical Buy Up 15%, Delta Dental 28%, Vision 20%, Building/Property 0%.
+
+Final Explore/Detail nested-table columns: Insurance type / plan | Share | Enrolled | Cost. Glance is unchanged (the KPI card). A small Explore width trim (share bar 104px) lets the four columns fit at 592px.
+
+**Sizes (Rule 12):** the three-size model Glance / Explore / Detail, no Small, via the `fc-fmode` mechanism, mapping Jo's kpi / wide / xwide layouts.
+
+**Verification:** ~202-assertion per-widget Node DOM-shim driver, 0 failures. It asserts the type subtotals, the grand total, expand/collapse behaviour, the cost math, the Share percents on both tiers (parent and child), `aria-expanded` on the type rows, and no-fetch-on-toggle. Browser-faithful CSS parse: 0 dropped rules. `final-check-rules.py`: 0 HIGH. W01-W05 plus W06 Final regressions green; the A/B/C options still render at every size and the Dashboard tab is byte-identical before and after. `FC_VERSION[6]` = 2.0.
+
+**Backend confirmed from codebase (2026-07-30):** the Insurance Billing (IB) module's enrollment is a LIVE count (`IBEmployeePlan` plus `IBEmployeeDependent`), computed at query time, not a stored snapshot. There is NO status / pending / COBRA / approval concept on plan enrollment in the real IB module: the "1 plan pending: COBRA" idea from the project's own mock Option C is a design invention, not real data or a real workflow (recorded here so nobody treats it as real). Cost per plan is derivable with query logic only: `SUM(IBEmployeePlan.Rate)` grouped by PlanID (Rate is already on the enrollment rows, with a standard-rate fallback via `IBPlanRate`). A real hierarchy exists: Type -> Plan -> coverage tier (`IBType` -> `IBPlan` via TypeID -> `IBTypeElection`); the nested table uses the Type -> Plan level, and there is no self-referencing sub-plan tree (no ParentPlanID on IBPlan). **One open question (not resolved here):** which figure "total cost" means (total premium vs employer share `EmployerBilled` / `RateIndividual` vs employee share, and `PreTax` handling) is a definition choice, not a data gap; it is left to the Step 5 API doc / SME.

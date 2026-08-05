@@ -72,7 +72,7 @@ Where a widget's reconciliation has gone far enough to draft a full API spec bui
 
 | Widget | File | Relationship to Step 5's own spec |
 |---|---|---|
-| W03 — Payroll Distributions | [Payroll Distributions - API Spec.md](Payroll%20Distrubution/Payroll%20Distributions%20-%20API%20Spec.md) + matching `.html` | A separate, parallel draft — not a replacement yet. `Step 5 - API documents/Payroll Distributions/`'s own spec still exists and is still 🟡 Draft. Reconciling the two into one is a later step, not done automatically by this one existing. |
+| W03 — Payroll Distributions | [Payroll Distributions - API Spec.md](Payroll%20Distrubution/Payroll%20Distributions%20-%20API%20Spec.md) + matching `.html` | A separate, parallel draft — not a replacement yet. `Step 5 - API documents/Payroll Distributions/`'s own spec still exists and is now ✅ Complete at Step 5 as of 2026-08-04 (it keeps its internal DRAFT header pending sign-off). Reconciling the two into one is a later step, not done automatically by this one existing. |
 
 ## Not done yet — deliberately
 

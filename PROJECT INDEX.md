@@ -14,11 +14,13 @@ Since this file was last synced, the biggest change is that the `build-final-wid
 - **W04 Remittance Pledges** — Jo's remittance look with Version A table content + Version B pacing bars, day-based ahead/behind colour scale, per-pledge-term pacing.
 - **W05 Receivable Invoices Outstanding** — Jo's AR widget 1-to-1 + a drill-modal checkbox/Confirm enhancement (the "move to unposted"/payment-processing action, dev-intent signal).
 
-Each has: a dated completion entry in its `Step 3 - Mock_Work/Widget_Specs/WNN-Name.md`; a version-updated Step 4 doc (W05 uses the refined Final-Design/Design-History structure, the reference example; W01-W04 use the earlier interleaved v2-tag mechanic — both accepted, see Step 4's index for the locked-doc rule); and a drafted Step 5 API spec. **Six widgets now have Step 5 draft specs: W01, W02, W03, W04, W05, W07.**
+Each has: a dated completion entry in its `Step 3 - Mock_Work/Widget_Specs/WNN-Name.md`; a version-updated Step 4 doc (W05 uses the refined Final-Design/Design-History structure, the reference example; W01-W04 use the earlier interleaved v2-tag mechanic — both accepted, see Step 4's index for the locked-doc rule); and a drafted Step 5 API spec. **As of the 2026-08-04 status update below, all seven of W01-W07 have Step 5 specs (W06's Final was built after this 2026-07-28 note) and are marked Complete through Step 5.**
 
 New this phase: `Step 3 - Mock_Work/final-check-rules.py` (the Final-build static gate) and the `build-final-widget` skill; a Pathway-based **Figma** of the four W01-W04 Finals (`4js4qkoUtuBrDcMkw2FaM2`, link doc in `Aditya Folder/`); and the MBAccounting codebase was traced for W05's payment-processing logic (recorded in Step 1's W05 §8 and the Step 5 logic-notes file).
 
-**Caveat:** the "What to work on next" and "Widget pipeline position" tables below are still tracker-sourced from 2026-07-20/21 and do NOT yet reflect these Finals (the tracker `Dashboard Tracker.xlsx` is pending a re-sync — it was open in Excel). Treat this build-phase note as the current reality where it disagrees with those tables.
+## Status update (2026-08-04)
+
+**W01-W07 are now complete through Step 5.** Since the 2026-07-28 note above: the **W06 Insurance Billing Plans** Final was built (Step 4 Done), and Step 5 API specs now exist for all seven of W01-W07 — W06 added, and W07 updated for the built "Deposits on Hand" Final with server-side pagination written in as an accepted requirement. Per direct instruction, **Steps 1-5 are marked ✅ Complete for W01-W07 across every Step index and `Dashboard Tracker.xlsx`**, and the tables in this file were re-synced to match on 2026-08-04 (so the earlier "tracker-sourced 2026-07-20/21" caveat no longer applies to the two tables below — they are current as of this sync). The Step 5 spec files still carry their internal `Status: DRAFT — not final` headers and open sign-off items; that is an internal review/publish nuance, not a change to the project-level Complete status. **Step 6 sign-off is unchanged** — only W03 has progressed there; the other six remain at pulled-dossier stage.
 
 ## What to work on next (priority)
 
@@ -29,9 +31,9 @@ Pulled from `Dashboard Tracker.xlsx`'s actual Priority column (F, on the "Dashbo
 | 1 | 01 | Budget Compared to Actual | ✅ [Complete](Step%204%20-%20Widget%20Final%20Design/W01%20-%20Budget%20Compared%20to%20Actual.md) |
 | 2 | 02 | Pension Plans | ✅ [Complete](Step%204%20-%20Widget%20Final%20Design/W02%20-%20Pension%20Plans.md) |
 | 3 | 03 | Payroll Distributions | ✅ [Complete](Step%204%20-%20Widget%20Final%20Design/W03%20-%20Payroll%20Distributions.md) |
-| 4 | 04 | Remittance Pledges | ⚪ [Not started](Step%204%20-%20Widget%20Final%20Design/W04%20-%20Remittance%20Pledges.md) |
-| 5 | 05 | Receivable Invoices Outstanding | ⚪ [Not started](Step%204%20-%20Widget%20Final%20Design/W05%20-%20Receivable%20Invoices%20Outstanding.md) |
-| 6 | 06 | Insurance Billing Plans | ⚪ [Not started](Step%204%20-%20Widget%20Final%20Design/W06%20-%20Insurance%20Billing%20Plans.md) |
+| 4 | 04 | Remittance Pledges | ✅ [Complete](Step%204%20-%20Widget%20Final%20Design/W04%20-%20Remittance%20Pledges.md) |
+| 5 | 05 | Receivable Invoices Outstanding | ✅ [Complete](Step%204%20-%20Widget%20Final%20Design/W05%20-%20Receivable%20Invoices%20Outstanding.md) |
+| 6 | 06 | Insurance Billing Plans | ✅ [Complete](Step%204%20-%20Widget%20Final%20Design/W06%20-%20Insurance%20Billing%20Plans.md) |
 | 7 | 07 | Deposit Accounts | ✅ [Complete](Step%204%20-%20Widget%20Final%20Design/W07%20-%20Deposit%20Accounts.md) |
 | 8 | 08 | My Status | ⚪ Not started (no Step 4 file exists) |
 | 9 | 09 | Payroll Scheduled Time Off | ⚪ [Not started](Step%204%20-%20Widget%20Final%20Design/W09%20-%20Payroll%20Scheduled%20Time%20Off.md) |
@@ -122,9 +124,9 @@ For Dashboard/
 │   ├── How to Write a Widget API Spec.md
 │   ├── Widget_Comparison_Classic.html          ← read-only historical baseline
 │   ├── Widget_Comparison_New_Widgets.html      ← read-only historical baseline
-│   ├── Budget Compared to Actual/Budget Compared to Actual - API Spec.md + ...(Confluence).html   (🟡 draft, needs review)
-│   ├── Payroll Distributions/Payroll Distributions - API Spec.md + ...(Confluence).html   (🟡 draft, needs review — reopened 2026-07-21)
-│   └── Deposit Accounts/Deposit Accounts - API Spec.md + ...(Confluence).html   (🟡 draft, needs review)
+│   ├── Budget Compared to Actual/ · Pension Plans/ · Payroll Distributions/ · Remittance Pledges/
+│   ├── Receivable Invoices Outstanding/ · Insurance Billing Plans/ · Deposit Accounts/
+│   │      each: <Widget> - API Spec.md + ...(Confluence).html   (7 widgets, W01-W07, Step 5 Complete; spec files still carry an internal DRAFT header pending sign-off)
 └── Step 6 - Sign off document/                 ← NEW, 2026-07-21 — management's own exports + Confluence pulls, never edited
     ├── 00 - INDEX.md
     ├── Payroll Distrubution/                    (sic — folder kept exactly as exported)
@@ -145,13 +147,13 @@ For Dashboard/
 
 | # | Widget | Module | Step 1 | Step 2 feedback? | Step 3 spec | Step 3 Mock_Work | Step 4 design | Step 5 API spec |
 |---|---|---|---|---|---|---|---|---|
-| 01 | Budget Compared to Actual | Finance | ✅ | ✅ Backend SME | [spec](Step%203%20-%20Mock_Work/Widget_Specs/W01-Budget-Compared-to-Actual.md) | ✅ Complete | ✅ [Complete](Step%204%20-%20Widget%20Final%20Design/W01%20-%20Budget%20Compared%20to%20Actual.md) | 🔵 [In progress](Step%205%20-%20API%20documents/Budget%20Compared%20to%20Actual/Budget%20Compared%20to%20Actual%20-%20API%20Spec.md) |
-| 02 | Pension Plans | Finance | ✅ | ✅ Backend SME | [spec](Step%203%20-%20Mock_Work/Widget_Specs/W02-Pension-Plans.md) | ✅ Complete | ✅ [Complete](Step%204%20-%20Widget%20Final%20Design/W02%20-%20Pension%20Plans.md) | ⚪ Not started |
-| 03 | Payroll Distributions | Payroll | ✅ | ✅ Backend SME, Ben Lane, DR Comparison | [spec](Step%203%20-%20Mock_Work/Widget_Specs/W03-Payroll-Distributions.md) | ✅ Complete | ✅ [Complete](Step%204%20-%20Widget%20Final%20Design/W03%20-%20Payroll%20Distributions.md) | 🟡 [Draft — reopened](Step%205%20-%20API%20documents/Payroll%20Distributions/Payroll%20Distributions%20-%20API%20Spec.md) |
-| 04 | Remittance Pledges | Finance | ✅ | ✅ UX tracker | [spec](Step%203%20-%20Mock_Work/Widget_Specs/W04-Remittance-Pledges.md) | 🔵 In progress | ⚪ [Not started](Step%204%20-%20Widget%20Final%20Design/W04%20-%20Remittance%20Pledges.md) | ⚪ Not started |
-| 05 | Receivable Invoices Outstanding | Finance | ✅ | ✅ UX tracker | [spec](Step%203%20-%20Mock_Work/Widget_Specs/W05-Receivable-Invoices-Outstanding.md) | 🔵 In progress | ⚪ [Not started](Step%204%20-%20Widget%20Final%20Design/W05%20-%20Receivable%20Invoices%20Outstanding.md) | ⚪ Not started |
-| 06 | Insurance Billing Plans | HR | ✅ | ✅ UX tracker | [spec](Step%203%20-%20Mock_Work/Widget_Specs/W06-Insurance-Billing-Plans.md) | 🔵 In progress | ⚪ [Not started](Step%204%20-%20Widget%20Final%20Design/W06%20-%20Insurance%20Billing%20Plans.md) | ⚪ Not started |
-| 07 | Deposit Accounts | Finance | ✅ | ✅ Backend SME, Ben Lane | [spec](Step%203%20-%20Mock_Work/Widget_Specs/W07-Deposit-Accounts.md) | ✅ Complete | ✅ [Complete](Step%204%20-%20Widget%20Final%20Design/W07%20-%20Deposit%20Accounts.md) | 🔵 [In progress](Step%205%20-%20API%20documents/Deposit%20Accounts/Deposit%20Accounts%20-%20API%20Spec.md) |
+| 01 | Budget Compared to Actual | Finance | ✅ | ✅ Backend SME | [spec](Step%203%20-%20Mock_Work/Widget_Specs/W01-Budget-Compared-to-Actual.md) | ✅ Complete | ✅ [Complete](Step%204%20-%20Widget%20Final%20Design/W01%20-%20Budget%20Compared%20to%20Actual.md) | ✅ [Complete](Step%205%20-%20API%20documents/Budget%20Compared%20to%20Actual/Budget%20Compared%20to%20Actual%20-%20API%20Spec.md) |
+| 02 | Pension Plans | Finance | ✅ | ✅ Backend SME | [spec](Step%203%20-%20Mock_Work/Widget_Specs/W02-Pension-Plans.md) | ✅ Complete | ✅ [Complete](Step%204%20-%20Widget%20Final%20Design/W02%20-%20Pension%20Plans.md) | ✅ [Complete](Step%205%20-%20API%20documents/Pension%20Plans/Pension%20Plans%20-%20API%20Spec.md) |
+| 03 | Payroll Distributions | Payroll | ✅ | ✅ Backend SME, Ben Lane, DR Comparison | [spec](Step%203%20-%20Mock_Work/Widget_Specs/W03-Payroll-Distributions.md) | ✅ Complete | ✅ [Complete](Step%204%20-%20Widget%20Final%20Design/W03%20-%20Payroll%20Distributions.md) | ✅ [Complete](Step%205%20-%20API%20documents/Payroll%20Distributions/Payroll%20Distributions%20-%20API%20Spec.md) |
+| 04 | Remittance Pledges | Finance | ✅ | ✅ UX tracker | [spec](Step%203%20-%20Mock_Work/Widget_Specs/W04-Remittance-Pledges.md) | ✅ Complete | ✅ [Complete](Step%204%20-%20Widget%20Final%20Design/W04%20-%20Remittance%20Pledges.md) | ✅ [Complete](Step%205%20-%20API%20documents/Remittance%20Pledges/Remittance%20Pledges%20-%20API%20Spec.md) |
+| 05 | Receivable Invoices Outstanding | Finance | ✅ | ✅ UX tracker | [spec](Step%203%20-%20Mock_Work/Widget_Specs/W05-Receivable-Invoices-Outstanding.md) | ✅ Complete | ✅ [Complete](Step%204%20-%20Widget%20Final%20Design/W05%20-%20Receivable%20Invoices%20Outstanding.md) | ✅ [Complete](Step%205%20-%20API%20documents/Receivable%20Invoices%20Outstanding/Receivable%20Invoices%20Outstanding%20-%20API%20Spec.md) |
+| 06 | Insurance Billing Plans | HR | ✅ | ✅ UX tracker | [spec](Step%203%20-%20Mock_Work/Widget_Specs/W06-Insurance-Billing-Plans.md) | ✅ Complete | ✅ [Complete](Step%204%20-%20Widget%20Final%20Design/W06%20-%20Insurance%20Billing%20Plans.md) | ✅ [Complete](Step%205%20-%20API%20documents/Insurance%20Billing%20Plans/Insurance%20Billing%20Plans%20-%20API%20Spec.md) |
+| 07 | Deposit Accounts | Finance | ✅ | ✅ Backend SME, Ben Lane | [spec](Step%203%20-%20Mock_Work/Widget_Specs/W07-Deposit-Accounts.md) | ✅ Complete | ✅ [Complete](Step%204%20-%20Widget%20Final%20Design/W07%20-%20Deposit%20Accounts.md) | ✅ [Complete](Step%205%20-%20API%20documents/Deposit%20Accounts/Deposit%20Accounts%20-%20API%20Spec.md) |
 | 08 | My Status | Other | ✅ | — none found | [spec — ⏸️ deferred](Step%203%20-%20Mock_Work/Widget_Specs/W08-My-Status.md) | ⚪ Not started | ⚪ Not started — deferred | ⚪ Not started |
 | 09 | Payroll Scheduled Time Off | Payroll | ✅ | ✅ UX tracker | [spec](Step%203%20-%20Mock_Work/Widget_Specs/W09-Payroll-Scheduled-Time-Off.md) | 🔵 In progress | ⚪ [Not started](Step%204%20-%20Widget%20Final%20Design/W09%20-%20Payroll%20Scheduled%20Time%20Off.md) | ⚪ Not started |
 | 10 | Loans With Balance Due | Finance | ✅ | ✅ Ben Lane | [spec](Step%203%20-%20Mock_Work/Widget_Specs/W10-Loans-With-Balance-Due.md) | 🔵 In progress | ⚪ [Not started](Step%204%20-%20Widget%20Final%20Design/W10%20-%20Loans%20With%20Balance%20Due.md) | ⚪ Not started |

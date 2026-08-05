@@ -24,7 +24,7 @@ Shared across all three APIs. No new tables are needed; the redesign is new quer
 
 | Table / repository | Fields and members used |
 |---|---|
-| `ARInvoice` | `Posted`, `UndoJournalID`, `TotalAmount`, `SalesTax`, `Payments`, `Discounts`, `WriteOffs` (the Outstanding formula), `DueDate` (aging), customer name, `BillToDisplay` (the Bill To name, see the gap note), invoice number |
+| `ARInvoice` | `Posted`, `UndoJournalID`, `TotalAmount`, `SalesTax`, `Payments`, `Discounts`, `WriteOffs` (the Outstanding formula), `DueDate` (aging), customer name, `BillToDisplay` (the Bill To name, blank by design when the bill-to party equals the customer, see note), invoice number |
 | `ARInvoiceDetail` | Invoice line items: item name and amount (API 3 detail). Confirmed source for line items |
 | `ARRevenueCenterRepository` | Supplies the Revenue Center dropdown list, dynamically populated from the data (not a fixed list) |
 | `ARSourceRepository` | Supplies the Source dropdown list, dynamically populated from the data (not a fixed list) |
@@ -38,7 +38,7 @@ Shared across all three APIs. No new tables are needed; the redesign is new quer
 
 **Aging buckets (confirmed):** `Age = Today - DueDate` in days, assigned to Current (< 31), 31-60, 61-90, 91-120, 121+. The aging read is an as-of-today snapshot.
 
-**Bill To gap (known, unresolved).** `BillToDisplay` (the "Bill To" name shown in the pop-up detail list) returns empty in the modern API today. This is a pre-existing gap, not introduced by the redesign. It is specced below as a field that must be populated, and the current empty-field state is flagged in "Still needs sign-off".
+**Bill To conditional blank (by design).** `BillToDisplay` (the "Bill To" name shown in the pop-up detail list) is blank BY DESIGN, not a bug: the legacy sets it to empty when the bill-to party equals the customer and only populates it when they differ (`CustomerID == BillToCustomerID ? "" : ARCustomerBillTo.CorePerson.LastFirstMiddleNames`) (confirmed in code: ReceivableInvoicesOutstanding.ascx.cs, conditional BillToDisplay). The modern API should replicate that conditional, not "fix" a blank; noted in "Still needs sign-off".
 
 ## API 1 - Widget (aging summary)
 
@@ -145,7 +145,7 @@ Headers: `X-Company-ID`.
 | `invoices[]` | array | The invoice rows for this bucket under the active filters |
 | `invoices[].invoiceId` | guid | Stable invoice id, the key for API 3 and for the Confirm action |
 | `invoices[].customer` | string | Customer name |
-| `invoices[].billTo` | string | Bill To name (`ARInvoice.BillToDisplay`). **Must be populated**; empty in the modern API today, see the gap note and "Still needs sign-off" |
+| `invoices[].billTo` | string | Bill To name (`ARInvoice.BillToDisplay`). Blank BY DESIGN when the bill-to party equals the customer, populated only when they differ (confirmed in code: ReceivableInvoicesOutstanding.ascx.cs, conditional BillToDisplay); the modern API should replicate that conditional, not "fix" a blank |
 | `invoices[].dueDate` | date | Invoice due date |
 | `invoices[].invoiceNumber` | string | Invoice number |
 | `invoices[].daysPastDue` | int | `Today - DueDate` in days for this invoice |
@@ -309,7 +309,7 @@ Reconciliation: line items 8,200 + 900 + 550 = 9,650, matching INV-2903's `outst
 2. **Nothing outstanding at all (API 1):** every bucket zero and `total` zero. The frontend renders its "all settled" state from this; not an error.
 3. **Filter combination yields no invoices (API 1 and 2a):** a `revenueCenterId` + `sourceId` pair that matches nothing returns zero buckets/rows honestly, not an error.
 4. **Bucket requested that is empty (API 2a):** empty `invoices[]` with `totals` zero. The legacy widget disables clicking a zero-value bucket row; the API still answers cleanly if called.
-5. **Bill To empty (API 2a):** `billTo` comes back empty today (`BillToDisplay` gap). The field must be populated; behaviour when it is genuinely absent (fall back to customer name vs empty string) needs a dev decision.
+5. **Bill To blank (API 2a):** `billTo` is blank BY DESIGN when the bill-to party equals the customer and populated only when they differ (confirmed in code: ReceivableInvoicesOutstanding.ascx.cs, conditional BillToDisplay); the modern API should replicate that conditional rather than treat the blank as a defect.
 6. **Unknown or non-outstanding `invoiceId` (API 3, 2b):** an id that is no longer outstanding (paid, voided, or reversed since the snapshot) or does not exist. Needs an explicit behaviour (404-style vs empty) rather than a silent empty payload.
 7. **Stale snapshot on Confirm (API 2b):** the aging view is as-of-today; an invoice may have been paid or already moved by another user before Confirm runs. The write must guard against double-processing and report per-invoice which ids could not be moved (concurrency, Q7 in the logic notes).
 8. **Attachments / Note / Payments unavailable (API 3):** if a source is not yet wired, return an empty array / empty string for that section rather than failing the whole detail call, and route to "View full invoice" as the fallback.
@@ -327,8 +327,8 @@ Reconciliation: line items 8,200 + 900 + 550 = 9,650, matching INV-2903's `outst
 
 - **Q1, the payment create-vs-stage nuance (the one open item).** The mechanism is settled: Confirm feeds the AR payment path (`ARPayment` / `ARPaymentDetail` applied to the invoices, into Payment Processing, posted by `ProcessPayments`). What is open is the product nuance: does Confirm create the payment records outright (full Outstanding, or a partial amount?), or stage the selected invoices into the payment-entry screen for a person to key? This is an SME/product decision, and the API 2b response and created-record shape depend on it. See `Move to Unposted Transactions - Logic Notes.md` (section 9) in this folder.
 - **API 2b response and created-record shape.** Cannot be finalised until the Q1 nuance is settled: the created unposted payment id(s), the Payment Processing link returned to the user, and the per-invoice applied / could-not-apply list.
-- **Double-processing guard and permission for the write.** What stops a payment being created twice for the same invoice or created while another unposted payment already references it (idempotency), and which permission gates the action (the Payment Processing / post right). Q4 in the logic notes.
-- **Bill To empty-field gap.** `ARInvoice.BillToDisplay` returns empty in the modern API today. Needs to be populated for API 2a, and a defined fallback when it is genuinely absent.
+- **Double-processing guard and permission for the write.** There is no explicit "invoice already has an unposted payment" lock: the guard is the `Outstanding != 0` eligibility filter plus a cap that limits the applied amount to the invoice's Outstanding (recomputed from non-void payment details), so the spec should describe that outstanding-based guard rather than promise a duplicate-payment lock. The permission part is answered: posting is gated by the Payment Processing right (confirmed in code: ARPaymentRepository auto-apply, Outstanding filter + min cap; PaymentProcessing right). Q4 in the logic notes.
+- **Bill To conditional-blank behaviour.** `ARInvoice.BillToDisplay` is blank BY DESIGN when the bill-to party equals the customer and populated only when they differ (confirmed in code: ReceivableInvoicesOutstanding.ascx.cs, conditional BillToDisplay); the modern API must replicate that conditional behaviour, not "fix" the blank.
 - **Attachments / Note / Payments sources (API 3).** Line items from `ARInvoiceDetail` are confirmed; the other three tabs' data sources are not yet verified. Confirm the sources or route those tabs to "View full invoice".
 - **Aging-band reconciliation vs the Modern API `ap-ar-aging` boundaries.** Confirm the five bucket boundaries used here (Current < 31 / 31-60 / 61-90 / 91-120 / 121+) match whatever the modern `ap-ar-aging` surface uses, so the widget and any shared aging endpoint do not disagree at the band edges.
 - **Revenue Center and Source list endpoints.** The two dropdowns are dynamically populated from `ARRevenueCenterRepository` / `ARSourceRepository`. Confirm the companion list endpoints that feed them (id + display name), since API 1 and 2a take the ids as filter params.

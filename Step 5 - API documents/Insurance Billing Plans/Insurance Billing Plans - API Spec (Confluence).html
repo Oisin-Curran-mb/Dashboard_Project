@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Insurance Billing Plans — API Spec</title>
+<style>
+body { font-family: -apple-system, Helvetica, Arial, sans-serif; max-width: 900px; margin: 30px auto; line-height: 1.5; color: #172B4D; }
+h1 { font-size: 24px; }
+h2 { font-size: 19px; border-bottom: 1px solid #DFE1E6; padding-bottom: 6px; margin-top: 32px; }
+h3 { font-size: 16px; margin-top: 20px; }
+table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+th, td { border: 1px solid #DFE1E6; padding: 6px 10px; text-align: left; vertical-align: top; }
+th { background: #F4F5F7; }
+code { background: #F4F5F7; padding: 1px 5px; border-radius: 3px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 90%; }
+pre { background: #F4F5F7; padding: 12px; border-radius: 4px; overflow-x: auto; }
+pre code { background: none; padding: 0; }
+.status { background: #FFF0B3; display: inline-block; padding: 3px 10px; border-radius: 3px; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<h1>Insurance Billing Plans — API Spec</h1>
+<p><span class="status">Status: DRAFT — not final</span></p>
+<h2>Overview</h2>
+<p>The widget is a snapshot of how many people are enrolled in each insurance plan, grouped by insurance type, filterable by a single insurance-type chip. It is read-only: nothing in this widget writes back. This spec is deliberately close to the existing insurance-billing read: the legacy widget already returned a per-plan enrolled count (employees plus dependents) for a pie and a table. The ONE genuinely new field in this contract is <code>cost</code> per plan. Everything else the widget shows is either that existing enrolled read or client-side arrangement of data the module already holds.</p>
+<p>The Type to Plan grouping is not new data: <code>IBPlan.TypeID</code> already links every plan to its insurance type. In this contract the API returns a single nested structure in ONE call: all insurance types at once, each type carrying its own name, its subtotals, and its plans inside it. The type grouping and the type subtotals that the client used to assemble are now server-provided, and the response also carries the grand total. The client still computes only the Share column (enrolled divided by the grand-total enrolled). This is a deliberate owner-requested shape (one call, all information, returned already nested by insurance type) rather than the strict flat-and-client-group minimal pattern used elsewhere in the project. There is no separate types endpoint: the insurance-type list for the filter chip derives from the <code>types[]</code> array in this same response.</p>
+<p><strong>There is no time axis.</strong> Enrolment is a live count computed at request time (<code>COUNT(IBEmployeePlan)</code> plus <code>COUNT(IBEmployeeDependent)</code> for the plan), not a stored point-in-time snapshot. This spec therefore has none of the Time Window Module machinery: no <code>window</code>, no <code>grain</code>, no <code>asOf</code>. Do not copy those parameters over from the Budget Compared to Actual spec; they do not exist here.</p>
+<p><strong>There is no enrolment status.</strong> There is no active/inactive, pending, COBRA, or approval field on plan enrolment anywhere in the real IB module (confirmed in code, 2026-07-30). This is recorded here so nobody adds a status field or a status filter to this contract; the earlier project mock that showed a "pending: COBRA" flag was a design invention with no backing data.</p>
+<h2>Tables</h2>
+<table>
+<thead>
+<tr>
+<th>Table</th>
+<th>Fields used</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>IBType</code></td>
+<td><code>TypeID</code>, <code>Name</code>, <code>Active</code>: the insurance-type categories (Medical, Dental, Vision, Property). Source of the <code>types[]</code> entries (and the filter chip that derives from them) and the <code>typeName</code> on each type; <code>Active</code> filtered</td>
+</tr>
+<tr>
+<td><code>IBPlan</code></td>
+<td><code>PlanID</code>, <code>Name</code>, <code>TypeID</code>, <code>Active</code>: the plan rows; <code>TypeID</code> is the existing link that places each plan under its type; <code>Active</code> filtered</td>
+</tr>
+<tr>
+<td><code>IBEmployeePlan</code></td>
+<td><code>PlanID</code>, <code>Rate</code>, <code>RateIndividual</code>, <code>PreTax</code>, <code>EmployerBilled</code>, <code>TypeElectionID</code>, <code>UseNonStandardRate</code>: the employee plan-enrolment rows counted into <code>enrolled</code> and summed into <code>cost</code></td>
+</tr>
+<tr>
+<td><code>IBEmployeeDependent</code></td>
+<td><code>PlanID</code>: the dependent enrolment rows, counted into <code>enrolled</code> only</td>
+</tr>
+<tr>
+<td><code>IBPlanRate</code></td>
+<td><code>PlanID</code>, <code>TypeElectionID</code>, <code>Rate</code>, <code>RateIndividual</code>, <code>Starting</code>: the standard rate by plan plus coverage tier, used for an enrolment's rate when it does not carry a non-standard rate</td>
+</tr>
+<tr>
+<td><code>IBTypeElection</code></td>
+<td>Coverage tier (Employee / Family / Waived etc.). Present in the real hierarchy but NOT surfaced by this contract; listed so its role in the rate lookup is clear</td>
+</tr>
+</tbody>
+</table>
+<p>No new tables and no new schema are needed. <code>enrolled</code> is the existing live count. <code>cost</code> is a new SUM over columns that already exist on <code>IBEmployeePlan</code> / <code>IBPlanRate</code>; it is a query addition, not stored data. The real module hierarchy is <code>IBType</code> (category) to <code>IBPlan</code> (via <code>TypeID</code>) to <code>IBTypeElection</code> (coverage tier); this contract uses the Type to Plan level only.</p>
+<h2>Old vs. new</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Old (live today)</th>
+<th>New (this contract)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Enrolled per plan</td>
+<td>Legacy <code>InsuranceBillingPlans : DataPanelControl</code> (<code>/InsuranceBilling</code>) returned <code>NumberEnrolled</code> per plan for a pie plus table: <code>COUNT(IB_EmployeePlan WHERE PlanID)</code> plus <code>COUNT(IB_EmployeeDependent WHERE PlanID)</code>, a live count</td>
+<td>Same figure, unchanged: <code>enrolled</code> = <code>COUNT(IBEmployeePlan)</code> plus <code>COUNT(IBEmployeeDependent)</code> for the plan. This is the existing read</td>
+</tr>
+<tr>
+<td>Cost per plan</td>
+<td>Not returned</td>
+<td><code>cost</code> (number), the ONE new field: per-plan <code>SUM</code> of the enrolment Rate (see Cost derivation). This is the only genuinely new backend field in this spec</td>
+</tr>
+<tr>
+<td>Type to Plan grouping</td>
+<td>Legacy grouped/filtered by insurance type via the type dropdown; the pie and table were plan-level</td>
+<td>Same data, now server-nested. The response is a single <code>types[]</code> structure with each type's <code>plans[]</code> inside it, so the Type to Plan grouping arrives already assembled rather than being built client-side</td>
+</tr>
+<tr>
+<td>Type filter list</td>
+<td>Legacy type dropdown from <code>IB_Type WHERE CompanyID = ctx ORDER BY Name</code>, "All Types" prepended</td>
+<td>Same list, now derived client-side from the <code>types[]</code> array of the single response (Active only, in the response order). No separate types fetch. "All types" is the client default and shows every type</td>
+</tr>
+<tr>
+<td>Subtotals / share / totals</td>
+<td>Legacy showed a total-enrolled footer row</td>
+<td>Server now returns each type's <code>enrolled</code>/<code>cost</code> subtotals and the grand <code>total</code>. The client computes only Share = row <code>enrolled</code> / grand-total <code>enrolled</code> (works for both a type row and a plan row)</td>
+</tr>
+<tr>
+<td>Status / pending / COBRA</td>
+<td>None in the real module</td>
+<td>Still none. No status field exists on enrolment; none is added</td>
+</tr>
+<tr>
+<td>Drill / mutation</td>
+<td>No drill-down; read-only</td>
+<td>Unchanged: read-only, no drill, no write action</td>
+</tr>
+</tbody>
+</table>
+<h2>Endpoints</h2>
+<p>There is ONE endpoint. It is <code>GET</code>, company-scoped, and belongs to the Insurance Billing module (<code>/InsuranceBilling</code>). It does not write. It returns the full widget dataset in a single call, already nested by insurance type. There is no separate types endpoint.</p>
+<h3>The one endpoint: plans (full nested dataset)</h3>
+<pre><code>GET /api/dashboard/insurance-billing/plans
+</code></pre>
+<p>No required parameters beyond company context. Returns the grand <code>total</code> plus a <code>types[]</code> array of every active insurance type, each type carrying its own <code>typeName</code>, its <code>enrolled</code>/<code>cost</code> subtotals, and its <code>plans[]</code> inside it. All types and all plans arrive in this one response, so the widget fetches once on load and never re-fetches for a filter change.</p>
+<p><strong>The type filter is client-side.</strong> Because every type and every plan already arrives in this one call, selecting (or clearing) a type in the filter chip is a client-side view over the response, NOT a fetch. The chip simply narrows which <code>types[]</code> entries the client renders; the "All types" default renders them all. The Type to Plan expand/collapse and column sort are, as before, instant client interactions and never a fetch.</p>
+<p><em>Optional narrowing note:</em> a server could still accept an optional <code>typeId</code> query param to return a single type's slice, but the widget does not need it and does not send it; the primary contract is the parameter-free single call above.</p>
+<blockquote>
+<p><strong>Build follow-up (do not edit the build here):</strong> this is a change from the earlier "the type filter is the only fetch" note. The current build refetches on type-change; that behaviour should become a client-side view over the single response. Flagging it here as a build follow-up only.</p>
+</blockquote>
+<h3>Example request</h3>
+<pre><code>GET /api/dashboard/insurance-billing/plans
+</code></pre>
+<h2>Cost derivation (the one new field)</h2>
+<p><code>cost</code> per plan is the per-plan SUM, over that plan's enrolments, of the enrolment Rate:</p>
+<ul>
+<li>For each enrolment on the plan, the rate is <code>IBEmployeePlan.Rate</code> when <code>UseNonStandardRate</code> is set on that enrolment.</li>
+<li>Otherwise the rate is the standard <code>IBPlanRate.Rate</code> for that plan plus the enrolment's coverage tier (<code>TypeElectionID</code>).</li>
+<li><code>cost</code> for the plan is the SUM of that per-enrolment rate across the plan's enrolments.</li>
+</ul>
+<p>Because the rate varies by coverage tier (Employee, Family, Waived, etc.), the SUM naturally reflects the mix of tiers actually enrolled: a plan skewed toward Family coverage sums higher than the same headcount on Employee-only coverage, with no extra logic. This is derivable with query logic only, no new stored field. <code>[confirmed in code: IBEmployeePlan.Rate / IBPlanRate]</code></p>
+<p>Two definitional points sit on top of this derivation and are NOT resolved here (see Still needs sign-off):</p>
+<ol>
+<li>
+<p><strong>Which figure "total cost" means.</strong> <code>cost</code> could be the total premium, the EMPLOYER share (<code>EmployerBilled</code> and/or <code>RateIndividual</code>), or the EMPLOYEE share, and <code>PreTax</code> may matter to the reading. The columns to compute any of these live on the same <code>IBEmployeePlan</code> / <code>IBPlanRate</code> rows, so this is a definition choice, not a data gap. This spec does not invent the answer. Recommended default: <code>cost</code> = total premium (SUM of the enrolment <code>Rate</code> as above); flag that an employer-versus-employee split is available from the same fields if product wants it.</p>
+</li>
+<li>
+<p><strong>Count basis versus cost basis differ.</strong> <code>enrolled</code> counts employees AND dependents (<code>IBEmployeePlan</code> plus <code>IBEmployeeDependent</code>), but <code>Rate</code> sits on <code>IBEmployeePlan</code>, the employee's plan enrolment, not on each dependent. So <code>enrolled</code> and <code>cost</code> are aggregated over different row sets. Dependents usually carry no separate Rate, because the coverage tier (Employee / Family) already prices family coverage on the employee's enrolment row, which implies <code>cost</code> should be <code>SUM(Rate)</code> over <code>IBEmployeePlan</code> only, while <code>enrolled</code> still includes dependents. This is a real definitional point for the dev / SME to confirm, not something this spec settles.</p>
+</li>
+</ol>
+<h2>Response schema</h2>
+<p>Field names below are the response property names. The response is a single object nested by insurance type: a grand <code>total</code>, then a <code>types[]</code> array where each type carries its subtotals and its <code>plans[]</code>.</p>
+<h3>Top level</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>total</code></td>
+<td>object</td>
+<td>The grand total across every type: <code>{ enrolled, cost }</code></td>
+</tr>
+<tr>
+<td><code>types[]</code></td>
+<td>array</td>
+<td>One entry per active insurance type, each with its subtotals and its plans (below)</td>
+</tr>
+</tbody>
+</table>
+<h3><code>total</code></h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>enrolled</code></td>
+<td>int</td>
+<td>Grand-total enrolment across all plans of all types</td>
+</tr>
+<tr>
+<td><code>cost</code></td>
+<td>number</td>
+<td>Grand-total cost across all plans of all types</td>
+</tr>
+</tbody>
+</table>
+<h3><code>types[]</code> entry</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>typeId</code></td>
+<td>guid</td>
+<td>The insurance type's id (<code>IBType.TypeID</code>)</td>
+</tr>
+<tr>
+<td><code>typeName</code></td>
+<td>string</td>
+<td>The insurance type's display name (<code>IBType.Name</code>), e.g. Medical, Dental, Vision, Property</td>
+</tr>
+<tr>
+<td><code>enrolled</code></td>
+<td>int</td>
+<td>This type's subtotal enrolment (server-provided; sum of its plans' <code>enrolled</code>)</td>
+</tr>
+<tr>
+<td><code>cost</code></td>
+<td>number</td>
+<td>This type's subtotal cost (server-provided; sum of its plans' <code>cost</code>)</td>
+</tr>
+<tr>
+<td><code>plans[]</code></td>
+<td>array</td>
+<td>The plans under this type (below); an empty array if the type has no active plans</td>
+</tr>
+</tbody>
+</table>
+<h3><code>plans[]</code> entry (inside a type)</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>planId</code></td>
+<td>guid</td>
+<td>The plan's id (<code>IBPlan.PlanID</code>); the row key</td>
+</tr>
+<tr>
+<td><code>planName</code></td>
+<td>string</td>
+<td>The plan's display name (<code>IBPlan.Name</code>); org-configured, not an enum</td>
+</tr>
+<tr>
+<td><code>enrolled</code></td>
+<td>int</td>
+<td>The existing live count: <code>COUNT(IBEmployeePlan)</code> plus <code>COUNT(IBEmployeeDependent)</code> for the plan</td>
+</tr>
+<tr>
+<td><code>cost</code></td>
+<td>number</td>
+<td><strong>NEW, the only addition in this spec.</strong> Per-plan SUM of the enrolment Rate (see Cost derivation). Plain decimal number, no currency formatting</td>
+</tr>
+</tbody>
+</table>
+<p>Notes:</p>
+<ul>
+<li>There are no envelope objects, no echo headers, and no <code>generatedAt</code> stamps. The response is the single nested object above.</li>
+<li>The type list for the filter chip derives from <code>types[]</code> (in response order); there is no separate types endpoint.</li>
+<li>Amounts are plain decimal numbers; currency symbol and locale are client concerns.</li>
+<li>Type subtotals and the grand <code>total</code> are server-provided. <strong>Share is the only client-side computation:</strong> Share = row <code>enrolled</code> divided by <code>total.enrolled</code>. It is computable for both a type row (<code>type.enrolled / total.enrolled</code>) and a plan row (<code>plan.enrolled / total.enrolled</code>).</li>
+</ul>
+<h2>Examples</h2>
+<p>All figures below are MOCK data shaped like the built Final's sample set. They are not live-verified production values; the shapes and the arithmetic reconciliation are the contract, not the amounts. The mock models cost as a representative rate times count for illustration (Rule 11: mock rates illustrative), while the real derivation is the per-enrolment <code>SUM(Rate)</code> described in Cost derivation.</p>
+<h3>Example: the single nested call</h3>
+<pre><code>GET /api/dashboard/insurance-billing/plans
+</code></pre>
+<pre><code>{
+  &quot;total&quot;: { &quot;enrolled&quot;: 349, &quot;cost&quot;: 95367 },
+  &quot;types&quot;: [
+    {
+      &quot;typeId&quot;: &quot;2a1c4e6f-8b0d-4f2a-9c6e-1d3b5a7c9e10&quot;,
+      &quot;typeName&quot;: &quot;Medical&quot;,
+      &quot;enrolled&quot;: 182,
+      &quot;cost&quot;: 91080,
+      &quot;plans&quot;: [
+        { &quot;planId&quot;: &quot;a1000000-0000-4000-8000-000000000001&quot;, &quot;planName&quot;: &quot;Medical Base&quot;,   &quot;enrolled&quot;: 128, &quot;cost&quot;: 57600 },
+        { &quot;planId&quot;: &quot;a1000000-0000-4000-8000-000000000002&quot;, &quot;planName&quot;: &quot;Medical Buy Up&quot;, &quot;enrolled&quot;: 54,  &quot;cost&quot;: 33480 }
+      ]
+    },
+    {
+      &quot;typeId&quot;: &quot;3b2d5f70-9c1e-4a3b-8d7f-2e4c6b8d0f21&quot;,
+      &quot;typeName&quot;: &quot;Dental&quot;,
+      &quot;enrolled&quot;: 96,
+      &quot;cost&quot;: 3648,
+      &quot;plans&quot;: [
+        { &quot;planId&quot;: &quot;a1000000-0000-4000-8000-000000000003&quot;, &quot;planName&quot;: &quot;Delta Dental&quot;, &quot;enrolled&quot;: 96, &quot;cost&quot;: 3648 }
+      ]
+    },
+    {
+      &quot;typeId&quot;: &quot;4c3e6081-0d2f-4b4c-9e80-3f5d7c9e1032&quot;,
+      &quot;typeName&quot;: &quot;Vision&quot;,
+      &quot;enrolled&quot;: 71,
+      &quot;cost&quot;: 639,
+      &quot;plans&quot;: [
+        { &quot;planId&quot;: &quot;a1000000-0000-4000-8000-000000000004&quot;, &quot;planName&quot;: &quot;Vision&quot;, &quot;enrolled&quot;: 71, &quot;cost&quot;: 639 }
+      ]
+    },
+    {
+      &quot;typeId&quot;: &quot;5d4f7192-1e30-4c5d-af91-4a6e8d0f2143&quot;,
+      &quot;typeName&quot;: &quot;Property&quot;,
+      &quot;enrolled&quot;: 0,
+      &quot;cost&quot;: 0,
+      &quot;plans&quot;: [
+        { &quot;planId&quot;: &quot;a1000000-0000-4000-8000-000000000005&quot;, &quot;planName&quot;: &quot;Building&quot;, &quot;enrolled&quot;: 0, &quot;cost&quot;: 0 }
+      ]
+    }
+  ]
+}
+</code></pre>
+<p>Everything the widget needs is in this one response, already nested by type:</p>
+<ul>
+<li>Type subtotals (server-provided): Medical 182 / 91080, Dental 96 / 3648, Vision 71 / 639, Property 0 / 0.</li>
+<li>Grand <code>total</code> (server-provided): 349 enrolled / 95367 cost.</li>
+<li>Share (client-side, <code>enrolled</code> divided by <code>total.enrolled</code> = 349): plan rows Medical Base 37%, Medical Buy Up 15%, Delta Dental 28%, Vision 20%, Building / Property 0%; type rows Medical 52%, Dental 28%, Vision 20%, Property 0%.</li>
+</ul>
+<p>The zero-enrolment plan (Building, under Property) is still returned inside its type so it lists with a zero count and 0% share. The type list for the filter chip is read straight from <code>types[]</code>; selecting Medical is a client-side view over the Medical entry already present in this response, not a fetch.</p>
+<p>Reconciliation: plan costs (57600 + 33480 + 3648 + 639 + 0) sum to the type subtotals (91080 + 3648 + 639 + 0), which sum to <code>total.cost</code> 95367; plan enrolled (128 + 54 + 96 + 71 + 0) sum to the type subtotals (182 + 96 + 71 + 0), which sum to <code>total.enrolled</code> 349.</p>
+<h2>Edge cases</h2>
+<ol>
+<li><strong>Zero-enrolment plan:</strong> still returned inside its type (e.g. Building, under Property) with <code>enrolled</code> 0 and <code>cost</code> 0; the client renders it as a row with a zero count and 0% share, never hidden. Its type still appears in <code>types[]</code> with a 0 / 0 subtotal.</li>
+<li><strong>Type with no plans:</strong> the type still appears in <code>types[]</code> (it is Active) with <code>enrolled</code>/<code>cost</code> of 0 and an empty <code>plans[]</code> array. The filter chip can still select it, showing an empty type. Not an error.</li>
+<li><strong>Deleted / inactive type or plan:</strong> <code>IBType.Active</code> and <code>IBPlan.Active</code> filter the response; inactive types are absent from <code>types[]</code> and inactive plans are absent from a type's <code>plans[]</code>.</li>
+<li><strong>Org with no plans or enrolments:</strong> the response has <code>total</code> 0 / 0 and an empty <code>types[]</code>; the client renders its "No insurance plans yet" empty state. Not an error.</li>
+<li><strong>Coverage-tier level:</strong> <code>IBTypeElection</code> exists in the real hierarchy but is NOT surfaced by this contract; the nesting is Type to Plan only. Surfacing the tier level is a future enhancement.</li>
+<li><strong>Type filter selection:</strong> the filter chip is a client-side view over <code>types[]</code> in the single response, never a fetch; the client only ever selects a type already present in the response, so there is no unknown-<code>typeId</code> fetch path.</li>
+<li><strong>Count basis versus cost basis:</strong> because <code>enrolled</code> includes dependents and <code>Rate</code> sits on <code>IBEmployeePlan</code>, a plan can show a headcount that differs from the number of rate-bearing rows behind its <code>cost</code>. This is the definitional point in Cost derivation, flagged for sign-off, not a bug.</li>
+</ol>
+<h2>Not in scope</h2>
+<ul>
+<li><strong>No mutation.</strong> This is a read-only widget: no write action, no Confirm, no move, no drill-through that changes anything.</li>
+<li><strong>No status / pending / COBRA / approval.</strong> No such field exists on plan enrolment in the real IB module; none is added. Recorded so nobody specs a status field or a status filter to fill it.</li>
+<li><strong>No coverage-tier breakdown.</strong> The Type to Plan to <code>IBTypeElection</code> hierarchy has a third (tier) level; this contract stops at Type to Plan. Surfacing the tier is a future enhancement, not this spec.</li>
+<li><strong>Share stays client-side.</strong> Type subtotals and the grand <code>total</code> are server-provided in the nested response, but Share is not: the client computes Share = row <code>enrolled</code> / <code>total.enrolled</code> for both type rows and plan rows.</li>
+<li><strong>No Time Window Module.</strong> No <code>window</code>, <code>grain</code>, or <code>asOf</code>; enrolment is a live count at request time.</li>
+<li><strong>Drill to individual employee or dependent names.</strong> The widget never surfaces individual people; matches legacy behaviour.</li>
+</ul>
+<h2>Still needs sign-off</h2>
+<ul>
+<li><strong>"Total cost" definition. DECIDED (2026-08-05, owner + code): <code>cost</code> = total premium</strong> (SUM of each enrolment's <code>Rate</code>). Confirmed in <code>IBEmployeeRepository</code>: each enrolment splits into an employer share (<code>Rate</code> minus <code>RateIndividual</code>) and an employee share (<code>RateIndividual</code>), so an employer-only or employee-only total is derivable from the same fields if product wants it later; <code>EmployerBilled</code> and <code>PreTax</code> remain flags on the row. Dependents carry their own premium and are counted.</li>
+<li><strong>Count basis versus cost basis.</strong> Confirm whether dependents contribute to <code>cost</code>. Because <code>Rate</code> sits on <code>IBEmployeePlan</code> and the coverage tier already prices family coverage, the working assumption is <code>cost</code> = <code>SUM(Rate)</code> over <code>IBEmployeePlan</code> only, while <code>enrolled</code> continues to include dependents (<code>IBEmployeePlan</code> plus <code>IBEmployeeDependent</code>). Needs a dev / SME confirmation.</li>
+<li><strong>Single-call nested shape confirmation.</strong> Confirm the one-call nested response (grand <code>total</code>, then <code>types[]</code> each with subtotals and <code>plans[]</code>, Active only) is acceptable as a deliberate owner-requested shape, given it departs from the project's usual flat-and-client-group minimal pattern. The type filter is now a client-side view over <code>types[]</code>, not a fetch; a build follow-up is needed to move the build's fetch-on-type-change to client-side (noted, not edited here).</li>
+<li><strong>Export.</strong> Whether an export is offered and, if so, whether it is generated client-side from the JSON the widget already holds (zero backend work) or server-side (new endpoint). Undecided.</li>
+<li><strong>Coverage-tier level as a future enhancement.</strong> Whether to surface the <code>IBTypeElection</code> tier as a third nesting level later. Out of scope for this contract; noted so the hierarchy is not forgotten.</li>
+</ul>
+<h2>Sign-off findings</h2>
+<p>W06 has a Confluence dossier in <code>Step 6 - Sign off document/Insurance Billing Plans/</code> (page id 7370113044, Part A/B/C, 14 sections), but no reconciliation file exists for it yet, so there are no Accepted / Rejected / Disputed / Unreviewed findings to honour in this spec. If a <code>Reconciliation - Insurance Billing Plans.md</code> is written later, its finding statuses should be reflected here.</p>
+
+</body>
+</html>

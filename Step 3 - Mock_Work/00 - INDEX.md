@@ -70,16 +70,16 @@ The intent: build a reusable pattern library (`Templates/`) — one template per
 
 ## Step 3 tracker status
 
-`Dashboard Tracker.xlsx`'s "Step 3 - Mock_Work" column, synced 2026-07-20 (project owner's own edit, treated as source of truth for this column). This folder didn't have a per-widget status table before — adding one here, since every widget already has a `Widget_Specs/WNN-Name.md` file regardless of this status, so "Not started" below means the tracker doesn't consider Mock_Work done for that widget, not that no file exists. **W14 flipped from "In progress" to "Complete" on 2026-07-21**, per direct instruction, once the project owner confirmed W14's mock-work pass was done and the "Ready to be reviewed by Jo" badge was added in `Dashboard Widget Mockups.html` — Step 4 remains Not Started pending that review. **W06 flipped from "Not started" to "In progress" on 2026-07-23**, per direct instruction, once real Create/Verify/Fix Mock Designs work actually started on it this session (3 design passes, Rules 8-11 applied, an on-screen cost-comparison toggle added to Option B). `Dashboard Tracker.xlsx` row 13, column I ("Step 3\nMock_Work") was found locked on the first attempt (file open in Excel) and updated once it was closed — both now agree, no drift:
+`Dashboard Tracker.xlsx`'s "Step 3 - Mock_Work" column, synced 2026-07-20 (project owner's own edit, treated as source of truth for this column). This folder didn't have a per-widget status table before — adding one here, since every widget already has a `Widget_Specs/WNN-Name.md` file regardless of this status, so "Not started" below means the tracker doesn't consider Mock_Work done for that widget, not that no file exists. **W14 flipped from "In progress" to "Complete" on 2026-07-21**, per direct instruction, once the project owner confirmed W14's mock-work pass was done and the "Ready to be reviewed by Jo" badge was added in `Dashboard Widget Mockups.html` — Step 4 remains Not Started pending that review. **W06 flipped from "Not started" to "In progress" on 2026-07-23**, per direct instruction, once real Create/Verify/Fix Mock Designs work actually started on it this session (3 design passes, Rules 8-11 applied, an on-screen cost-comparison toggle added to Option B). `Dashboard Tracker.xlsx` row 13, column I ("Step 3\nMock_Work") was found locked on the first attempt (file open in Excel) and updated once it was closed — both now agree, no drift. **W04, W05, and W06 flipped from "In progress" to "Complete" on 2026-08-04**, per direct instruction, once all three had built Finals and completed the pipeline through Step 5 (W01-W07 are now Complete through Step 5 across every index and the tracker):
 
 | # | Widget | Step 3 (tracker) |
 |---|---|---|
 | 01 | Budget Compared to Actual | ✅ Complete |
 | 02 | Pension Plans | ✅ Complete |
 | 03 | Payroll Distributions | ✅ Complete |
-| 04 | Remittance Pledges | 🔵 In progress |
-| 05 | Receivable Invoices Outstanding | 🔵 In progress |
-| 06 | Insurance Billing Plans | 🔵 In progress |
+| 04 | Remittance Pledges | ✅ Complete |
+| 05 | Receivable Invoices Outstanding | ✅ Complete |
+| 06 | Insurance Billing Plans | ✅ Complete |
 | 07 | Deposit Accounts | ✅ Complete |
 | 08 | My Status | ⚪ Not started |
 | 09 | Payroll Scheduled Time Off | 🔵 In progress |
