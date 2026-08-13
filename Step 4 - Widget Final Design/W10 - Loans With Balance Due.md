@@ -5,7 +5,9 @@
 **Full history / rejected ideas:** [Widget_Specs/W10-Loans-With-Balance-Due.md](../Step%203%20-%20Mock_Work/Widget_Specs/W10-Loans-With-Balance-Due.md)
 **Data source & formulas:** [Step 1 - Dashboard Research/10 - Loans With Balance Due.md](../Step 1 - Dashboard Research/10%20-%20Loans%20With%20Balance%20Due.md)
 **Confluence dossier:** none yet
-**Last verified against build:** not yet audited
+**Last verified against build:** 2026-08-11 (build-final-widget driver + final-check-rules.py; Final Check tab, opt 'F' / loanF)
+
+> **Final Design (current), 2026-08-11.** The shipped Final is a 1-to-1 copy of Jo Lopez's Widget Container Demo Loans With Balance Due widget, built into the Final Check tab as `opt==='F'` in `WRENDER[10]` (prefix `loanF`), per direct owner instruction. It renders at three sizes only, in Jo's model and order **Glance / Explore / Detail** (Rule 12, no Small): Glance = a total-balance-due card with a past-due pill and a compact amethyst aging bar; Explore = the loan-type-filtered header plus the loans table grouped into aging bands with subtotals; Detail = that table alongside an aging-and-risk side panel (clickable aging bands that filter the table, a portfolio-risk read, and a most-overdue collections list). KPI headline is **Total Balance Due**. Filter is Loan Type only. The loan-detail drill modal, the aging-band hover card, and the empty/loading states are all Jo's, ported verbatim. Full composition mapping, driver results, and backend caveats: Widget_Specs/W10-Loans-With-Balance-Due.md, "2026-08-11 FINAL build" entry. The older Small/Medium/Large/KPI size model and the Balance Bars vs Summary Table view split below are superseded by this build and kept in Design History at the end of this doc.
 
 > **Evidence key:** `[LIVE]` verified in beta1/test1 on a stated date · `[SME]` interview-sourced (name + date) · `[RESEARCH]` desktop/market research · `[BUILD]` true of the mockup build · `[DOC]` backed by a written source document (name it) · `[TO CONFIRM]` assumed, with the named owner who can confirm. Claims with no mark are template boilerplate only.
 
@@ -48,6 +50,17 @@ Terminology note: Step 1 labels the legacy behaviour "Last-In-First-Out" while t
 - **Rounding/currency/locale:** values are currency amounts. Rounding rules not specified in any source.
 - **"Data as of" freshness behaviour:** loan balance due is an as-of-today snapshot (see Filters). Whether a "data as of" stamp is shown: not specified in any source.
 
+**[2026-08-11] Loan-detail drill modal data (confirmed in code).** The built Final's loan-detail popup (Jo's, ported 1-to-1) is fully backed by real tables in the MBAccounting `LN` (Loans) module. There is no drill in the widget today, so this modal is a NEW query, but every field it needs already exists:
+
+| Modal field | Source | Notes | Evidence |
+|---|---|---|---|
+| Loan summary (account, name, type, balance, rate, schedule, dates) | `LNLoan` (`AccountNumber`, `Name`, `TypeID` → `LNType`, `TotalAmount`, `InvoicedPrincipal`/`InvoicedInterest`, `PaidPrincipal`/`PaidInterest`, `InterestRate`, `PaymentAmount`, `PaymentsPerYear`, `NumberPayments`, `FirstPaymentDate`, `InceptionDate`, `BalloonDate`) | Rich summary all present on one row | [CODE — LNLoan] |
+| Borrower | `LNLoan.PersonID` (int) → `CorePerson` | The borrower is a **person** record (like the remittance pledge name), so a person name | [CODE — LNLoan.PersonID → CorePerson] |
+| Payment history (the list in the modal) | `LNPayment`, one row per payment on the loan (`LoanID`) | `PaymentDate` (Date), `CheckNumber` (Reference); the amount is a **composed breakdown** = `Principal` + `Interest` + `LateFee` (+ `AdditionalPrincipal`/`AdditionalDraw`, − `Adjustment`), not a single column; count only `Posted = true AND VoidJournalID IS NULL` (same consistency filter as remittance) | [CODE — LNPayment] |
+| Balance / days past due | `LNInvoice` (+ `LNInvoicePost`) netted against `LNPayment` | Scheduled principal/interest per invoice vs payments; the aging bucketing needs the oldest-first allocation (see the LIFO decision above / the Modern-API gap) | [CODE — LNInvoice/LNInvoicePost] |
+
+So the drill popup's information is real, not invented: summary from `LNLoan`, payment history from `LNPayment`, balance/aging from `LNInvoice`. Two things for the dev: the per-payment amount is a composed figure (decide whether to show the total or the Principal/Interest/LateFee breakdown), and posted/non-void filtering applies.
+
 ## Widget States
 
 | State | Behaviour |
@@ -66,6 +79,7 @@ This widget is read-only in both views. No approve/edit style actions are docume
 | Interaction | Behaviour | Evidence |
 |---|---|---|
 | Account name click (table) | Account names in the table appear as links; it is not yet confirmed where these navigate to (see Drill-Through) | [DOC - Step 1 research] |
+| Loan-detail drill modal (built Final) **[2026-08-11]** | Clicking a loan opens a loan-detail modal: loan summary + per-loan payment history + Open loan / Record a contact actions. The modal's data is confirmed real (summary `LNLoan`, payment history `LNPayment`, balance/aging `LNInvoice`; see Data Contract). The "Open loan" out-destination is still a stub pending a confirmed target | [BUILD]; data [CODE — LN module]; out-destination [TO CONFIRM] |
 | Chart hover (legacy pie) | Hovering over a pie segment shows the balance for that age bucket | [DOC - Step 1 research] |
 | Bar hover (View 1, Balance Bars) | *Not yet specified; needs a pass.* The legacy pie hover above is the only documented hover behaviour | |
 | Row click beyond the account-name link | *Not yet specified; needs a pass.* | |
@@ -107,14 +121,14 @@ Horizontal bar per loan, showing outstanding balance — length makes relative b
 ### View 2 — Summary Table
 Loan Name · Type · Original · Balance Due · Status · Next Payment, totals row. Sort per Data Table Sort above.
 
-### Size behaviour
+### Size behaviour (current, Rule 12 — Glance / Explore / Detail, no Small)
 | Size | Behaviour |
 |------|-----------|
-| **Small (1×1)** | Active view, top 3 loans, no Switch View |
-| **Medium (2×2)** | Active view, top 5 loans + type labels; Switch View available |
-| **Large (4×4)** | Active view, all loans + status badges + totals row; Switch View available |
-| **KPI (1×0.5)** | Headline: **Total Balance Due ($)**, across all loans. No download, no switch. |
-| **Expanded** | Active view, full detail, all filters live in the modal |
+| **Glance** (Jo's KPI tier) | Total Balance Due headline with a past-due / All current pill and a compact amethyst aging bar. No filter, download, or switch. |
+| **Explore** (Jo's `wide`) | Loan-type filter chip; total + past-due pill + one context line; the loans table grouped into aging bands with per-band subtotals and a cross-footed total; sortable columns (Account / Borrower / Last payment / Days past due / Amount due). |
+| **Detail** (Jo's `xwide`) | The Explore table alongside an aging-and-risk side panel: clickable aging bands that filter the table, a Portfolio risk read (past due, 90+ days), and a Most overdue borrowers collections list. |
+
+The old Small / Medium / Large / KPI table is in Design History below.
 
 ---
 
@@ -135,7 +149,7 @@ Required (project baseline commitments, stated per widget):
 |---|---|---|---|---|
 | 1 | Status field: "flagged as unconfirmed: no explicit active/arrears field found in the source data; overdue-ness today is only derived from aging buckets. Needs backend confirmation before build." (see Filters and Data Contract [TO CONFIRM]) | Field | Backend team (not yet named) | Yes, per this doc's own flag: needs backend confirmation before build |
 | 2 | Interview finding (Ben Lane, 13.07.2026): HQs don't actually expect these loans to be repaid on a schedule at all ("we give them a loan, but we don't really expect them to pay it back... we just want to know what the balance of the loan is"), described as functioning more like a donation than a loan. This may mean the Status: All · Active · In Arrears filter is modelling a distinction that doesn't really matter to users, since nobody appears to be tracking these as overdue in practice. "Worth confirming directly before investing more design/dev effort in the arrears concept." (See Interview Q&A appendix, "not yet reflected in the design above") | Product decision | Not yet assigned | Possibly, product decision |
-| 3 | Drill-through: account names are already clickable in the table, but the destination isn't confirmed; treat as an existing feature needing its target confirmed, not a new feature to design | Field / navigation | Not yet assigned | Not stated |
+| 3 | Drill-through: the in-widget loan-detail modal's DATA is now confirmed available in code (`LNLoan` + `LNPayment` + `LNInvoice`, see Data Contract 2026-08-11) so the popup itself is buildable; what remains unconfirmed is the drill-OUT destination for the "Open loan" / clickable account name (a stub today), an existing feature needing its target confirmed, not a new feature to design | Field / navigation | Not yet assigned | Not stated |
 | 4 | Fiscal Year filter, dropped from this design: "Raise with backend/dev: is a fiscal-year-scoped filter on loan origination date worth adding later?" [DOC - Step 3 spec] | Product decision | Backend/dev (not yet named) | No (dropped from this design; future ask) |
 | 5 | Modern API aging gap: the Modern API does not replicate the legacy oldest-first (LIFO) payment application, so aging totals will not match legacy numbers; this doc has decided the legacy calculation must be replicated (see Data Contract), which makes this a targeted backend fix | Math / API | Backend team (not yet named) | Yes for anything aging-derived (including the arrears colour rule); Step 1 calls it the single most consequential data-accuracy gap in the whole comparison exercise |
 | 6 | Where the renamed aging buckets (Current (0–29) · 30–59 · 60–89 · 90+) actually surface in the two kept views is not stated in this doc; today they only drive the derived arrears/90+ colour rule | Spec gap | Design (this doc) | Not stated |
@@ -167,3 +181,22 @@ A: Remaining balance. — *Confirms Total Balance Due ($) as the right KPI headl
 A: Yes, confirmed as a mislabeling that should be corrected. — *This fix is already implemented in this widget's design ("Aging bucket labels fixed for clarity... the old labels '60' and 'Over 60' were misleading" — see Filters above) — this answer confirms that decision was correct, not a new requirement.*
 
 **Important, not yet reflected in the design above:** Ben's fuller answer on the aging question suggests HQs don't actually expect these loans to be repaid on a schedule at all — "we give them a loan, but we don't really expect them to pay it back... we just want to know what the balance of the loan is" — described in the interview as functioning more like a donation than a loan. This may mean the **Status: All · Active · In Arrears** filter (flagged above as "unconfirmed — no explicit active/arrears field found") is modelling a distinction that doesn't really matter to users, since nobody appears to be tracking these as overdue in practice. Worth confirming directly before investing more design/dev effort in the arrears concept.
+
+---
+
+# Design History (superseded — kept for the record)
+
+## Size model and view split before the 2026-08-11 Final build
+Superseded by the 1-to-1 Jo Final (Glance / Explore / Detail, Rule 12) described in the Final Design (current) banner at the top. Kept verbatim for the record.
+
+**Old size behaviour:**
+
+| Size | Behaviour |
+|------|-----------|
+| **Small (1×1)** | Active view, top 3 loans, no Switch View |
+| **Medium (2×2)** | Active view, top 5 loans + type labels; Switch View available |
+| **Large (4×4)** | Active view, all loans + status badges + totals row; Switch View available |
+| **KPI (1×0.5)** | Headline: **Total Balance Due ($)**, across all loans. No download, no switch. |
+| **Expanded** | Active view, full detail, all filters live in the modal |
+
+**Old view split (Switch View):** the earlier design offered View 1 Balance Bars (default) and View 2 Summary Table (Loan Name / Type / Original / Balance Due / Status / Next Payment). Jo's shipped Final has no Balance Bars vs Summary Table toggle: her loans table (grouped into aging bands, with the aging-and-risk panel appearing at Detail) is the single hero read across sizes, and the aging bands themselves double as the table filter. The Summary Table's Original, Status and Next Payment columns are not carried in Jo's build (Status has no confirmed backing field; Original and Next Payment have no documented source field — see Data Contract). The KPI headline Total Balance Due is unchanged and carried into the Glance tier.

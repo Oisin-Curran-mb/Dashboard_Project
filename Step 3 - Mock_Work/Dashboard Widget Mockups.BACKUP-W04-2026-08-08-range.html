@@ -488,20 +488,6 @@ body{font-family:'Red Hat Text',sans-serif;background:#fafafa;color:#202020;}
 #fc-widget-9 .fc-szhd-f{display:none;}
 #fc-widget-9.fc-fmode .fc-szhd-f{display:inline;}
 #fc-widget-9.fc-fmode .fc-szhd-abc{display:none;}
-/* W10 Final (Loans With Balance Due, built 2026-08-11): three-size model via the same
-   generic fc-fmode mechanism as W01-W09. While the section shows opt 'F' it carries
-   .fc-fmode, which hides the Small card + Small size button, applies the Glance/Explore/
-   Detail proportions, and swaps the size-header labels. Flipping to A/B/C drops .fc-fmode
-   and restores the shared grid sizing untouched. */
-#fc-widget-10.fc-fmode #fc-opt-10-s{display:none;}
-#fc-widget-10.fc-fmode .wc-sz-btn[data-fc-sz="s"]{display:none;}
-#fc-widget-10.fc-fmode .opt.sz-k{height:auto;aspect-ratio:288/176;}
-#fc-widget-10.fc-fmode .opt.sz-m{height:auto;aspect-ratio:592/496;}
-#fc-widget-10.fc-fmode .opt.sz-l{grid-column:1/-1;height:auto;aspect-ratio:1200/560;}
-#fc-widget-10.fc-fmode .opt.sz-k .opt-v{padding:2px 8px 6px;display:flex;flex-direction:column;justify-content:center;}
-#fc-widget-10 .fc-szhd-f{display:none;}
-#fc-widget-10.fc-fmode .fc-szhd-f{display:inline;}
-#fc-widget-10.fc-fmode .fc-szhd-abc{display:none;}
 /* ===== W09 Final scoped styling (refined 2026-08-07): adopts Jo's shell segmented
    toggle (.vtoggle/.vt) and filter treatment via the same Pathway tokens the other
    Finals use, plus a real month-grid Leave Calendar. Everything is scoped to
@@ -1475,11 +1461,6 @@ body{font-family:'Red Hat Text',sans-serif;background:#fafafa;color:#202020;}
 .remf-root .rem-datepick{display:flex;align-items:center;gap:8px;padding:4px 10px 6px;}
 .remf-root .rem-date-input{flex:1;min-width:0;font-family:inherit;font-size:12px;padding:5px 8px;border:1px solid var(--stroke-widget);border-radius:8px;background:var(--surface-widget);color:var(--txt-primary);}
 .remf-root .rem-date-input:focus{outline:none;border-color:var(--am-400);box-shadow:0 0 0 2px var(--am-100);}
-/* Custom From/To reveal (range filter, 2026-08-08): two labelled date fields, same
-   inline reveal pattern as W01/W03's Custom row. */
-.remf-root .rem-pop-dates{display:flex;gap:8px;padding:4px 10px 8px;}
-.remf-root .rem-pop-dates label{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;font-size:11px;color:var(--txt-subtle);}
-.remf-root .rem-pop-dates input{width:100%;box-sizing:border-box;font-family:inherit;font-size:12px;padding:5px 8px;border:1px solid var(--stroke-widget);border-radius:8px;background:var(--surface-widget);color:var(--txt-primary);}
 /* -- states -- */
 .remf-root .state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;color:var(--txt-secondary);padding:14px;}
 .remf-root .state>.material-symbols-rounded{font-size:28px;color:var(--am-500);}
@@ -1792,224 +1773,6 @@ body{font-family:'Red Hat Text',sans-serif;background:#fafafa;color:#202020;}
 .arf-pop-card .bgt-pop-var .bgt-pop-lbl{font-weight:600;color:#202020;}
 .arf-pop-card .bgt-pop-fav{font-weight:600;color:#1f602e;font-variant-numeric:tabular-nums;}
 .arf-pop-card .bgt-pop-fav.neutral{color:#484848;}
-
-/* ========================================================================
-   W10 FINAL (loanF), added 2026-08-11: Jo Lopez's Loans With Balance Due
-   design (her loan block: data + render + handlers + aging-band hover),
-   ported 1-to-1 from her Widget Container Demo as this widget's Final. Every
-   rule is scoped under .loanf-root, the wrapper class the F branch of
-   WRENDER[10] renders; the loan-type popover, the loan-detail drill modal and
-   the aging-band hover card (all on document.body) also carry .loanf-root so
-   they inherit the same tokens. Jo's original class names (loan-, dep-, wt-row,
-   mi, filter-chip, bank-pill, delta-pill, bgt-pop) are kept for 1:1
-   traceability. Nothing outside .loanf-root uses these selectors, so nothing
-   can leak. Design tokens inlined from her demo root (amethyst ramp, warm
-   neutrals). No star-slash sequences inside CSS comment text, ever. */
-.loanf-root{
-  --wn-0:#fefefd;--wn-100:#fbfaf8;--wn-200:#f7f5f3;--wn-250:#f3f0ec;--wn-300:#eeebe6;--wn-400:#d4cfc8;--wn-750:#87827b;--wn-950:#292724;
-  --brand-70:#6e8bd4;--brand-90:#5475c6;--brand-100:#4b6ec3;--brand-400:#345499;
-  --red-10:#faefef;--red-100:#b03a3a;--green-10:#edf6f0;--green-120:#1f602e;--pos-100:#1f7a34;
-  --txt-primary:#202020;--txt-secondary:#484848;--txt-subtle:#606060;--txt-pos:var(--green-120);
-  --surface-canvas:var(--wn-250);--surface-widget:var(--wn-0);--surface-header:var(--wn-200);--stroke-widget:var(--wn-300);
-  --am-700:#463f7f;--am-600:#4f4890;--am-500:#5951a0;--am-400:#7a72ba;--am-300:#9c95cf;--am-200:#c3bee6;--am-100:#e8e6f5;--am-50:#f4f2fa;
-  --dur:150ms;--dur2:300ms;--ease:cubic-bezier(.4,0,.2,1);--dec:cubic-bezier(0,0,.2,1);--r:12px;
-  font-family:'Red Hat Text',sans-serif;color:var(--txt-primary);
-}
-.loanf-root.loanf-w{height:100%;display:flex;flex-direction:column;min-height:0;overflow:hidden;}
-/* -- shared shell components (subset of Jo's demo, scoped) -- */
-.loanf-root .btn{display:inline-flex;align-items:center;gap:8px;font-family:inherit;font-size:14px;font-weight:500;border:1px solid transparent;border-radius:8px;padding:9px 13px;cursor:pointer;background:var(--wn-200);color:var(--txt-primary);}
-.loanf-root .btn .material-symbols-rounded{font-size:18px;}
-.loanf-root .btn.primary{background:var(--brand-100);color:#fff;}.loanf-root .btn.primary:hover{background:var(--brand-90);}
-.loanf-root .btn.outlined{border-color:var(--wn-750);}.loanf-root .btn.outlined:hover{background:var(--wn-200);}
-.loanf-root .btn.naked{color:var(--txt-secondary);background:transparent;}.loanf-root .btn.naked:hover{background:var(--wn-200);}
-.loanf-root .btn.sm{padding:7px 10px;font-size:13px;}.loanf-root .btn.sm .material-symbols-rounded{font-size:16px;}
-.loanf-root .iconbtn{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border:0;background:transparent;color:var(--txt-subtle);border-radius:8px;cursor:pointer;}
-.loanf-root .iconbtn:hover{background:var(--wn-200);color:var(--wn-950);}
-.loanf-root .iconbtn .material-symbols-rounded{font-size:20px;}
-.loanf-root .metric-value{font-family:'Red Hat Display',sans-serif;font-weight:700;font-size:26px;line-height:1.1;font-variant-numeric:tabular-nums;}
-.loanf-root .kpi-row{display:flex;align-items:stretch;gap:14px;padding:12px 16px;flex:1;min-height:0;}
-.loanf-root .kpi-num{display:flex;flex-direction:column;align-items:flex-start;gap:4px;flex:1 1 auto;min-width:0;justify-content:center;}
-.loanf-root .kpi-num .metric-value{font-size:22px;line-height:1.1;}
-.loanf-root .gl-sub{display:flex;align-items:center;gap:5px;flex-wrap:wrap;font-size:11px;color:var(--txt-subtle);margin:0;}
-.loanf-root .bgt-caption{color:var(--txt-subtle);font-weight:400;font-size:11px;}
-.loanf-root .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
-/* -- header (Explore/Detail): Jo's two-row dep-hd grid via display:contents -- */
-.loanf-root .dep-hd{display:grid;grid-template-columns:1fr auto;align-items:start;column-gap:12px;row-gap:14px;padding:14px 16px 16px;flex-shrink:0;}
-.loanf-root .dep-hd-top,.loanf-root .dep-hd-num{display:contents;}
-.loanf-root .dep-hd-toggle{display:flex;justify-content:flex-end;align-self:center;}
-.loanf-root .dep-hd-num>*:first-child{grid-column:1;justify-self:start;}
-.loanf-root .dep-hd-kpigrp{display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-width:0;}
-.loanf-root .dep-hd-num .metric-value{font-size:22px;line-height:1.1;}
-.loanf-root .filter-chip{display:inline-flex;align-items:center;gap:2px;font-family:inherit;font-size:12px;font-weight:500;color:var(--txt-primary);background:transparent;border:1px solid var(--stroke-widget);border-radius:8px;padding:4px 6px 4px 10px;cursor:pointer;max-width:260px;}
-.loanf-root .filter-chip:hover{background:var(--wn-200);color:var(--txt-primary);}
-.loanf-root .filter-chip .material-symbols-rounded{font-size:16px;}
-.loanf-root .fc-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.loanf-root .filter-chip[data-loanf]{background:var(--wn-200);border-color:var(--wn-300);color:var(--txt-primary);}
-.loanf-root .filter-chip[data-loanf]:hover{background:var(--wn-300);border-color:var(--wn-400);}
-.loanf-root .filter-chip[data-loanf]::before{font-family:'Material Symbols Rounded';content:'filter_list';font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 20;font-size:16px;line-height:1;color:var(--txt-subtle);flex:0 0 auto;margin-right:1px;}
-.loanf-root .bank-pill{display:inline-flex;align-items:center;gap:3px;font-size:12px;font-weight:600;color:var(--txt-secondary);background:var(--wn-200);border-radius:999px;padding:2px 9px 2px 7px;font-variant-numeric:tabular-nums;}
-.loanf-root .bank-pill .material-symbols-rounded{font-size:15px;color:var(--txt-subtle);}
-.loanf-root .delta-pill{display:inline-flex;align-items:center;gap:1px;font-size:12px;font-weight:600;color:var(--txt-pos);background:var(--green-10);border-radius:999px;padding:2px 8px 2px 6px;font-variant-numeric:tabular-nums;}
-.loanf-root .delta-pill .material-symbols-rounded{font-size:14px;font-variation-settings:'wght' 500;}
-/* -- states + skeleton -- */
-.loanf-root .state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;color:var(--txt-secondary);padding:12px;}
-.loanf-root .state>.material-symbols-rounded{font-size:26px;color:var(--am-500);}
-.loanf-root .state-title{font-size:13px;font-weight:600;}
-.loanf-root .state-sub{font-size:12px;color:var(--txt-subtle);max-width:360px;}
-.loanf-root .sk{border-radius:4px;background:linear-gradient(90deg,#f1efec 25%,#f8f6f3 37%,#f1efec 63%);background-size:400% 100%;animation:loanfsk 1.4s linear infinite;display:inline-block;}
-@keyframes loanfsk{from{background-position:100% 0;}to{background-position:0 0;}}
-.loanf-root .bgt-spin{display:inline-block;width:13px;height:13px;border-radius:50%;border:2px solid var(--am-200);border-top-color:var(--am-600);animation:loanfspin .7s linear infinite;flex:0 0 auto;vertical-align:middle;}
-@keyframes loanfspin{to{transform:rotate(360deg);}}
-.loanf-root .bgt-skel-cap{display:flex;align-items:center;gap:8px;justify-content:center;padding-top:12px;font-size:12px;color:var(--txt-subtle);}
-@media(prefers-reduced-motion:reduce){.loanf-root .sk,.loanf-root .bgt-spin{animation:none!important;}}
-/* -- report table shell (Jo's wt-row primitives) -- */
-.loanf-root .scroll{flex:0 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;}
-.loanf-root .wt-row{display:flex;align-items:center;gap:12px;padding:7px 14px;border-bottom:1px solid var(--stroke-widget);font-size:13px;}
-.loanf-root .wt-head{position:sticky;top:0;background:var(--surface-widget);font-size:11px;font-weight:600;text-transform:none;letter-spacing:0;color:var(--txt-subtle);}
-.loanf-root .wt-row:not(.wt-head) .lr-main{font-weight:500;color:var(--txt-primary);}
-.loanf-root .lr-main{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.loanf-root .wt-row .lr-main.lr-stack{display:flex;align-items:center;white-space:normal;overflow:visible;text-overflow:clip;min-width:0;}
-.loanf-root .lr-link{cursor:pointer;}
-.loanf-root .wt-c2{flex:0 0 96px;text-align:right;font-weight:600;font-variant-numeric:tabular-nums;}
-.loanf-root .wt-sort{border:0;background:transparent;font-family:inherit;font-size:inherit;font-weight:inherit;letter-spacing:inherit;text-transform:inherit;color:inherit;cursor:pointer;display:inline-flex;align-items:center;gap:1px;padding:0;}
-.loanf-root .wt-sort:hover{color:var(--txt-primary);}.loanf-root .wt-sort .material-symbols-rounded{font-size:14px;opacity:.45;}
-.loanf-root .wt-sort.on .material-symbols-rounded{opacity:.85;}
-.loanf-root .dep-total{display:flex;justify-content:space-between;gap:12px;padding:9px 14px;border-top:1.5px solid var(--stroke-widget);font-size:13px;font-weight:700;}
-.loanf-root .dep-full{flex:1;min-height:0;display:flex;gap:12px;padding:12px 14px;}
-.loanf-root .dep-col{flex:1;min-width:0;display:flex;flex-direction:column;border:1px solid var(--stroke-widget);border-radius:9px;overflow:hidden;}
-.loanf-root .dep-col-h{font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--txt-subtle);padding:8px 12px 4px;}
-/* -- popover option-list bits (loan type) -- */
-.loanf-root .mi{display:flex;align-items:center;gap:8px;width:100%;border:none;background:transparent;font-family:inherit;font-size:13px;text-align:left;padding:9px 10px;border-radius:7px;cursor:pointer;color:var(--txt-primary);}
-.loanf-root .mi:hover{background:var(--wn-200);}
-.loanf-root .mi .material-symbols-rounded{font-size:18px;color:var(--txt-subtle);}
-.loanf-root .mi.check .material-symbols-rounded{color:var(--am-600);}
-.loanf-root .mi-gap{flex:0 0 18px;}
-.loanf-root .cap{font-size:11px;font-weight:600;letter-spacing:0;text-transform:none;color:var(--txt-subtle);padding:8px 10px 3px;}
-/* -- loan-specific rules (Jo's loan block, scoped verbatim under .loanf-root) -- */
-.loanf-root .loan-ctlrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0;}
-.loanf-root .loan-ctlrow .loan-chip{min-width:0;flex:0 1 auto;}
-.loanf-root .loan-numwrap{display:flex;flex-direction:column;gap:3px;min-width:0;}
-.loanf-root .loan-ctx{font-size:11.5px;font-weight:400;color:var(--txt-subtle);line-height:1.4;max-width:72ch;}
-.loanf-root .loan-glance-read{display:flex;flex-direction:column;gap:7px;margin-top:9px;min-width:0;}
-.loanf-root .loan-stack{display:flex;height:9px;border-radius:5px;overflow:hidden;background:var(--wn-200);}
-.loanf-root .loan-seg{display:block;min-width:3px;height:100%;}
-.loanf-root .loan-glance-cap{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--txt-secondary);min-width:0;}
-.loanf-root .loan-glance-cap .material-symbols-rounded{font-size:15px;flex:0 0 auto;}
-.loanf-root .loan-cap-ok,.loanf-root .loan-cap-ok .material-symbols-rounded{color:var(--txt-pos);}
-.loanf-root .loan-sevdot{width:9px;height:9px;border-radius:2px;flex:0 0 auto;display:inline-block;align-self:center;}
-.loanf-root .loan-allset{color:var(--txt-pos);display:inline-flex;align-items:center;gap:7px;font-size:20px;}
-.loanf-root .loan-allset .material-symbols-rounded{font-size:22px;color:var(--txt-pos);}
-.loanf-root .loan-body{padding:2px 0 0;min-width:0;}
-.loanf-root .loan-c-acct{flex:0 0 84px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--txt-secondary);font-variant-numeric:tabular-nums;font-size:12.5px;}
-.loanf-root .wt-head .loan-c-acct{color:var(--txt-subtle);}
-.loanf-root .loan-c-name{flex:1.4 1 0;min-width:0;}
-.loanf-root .loan-nm-wrap{display:flex;flex-direction:column;min-width:0;line-height:1.25;}
-.loanf-root .loan-nm{color:var(--txt-primary);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;}
-.loanf-root .loan-row:hover .loan-nm{text-decoration:underline;text-underline-offset:2px;}
-.loanf-root .loan-type-sub{font-size:10.5px;color:var(--txt-subtle);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.loanf-root .loan-c-last{flex:0 0 132px;min-width:0;display:inline-flex;align-items:center;gap:5px;color:var(--txt-secondary);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.loanf-root .wt-head .loan-c-last{color:var(--txt-subtle);}
-.loanf-root .loan-dormant{display:inline-flex;align-items:center;color:var(--txt-subtle);}
-.loanf-root .loan-dormant .material-symbols-rounded{font-size:15px;}
-.loanf-root .loan-c-days{flex:0 0 108px;min-width:0;white-space:nowrap;font-variant-numeric:tabular-nums;}
-.loanf-root .wt-head .loan-c-days{color:var(--txt-subtle);}
-.loanf-root .loan-days-v{color:var(--txt-secondary);}
-.loanf-root .loan-days-v.over{color:var(--txt-primary);font-weight:600;}
-.loanf-root .loan-notdue{color:var(--txt-subtle);}
-.loanf-root .loan-c-amt{flex:0 0 116px;text-align:right;font-variant-numeric:tabular-nums;font-weight:700;color:var(--txt-primary);}
-.loanf-root .wt-head .loan-c-amt{font-weight:600;color:var(--txt-subtle);}
-.loanf-root .loan-row{cursor:pointer;}
-.loanf-root .loan-row:hover{background:var(--wn-100);}
-.loanf-root .loan-row:focus-visible{outline:2px solid var(--am-400);outline-offset:-2px;}
-.loanf-root .wt-row.loan-grp{gap:12px;background:var(--wn-100);padding-top:8px;padding-bottom:8px;}
-.loanf-root .loan-grp-nm{flex:1 1 0;min-width:0;display:inline-flex;align-items:center;gap:8px;font-size:11.5px;font-weight:700;color:var(--txt-secondary);}
-.loanf-root .loan-grp-nm.over{color:var(--txt-primary);}
-.loanf-root .loan-grp-dot{width:9px;height:9px;border-radius:2px;flex:0 0 auto;}
-.loanf-root .loan-grp-ct{font-weight:500;color:var(--txt-subtle);}
-.loanf-root .loan-grp-amt{flex:0 0 116px;text-align:right;font-variant-numeric:tabular-nums;font-weight:700;color:var(--txt-primary);}
-.loanf-root .loan-zeroline{display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--txt-subtle);padding:14px;line-height:1.4;}
-.loanf-root .loan-zeroline .material-symbols-rounded{font-size:16px;color:var(--txt-subtle);flex:0 0 auto;}
-.loanf-root .loan-col-side{min-width:0;}
-.loanf-root .loan-panel{display:flex;flex-direction:column;gap:2px;min-width:0;}
-.loanf-root .loan-panel-sub{font-size:11.5px;color:var(--txt-subtle);line-height:1.4;margin-bottom:6px;}
-.loanf-root .loan-panel-sep{height:1px;background:var(--stroke-widget);margin:10px 0 8px;}
-.loanf-root .loan-panel-h{font-size:11px;font-weight:600;color:var(--txt-secondary);margin-bottom:4px;}
-.loanf-root .loan-band-row{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:transparent;border:1px solid transparent;border-radius:8px;padding:7px 9px;font-family:inherit;cursor:pointer;}
-.loanf-root .loan-band-row:hover:not(.loan-band-static){background:var(--wn-100);}
-.loanf-root .loan-band-row.sel{background:var(--wn-100);border-color:var(--wn-300);}
-.loanf-root .loan-band-row:focus-visible{outline:2px solid var(--am-400);outline-offset:-1px;}
-.loanf-root .loan-band-static{cursor:default;opacity:.72;}
-.loanf-root .loan-band-main{flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:4px;}
-.loanf-root .loan-band-lbl{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:var(--txt-primary);}
-.loanf-root .loan-band-lbl .material-symbols-rounded{font-size:16px;color:var(--txt-subtle);}
-.loanf-root .loan-band-dot{width:9px;height:9px;border-radius:2px;flex:0 0 auto;}
-.loanf-root .loan-mini-track{display:block;height:6px;border-radius:4px;background:var(--wn-200);overflow:hidden;}
-.loanf-root .loan-mini-fill{display:block;height:100%;border-radius:4px;min-width:3px;}
-.loanf-root .loan-band-meta{font-size:10.5px;color:var(--txt-subtle);}
-.loanf-root .loan-band-val{flex:0 0 auto;text-align:right;font-size:12.5px;font-weight:600;color:var(--txt-primary);font-variant-numeric:tabular-nums;align-self:flex-start;}
-.loanf-root .loan-band-val.loan-band-zero{color:var(--txt-subtle);font-weight:500;}
-.loanf-root .loan-risk-row{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:4px 9px;}
-.loanf-root .loan-risk-lbl{font-size:12px;color:var(--txt-secondary);}
-.loanf-root .loan-risk-v{font-size:13px;font-weight:700;color:var(--txt-primary);font-variant-numeric:tabular-nums;}
-.loanf-root .loan-risk-pct{font-size:11px;font-weight:500;color:var(--txt-subtle);}
-.loanf-root .loan-worst-row{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:transparent;border:none;border-radius:8px;padding:6px 9px;font-family:inherit;cursor:pointer;}
-.loanf-root .loan-worst-row:hover{background:var(--wn-100);}
-.loanf-root .loan-worst-row:focus-visible{outline:2px solid var(--am-400);outline-offset:-1px;}
-.loanf-root .loan-worst-main{flex:1 1 0;min-width:0;display:flex;flex-direction:column;line-height:1.3;}
-.loanf-root .loan-worst-nm{font-size:12.5px;font-weight:600;color:var(--txt-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.loanf-root .loan-worst-meta{font-size:10.5px;color:var(--txt-subtle);}
-.loanf-root .loan-worst-val{flex:0 0 auto;text-align:right;font-size:12.5px;font-weight:600;color:var(--txt-primary);font-variant-numeric:tabular-nums;}
-.loanf-root .loan-skel{padding:16px;display:flex;flex-direction:column;gap:12px;}
-.loanf-root .loan-sk-row{display:flex;align-items:center;gap:12px;}
-.loanf-root .loan-empty>.material-symbols-rounded{color:var(--txt-pos);}
-/* -- drill focus overlay (Jo's loan detail modal; backdrop is the .loanf-mb mount wrapper) -- */
-.loanf-root.loanf-mb{position:fixed;inset:0;z-index:3500;background:rgba(41,39,36,.40);display:flex;align-items:center;justify-content:center;padding:24px;}
-.loanf-mb .modal{background:var(--surface-widget);border-radius:14px;box-shadow:0 24px 60px rgba(41,39,36,.32);max-width:640px;width:100%;max-height:86vh;display:flex;flex-direction:column;overflow:hidden;}
-.loanf-mb .modal-h{display:flex;align-items:center;gap:8px;padding:16px 12px 6px 18px;position:relative;}
-.loanf-mb .modal-title{flex:0 0 auto;font-family:'Red Hat Display',sans-serif;font-weight:700;font-size:16px;line-height:22px;color:var(--txt-primary);}
-.loanf-mb .modal-b{padding:0 18px 16px;font-size:13px;line-height:1.55;color:var(--txt-secondary);flex:1;min-height:0;overflow-y:auto;}
-.loanf-mb .modal-f{display:flex;justify-content:flex-end;gap:8px;padding:0 16px 16px;align-items:center;}
-.loanf-mb .loan-detail-modal{max-width:640px;}
-.loanf-mb .loan-detail-h{align-items:center;}
-.loanf-mb .loan-dsub{font-size:12px;font-weight:600;color:var(--txt-secondary);background:var(--wn-200);border-radius:999px;padding:2px 10px;margin-left:10px;white-space:nowrap;}
-.loanf-mb .loan-dh-spacer{flex:1;}
-.loanf-mb .loan-detail-b{display:block;padding:16px 18px 6px;}
-.loanf-mb .loan-dl-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 22px;border:1px solid var(--stroke-widget);border-radius:10px;padding:4px 14px;}
-.loanf-mb .loan-dl-row{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--stroke-widget);}
-.loanf-mb .loan-dl-grid .loan-dl-row:nth-last-child(-n+1){border-bottom:none;}
-.loanf-mb .loan-dl-lbl{font-size:11.5px;color:var(--txt-subtle);}
-.loanf-mb .loan-dl-val{font-size:12.5px;font-weight:600;color:var(--txt-primary);text-align:right;font-variant-numeric:tabular-nums;}
-.loanf-mb .loan-dl-val.loan-dl-amt{font-size:14px;font-weight:700;}
-.loanf-mb .loan-dl-val.over{color:var(--txt-primary);}
-.loanf-mb .loan-dl-band{display:inline-flex;align-items:center;gap:6px;}
-.loanf-mb .loan-dl-since{font-weight:500;color:var(--txt-subtle);}
-.loanf-mb .loan-dl-dormant{display:flex;align-items:center;gap:8px;margin-top:12px;padding:9px 12px;background:var(--wn-100);border:1px solid var(--wn-300);border-radius:8px;font-size:12px;color:var(--txt-secondary);}
-.loanf-mb .loan-dl-dormant .material-symbols-rounded{font-size:18px;color:var(--txt-subtle);flex:0 0 auto;}
-.loanf-mb .loan-dl-payh{margin:16px 0 8px;font-size:11px;font-weight:600;color:var(--txt-secondary);}
-.loanf-mb .loan-pays{border:1px solid var(--stroke-widget);border-radius:8px;overflow:hidden;background:var(--surface-widget);}
-.loanf-mb .loan-prow{display:flex;align-items:center;gap:10px;padding:7px 12px;border-bottom:1px solid var(--stroke-widget);font-variant-numeric:tabular-nums;font-size:12.5px;}
-.loanf-mb .loan-prow:last-child{border-bottom:none;}
-.loanf-mb .loan-phead{font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--txt-subtle);background:var(--wn-100);}
-.loanf-mb .loan-prow>span:first-child{flex:0 0 120px;}
-.loanf-mb .loan-prow>span:nth-child(2){flex:1 1 0;min-width:0;color:var(--txt-primary);}
-.loanf-mb .loan-pa{flex:0 0 110px;text-align:right;font-weight:600;color:var(--txt-primary);}
-.loanf-mb .loan-tab-empty{display:flex;align-items:center;gap:8px;color:var(--txt-subtle);padding:12px 2px;font-size:12.5px;}
-.loanf-mb .loan-tab-empty .material-symbols-rounded{font-size:18px;}
-.loanf-mb .loan-actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;}
-@media(max-width:560px){.loanf-mb .loan-dl-grid{grid-template-columns:1fr;}}
-/* -- loan-type popover (body-appended, loanf-scoped) -- */
-.loanf-root.loanf-pop{position:fixed;z-index:3000;background:var(--surface-widget);border:1px solid var(--stroke-widget);border-radius:10px;box-shadow:0 14px 40px rgba(41,39,36,.20);padding:6px;min-width:220px;max-width:280px;}
-/* -- aging-band hover card (standalone on body) -- */
-.loanf-pop-card{position:fixed;z-index:4000;background:#fefefd;border:1px solid #eeebe6;border-radius:10px;box-shadow:0 12px 32px rgba(41,39,36,.22),0 2px 8px rgba(41,39,36,.12);padding:10px 12px;min-width:190px;pointer-events:none;font-family:'Red Hat Text',sans-serif;font-size:12px;color:#202020;}
-.loanf-pop-card .bgt-pop-h{font-weight:600;font-size:12px;color:#202020;margin-bottom:7px;}
-.loanf-pop-card .bgt-pop-r{display:flex;align-items:center;gap:8px;line-height:1.9;color:#484848;}
-.loanf-pop-card .bgt-pop-lbl{flex:1;min-width:0;}
-.loanf-pop-card .bgt-pop-v{font-weight:600;font-variant-numeric:tabular-nums;color:#202020;}
-.loanf-pop-card .bgt-pop-div{height:1px;background:#eeebe6;margin:7px 0;}
-.loanf-pop-card .bgt-pop-var{display:flex;align-items:baseline;justify-content:space-between;gap:10px;}
-.loanf-pop-card .bgt-pop-var .bgt-pop-lbl{font-weight:600;color:#202020;}
-.loanf-pop-card .bgt-pop-fav{font-weight:600;color:#1f602e;font-variant-numeric:tabular-nums;}
-.loanf-pop-card .bgt-pop-fav.neutral{color:#484848;}
 
 /* ========================================================================
    W06 FINAL (insF), added 2026-07-30: Jo Lopez's Insurance Billing Plans
@@ -3215,7 +2978,7 @@ body{font-family:'Red Hat Text',sans-serif;background:#fafafa;color:#202020;}
   </div>
 
   <div class="sec-hd" style="margin-top:28px">Purpose</div>
-  <div class="fc-purpose">Answers one question at a glance: are we keeping pace with the year on every remittance pledge? The headline is the total paid so far, badged On track or Behind pace against the share of the calendar year elapsed, with a "% of pledged" goal pill, so the pacing read is never left for the reader to work out by eye. Each activity reads two ways over the same figures: a full report table (Activity, Annual, YTD Expected, YTD Paid, Outstanding, % Paid, with a Total row) and a pacing-bars view (one bar per activity with an "expected by now" marker), behind a Table / Pacing Bars toggle at Explore; at Detail both are shown side by side and the toggle disappears. "Expected by now" is the annual pledge times the share of the calendar year elapsed (the verified production basis for apportionments), and pacing is measured cumulatively to the end of the chosen receipts window (only receipts on or before that end date count), so changing the window genuinely re-computes the figures. Every row drills to its payment history, with a plain year-end catch-up line on any activity that is behind. Ported from Jo Lopez's Widget Container Demo remittance design as this widget's Final, recomposed with the locked Version A report table as the default view and a 4-step pacing colour scale.</div>
+  <div class="fc-purpose">Answers one question at a glance: are we keeping pace with the year on every remittance pledge? The headline is the total paid so far, badged On track or Behind pace against the share of the calendar year elapsed, with a "% of pledged" goal pill, so the pacing read is never left for the reader to work out by eye. Each activity reads two ways over the same figures: a full report table (Activity, Annual, YTD Expected, YTD Paid, Outstanding, % Paid, with a Total row) and a pacing-bars view (one bar per activity with an "expected by now" marker), behind a Table / Pacing Bars toggle at Explore; at Detail both are shown side by side and the toggle disappears. "Expected by now" is the annual pledge times the share of the calendar year elapsed (the verified production basis for apportionments), and only receipts on or before the Receipts through date count, so changing that date genuinely re-computes the figures. Every row drills to its payment history, with a plain year-end catch-up line on any activity that is behind. Ported from Jo Lopez's Widget Container Demo remittance design as this widget's Final, recomposed with the locked Version A report table as the default view and a 4-step pacing colour scale.</div>
 
   <div class="sec-hd" style="margin-top:20px">Customer Research — What We're Working Off</div>
   <div class="fc-source">
@@ -3237,7 +3000,6 @@ body{font-family:'Red Hat Text',sans-serif;background:#fafafa;color:#202020;}
     <p><strong>Pledge-drill refinement (2026-08-08, v2.1, per direct instruction).</strong> Four owner changes, all additive to the working Final and scoped to the remF branch only. (1) <strong>YTD Paid column.</strong> The activity table's paid-to-date column is relabelled "YTD Paid" and kept in its legacy position (Pledge, then Expected, then YTD Paid, then Outstanding, then % Paid); only YTD Paid was added, not a separate YTD Expected, and the existing paid-to-date figure was reused rather than duplicated. (2) <strong>The activity-click popup is removed from the table but kept rollback-able.</strong> Clicking an activity no longer opens the payment-history modal; the modal code (remFDetailModalHTML / remFRenderModal) is untouched and gated behind a new constant REMF_USE_POPUP, which defaults to false. Setting REMF_USE_POPUP to true restores the old popup on activity click exactly as before. (3) <strong>Activity click expands an inline pledge table.</strong> With the popup off, clicking an activity row (in either the Table or Pacing bars view) toggles open an inline dropdown table of THAT activity's pledges, collapsed by default and expand/collapse per activity. Columns: Church/donor name, Begin date, End date, Goal (pledged), Paid, Outstanding, and a paired-text pacing status (never colour alone). Each pledge is paced on its OWN begin-to-end term: expectedByNow = goal times clamp(receipts-through date minus begin, 0, termDays) divided by termDays, and shortfall = expectedByNow minus paid. The default sort is shortfall DESCENDING (most behind pace at the top), so later pages are progressively healthier. Pagination is real, 20 per page (REMF_PAGE_SIZE), with a numbered pager; each activity seeds about 60 to 72 pledges (three or more pages) so paging is demonstrable. (4) <strong>Activity Paid and Outstanding stay aggregates.</strong> Each activity's pledge set is generated deterministically (a seeded PRNG, memoised on the activity) so that the pledge goals sum exactly to the activity's Pledge total and the pledge paids sum exactly to the activity's YTD Paid at the mock anchor, so activity Paid equals the sum of its pledges' Paid and activity Outstanding equals the sum of its pledges' Outstanding. Church/donor names come from a shared pool and may repeat across activities, but each activity's pledge set is its own unique data. The Table / Pacing bars toggle, the receipts-through chip, the Glance/Explore/Detail sizes, the states and the values-as-text accessibility all keep working. FC_VERSION[4] = 2.1. No em dashes in any new user-facing string.</p>
     <p><strong>Name column and Pacing Bars drill removal (2026-08-08, v2.2, per direct instruction).</strong> Two owner changes, both additive to the working Final and scoped to the remF branch only. (1) <strong>The pledge table's name column is now "Name".</strong> The inline pledge table's first column heading changed from "Church / donor" to "Name", matching the legacy Remittance Pledges screen, where this column is labelled "Name" and the data is CorePerson.DisplayNameLastFirst. The names are PERSON names in "Last, First" form (each remittance church is a CorePerson record), so the seeded pool (REMF_CHURCHES) now holds realistic person-style names such as "Whitfield, Dana" and "Bell, Marcus". Names may repeat across activities while each activity's pledge SET stays its own unique seeded data; the other columns (Begin, End, Goal, Paid, Outstanding, status) are unchanged. (2) <strong>The inline pledge drill is now Table-view only.</strong> The Pacing Bars view is a quick at-a-glance overview: its activity rows are no longer clickable to expand, carry no expand caret, and never open the inline pledge table. If a row is expanded on the Table view and the user switches to Pacing Bars, no pledge panel renders there. The pledge drill (caret, expand, and 20-per-page pagination) stays on the Table view only. The bars, status chips and receipts-through chip on the Pacing Bars view are unchanged. FC_VERSION[4] = 2.2. No em dashes in any new user-facing string.</p>
     <p><strong>Pacing Bars popup: top 5 most behind (2026-08-08, v2.3, per direct instruction).</strong> One owner change, additive to the working Final and scoped to the remF branch only. The Pacing Bars view activity rows are clickable again: clicking a row (or pressing Enter/Space, aria-haspopup dialog) opens a popup built on the shell's existing modal pattern (remFBehindModalHTML, mounted by remFRenderModal). The popup's TOP is the activity summary, exactly as the old popup had it: Total pledge, YTD Paid, Expected by now, Outstanding, % Paid, and the pacing status chip, plus the pledge-term line. The popup's LOWER SECTION is no longer the receipts / last payments to the activity. It is now the activity's TOP 5 pledges most behind pace: that activity's pledges sorted by shortfall (shortfall = expectedByNow minus paid, using each pledge's own start-to-end term) descending, filtered to those actually behind (shortfall greater than 0), capped at 5, with no pager. Each row shows Name (CorePerson Last,First), Begin date, End date, Goal, Paid, Outstanding and a paired-text pacing status, reusing the same pledge-row markup as the Table drill. The section carries a "Most behind pledges" heading and a note: if 5 or more are behind it reads "Showing the 5 furthest behind of N pledges behind pace"; if fewer than 5 are behind it reads "Showing all N pledge(s) behind pace" (and shows only those); if none are behind it shows a clean "No pledges are behind pace" message. The receipts / payment-history content is REMOVED from this popup but the old code is preserved and rollback-able: remFDetailModalHTML is untouched and is rendered only when the modal is opened with mode 'history', which happens only on the Table-view activity click while REMF_USE_POPUP is true (still default false). The Table view inline paginated pledge drill, the Table / Pacing bars toggle, the receipts-through chip, YTD Paid column, the Glance/Explore/Detail sizes, the states and the values-as-text accessibility all keep working unchanged. FC_VERSION[4] = 2.3. No em dashes in any new user-facing string.</p>
-    <p><strong>Receipts window: single cutoff to date range (2026-08-08, v2.4, per direct instruction).</strong> One owner change, additive to the working Final and scoped to the remF branch only. The single "Receipts through [date]" filter is replaced by a DATE RANGE, wired per the owner's behaviour (a): the range END is the pacing cutoff (all pacing stays cumulative to it) and the START frames the window (and is reserved for scoping a receipts list, of which there is none in this build, so START currently only drives the chip). (1) The filter popover now offers exactly THREE options and no Refresh button: <strong>This year</strong> (the default: start = 1 January of the end's calendar year, end = today, i.e. the calendar year to date, never called fiscal), <strong>Last 30 days</strong> (start = end minus 30 days, end = today), and <strong>Custom</strong>, which reveals inline From and To date fields (same reveal pattern as W01/W03's Custom row) and applies on the fields changing. The old Today / End of last month presets and the single "choose a date" input plus Refresh button are gone. (2) Selecting a preset applies immediately (both This year and Last 30 days end today); Custom applies when a From/To field changes, read from the DOM at change time, with the popover kept open and the caret restored via the existing REMF_FOCUS_ID bookkeeping so typing never drops focus. (3) The filter chip now reads "Receipts from [start] to [end]" with both dates formatted concisely (a shared year is shown once, e.g. "Receipts from Jan 1 to Jul 31, 2026"), replacing the old "Receipts through [date]" text. (4) Wiring: REMF_STATE gains range / rStart / rEnd; remFRangeBounds derives {start,end} for the active option and remFThru now returns that END, so every pacing formula (Expected paced to end, Paid = receipts with check date on or before end, Outstanding, % Paid, the per-pledge shortfall used by the Table drill and the Pacing Bars top-5-behind popup) is UNCHANGED, just driven by end. remFRangeStart / remFRangePhrase are new. Because This year and Last 30 days both end today, their headline pacing numbers are identical by design (owner's decision), differing only in the displayed window. The Table view inline paginated pledge drill, the Pacing Bars top-5 popup, the YTD Paid column, the Table / Pacing bars toggle, the Glance/Explore/Detail sizes, the states, the person Last,First names and the REMF_USE_POPUP rollback flag all keep working unchanged. FC_VERSION[4] = 2.4. No em dashes in any new user-facing string.</p>
     <p><strong>Detail layout change (2026-07-28).</strong> Per owner instruction, Detail (the largest, xwide size) changed from a synced two-panel layout (report table on the left, pacing bars on the right, with the view toggle hidden) to a single full-width panel with the Table / Pacing bars view toggle visible in the header, exactly like Explore but at the larger size. Detail now shows one view at a time, the Table by default and the Pacing bars view when toggled, matching Jo Lopez's own single-column xwide remittance design rather than the earlier composed two-panel deviation. Both Explore and Detail now share the same single-view render (header plus one view under the toggle) and the full report table columns (Activity, Pledge, Expected, Paid, Outstanding, % Paid, plus the Total row); the only difference between the two sizes is the fc-fmode aspect ratio. The two-panel remFFull code path was removed. Everything else is unchanged: the receipts-through chip, the day-based colour bars (flat fill plus navy expected tick), the drill modal, the header, the states, the accessibility layer, and the Glance card. FC_VERSION[4] stays 2.0. No em dashes anywhere in the build.</p>
   </div>
   </div><!-- /fc-widget-4 -->
@@ -3908,23 +3670,13 @@ body{font-family:'Red Hat Text',sans-serif;background:#fafafa;color:#202020;}
 
   <div class="fc-widget" id="fc-widget-10">
   <span class="fc-version-badge" id="fc-version-10"></span>
-  <div class="w-hdr" style="margin-bottom:20px">
+  <div class="w-hdr">
     <div class="w-bc">Final Check</div>
-    <h1 class="w-title">W10 — Loans With Balance Due <span class="badge b-g" style="margin-left:8px">Final</span> <span class="badge b-g" style="margin-left:4px">Jo design</span></h1>
-    <p class="w-desc">Visual proof that this widget's final design matches what's actually rendered: the real widget card, chrome and all, shown at Glance, Explore and Detail using the same live renderer as the Dashboard tab, not a static mock. <strong>Built 2026-08-11:</strong> the Final shown by default is Jo Lopez's Widget Container Demo Loans With Balance Due build (her total-owed header with a past-due badge, a loan type filter chip, an ordered amethyst aging read, a portfolio-risk and most-overdue cut, and a loan-detail drill), copied 1-to-1. The earlier A/B/C options stay reachable from the design-option switch below.</p>
+    <h1 class="w-title">W10 — Loans With Balance Due <span class="badge b-a" style="margin-left:8px">Final design — locked</span></h1>
+    <p class="w-desc">Visual proof that this widget's locked design matches what's actually rendered.</p>
   </div>
 
-  <!-- Design-option switch (2026-08-11): Final is the default render; A/B/C stay reachable
-       for comparison. Wired to fcSetOpt, which just flips FC_STATE[10].opt and re-renders. -->
-  <div class="fc-optsw" id="fc-optsw-10" role="group" aria-label="Design option switch">
-    <span class="fc-optsw-lbl">Design option:</span>
-    <button class="fc-optsw-btn is-current" data-fc-opt="F" onclick="fcSetOpt(10,'F',event)">Final</button>
-    <button class="fc-optsw-btn" data-fc-opt="A" onclick="fcSetOpt(10,'A',event)">A</button>
-    <button class="fc-optsw-btn" data-fc-opt="B" onclick="fcSetOpt(10,'B',event)">B</button>
-    <button class="fc-optsw-btn" data-fc-opt="C" onclick="fcSetOpt(10,'C',event)">C</button>
-  </div>
-
-  <div class="sec-hd"><span class="fc-szhd-abc">KPI Card — shown as a header bar</span><span class="fc-szhd-f">Glance Card, shown as a header bar (Jo's KPI size)</span></div>
+  <div class="sec-hd">KPI Card — shown as a header bar</div>
   <div class="opt sz-k" id="fc-opt-10-k">
     <div class="opt-chrome">
       <div class="opt-chrome-left">
@@ -3938,9 +3690,9 @@ body{font-family:'Red Hat Text',sans-serif;background:#fafafa;color:#202020;}
             <div class="wc-dd-lbl">Widget size</div>
             <div class="wc-dd-size">
               <button class="wc-sz-btn" data-fc-sz="s" onclick="fcSetSize(10,'k','s',event)"><span class="material-symbols-rounded">crop_square</span><span class="wc-sz-label">Small</span></button>
-              <button class="wc-sz-btn" data-fc-sz="m" onclick="fcSetSize(10,'k','m',event)"><span class="material-symbols-rounded">crop_landscape</span><span class="wc-sz-label"><span class="fc-szhd-abc">Medium</span><span class="fc-szhd-f">Explore</span></span></button>
-              <button class="wc-sz-btn" data-fc-sz="l" onclick="fcSetSize(10,'k','l',event)"><span class="material-symbols-rounded">crop_free</span><span class="wc-sz-label"><span class="fc-szhd-abc">Large</span><span class="fc-szhd-f">Detail</span></span></button>
-              <button class="wc-sz-btn" data-fc-sz="k" onclick="fcSetSize(10,'k','k',event)"><span class="material-symbols-rounded">crop_7_5</span><span class="wc-sz-label"><span class="fc-szhd-abc">KPI</span><span class="fc-szhd-f">Glance</span></span></button>
+              <button class="wc-sz-btn" data-fc-sz="m" onclick="fcSetSize(10,'k','m',event)"><span class="material-symbols-rounded">crop_landscape</span><span class="wc-sz-label">Medium</span></button>
+              <button class="wc-sz-btn" data-fc-sz="l" onclick="fcSetSize(10,'k','l',event)"><span class="material-symbols-rounded">crop_free</span><span class="wc-sz-label">Large</span></button>
+              <button class="wc-sz-btn" data-fc-sz="k" onclick="fcSetSize(10,'k','k',event)"><span class="material-symbols-rounded">crop_7_5</span><span class="wc-sz-label">KPI</span></button>
             </div>
           </div>
         </div>
@@ -3948,9 +3700,9 @@ body{font-family:'Red Hat Text',sans-serif;background:#fafafa;color:#202020;}
     </div>
     <div class="opt-v" id="fc-body-10-k"></div>
   </div>
-  <p style="font-size:11px;color:#888;margin:-8px 0 20px">No filters at Glance size, matching Jo's KPI tier: total balance due, the past-due read, and a compact aging bar only.</p>
+  <p style="font-size:11px;color:#888;margin:-8px 0 20px">No filters at KPI size — doc: "No download, no switch."</p>
 
-  <div class="sec-hd" style="margin-top:4px"><span class="fc-szhd-abc">Small &middot; Medium &middot; Large — side by side</span><span class="fc-szhd-f">Explore &middot; Detail, side by side (Glance card above; Jo's three-size model, no Small)</span></div>
+  <div class="sec-hd" style="margin-top:4px">Small &middot; Medium &middot; Large — side by side</div>
   <div class="opts">
     <div class="opt sz-s" id="fc-opt-10-s">
       <div class="opt-chrome">
@@ -3969,9 +3721,9 @@ body{font-family:'Red Hat Text',sans-serif;background:#fafafa;color:#202020;}
               <div class="wc-dd-lbl">Widget size</div>
               <div class="wc-dd-size">
                 <button class="wc-sz-btn" data-fc-sz="s" onclick="fcSetSize(10,'s','s',event)"><span class="material-symbols-rounded">crop_square</span><span class="wc-sz-label">Small</span></button>
-                <button class="wc-sz-btn" data-fc-sz="m" onclick="fcSetSize(10,'s','m',event)"><span class="material-symbols-rounded">crop_landscape</span><span class="wc-sz-label"><span class="fc-szhd-abc">Medium</span><span class="fc-szhd-f">Explore</span></span></button>
-                <button class="wc-sz-btn" data-fc-sz="l" onclick="fcSetSize(10,'s','l',event)"><span class="material-symbols-rounded">crop_free</span><span class="wc-sz-label"><span class="fc-szhd-abc">Large</span><span class="fc-szhd-f">Detail</span></span></button>
-                <button class="wc-sz-btn" data-fc-sz="k" onclick="fcSetSize(10,'s','k',event)"><span class="material-symbols-rounded">crop_7_5</span><span class="wc-sz-label"><span class="fc-szhd-abc">KPI</span><span class="fc-szhd-f">Glance</span></span></button>
+                <button class="wc-sz-btn" data-fc-sz="m" onclick="fcSetSize(10,'s','m',event)"><span class="material-symbols-rounded">crop_landscape</span><span class="wc-sz-label">Medium</span></button>
+                <button class="wc-sz-btn" data-fc-sz="l" onclick="fcSetSize(10,'s','l',event)"><span class="material-symbols-rounded">crop_free</span><span class="wc-sz-label">Large</span></button>
+                <button class="wc-sz-btn" data-fc-sz="k" onclick="fcSetSize(10,'s','k',event)"><span class="material-symbols-rounded">crop_7_5</span><span class="wc-sz-label">KPI</span></button>
               </div>
             </div>
           </div>
@@ -4002,9 +3754,9 @@ body{font-family:'Red Hat Text',sans-serif;background:#fafafa;color:#202020;}
               <div class="wc-dd-lbl">Widget size</div>
               <div class="wc-dd-size">
                 <button class="wc-sz-btn" data-fc-sz="s" onclick="fcSetSize(10,'m','s',event)"><span class="material-symbols-rounded">crop_square</span><span class="wc-sz-label">Small</span></button>
-                <button class="wc-sz-btn" data-fc-sz="m" onclick="fcSetSize(10,'m','m',event)"><span class="material-symbols-rounded">crop_landscape</span><span class="wc-sz-label"><span class="fc-szhd-abc">Medium</span><span class="fc-szhd-f">Explore</span></span></button>
-                <button class="wc-sz-btn" data-fc-sz="l" onclick="fcSetSize(10,'m','l',event)"><span class="material-symbols-rounded">crop_free</span><span class="wc-sz-label"><span class="fc-szhd-abc">Large</span><span class="fc-szhd-f">Detail</span></span></button>
-                <button class="wc-sz-btn" data-fc-sz="k" onclick="fcSetSize(10,'m','k',event)"><span class="material-symbols-rounded">crop_7_5</span><span class="wc-sz-label"><span class="fc-szhd-abc">KPI</span><span class="fc-szhd-f">Glance</span></span></button>
+                <button class="wc-sz-btn" data-fc-sz="m" onclick="fcSetSize(10,'m','m',event)"><span class="material-symbols-rounded">crop_landscape</span><span class="wc-sz-label">Medium</span></button>
+                <button class="wc-sz-btn" data-fc-sz="l" onclick="fcSetSize(10,'m','l',event)"><span class="material-symbols-rounded">crop_free</span><span class="wc-sz-label">Large</span></button>
+                <button class="wc-sz-btn" data-fc-sz="k" onclick="fcSetSize(10,'m','k',event)"><span class="material-symbols-rounded">crop_7_5</span><span class="wc-sz-label">KPI</span></button>
               </div>
             </div>
           </div>
@@ -4035,9 +3787,9 @@ body{font-family:'Red Hat Text',sans-serif;background:#fafafa;color:#202020;}
               <div class="wc-dd-lbl">Widget size</div>
               <div class="wc-dd-size">
                 <button class="wc-sz-btn" data-fc-sz="s" onclick="fcSetSize(10,'l','s',event)"><span class="material-symbols-rounded">crop_square</span><span class="wc-sz-label">Small</span></button>
-                <button class="wc-sz-btn" data-fc-sz="m" onclick="fcSetSize(10,'l','m',event)"><span class="material-symbols-rounded">crop_landscape</span><span class="wc-sz-label"><span class="fc-szhd-abc">Medium</span><span class="fc-szhd-f">Explore</span></span></button>
-                <button class="wc-sz-btn" data-fc-sz="l" onclick="fcSetSize(10,'l','l',event)"><span class="material-symbols-rounded">crop_free</span><span class="wc-sz-label"><span class="fc-szhd-abc">Large</span><span class="fc-szhd-f">Detail</span></span></button>
-                <button class="wc-sz-btn" data-fc-sz="k" onclick="fcSetSize(10,'l','k',event)"><span class="material-symbols-rounded">crop_7_5</span><span class="wc-sz-label"><span class="fc-szhd-abc">KPI</span><span class="fc-szhd-f">Glance</span></span></button>
+                <button class="wc-sz-btn" data-fc-sz="m" onclick="fcSetSize(10,'l','m',event)"><span class="material-symbols-rounded">crop_landscape</span><span class="wc-sz-label">Medium</span></button>
+                <button class="wc-sz-btn" data-fc-sz="l" onclick="fcSetSize(10,'l','l',event)"><span class="material-symbols-rounded">crop_free</span><span class="wc-sz-label">Large</span></button>
+                <button class="wc-sz-btn" data-fc-sz="k" onclick="fcSetSize(10,'l','k',event)"><span class="material-symbols-rounded">crop_7_5</span><span class="wc-sz-label">KPI</span></button>
               </div>
             </div>
           </div>
@@ -4065,7 +3817,6 @@ body{font-family:'Red Hat Text',sans-serif;background:#fafafa;color:#202020;}
     <p><strong>Fix made — Small-size headline removed.</strong> The render previously showed a "Total outstanding" single-number headline plus one loan's progress bar at Small, instead of the doc's plain "Active view, top 3 loans, no Switch View." Removed; Small now falls through to the same progress-bar list every other size uses, just capped to 3.</p>
     <p>The missing KPI-size card was added (Total Balance Due, across all loans, per the doc's exact headline). A dead "Year" filter was also removed — the doc is explicit that "No Fiscal Year filter" applies here since this is an as-of-today snapshot, and the underlying data helper already falls back to the current bucket safely with no year filter present.</p>
     <p>Two items already flagged by the doc itself, carried forward rather than re-solved here: the Status filter (Active/In Arrears) is noted as "unconfirmed — no explicit active/arrears field found in the source data," and the aging-bucket payment-allocation calculation (oldest-first, matching legacy behaviour) is a backend calculation change, not something visible in this render to check.</p>
-    <p><strong>Final build (2026-08-11).</strong> Built as the Final from Jo Lopez's Widget Container Demo Loans With Balance Due widget (her <code>loan</code> block), per direct instruction, as a new additive <code>opt==='F'</code> branch in <code>WRENDER[10]</code> (prefix <code>loanF</code>); the A/B/C branches above stay untouched and reachable from the design-option switch at the top of this section, with Final as the default. It is a 1-to-1 copy of her design: her total balance due header with the past due / All current pill and a single plain context line (count, past due amount and percent, of which 90+ days), her Loan type filter chip (the one and only fetch, showing her 800ms chip spinner and skeleton, while sort and aging band pick are instant client re-renders), her four aging bands in severity order (Current, 1-30 days, 31-60 days, 90+ days) rendered as an amethyst severity read with values as text and no red, her Glance card with the compact stacked aging bar and a most overdue call, her Explore table grouped into aging bands with a per band subtotal and sortable Account / Borrower / Last payment / Days past due / Amount due columns, her Detail layout that adds the aging and risk side panel (clickable aging bands that filter the table, a Portfolio risk read of past due and 90+ days, and a Most overdue borrowers collections list), her dormancy flag on loans with no payment in over 90 days, her loan-detail drill modal (Account, Loan type, Original amount, Amount due, Aging, Days past due, Next payment due, Last payment, a payment history table, an Open loan and Record a contact next-step pair, and Export to Excel plus Close), her aging-band hover card, and her "Nothing outstanding" empty state. Her real sample numbers carry over verbatim in standalone <code>LOANF_</code> constants next to <code>WRENDER[10]</code> (not <code>MOCK_DATA</code>, so <code>mock-data.master.js</code> needs no re-sync; the A/B/C mock series are untouched): nine loans across three types totalling $112,037.96, with the oldest 90+ days band holding Third Presbyterian Church LN-1301 (95 days, $24,690.13) and Cornerstone Academy LN-1099 (145 days, dormant, $14,250.00). The KPI headline is Total Balance Due, matching the locked doc. Sizing follows Jo's three-tier model via the same generic <code>fc-fmode</code> mechanism as W01-W09 (no Small under Final; Glance / Explore / Detail wording and her tier proportions, KPI = Glance, Explore = her wide, Detail = her xwide), and the KPI card title reflects the widget's own scope through the existing <code>FC_KPI_HEADLINE</code> plumbing. <code>FC_VERSION[10]</code> = 2.0. <strong>Backend caveats carried (render as if real, per Rule 11, decision lives in the docs):</strong> Jo's aging bands are labelled Current / 1-30 / 31-60 / 90+, which differ from the Step 4 doc's Current (0-29) / 30-59 / 60-89 / 90+ labels; the aging totals themselves require the legacy oldest-first payment allocation to be rebuilt server-side (the Modern API does not replicate it), which is the single most consequential data-accuracy gap and a decided must-fix; the loan Status (Active / In Arrears) concept has no confirmed backing field; the loan-detail drill-through destination is unconfirmed; and Ben Lane's interview notes these HQ-to-church loans may function more like donations than scheduled repayments. No em dashes in any new user-facing string.</p>
   </div>
   </div><!-- /fc-widget-10 -->
 
@@ -8373,7 +8124,7 @@ var REMF_ACTIVITIES=[
   {seq:6,name:"Youth Ministry Fund",ref:"No pledge amount set",total:0,begin:"2026-01-01",end:"2026-12-31",freq:12,dur:12,payments:[
     {date:"2026-03-01",ref:"Gift",amount:500}]}
 ];
-var REMF_STATE={id:'4F',size:'explore',range:'year',rStart:null,rEnd:null,remThru:null,view:'table',remSort:'seq',remLoading:false,state:null,expanded:{},plPage:{}};
+var REMF_STATE={id:'4F',size:'explore',remThru:null,view:'table',remSort:'seq',remLoading:false,state:null,expanded:{},plPage:{}};
 var REMF_POP=null,REMF_MODAL=null,REMF_MODAL_MOUNTED=false,REMF_TIMER=null,REMF_FOCUS_ID=null;
 function remFRerender(){ if(typeof FC_STATE!=='undefined'&&FC_STATE[4]&&FC_STATE[4].opt==='F'&&typeof fcRenderWidget==='function') fcRenderWidget(4); }
 /* Loading ONLY on a data fetch (the receipts-through date): transient remLoading
@@ -8391,23 +8142,7 @@ function remFDayOfYear(d){var s=new Date(d.getFullYear(),0,1);return Math.round(
 function remFPctYear(iso){var d=remFParse(iso);return remFDayOfYear(d)/remFDaysInYear(d.getFullYear());}
 function remFDaysToYearEnd(iso){var d=remFParse(iso),e=new Date(d.getFullYear(),11,31);return Math.round((e-new Date(d.getFullYear(),d.getMonth(),d.getDate()))/86400000);}
 function remFEndOfLastMonth(base){var d=new Date(base.getFullYear(),base.getMonth(),1);return remFISO(new Date(d-86400000));}
-/* Receipts window (2026-08-08): a date RANGE replaces the single cutoff. Behaviour (a):
-   the range END is the pacing cutoff (all pacing stays cumulative to it, formulas
-   unchanged, just driven by end); the START frames the window and scopes any receipts
-   list. This year (default) = Jan 1 of the end's year to today; Last 30 days = today
-   minus 30 to today; Custom = the entered From/To. */
-function remFRangeBounds(w){
-  var todayIso=remFISO(REMF_TODAY),r=w.range||'year';
-  if(r==='last30'){var s=new Date(REMF_TODAY.getFullYear(),REMF_TODAY.getMonth(),REMF_TODAY.getDate()-30);return {start:remFISO(s),end:todayIso};}
-  if(r==='custom'){return {start:w.rStart||remFISO(new Date(REMF_TODAY.getFullYear(),0,1)),end:w.rEnd||todayIso};}
-  var ey=remFParse(todayIso).getFullYear();return {start:remFISO(new Date(ey,0,1)),end:todayIso};
-}
-function remFThru(w){return remFRangeBounds(w).end;}
-function remFRangeStart(w){return remFRangeBounds(w).start;}
-function remFRangePhrase(w){var b=remFRangeBounds(w),sd=remFParse(b.start),ed=remFParse(b.end);
-  var st=REMF_MON[sd.getMonth()]+" "+sd.getDate();if(sd.getFullYear()!==ed.getFullYear())st+=", "+sd.getFullYear();
-  var en=REMF_MON[ed.getMonth()]+" "+ed.getDate()+", "+ed.getFullYear();
-  return "Receipts from "+st+" to "+en;}
+function remFThru(w){return w.remThru||remFISO(REMF_TODAY);}
 function remFPct(x){return Math.round(x*100)+"%";}
 function remFPaid(act,iso){return (act.payments||[]).filter(function(p){return p.date<=iso;}).reduce(function(s,p){return s+p.amount;},0);}
 function remFData(w){if(w.state==="empty")return [];return REMF_ACTIVITIES;}
@@ -8647,8 +8382,8 @@ function remFLegend(){
 }
 /* ---- controls + header ---- */
 function remFThruChip(w){
-  var spin=w.remLoading?'<span class="rem-spin" aria-hidden="true"></span>':"",phrase=remFRangePhrase(w);
-  return '<button class="filter-chip rem-thru-chip" data-remf="thru" aria-haspopup="dialog" aria-expanded="'+(REMF_POP?"true":"false")+'" aria-label="'+remFEsc(phrase)+', tap to change"><span class="fc-label">'+spin+phrase+'</span>'+remFIcon("expand_more")+'</button>';
+  var iso=remFThru(w),spin=w.remLoading?'<span class="rem-spin" aria-hidden="true"></span>':"";
+  return '<button class="filter-chip rem-thru-chip" data-remf="thru" aria-haspopup="dialog" aria-expanded="'+(REMF_POP?"true":"false")+'" aria-label="Receipts through '+remFEsc(remFFmtDate(iso))+', tap to change"><span class="fc-label">'+spin+'Receipts through '+remFFmtDate(iso)+'</span>'+remFIcon("expand_more")+'</button>';
 }
 /* View toggle: 2-way Table (default) / Pacing Bars. Shown at BOTH Explore and
    Detail (2026-07-28): Detail is now the same single-view render as Explore, just
@@ -8716,20 +8451,18 @@ function remFRender(wid,sz){
   REMF_STATE.size=tier;
   return '<div class="remf-root remf-w" data-tier="'+tier+'">'+remFContent(REMF_STATE)+'</div>';
 }
-/* ---- receipts window popover (body-appended, remf-scoped). Three options:
-   This year (default), Last 30 days, and Custom, which reveals inline From/To
-   date fields (same reveal pattern as W01/W03's Custom row). No Refresh button:
-   a preset applies on click and Custom applies when a date field changes; the
-   value is read from the DOM at change time so typing never drops the caret. ---- */
+/* ---- receipts-through popover (body-appended, remf-scoped). Presets Today /
+   End of last month, plus a date field committed by Refresh: the value is read
+   from the DOM at commit time (commit-then-persist), so typing never triggers a
+   render and the caret is never dropped. ---- */
 function remFPopContent(){
-  var w=REMF_STATE,r=w.range||'year',b=remFRangeBounds(w),todayIso=remFISO(REMF_TODAY);
-  var opts=[['year','This year'],['last30','Last 30 days'],['custom','Custom']];
-  var out='<div class="cap">Receipts window</div><div role="listbox" aria-label="Receipts window">';
-  out+=opts.map(function(o){var on=r===o[0];return '<button class="mi'+(on?" check":"")+'" role="option" aria-selected="'+on+'" data-remf="set-range" data-r="'+o[0]+'">'+(on?remFIcon("check"):'<span class="mi-gap"></span>')+'<span class="mi-nm">'+o[1]+'</span></button>';}).join("");
-  out+='</div>';
-  if(r==='custom'){
-    out+='<div class="rem-pop-dates"><label>From<input type="date" id="remfFrom" class="rem-date-input remf-date-input" data-which="start" value="'+b.start+'" max="'+todayIso+'"></label><label>To<input type="date" id="remfTo" class="rem-date-input remf-date-input" data-which="end" value="'+b.end+'" max="'+todayIso+'"></label></div>';
-  }
+  var w=REMF_STATE,cur=remFThru(w);
+  var todayIso=remFISO(REMF_TODAY),lastMo=remFEndOfLastMonth(REMF_TODAY);
+  var presets=[["Today",todayIso],["End of last month",lastMo]];
+  var out='<div class="cap">Count receipts through</div>';
+  out+=presets.map(function(p){var on=cur===p[1];return '<button class="mi'+(on?" check":"")+'" role="option" aria-selected="'+on+'" data-remf="set-thru" data-iso="'+p[1]+'">'+(on?remFIcon("check"):'<span class="mi-gap"></span>')+'<span class="mi-nm">'+p[0]+'</span><span class="rem-mi-date">'+remFFmtDate(p[1])+'</span></button>';}).join("");
+  out+='<div class="sep"></div><div class="cap">Or choose a date</div>'+
+    '<div class="rem-datepick"><input type="date" id="remfq" class="rem-date-input remf-date-input" value="'+cur+'" max="'+todayIso+'" aria-label="Receipts through date"><button class="btn primary sm" data-remf="refresh">'+remFIcon("refresh")+'Refresh</button></div>';
   return out;
 }
 function remFOpenPop(anchor){
@@ -8745,27 +8478,12 @@ function remFOpenPop(anchor){
   var left=Math.min(Math.max(M,r.left),window.innerWidth-bw-M);
   var top=r.bottom+6;if(top+bh>window.innerHeight-M)top=Math.max(M,r.top-bh-6);
   el.style.left=left+'px';el.style.top=top+'px';el.style.visibility='';
-  if(REMF_FOCUS_ID){var f=document.getElementById(REMF_FOCUS_ID);if(f){f.focus();try{var vl=(f.value||'').length;f.setSelectionRange(vl,vl);}catch(_e){}}}
+  var f=document.getElementById('remfq');if(f&&REMF_FOCUS_ID==='remfq'){f.focus();}
 }
 function remFClosePop(){REMF_POP=null;var el=document.getElementById('remfPop');if(el)el.remove();}
-/* Apply a preset receipts window immediately (This year / Last 30 days both end
-   today; Custom keeps its current From/To, seeded from the active bounds). */
-function remFSetRange(w,r){
-  if(r==='custom'){var b=remFRangeBounds(w);if(!w.rStart)w.rStart=b.start;if(!w.rEnd)w.rEnd=b.end;}
-  w.range=r;remFLoad(w);if(typeof showToast==='function')showToast(remFRangePhrase(w));return true;
-}
-/* Apply a Custom From/To field change (read from the DOM at change time). */
-function remFSetCustomDate(w,which,val){
-  if(!(val&&/^\d{4}-\d{2}-\d{2}$/.test(val)))return false;
-  w.range='custom';if(which==='start')w.rStart=val;else w.rEnd=val;remFLoad(w);return true;
-}
-/* Re-render the OPEN popover in place (check marks + reveal the From/To fields)
-   and restore focus to whichever date field was being typed, so switching to
-   Custom or editing a date never drops the caret (mirrors W03's prFSyncPop). */
-function remFSyncPop(){
-  if(!REMF_POP)return;var el=document.getElementById('remfPop');if(!el)return;
-  el.innerHTML=remFPopContent();
-  if(REMF_FOCUS_ID){var f=document.getElementById(REMF_FOCUS_ID);if(f&&document.activeElement!==f){f.focus();try{var vl=(f.value||'').length;f.setSelectionRange(vl,vl);}catch(_e){}}}
+function remFCommitThru(w,iso){
+  if(iso&&/^\d{4}-\d{2}-\d{2}$/.test(iso)&&iso!==remFThru(w)){w.remThru=iso;remFLoad(w);if(typeof showToast==='function')showToast("Counting receipts through "+remFFmtDate(iso));return true;}
+  return false;
 }
 /* ---- drill: payment-history focus overlay (Jo's remDetailModalHTML) ---- */
 function remFDetailModalHTML(){
@@ -8856,7 +8574,8 @@ function remFOnClick(e){
   if(!t.closest('.remf-root'))return;
   var a=t.getAttribute('data-remf'),w=REMF_STATE;
   if(a==='thru'){ if(REMF_POP&&document.getElementById('remfPop')){remFClosePop();}else{remFOpenPop(t);} return; }
-  if(a==='set-range'){var rset=t.getAttribute('data-r');remFSetRange(w,rset);if(rset==='custom'){remFSyncPop();}else{remFClosePop();}remFRerender();return;}
+  if(a==='set-thru'){remFCommitThru(w,t.getAttribute('data-iso'));remFClosePop();remFRerender();return;}
+  if(a==='refresh'){var inp=document.getElementById('remfq');remFCommitThru(w,inp?inp.value:null);remFClosePop();remFRerender();return;}
   if(a==='sort'){var k=t.getAttribute('data-k'),cs=(w.remSort||'seq').split('-');var dd=(k==='name'||k==='status')?'asc':'desc';w.remSort=(cs[0]===k)?(k+'-'+(cs[1]==='asc'?'desc':'asc')):(k+'-'+dd);remFRerender();return;}
   if(a==='view'){w.view=t.getAttribute('data-v');remFRerender();return;}
   if(a==='baropen'){
@@ -8888,14 +8607,6 @@ var REMF_WIRED=false;
   });
   document.addEventListener('focus',function(e){if(e.target&&e.target.classList&&e.target.classList.contains('remf-date-input'))REMF_FOCUS_ID=e.target.id;},true);
   document.addEventListener('focusout',function(e){if(e.target&&e.target.classList&&e.target.classList.contains('remf-date-input')&&e.target.id===REMF_FOCUS_ID)REMF_FOCUS_ID=null;},true);
-  /* Custom From/To change: apply immediately (no Refresh), keep the popover open
-     and the caret where it was (Jo's commit-then-persist flow). */
-  document.addEventListener('change',function(e){
-    if(e.target&&e.target.classList&&e.target.classList.contains('remf-date-input')){
-      var which=e.target.getAttribute('data-which');
-      if(e.target.value&&remFSetCustomDate(REMF_STATE,which,e.target.value)){remFSyncPop();remFRerender();}
-    }
-  });
   document.addEventListener('mousemove',function(e){
     var el=e.target.closest&&e.target.closest('.pbar[data-pbar]');
     if(!el||!(el.closest&&el.closest('.remf-root'))){remFPbarHide();return;}
@@ -11043,371 +10754,8 @@ WRENDER[9]=function(opt,wid,sz){
   }
 };
 
-/* ========================================================================
-   W10 FINAL (loanF), added 2026-08-11: Jo Lopez's Loans With Balance Due
-   design (her loan block: data + render + handlers + aging-band hover),
-   ported 1-to-1 from her Widget Container Demo as this widget's Final.
-   Everything here is loanF-/LOANF_-prefixed; WRENDER[10]'s A/B/C branches
-   below are deliberately untouched. Standalone LOANF_ constants (not
-   MOCK_DATA), so mock-data.master.js needs no re-sync. Shared-helper calls
-   (ICON, find, render, pop, modal, setStatus, timers) are ported as small
-   loanF-prefixed adapters over a single LOANF_STATE the way arF/depF did; a
-   single delegated click listener behind LOANF_WIRED reacts to data-loanf
-   attributes; the loan-type popover, the loan-detail drill modal and the
-   aging-band hover card live on document.body and carry .loanf-root so they
-   inherit Jo's tokens. Jo's three tiers map to fc sizes: KPI (k/xk) = Glance,
-   Small/Medium (s/m) = Explore (her wide), Large/Expanded (l/x) = Detail (her
-   xwide). No em dashes in any user-facing string. */
-
-/* (1) DATA (Jo's LOAN_* renamed LOANF_*) -------------------------------- */
-var LOANF_TODAY="2026-07-24";
-var LOANF_BUCKETS=[
-  {key:"cur",label:"Current",   sub:"not yet due",           hi:0,       sev:0},
-  {key:"b1", label:"1-30 days", sub:"up to 1 month past due", hi:30,     sev:1},
-  {key:"b2", label:"31-60 days",sub:"1 to 2 months past due", hi:60,     sev:2},
-  {key:"b3", label:"90+ days",  sub:"most overdue",           hi:Infinity,sev:3}
-];
-var LOANF_SEV_COLORS=["--am-200","--am-300","--am-500","--am-700"];
-var LOANF_TYPES=["All","Church - Special","Church Expansion","Individual"];
-var LOANF_LOANS=[
-  {acct:"LN-1042",name:"Grace Fellowship",type:"Church Expansion",orig:150000,amount:28450.00,days:-8,lastPay:"2026-07-08",nextDue:"2026-08-01",
-    payments:[{date:"2026-07-08",method:"ACH",amount:2100.00},{date:"2026-06-08",method:"ACH",amount:2100.00}]},
-  {acct:"LN-1017",name:"New Life Center",type:"Church Expansion",orig:120000,amount:24800.00,days:-12,lastPay:"2026-07-10",nextDue:"2026-08-05",
-    payments:[{date:"2026-07-10",method:"Check #2093",amount:1750.00}]},
-  {acct:"LN-2231",name:"Maria Alvarez",type:"Individual",orig:5000,amount:640.00,days:-6,lastPay:"2026-07-02",nextDue:"2026-07-30",
-    payments:[{date:"2026-07-02",method:"ACH",amount:160.00},{date:"2026-06-02",method:"ACH",amount:160.00}]},
-  {acct:"LN-1188",name:"First Baptist Church",type:"Church - Special",orig:12000,amount:186.86,days:6,lastPay:"2026-06-30",nextDue:"2026-07-18",
-    payments:[{date:"2026-06-30",method:"Check #4021",amount:930.00}]},
-  {acct:"LN-1205",name:"Trinity Chapel",type:"Church - Special",orig:30000,amount:8200.00,days:22,lastPay:"2026-05-28",nextDue:"2026-07-02",
-    payments:[{date:"2026-05-28",method:"ACH",amount:1200.00}]},
-  {acct:"LN-2044",name:"Stephen Ho",type:"Individual",orig:8000,amount:1020.97,days:44,lastPay:"2026-05-02",nextDue:"2026-06-10",
-    payments:[{date:"2026-05-02",method:"ACH",amount:255.00}]},
-  {acct:"LN-1150",name:"St. Mark Parish",type:"Church - Special",orig:40000,amount:9800.00,days:58,lastPay:"2026-04-15",nextDue:"2026-05-27",
-    payments:[]},
-  {acct:"LN-1301",name:"Third Presbyterian Church",type:"Church Expansion",orig:300000,amount:24690.13,days:95,lastPay:"2026-03-18",nextDue:"2026-04-20",
-    payments:[{date:"2026-03-18",method:"Wire",amount:3400.00}]},
-  {acct:"LN-1099",name:"Cornerstone Academy",type:"Church - Special",orig:60000,amount:14250.00,days:145,lastPay:"2026-01-30",nextDue:"2026-03-01",
-    payments:[]}
-];
-var LOANF_LOANS_CURRENT=[
-  {acct:"LN-3001",name:"Hope Chapel",type:"Church Expansion",orig:90000,amount:12400.00,days:-9,lastPay:"2026-07-12",nextDue:"2026-08-03",payments:[{date:"2026-07-12",method:"ACH",amount:1300.00}]},
-  {acct:"LN-3002",name:"Faith Community Church",type:"Church - Special",orig:25000,amount:3800.00,days:-4,lastPay:"2026-07-15",nextDue:"2026-07-28",payments:[{date:"2026-07-15",method:"Check #118",amount:600.00}]},
-  {acct:"LN-3003",name:"David Nguyen",type:"Individual",orig:6000,amount:520.00,days:-15,lastPay:"2026-07-05",nextDue:"2026-08-06",payments:[{date:"2026-07-05",method:"ACH",amount:130.00}]}
-];
-var LOANF_LOANS_SINGLE=[
-  {acct:"LN-4001",name:"Emmanuel Church",type:"Church Expansion",orig:80000,amount:9300.00,days:112,lastPay:"2026-02-14",nextDue:"2026-03-20",payments:[]},
-  {acct:"LN-4002",name:"Shepherd Fellowship",type:"Church - Special",orig:20000,amount:4100.00,days:98,lastPay:"2026-03-01",nextDue:"2026-04-10",payments:[{date:"2026-03-01",method:"ACH",amount:500.00}]}
-];
-
-/* State + globals (single-widget adapters for Jo's cur().widgets model) */
-var LOANF_STATE={id:'10F',size:'wide',loanType:'All',loanSort:'days-desc',loanBucket:'total',loanloading:false,dataset:null,state:null};
-var LOANF_POP=null,LOANF_MODAL=null,LOANF_MODAL_MOUNTED=false,LOANF_TIMER=null;
-function loanFRerender(){ if(typeof FC_STATE!=='undefined'&&FC_STATE[10]&&FC_STATE[10].opt==='F'&&typeof fcRenderWidget==='function') fcRenderWidget(10); }
-/* Loading ONLY on a data fetch (loan-type change): transient loanloading +
-   skeleton for 800ms. Sort and band pick are instant. */
-function loanFLoad(w){w.loanloading=true;if(LOANF_TIMER)clearTimeout(LOANF_TIMER);LOANF_TIMER=setTimeout(function(){w.loanloading=false;LOANF_TIMER=null;loanFRerender();},800);}
-
-/* (2) RENDER (Jo's loan functions, renamed) ----------------------------- */
-function loanFIcon(n){return '<span class="material-symbols-rounded" aria-hidden="true">'+n+'</span>';}
-function loanFEsc(s){return String(s).replace(/"/g,"&quot;");}
-function loanFMoney(n){return "$"+Number(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});}
-function loanFFmtDate(iso){var M=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];var p=String(iso).split("-");if(p.length!==3)return iso;return M[(+p[1])-1]+" "+(+p[2])+", "+p[0];}
-function loanFParse(iso){var p=String(iso).split("-");return new Date(+p[0],(+p[1])-1,+p[2]);}
-function loanFDaysSincePay(iso){if(!iso)return null;var t=loanFParse(LOANF_TODAY);return Math.round((t-loanFParse(iso))/86400000);}
-function loanFIsDormant(x){var d=loanFDaysSincePay(x.lastPay);return d!=null&&d>90;}
-function loanFDataset(w){if(w.dataset==="current")return LOANF_LOANS_CURRENT;if(w.dataset==="single")return LOANF_LOANS_SINGLE;if(w.dataset==="none")return [];return LOANF_LOANS;}
-function loanFFiltered(w){var ty=w.loanType||"All";return loanFDataset(w).filter(function(x){return ty==="All"||x.type===ty;});}
-function loanFBucketOf(days){for(var i=0;i<LOANF_BUCKETS.length;i++){if(days<=LOANF_BUCKETS[i].hi)return LOANF_BUCKETS[i].key;}return "b3";}
-function loanFSevOf(days){for(var i=0;i<LOANF_BUCKETS.length;i++){if(days<=LOANF_BUCKETS[i].hi)return LOANF_BUCKETS[i].sev;}return 3;}
-function loanFBucketLabel(key){for(var i=0;i<LOANF_BUCKETS.length;i++)if(LOANF_BUCKETS[i].key===key)return LOANF_BUCKETS[i].label;return key;}
-function loanFColorOf(key){for(var i=0;i<LOANF_BUCKETS.length;i++)if(LOANF_BUCKETS[i].key===key)return LOANF_SEV_COLORS[LOANF_BUCKETS[i].sev];return LOANF_SEV_COLORS[3];}
-function loanFBuckets(w){
-  var ls=loanFFiltered(w),m={};LOANF_BUCKETS.forEach(function(b){m[b.key]={count:0,total:0};});
-  ls.forEach(function(x){var k=loanFBucketOf(x.days);m[k].count++;m[k].total+=x.amount;});
-  return LOANF_BUCKETS.map(function(b){return {key:b.key,label:b.label,sub:b.sub,sev:b.sev,color:LOANF_SEV_COLORS[b.sev],count:m[b.key].count,total:m[b.key].total};});
-}
-function loanFTotal(w){return loanFFiltered(w).reduce(function(s,x){return s+x.amount;},0);}
-function loanFCount(w){return loanFFiltered(w).length;}
-function loanFPastDue(w){return loanFFiltered(w).filter(function(x){return x.days>0;}).reduce(function(s,x){return s+x.amount;},0);}
-function loanFPastDueCount(w){return loanFFiltered(w).filter(function(x){return x.days>0;}).length;}
-function loanF90(w){return loanFFiltered(w).filter(function(x){return loanFBucketOf(x.days)==="b3";}).reduce(function(s,x){return s+x.amount;},0);}
-function loanFPct(w){var t=loanFTotal(w);return t>0?Math.round(loanFPastDue(w)/t*100):0;}
-function loanFWorstBucket(w){var nz=loanFBuckets(w).filter(function(r){return r.total>0;});return nz.length?nz[nz.length-1]:null;}
-function loanFFind(w,acct){var ls=loanFDataset(w);for(var i=0;i<ls.length;i++)if(ls[i].acct===acct)return ls[i];return null;}
-function loanFTopOverdue(w){return loanFFiltered(w).filter(function(x){return x.days>0;}).slice().sort(function(a,b){return (b.days-a.days)||(b.amount-a.amount);});}
-function loanFSel(w){var v=w&&w.loanBucket;if(v==null||v==="total")return "total";for(var i=0;i<LOANF_BUCKETS.length;i++)if(LOANF_BUCKETS[i].key===v)return v;return "total";}
-function loanFRows(w){
-  var sel=loanFSel(w),list=loanFFiltered(w).slice();
-  if(sel!=="total")list=list.filter(function(x){return loanFBucketOf(x.days)===sel;});
-  var sk=(w.loanSort||"days-desc").split("-"),key=sk[0],dir=sk[1]==="asc"?1:-1;
-  list.sort(function(a,b){
-    if(key==="name")return dir*a.name.localeCompare(b.name);
-    if(key==="last")return dir*(loanFParse(a.lastPay)-loanFParse(b.lastPay));
-    if(key==="amt")return dir*(a.amount-b.amount);
-    return dir*(a.days-b.days);
-  });
-  return list;
-}
-function loanFTypeChip(w){
-  var ty=w.loanType||"All",spin=w.loanloading?'<span class="bgt-spin" aria-hidden="true"></span>':"";
-  return '<button class="filter-chip loan-chip" data-loanf="loan-type" aria-haspopup="listbox" aria-expanded="'+(LOANF_POP?"true":"false")+'" aria-label="Loan type, tap to change"><span class="fc-label">'+spin+(ty==="All"?"All loan types":ty)+'</span>'+loanFIcon("expand_more")+'</button>';
-}
-function loanFBadge(w){
-  var over=loanFPastDue(w);
-  if(over>0){var n=loanFPastDueCount(w),pct=loanFPct(w);return '<span class="bank-pill" title="'+loanFEsc(loanFMoney(over)+" across "+n+" loan"+(n===1?"":"s")+" is past due, that is "+pct+"% of the outstanding balance.")+'">'+loanFIcon("schedule")+loanFMoney(over)+' past due ('+pct+'%)</span>';}
-  return '<span class="delta-pill" title="Every loan with a balance is current, nothing is past due.">'+loanFIcon("check")+'All current</span>';
-}
-function loanFStackBar(w){
-  var tot=loanFTotal(w);if(tot<=0)return "";
-  var segs=loanFBuckets(w).filter(function(r){return r.total>0;});
-  var inner=segs.map(function(r){var pct=r.total/tot*100;return '<span class="loan-seg" style="flex-basis:'+pct.toFixed(2)+'%;background:var('+r.color+')" title="'+loanFEsc(r.label+": "+loanFMoney(r.total))+'"></span>';}).join("");
-  return '<div class="loan-stack" aria-hidden="true">'+inner+'</div>';
-}
-function loanFAgeSr(w){var b=loanFBuckets(w);return 'Outstanding by age: '+b.map(function(r){return r.label+" "+loanFMoney(r.total);}).join(", ")+'.';}
-function loanFGlance(w){
-  var tot=loanFTotal(w),n=loanFCount(w),worst=loanFWorstBucket(w),over=loanFPastDue(w);
-  var read="";
-  if(tot>0){
-    var call=(over>0&&worst&&worst.key!=="cur")
-      ?'<span class="loan-glance-cap"><span class="loan-sevdot" style="background:var('+worst.color+')"></span>'+loanFMoney(worst.total)+' in '+worst.label+', the most overdue with a balance</span>'
-      :'<span class="loan-glance-cap loan-cap-ok">'+loanFIcon("check")+'Every loan is current</span>';
-    read='<div class="loan-glance-read">'+loanFStackBar(w)+call+'</div>';
-  }
-  return '<div class="kpi-row"><div class="kpi-num">'+
-    '<div class="dep-hd-kpigrp"><span class="metric-value">'+loanFMoney(tot)+'</span>'+loanFBadge(w)+'</div>'+
-    '<div class="gl-sub"><span class="bgt-caption">owed across '+n+' loan'+(n===1?"":"s")+' with a balance</span></div>'+
-    read+
-    '<span class="sr-only">'+loanFAgeSr(w)+'</span>'+
-  '</div></div>';
-}
-function loanFEmpty(w){
-  if(w.size==="kpi")return '<div class="kpi-row"><div class="kpi-num"><div class="dep-hd-kpigrp"><span class="metric-value loan-allset">'+loanFIcon("check_circle")+'All settled</span></div><div class="gl-sub"><span class="bgt-caption">no loans have a balance right now</span></div></div></div>';
-  return '<div class="state loan-empty" data-kind="empty">'+loanFIcon("task_alt")+'<div class="state-title">Nothing outstanding</div><div class="state-sub">No loans currently carry a balance. There is nothing to collect right now.</div></div>';
-}
-function loanFHeaderBlock(w,mode){
-  var loading=(mode==="loading"),numInner,ctx;
-  if(loading){
-    numInner='<div class="dep-hd-kpigrp"><span class="sk" style="width:130px;height:22px;border-radius:6px"></span><span class="sk" style="width:130px;height:20px;border-radius:999px"></span></div>';
-    ctx="Updating loans with a balance";
-  }else{
-    numInner='<div class="dep-hd-kpigrp"><span class="metric-value">'+loanFMoney(loanFTotal(w))+'</span>'+loanFBadge(w)+'</div>';
-    var n=loanFCount(w),over=loanFPastDue(w),nine=loanF90(w),pct=loanFPct(w);
-    ctx=(over>0?(loanFMoney(over)+' ('+pct+'%) past due, of which '+loanFMoney(nine)+' is 90+ days'):'Nothing past due');
-  }
-  return '<div class="dep-hd">'+
-    '<div class="dep-hd-top"><div class="loan-ctlrow">'+loanFTypeChip(w)+'</div><div class="dep-hd-toggle"></div></div>'+
-    '<div class="dep-hd-num"><div class="loan-numwrap">'+numInner+'<div class="loan-ctx">'+ctx+'</div></div></div>'+
-  '</div>';
-}
-function loanFDaysCell(x){
-  if(x.days<=0)return '<span class="loan-c-days"><span class="loan-notdue">Not due</span></span>';
-  return '<span class="loan-c-days"><span class="loan-days-v over">'+x.days+' day'+(x.days===1?"":"s")+'</span></span>';
-}
-function loanFLastCell(x){
-  var dorm=loanFIsDormant(x);
-  var flag=dorm?('<span class="loan-dormant" title="No payment received in over 90 days on this loan.">'+loanFIcon("hourglass_empty")+'</span>'):"";
-  return '<span class="loan-c-last">'+loanFFmtDate(x.lastPay)+flag+'</span>';
-}
-function loanFRowHTML(w,x){
-  var lbl=x.name+", account "+x.acct+", "+(x.days>0?(x.days+" days past due"):"current")+", "+loanFMoney(x.amount)+" due, tap to open the loan";
-  return '<div class="wt-row loan-row" data-loanf="loan-open" data-acct="'+loanFEsc(x.acct)+'" role="button" tabindex="0" aria-label="'+loanFEsc(lbl)+'">'+
-    '<span class="loan-c-acct">'+x.acct+'</span>'+
-    '<span class="lr-main lr-stack loan-c-name"><span class="loan-nm-wrap"><span class="lr-link loan-nm">'+x.name+'</span><span class="loan-type-sub">'+x.type+'</span></span></span>'+
-    loanFLastCell(x)+
-    loanFDaysCell(x)+
-    '<span class="wt-c2 loan-c-amt">'+loanFMoney(x.amount)+'</span>'+
-  '</div>';
-}
-function loanFTable(w){
-  var sel=loanFSel(w),rows=loanFRows(w);
-  var sk=(w.loanSort||"days-desc").split("-"),key=sk[0],dir=sk[1]==="asc"?1:-1;
-  function sb(k,label){var on=key===k,ic=on?(dir<0?"arrow_downward":"arrow_upward"):"unfold_more";return '<button class="wt-sort'+(on?" on":"")+'" data-loanf="loan-sort" data-k="'+k+'">'+label+' '+loanFIcon(ic)+'</button>';}
-  var head='<div class="wt-row wt-head loan-head"><span class="loan-c-acct">'+sb("acct","Account")+'</span><span class="lr-main loan-c-name">'+sb("name","Borrower")+'</span><span class="loan-c-last">'+sb("last","Last payment")+'</span><span class="loan-c-days">'+sb("days","Days past due")+'</span><span class="wt-c2 loan-c-amt">'+sb("amt","Amount due")+'</span></div>';
-  var body;
-  if(sel==="total"){
-    body=LOANF_BUCKETS.map(function(b){
-      var br=rows.filter(function(x){return loanFBucketOf(x.days)===b.key;});
-      if(!br.length)return "";
-      var st=br.reduce(function(s,x){return s+x.amount;},0),over=(b.sev>=1);
-      var gh='<div class="wt-row loan-grp"><span class="loan-grp-nm'+(over?" over":"")+'"><span class="loan-grp-dot" style="background:var('+LOANF_SEV_COLORS[b.sev]+')"></span>'+b.label+' <span class="loan-grp-ct">'+br.length+' loan'+(br.length===1?"":"s")+'</span></span><span class="loan-grp-amt">'+loanFMoney(st)+'</span></div>';
-      return gh+br.map(function(x){return loanFRowHTML(w,x);}).join("");
-    }).join("");
-  }else{
-    body=rows.map(function(x){return loanFRowHTML(w,x);}).join("");
-  }
-  var tot=rows.reduce(function(s,x){return s+x.amount;},0);
-  var footLbl=(sel==="total")?("All aging bands ("+rows.length+" loan"+(rows.length===1?"":"s")+")"):(loanFBucketLabel(sel)+" ("+rows.length+" loan"+(rows.length===1?"":"s")+")");
-  var empty=rows.length?"":'<div class="loan-zeroline">'+loanFIcon("info")+'No loans match this selection.</div>';
-  return '<div class="scroll">'+head+body+empty+'</div><div class="dep-total"><span>'+footLbl+'</span><span>'+loanFMoney(tot)+'</span></div>';
-}
-function loanFMiniBar(frac,color){var pct=Math.max(3,Math.round(frac*100));return '<span class="loan-mini-track" aria-hidden="true"><span class="loan-mini-fill" style="width:'+pct+'%;background:var('+color+')"></span></span>';}
-function loanFAgingPanel(w){
-  var sel=loanFSel(w),grand=loanFTotal(w),bs=loanFBuckets(w),n=loanFCount(w);
-  var out='<div class="loan-panel">';
-  var allSel=(sel==="total");
-  out+='<button class="loan-band-row loan-band-all'+(allSel?" sel":"")+'" data-loanf="loan-set-bucket" data-bucket="total" aria-pressed="'+allSel+'"><span class="loan-band-main"><span class="loan-band-lbl">'+loanFIcon("account_balance")+'All aging bands</span><span class="loan-band-meta">'+n+' loan'+(n===1?"":"s")+' with a balance</span></span><span class="loan-band-val">'+loanFMoney(grand)+'</span></button>';
-  bs.forEach(function(r){
-    var has=r.total>0,frac=grand>0?r.total/grand:0,isSel=(sel===r.key),share=grand>0?Math.round(r.total/grand*100):0;
-    var arpop=[r.label,r.total,r.count,share].join("|");
-    out+='<button class="loan-band-row'+(isSel?" sel":"")+(has?"":" loan-band-static")+'"'+(has?' data-loanf="loan-set-bucket" data-bucket="'+r.key+'" data-loanpop="'+loanFEsc(arpop)+'" aria-pressed="'+isSel+'"':' disabled aria-disabled="true"')+'>'+
-      '<span class="loan-band-main">'+
-        '<span class="loan-band-lbl'+(r.sev>=1&&has?" over":"")+'"><span class="loan-band-dot" style="background:var('+r.color+')"></span>'+r.label+'</span>'+
-        loanFMiniBar(frac,r.color)+
-        '<span class="loan-band-meta">'+(has?(r.count+' loan'+(r.count===1?"":"s")+', '+share+'% of balance'):'no balance in this band')+'</span>'+
-      '</span>'+
-      '<span class="loan-band-val'+(has?"":" loan-band-zero")+'">'+loanFMoney(r.total)+'</span></button>';
-  });
-  var over=loanFPastDue(w),nine=loanF90(w),pct=loanFPct(w),pctN=grand>0?Math.round(nine/grand*100):0;
-  out+='<div class="loan-panel-sep"></div><div class="loan-panel-h">Portfolio risk</div>';
-  out+='<div class="loan-risk-row"><span class="loan-risk-lbl">Past due</span><span class="loan-risk-v">'+loanFMoney(over)+' <span class="loan-risk-pct">('+pct+'%)</span></span></div>';
-  out+='<div class="loan-risk-row"><span class="loan-risk-lbl">90+ days</span><span class="loan-risk-v">'+loanFMoney(nine)+' <span class="loan-risk-pct">('+pctN+'%)</span></span></div>';
-  var top=loanFTopOverdue(w).slice(0,4);
-  if(top.length){
-    out+='<div class="loan-panel-sep"></div><div class="loan-panel-h">Most overdue</div>';
-    top.forEach(function(x){
-      out+='<button class="loan-worst-row" data-loanf="loan-open" data-acct="'+loanFEsc(x.acct)+'" aria-label="'+loanFEsc("Open "+x.name+", "+x.days+" days past due")+'"><span class="loan-worst-main"><span class="loan-worst-nm">'+x.name+'</span><span class="loan-worst-meta">'+x.days+' days past due'+(loanFIsDormant(x)?', dormant':'')+'</span></span><span class="loan-worst-val">'+loanFMoney(x.amount)+'</span></button>';
-    });
-  }
-  return out+'</div>';
-}
-function loanFFull(w){
-  return '<div class="dep-full">'+
-    '<div class="dep-col"><div class="dep-col-h">Loans with a balance</div>'+loanFTable(w)+'</div>'+
-    '<div class="dep-col loan-col-side"><div class="dep-col-h">Aging and risk</div>'+loanFAgingPanel(w)+'</div>'+
-  '</div>';
-}
-function loanFSkeleton(){var rows="";[82,58,70,48,64].forEach(function(wd){rows+='<div class="loan-sk-row"><span class="sk" style="width:70px;height:12px;border-radius:4px"></span><span class="sk" style="flex:1;height:12px;border-radius:4px"></span><span class="sk" style="width:'+wd+'px;height:12px;border-radius:4px"></span></div>';});return '<div class="loan-skel" aria-busy="true">'+rows+'<div class="bgt-skel-cap"><span class="bgt-spin"></span>Loading</div></div>';}
-function loanFContent(w){
-  if(w.state==="empty"||!loanFDataset(w).length)return loanFEmpty(w);
-  if(w.size==="kpi")return loanFGlance(w);
-  if(w.loanloading)return loanFHeaderBlock(w,"loading")+loanFSkeleton();
-  var mh=loanFHeaderBlock(w);
-  if(w.size==="xwide")return mh+loanFFull(w);
-  return mh+'<div class="loan-body">'+loanFTable(w)+'</div>';
-}
-/* Entry point for WRENDER[10]'s F branch. Maps fc sizes onto Jo's three tiers. */
-function loanFRender(wid,sz){
-  var tier=(sz==='k'||sz==='xk')?'kpi':((sz==='l'||sz==='x')?'xwide':'wide');
-  LOANF_STATE.size=tier;
-  return '<div class="loanf-root loanf-w" data-tier="'+tier+'">'+loanFContent(LOANF_STATE)+'</div>';
-}
-
-/* Drill-to-detail focus overlay (Jo's loanDetailModalHTML) */
-function loanFDetailModalHTML(){
-  var w=LOANF_STATE;if(!LOANF_MODAL)return "";
-  var x=loanFFind(w,LOANF_MODAL.acct);if(!x)return "";
-  var bucket=loanFBucketOf(x.days),bl=loanFBucketLabel(bucket),bcolor=loanFColorOf(bucket);
-  var dpd=x.days>0?(x.days+" day"+(x.days===1?"":"s")+" past due"):"Not yet due";
-  var dorm=loanFIsDormant(x),since=loanFDaysSincePay(x.lastPay);
-  function line(lbl,val,cls){return '<div class="loan-dl-row"><span class="loan-dl-lbl">'+lbl+'</span><span class="loan-dl-val'+(cls?" "+cls:"")+'">'+val+'</span></div>';}
-  var grid='<div class="loan-dl-grid">'+
-    line("Account",x.acct)+
-    line("Loan type",x.type)+
-    line("Original amount",loanFMoney(x.orig))+
-    line("Amount due",loanFMoney(x.amount),"loan-dl-amt")+
-    line("Aging",'<span class="loan-dl-band"><span class="loan-band-dot" style="background:var('+bcolor+')"></span>'+bl+'</span>')+
-    line("Days past due",dpd,x.days>0?"over":"")+
-    line("Next payment due",loanFFmtDate(x.nextDue))+
-    line("Last payment",loanFFmtDate(x.lastPay)+(since!=null?(' <span class="loan-dl-since">('+since+' days ago)</span>'):''))+
-  '</div>';
-  var dormNote=dorm?('<div class="loan-dl-dormant">'+loanFIcon("hourglass_empty")+'No payment in over 90 days. Consider making contact.</div>'):'';
-  var pays=(x.payments||[]).filter(function(p){return p.amount>0;});
-  var payTbl=pays.length
-    ?'<div class="loan-pays"><div class="loan-prow loan-phead"><span>Date</span><span>Method</span><span class="loan-pa">Amount</span></div>'+pays.map(function(p){return '<div class="loan-prow"><span>'+loanFFmtDate(p.date)+'</span><span>'+p.method+'</span><span class="loan-pa">'+loanFMoney(p.amount)+'</span></div>';}).join("")+'</div>'
-    :'<div class="loan-tab-empty">'+loanFIcon("payments")+'No payments recorded yet on this loan.</div>';
-  var actions='<div class="loan-actions"><button class="btn outlined sm" data-loanf="loan-open-loan" data-acct="'+loanFEsc(x.acct)+'">'+loanFIcon("open_in_new")+'Open loan</button>'+
-    '<button class="btn naked sm" data-loanf="loan-contact" data-acct="'+loanFEsc(x.acct)+'">'+loanFIcon("event_note")+'Record a contact</button></div>';
-  return '<div class="modal loan-detail-modal" data-loanf="stop" role="dialog" aria-modal="true" aria-label="Loan detail">'+
-    '<div class="modal-h loan-detail-h"><span class="modal-title"><span class="material-symbols-rounded" aria-hidden="true" style="font-size:19px;vertical-align:-4px;margin-right:7px;color:var(--txt-subtle)">account_balance</span>Loan detail</span><span class="loan-dsub">'+x.name+'</span><span class="loan-dh-spacer"></span><button class="iconbtn" data-loanf="loan-detail-close" aria-label="Close">'+loanFIcon("close")+'</button></div>'+
-    '<div class="modal-b loan-detail-b">'+grid+dormNote+'<div class="loan-dl-payh">Payment history</div>'+payTbl+actions+'</div>'+
-    '<div class="modal-f"><button class="btn naked sm" data-loanf="loan-export">'+loanFIcon("download")+'Export to Excel</button><span class="loan-dh-spacer"></span><button class="btn primary sm" data-loanf="loan-detail-close">Close</button></div></div>';
-}
-function loanFRenderModal(){
-  var mr=document.getElementById('loanfModalRoot');
-  if(!mr){mr=document.createElement('div');mr.id='loanfModalRoot';document.body.appendChild(mr);}
-  if(!LOANF_MODAL){mr.innerHTML='';LOANF_MODAL_MOUNTED=false;try{document.body.style.overflow='';}catch(e){}return;}
-  try{document.body.style.overflow='hidden';}catch(e2){}
-  mr.innerHTML='<div class="loanf-root loanf-mb" data-loanf="loan-detail-close">'+loanFDetailModalHTML()+'</div>';
-  LOANF_MODAL_MOUNTED=true;
-}
-
-/* Loan-type popover (body-appended, loanf-scoped) */
-function loanFPopContent(){
-  if(!LOANF_POP)return "";
-  var w=LOANF_STATE,cur=w.loanType||"All";
-  return '<div class="cap">Loan type</div>'+LOANF_TYPES.map(function(o){var on=cur===o;return '<button class="mi'+(on?" check":"")+'" role="option" aria-selected="'+on+'" data-loanf="loan-set-type" data-v="'+loanFEsc(o)+'">'+(on?loanFIcon("check"):'<span class="mi-gap"></span>')+(o==="All"?"All loan types":o)+'</button>';}).join("");
-}
-function loanFOpenPop(anchor){
-  LOANF_POP={type:"loan-type"};
-  var el=document.getElementById('loanfPop');
-  if(!el){el=document.createElement('div');el.id='loanfPop';document.body.appendChild(el);}
-  el.setAttribute('data-loanf','stop');
-  el.className='loanf-root loanf-pop';
-  el.innerHTML=loanFPopContent();
-  var r=anchor.getBoundingClientRect(),M=8;
-  el.style.visibility='hidden';el.style.left='0px';el.style.top='0px';
-  var bw=el.offsetWidth,bh=el.offsetHeight;
-  var left=Math.min(Math.max(M,r.left),window.innerWidth-bw-M);
-  var top=r.bottom+6;if(top+bh>window.innerHeight-M)top=Math.max(M,r.top-bh-6);
-  el.style.left=left+'px';el.style.top=top+'px';el.style.visibility='';
-}
-function loanFClosePop(){LOANF_POP=null;var el=document.getElementById('loanfPop');if(el)el.remove();}
-
-/* Aging-band hover card (standalone .loanf-pop-card on body) */
-var loanfPopEl=null;
-function loanFHidePop(){if(loanfPopEl){loanfPopEl.remove();loanfPopEl=null;}}
-function loanFShowPop(row,mx,my){
-  var raw=row.getAttribute("data-loanpop");if(!raw)return;var p=raw.split("|");
-  var label=p[0],total=+p[1],count=+p[2],share=+p[3];
-  if(!loanfPopEl){loanfPopEl=document.createElement("div");loanfPopEl.className="loanf-pop-card";document.body.appendChild(loanfPopEl);}
-  loanfPopEl.innerHTML='<div class="bgt-pop-h">'+label+'</div>'+
-    '<div class="bgt-pop-r"><span class="bgt-pop-lbl">Outstanding</span><span class="bgt-pop-v">'+loanFMoney(total)+'</span></div>'+
-    '<div class="bgt-pop-r"><span class="bgt-pop-lbl">Loans</span><span class="bgt-pop-v">'+count+'</span></div>'+
-    '<div class="bgt-pop-div"></div><div class="bgt-pop-var"><span class="bgt-pop-lbl">Share of balance</span><span class="bgt-pop-fav neutral">'+share+'%</span></div>';
-  var bw=loanfPopEl.offsetWidth,bh=loanfPopEl.offsetHeight,M=10;
-  var left=mx+14,top=my-bh-10;if(left+bw>window.innerWidth-M)left=mx-bw-14;if(top<M)top=my+16;
-  loanfPopEl.style.left=left+"px";loanfPopEl.style.top=top+"px";
-}
-
-/* (3) DELEGATED HANDLERS (Jo's loanHandleClick, adapted to LOANF_STATE + data-loanf) */
-function loanFOnClick(e){
-  var t=e.target.closest?e.target.closest('[data-loanf]'):null;
-  if(!t){ if(LOANF_POP&&!(e.target.closest&&e.target.closest('#loanfPop')))loanFClosePop(); return; }
-  if(!t.closest('.loanf-root'))return;
-  var a=t.getAttribute('data-loanf'),w=LOANF_STATE;
-  if(a==='loan-type'){ if(LOANF_POP&&document.getElementById('loanfPop')){loanFClosePop();}else{loanFOpenPop(t);} loanFRerender(); return; }
-  if(a==='loan-set-type'){var nv=t.getAttribute('data-v');if((w.loanType||'All')!==nv){w.loanType=nv;w.loanBucket='total';loanFLoad(w);}loanFClosePop();loanFRerender();return;}
-  if(a==='loan-sort'){var k=t.getAttribute('data-k');var cs=(w.loanSort||'days-desc').split('-');w.loanSort=(cs[0]===k)?(k+'-'+(cs[1]==='asc'?'desc':'asc')):(k+'-'+((k==='name'||k==='last')?'asc':'desc'));loanFRerender();return;}
-  if(a==='loan-set-bucket'){var nb=t.getAttribute('data-bucket');w.loanBucket=(w.loanBucket===nb)?'total':nb;loanFRerender();return;}
-  if(a==='loan-open'){LOANF_MODAL={acct:t.getAttribute('data-acct')};LOANF_MODAL_MOUNTED=false;loanFClosePop();loanFRenderModal();return;}
-  if(a==='loan-detail-close'){LOANF_MODAL=null;loanFRenderModal();return;}
-  if(a==='loan-open-loan'){if(typeof showToast==='function')showToast('Opening loan '+t.getAttribute('data-acct')+' in Loan Processing (stub)');return;}
-  if(a==='loan-contact'){if(typeof showToast==='function')showToast('Contact logged for loan '+t.getAttribute('data-acct')+'.');return;}
-  if(a==='loan-export'){loanFClosePop();if(typeof showToast==='function')showToast('Exporting the loan detail to Excel (stub, no export backend in this mock)');return;}
-  /* 'stop' and anything unmatched: no-op on purpose */
-}
-var LOANF_WIRED=false;
-(function(){
-  if(LOANF_WIRED)return;LOANF_WIRED=true;
-  document.addEventListener('click',loanFOnClick);
-  document.addEventListener('keydown',function(e){
-    if(e.key==='Escape'){if(LOANF_MODAL){LOANF_MODAL=null;loanFRenderModal();}else if(LOANF_POP){loanFClosePop();}return;}
-    if((e.key==='Enter'||e.key===' ')&&e.target&&e.target.getAttribute&&e.target.getAttribute('data-loanf')==='loan-open'&&e.target.closest&&e.target.closest('.loanf-root')&&e.target.tagName!=='BUTTON'){e.preventDefault();e.target.click();}
-  });
-  document.addEventListener('mousemove',function(e){
-    var row=e.target.closest&&e.target.closest('.loan-band-row[data-loanpop]');
-    if(!row||!(row.closest&&row.closest('.loanf-root'))){loanFHidePop();return;}
-    loanFShowPop(row,e.clientX,e.clientY);
-  });
-})();
-
 // W10 — Loans With Balance Due
 WRENDER[10]=function(opt,wid,sz){
-  /* FINAL, 2026-08-11: Jo Lopez's Loans With Balance Due design, ported 1-to-1 (see the
-     loanF block above), her filter/sort/aging/drill/states kept as-is. Additive branch;
-     the A/B/C branches below are deliberately untouched (the Dashboard tab still renders
-     them, and they stay reachable from the design-option switch). */
-  if(opt==='F') return loanFRender(wid,sz);
   var fk=wid+'-'+opt; // Rule 8 (2026-07-23 refresh): filter state scoped per design option (10-A/10-B/10-C), never shared across A/B/C
   sz=sz||getSz(wid,opt);
   var view=sv(wid,opt);
@@ -12667,17 +12015,7 @@ FC_KPI_HEADLINE[9]=function(){
   return 'Pending Approvals';
 };
 fcInitState(9,'F'); // Final (v2) is the default render for W09 (2026-08-07); A/B/C reachable via the switch.
-// W10 Final headline (2026-08-11): Glance card title reflects the live total balance due and past-due read.
-FC_KPI_HEADLINE[10]=function(){
-  if(typeof FC_STATE!=='undefined'&&FC_STATE[10]&&FC_STATE[10].opt==='F'&&typeof loanFTotal==='function'){
-    var over=loanFPastDue(LOANF_STATE);
-    return 'Total Balance Due, '+(over>0?loanFMoney(over)+' past due':'all current');
-  }
-  return 'Loan Cards';
-};
-// W10 defaults to 'F' (2026-08-11): the Final build ported 1-to-1 from Jo Lopez's Loans With Balance
-// Due design (see the loanF block above WRENDER[10]). A/B/C stay reachable via the design-option switch.
-fcInitState(10,'F');
+fcInitState(10,'A');
 fcInitState(11,'A');
 fcInitState(13,'B');
 fcInitState(14,'A');
@@ -12714,8 +12052,8 @@ fcInitState(17,'A');
 // and source filter chips, ordered amethyst severity bars, invoice-detail drill modal, empty/loading
 // states), three-size model (Glance/Explore/Detail). See the fc-widget-5 Logic note of the same date.
 var FC_VERSION = {
-  1:'2.0', 2:'2.0', 3:'2.0', 4:'2.4', /* 2026-08-08 v2.1: activity table gains a YTD Paid column (relabelled, legacy position); the activity-click payment-history popup is gated behind REMF_USE_POPUP (default false, fully rollback-able); clicking an activity now expands an inline, paginated (20/page) pledge table sorted most-behind-first (shortfall desc); activity Paid/Outstanding stay aggregates that reconcile to the seeded per-pledge-term pledges. 2026-08-08 v2.2: the pledge table's name column heading is "Name" (was "Church / donor"), matching the legacy Remittance Pledges screen (CorePerson.DisplayNameLastFirst), and the seeded names are now person names in "Last, First" form; the inline pledge drill is Table-view only (the Pacing Bars view is a quick at-a-glance overview: no expand caret, rows not clickable, no pledge panel) 2026-08-08 v2.3: the Pacing Bars view rows are clickable again and open a popup (remFBehindModalHTML) whose top is the activity summary (Total pledge, YTD Paid, Expected by now, Outstanding, % Paid, pacing status) and whose lower section is that activity's TOP 5 pledges most behind pace (its pledges sorted by shortfall = expectedByNow - paid descending, filtered to those actually behind, capped at 5, no pager, no receipts list); the old receipts/payment-history popup content is preserved in remFDetailModalHTML and reachable only via REMF_USE_POPUP (mode:'history'); the Table view inline paginated pledge drill is unchanged. 2026-08-08 v2.4: the single "Receipts through [date]" filter becomes a DATE RANGE (behaviour a: range END is the pacing cutoff, START frames the window/chip and is reserved for receipts scoping); the popover offers exactly This year (default: Jan 1 of the end's year to today), Last 30 days (end-30 to today) and Custom (inline From/To reveal, same pattern as W01/W03), with NO Refresh button (presets apply on click, Custom on the fields changing); the chip reads "Receipts from [start] to [end]"; REMF_STATE gains range/rStart/rEnd and remFThru now returns the range end so all pacing formulas are unchanged, just driven by end; This year and Last 30 days share headline pacing since both end today */ 5:'2.0', 6:'2.0', /* 2026-07-30: W06 Final (Jo's Insurance Billing Plans, 1-to-1) */ 7:'2.0', /* 2026-07-30: W07 Final (Jo's Deposits on Hand, 1-to-1; four tiers mapped to three) */
-  9:'2.8', /* 2026-08-07: W09 Final composed; 2026-08-08 refine: Jo-style segmented controls, queue Group by, functional month-grid calendar; 2026-08-08 v2.2: calendar markers coloured by active Group by dimension + click-a-day/icon day-detail popover; 2026-08-08 v2.3: person initials shown beside each calendar marker icon at Explore and Detail; 2026-08-08 v2.4: Approval Queue owner feedback: per-person Info panel (this-year totals by leave type + other-staff coverage), per-entry Approve AND Reject plus bulk Reject all, Rejected as a real status ("Rejected by [name], [date]", red+cancel icon), four status filter chips All/Pending/Approved/Rejected; 2026-08-08 v2.5: Leave Calendar colour language changed from group to approval STATUS (green approved, amber pending, red rejected), day cell takes priority colour (Pending>Rejected>Approved), each marker its own status colour + paired status glyph, group colour legend replaced by status legend, Group by now drives grouping/labels only (not colour); 2026-08-08 v2.6: Approval Queue Info popover lower section reworked from "other staff off this year totals" to a same-dates coverage-overlap list (who else is off during this person's dates, with each one's department and pay group, the overlapping dates and leave type + status), subject's dept + pay group added to the panel header, clean "No one else is off during these dates." empty line; 2026-08-08 v2.7: owner changes, four together: (1) per-day model (multi-day requests expand to one line/marker per calendar day, counts count day-lines), (2) Rejected removed from both views (statuses Pending/Approved only, filters All/Pending/Approved, no red, Undo still reverses Approved to Pending, calendar priority any Pending>yellow else all-approved>green), (3) Group by Department is first and the default in both views (Pay Group second), (4) leave-type icons removed everywhere (type as text; calendar marker is initials coloured by status with the status word in title/label/aria; legend is a simple status colour key); 2026-08-08 v2.8: owner change, Outstanding state introduced (a day-line still Pending AND dated strictly before today is Outstanding = past-due pending; approved-past and pending-future are NOT outstanding): calendar Outstanding marker + day cell are RED with day-cell priority Outstanding>Pending>Approved and the state word in the marker title/sr-label + day aria-label, red=Outstanding added to the status legend; Glance shows a Pending figure and a separate Outstanding figure side by side where Pending EXCLUDES outstanding (the two partition the pending set) and the old "Out this week" secondary was dropped; the Approval Queue flags outstanding day-lines with a red "Outstanding" tag + accent (still Pending, still counted in queue counts this pass, no new chip) */ 10:'2.0', /* 2026-08-11: W10 Final (Jo's Loans With Balance Due, 1-to-1; loanF branch: loan-type filter, ordered amethyst aging read, aging-band table filter, portfolio-risk + most-overdue panel, loan-detail drill modal, empty/loading states), three-size model Glance/Explore/Detail */ 11:'0.1', 13:'0.1', 15:'0.1', 16:'0.1', 17:'0.1'
+  1:'2.0', 2:'2.0', 3:'2.0', 4:'2.3', /* 2026-08-08 v2.1: activity table gains a YTD Paid column (relabelled, legacy position); the activity-click payment-history popup is gated behind REMF_USE_POPUP (default false, fully rollback-able); clicking an activity now expands an inline, paginated (20/page) pledge table sorted most-behind-first (shortfall desc); activity Paid/Outstanding stay aggregates that reconcile to the seeded per-pledge-term pledges. 2026-08-08 v2.2: the pledge table's name column heading is "Name" (was "Church / donor"), matching the legacy Remittance Pledges screen (CorePerson.DisplayNameLastFirst), and the seeded names are now person names in "Last, First" form; the inline pledge drill is Table-view only (the Pacing Bars view is a quick at-a-glance overview: no expand caret, rows not clickable, no pledge panel) 2026-08-08 v2.3: the Pacing Bars view rows are clickable again and open a popup (remFBehindModalHTML) whose top is the activity summary (Total pledge, YTD Paid, Expected by now, Outstanding, % Paid, pacing status) and whose lower section is that activity's TOP 5 pledges most behind pace (its pledges sorted by shortfall = expectedByNow - paid descending, filtered to those actually behind, capped at 5, no pager, no receipts list); the old receipts/payment-history popup content is preserved in remFDetailModalHTML and reachable only via REMF_USE_POPUP (mode:'history'); the Table view inline paginated pledge drill is unchanged */ 5:'2.0', 6:'2.0', /* 2026-07-30: W06 Final (Jo's Insurance Billing Plans, 1-to-1) */ 7:'2.0', /* 2026-07-30: W07 Final (Jo's Deposits on Hand, 1-to-1; four tiers mapped to three) */
+  9:'2.8', /* 2026-08-07: W09 Final composed; 2026-08-08 refine: Jo-style segmented controls, queue Group by, functional month-grid calendar; 2026-08-08 v2.2: calendar markers coloured by active Group by dimension + click-a-day/icon day-detail popover; 2026-08-08 v2.3: person initials shown beside each calendar marker icon at Explore and Detail; 2026-08-08 v2.4: Approval Queue owner feedback: per-person Info panel (this-year totals by leave type + other-staff coverage), per-entry Approve AND Reject plus bulk Reject all, Rejected as a real status ("Rejected by [name], [date]", red+cancel icon), four status filter chips All/Pending/Approved/Rejected; 2026-08-08 v2.5: Leave Calendar colour language changed from group to approval STATUS (green approved, amber pending, red rejected), day cell takes priority colour (Pending>Rejected>Approved), each marker its own status colour + paired status glyph, group colour legend replaced by status legend, Group by now drives grouping/labels only (not colour); 2026-08-08 v2.6: Approval Queue Info popover lower section reworked from "other staff off this year totals" to a same-dates coverage-overlap list (who else is off during this person's dates, with each one's department and pay group, the overlapping dates and leave type + status), subject's dept + pay group added to the panel header, clean "No one else is off during these dates." empty line; 2026-08-08 v2.7: owner changes, four together: (1) per-day model (multi-day requests expand to one line/marker per calendar day, counts count day-lines), (2) Rejected removed from both views (statuses Pending/Approved only, filters All/Pending/Approved, no red, Undo still reverses Approved to Pending, calendar priority any Pending>yellow else all-approved>green), (3) Group by Department is first and the default in both views (Pay Group second), (4) leave-type icons removed everywhere (type as text; calendar marker is initials coloured by status with the status word in title/label/aria; legend is a simple status colour key); 2026-08-08 v2.8: owner change, Outstanding state introduced (a day-line still Pending AND dated strictly before today is Outstanding = past-due pending; approved-past and pending-future are NOT outstanding): calendar Outstanding marker + day cell are RED with day-cell priority Outstanding>Pending>Approved and the state word in the marker title/sr-label + day aria-label, red=Outstanding added to the status legend; Glance shows a Pending figure and a separate Outstanding figure side by side where Pending EXCLUDES outstanding (the two partition the pending set) and the old "Out this week" secondary was dropped; the Approval Queue flags outstanding day-lines with a red "Outstanding" tag + accent (still Pending, still counted in queue counts this pass, no new chip) */ 10:'0.1', 11:'0.1', 13:'0.1', 15:'0.1', 16:'0.1', 17:'0.1'
 };
 Object.keys(FC_VERSION).forEach(function(wid){
   var el=document.getElementById('fc-version-'+wid);

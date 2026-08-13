@@ -275,3 +275,44 @@ WRENDER touched); the 4/5/6/9 filter branches are intact. Subordinate caption co
 `#fc-opt-10-*`) and its "Final design — locked" badge were not touched** — reported only, per instruction.
 No `MOCK_DATA.series[10]` values changed, so `mock-data.master.js` needed no re-sync (verified it still
 carries the W10 series).
+
+---
+
+## 2026-08-11 — FINAL build (loanF), 1-to-1 copy of Jo Lopez's Loans With Balance Due
+
+Built with the `build-final-widget` skill, per direct owner instruction ("one to one copy of Jo, like the earlier W05/W06/W07 builds; work autonomously, do not prompt"). Added as a new additive `opt==='F'` branch in `WRENDER[10]` (prefix `loanF`, `LOANF_` data); the A/B/C branches, the Dashboard-tab markup, and every other widget were left untouched. Final (v2) is now the default render for `fc-widget-10`, with A/B/C reachable from the design-option switch. `FC_VERSION[10]` = 2.0.
+
+### 1-to-1 composition, mapped to Jo's `loan` block
+Every component is Jo's, ported verbatim and renamed `loan*`/`LOAN_*` → `loanF*`/`LOANF_*`. Source for all rows: Jo's Widget Container Demo `loanContent(w)` and its registry/handlers/CSS.
+
+| Component | Source | Notes |
+|---|---|---|
+| KPI headline | Jo Glance (`loanGlance`) + Step 4 "Total Balance Due" | Big number = total balance due; matches the locked doc's exact headline. Past-due pill (amount + percent) or an "All current" pill beside it. |
+| Glance (KPI tier) | Jo `loanGlance` | Total, past-due badge, compact amethyst stacked aging bar, a "most overdue with a balance" call, sr-only aging sentence. No filter/download/switch (Jo's KPI tier). |
+| Explore (her `wide`) | Jo header + `loanTable` | Two-row `dep-hd` header (loan-type chip; total + pill + one context line stating count, past-due amount/percent, and 90+ portion), then the table grouped into aging bands with per-band subtotals and a cross-footed total. |
+| Detail (her `xwide`) | Jo `loanFull` | Table on the left, "Aging and risk" side panel on the right: clickable aging bands that filter the table, a Portfolio risk read (Past due, 90+ days with percents), and a Most overdue borrowers collections list. |
+| Filter | Jo `loanTypeChip` + `LOAN_TYPES` | Loan type only (All, Church - Special, Church Expansion, Individual). The one and only fetch: 800ms chip spinner + skeleton; sort and band pick are instant. |
+| Columns (table) | Jo `loanRowHTML` | Account, Borrower (name + type sub + link), Last payment (with dormancy flag), Days past due, Amount due. |
+| Views | Jo's tiers, not a bars/table toggle | Jo has no View 1/View 2 switch. Her "views" are the three size tiers plus the aging-band filter. Carried 1-to-1. |
+| Aging treatment | Jo `LOAN_BUCKETS` + `loanBuckets` | Four bands in severity order: Current, 1-30 days, 31-60 days, 90+ days. Amethyst severity ramp (--am-200 → --am-700), no red. Values as text; empty bands drop out of the stack and read "no balance in this band" in the panel. |
+| Sort | Jo `loanRows` / `wt-sort` headers | Account / Borrower / Last payment / Days past due / Amount due; days-desc default, text columns asc-first, each click flips the active column. |
+| Drill / modal | Jo `loanDetailModalHTML` | Row (or Most-overdue row) opens a loan-detail modal: summary grid (Account, Loan type, Original amount, Amount due, Aging, Days past due, Next payment due, Last payment), a dormancy note, a payment-history table, Open loan + Record a contact next steps, Export to Excel + Close. |
+| States | Jo `loanEmpty` / `loanSkeleton` | "Nothing outstanding" empty state (+ compact "All settled" Glance variant), loading skeleton on a loan-type fetch. |
+| Tooltips | Jo `loanShowPop` (aging hover) + `data-tip`/`title` | Aging-band hover card (Outstanding / Loans / Share of balance); dormancy and pill tooltips carried as `title`. |
+| Accessibility | Jo | sr-only aging sentence, role=button rows, aria-labelled chip with aria-haspopup/aria-expanded, listbox popover, aria-pressed band toggles. |
+
+**Could not copy exactly / knowing deviations:** none in behaviour. The only faithful-to-Jo divergence from the Step 4 doc is the aging-band labels (see caveats). Shell-contract adaptations only: Jo's `render()`/`pop`/`modal`/`find`/`timers`/`setStatus`/`ICON` become `loanFRerender`/`LOANF_POP`/`LOANF_MODAL`/`LOANF_STATE`/`LOANF_TIMER`/`showToast`/`loanFIcon`; delegated clicks use `data-loanf` attributes gated to `.loanf-root`; the modal/popover/hover-card mount on `document.body` carrying `.loanf-root`; sizes map k/xk→Glance, s/m→Explore, l/x→Detail (Rule 12). All rendered strings, values and labels are real text in the DOM.
+
+### Mock data (standalone `LOANF_` constants, not `MOCK_DATA`)
+Jo's sample verbatim: nine loans across three types totalling **$112,037.96**. Oldest 90+ band holds Third Presbyterian Church LN-1301 (95 days, $24,690.13) and Cornerstone Academy LN-1099 (145 days, dormant, $14,250.00). Edge datasets carried too: `LOANF_LOANS_CURRENT` (all current) and `LOANF_LOANS_SINGLE` (single band); a `dataset:"none"` path drives the empty state. Because these are standalone constants, `mock-data.master.js` needs **no** re-sync (the A/B/C `MOCK_DATA.series[10]` is untouched).
+
+### Verification
+- **Static gate** `final-check-rules.py --widget 10`: `F2` node --check passes; **2 HIGH F9** (the two Sign-off Readiness rows that block build, below) — waived per owner directive to build the 1-to-1 as write-up caveats (Rule 11); **4 MED F7** em dashes, all in pre-existing shared chrome (the widget-title convention "W10 —", the shared "Customer Research —"/"Logic —" section headers present identically in all 17 widgets, the pre-existing A/B/C source name and Logic prose) — none in the loanF branch or the new Final paragraph; **1 LOW F8** empty-guard heuristic (guard exists in `loanFContent`, proven by the driver).
+- **DOM-shim driver** `w10_driver.scratch.js` (extracts the loanF data + render fns verbatim from the live file, runs under a DOM shim): **17 PASS, 0 FAIL.** Asserts: non-empty render at Glance/Explore/Detail(l)/Detail(x); loan-type filter changes output; each aging-band toggle (total/cur/b1/b2/b3) changes output; sort toggle changes output; KPI Total Balance Due renders in Glance; all four aging bands render at Detail; the loan-detail drill modal opens (Loan detail + borrower + Payment history) and closes cleanly; empty state renders cleanly at Explore, Glance and via dataset=none; and a no-em-dash sweep across every loan type × band × size plus the modal.
+
+### Backend caveats carried (Rule 11 — rendered as if real, decision lives here, not on screen)
+1. **Aging-band labels differ from the Step 4 doc.** Jo labels the four bands Current / 1-30 days / 31-60 days / 90+ days; the Step 4 doc specifies Current (0-29) / 30-59 / 60-89 / 90+. The 1-to-1 build keeps Jo's labels. Reconcile in a later pass.
+2. **Aging totals need the legacy oldest-first (LIFO) payment allocation rebuilt server-side** — the Modern API does not replicate it, so a Modern-API build's band totals will not match legacy. Step 1 calls this the single most consequential data-accuracy gap; the Step 4 doc has decided it is a must-fix. (Sign-off Readiness row 5, HIGH F9.)
+3. **Status (Active / In Arrears) has no confirmed backing field.** Jo's build does not surface a Status column or filter (overdue-ness reads only from the aging bands), so this Final does not render the unconfirmed Status concept at all. (Sign-off Readiness row 1, HIGH F9.)
+4. **Drill-through destination unconfirmed.** The loan-detail modal's "Open loan" action is a stub toast; the real navigation target is not confirmed.
+5. **Ben Lane interview (13.07.2026):** these HQ-to-church loans may function more like donations than scheduled repayments, which may make the arrears framing less relevant to users. Recorded, not resolved.
