@@ -5,7 +5,9 @@
 **Full history / rejected ideas:** [Widget_Specs/W16-Accounts-Payable-By-Due-Date.md](../Step%203%20-%20Mock_Work/Widget_Specs/W16-Accounts-Payable-By-Due-Date.md)
 **Data source & formulas:** [Step 1 - Dashboard Research/16 - Accounts Payable By Due Date.md](../Step 1 - Dashboard Research/16%20-%20Accounts%20Payable%20By%20Due%20Date.md)
 **Confluence dossier:** none yet
-**Last verified against build:** not yet audited
+**[2026-08-25, Feargal call] This widget stays a focused due-date and aging view. Do not grow it into a super-widget.** Feargal was explicit that it should not become a container for every payment function, and preferred **separate action widgets** for distinct tasks (unposted invoices, payment processing, posting to the general ledger), with this widget remaining a useful overview. Those separate action widgets are **assigned to Aditya**, outside this project's queue, but the outcome affects this widget's boundary so it is recorded here. Documentation only, no build change.
+
+**Last verified against build:** 2026-08-19 via build-final-widget (Final, Jo design 1-to-1 plus owner horizon picker: 107-assertion Node DOM-shim driver, 0 failures + final-check-rules.py node gate clean). Previous: not yet audited.
 
 **Evidence key:** `[LIVE]` verified in beta1/test1 on a stated date · `[SME]` interview-sourced (name + date) · `[RESEARCH]` desktop/market research · `[BUILD]` true of the mockup build · `[DOC]` backed by a written source document (named) · `[TO CONFIRM]` assumed, with the owner who can confirm. Claims with no mark are template boilerplate only. Conflicting evidence coexists: if two sources disagree, both claims stay recorded, each with its own mark, until someone with backend access settles it.
 
@@ -117,14 +119,15 @@ Vendor · Invoice # · Amount · Due Date · Status. Complete list for payment p
 
 | # | Open item | Type | Owner | Blocks build? |
 |---|---|---|---|---|
-| 1 | Drill-through: "Leaning yes, pending expert/dev confirmation: a link out to the full Accounts Payable module (filtered to the same due date/vendor) would be a meaningful improvement over view-only behaviour. Raise with experts/dev before building." | product decision | experts/dev | Yes, for the drill-through element only |
+| 1 | Drill-through: "Leaning yes, pending expert/dev confirmation: a link out to the full Accounts Payable module (filtered to the same due date/vendor) would be a meaningful improvement over view-only behaviour. Raise with experts/dev before building." **Update 2026-08-19, per direct instruction: the Final was built without any drill-through element (matching Jo's view-only v2 design), so nothing blocked was built; the question stays open with experts/dev for a possible later addition.** | product decision | experts/dev | No (element not built; question open) |
 | 2 | Possible mislabeling bug carryover, per PROJECT INDEX: "Possibly still open, and only indirectly tagged: a mislabeling bug ('Over 60' actually meaning 90+ days) confirmed for W10 may also apply here — never confirmed per-widget." This widget's own old design filters by exact due date rather than banded labels [DOC — Step 1 research], so the carryover is unconfirmed either way; check before reusing any aging-band labels. | bug check | TBD | No |
 | 3 | Modern API security gap: module access is metadata-only and not actually enforced; any authenticated user can call the endpoint regardless of AP license | backend | dev | No (but must be fixed server-side before release) |
-| 4 | Urgency bucket boundary math (Overdue Now / Due This Week / Due This Month) is undefined | math | TBD | Yes (the primary filter and default view depend on it) |
+| 4 | Urgency bucket boundary math (Overdue Now / Due This Week / Due This Month) is undefined. **Resolved 2026-08-19, per direct instruction: adopted Jo's band math from her v2 build (overdue = due before today; due this week = 0-7 days out; due this month = 8-30; due later = 31+), including her fourth "Due later" band. The Final build implements exactly this.** | math | Resolved (owner) | No (resolved) |
 
 This doc has 4 open items; it is not sign-off-ready until this table is empty or every row is explicitly accepted as a known risk.
 
 ## Fine-Tuning Notes
 - Overdue items always red regardless of filter selection
+- **2026-08-19, per direct instruction — Final built (v2.0).** A 1-to-1 copy of Jo Lopez's Widget Container Demo v2 `ap` block (aging + cash requirements, per her dossier 7371554882 Part C decisions 11.1/11.3/11.4/11.5): four aging bands (Overdue / Due this week / Due this month / Due later, math per her `apBandOf`), grouped hero table with per-band subtotals, Cash requirements selector panel + Top vendors owed at Detail, due-date filter chip and popover as the only fetch, no charts, no timeline, no drill-through. PLUS one owner addition: a due-date horizon picker in the standard v2 chip pattern (All outstanding / Next 7 / 30 / 60 / 90 days; scopes the invoice set; overdue always included; due filter snaps to All due dates when invalidated), deliberately not identical to any other widget's picker. Built as the additive `opt==='F'` branch in `WRENDER[16]` (`apF`/`APF_` namespaces); verified by a 107-assertion Node DOM-shim driver (0 failures) plus final-check-rules.py. Sizing per Rule 12 (Glance / Explore / Detail). `FC_VERSION[16]` = 2.0. Full composition sheet in Widget_Specs (2026-08-19 entry).
 - Due Date filter filters all views independently
 - Total AP Outstanding shown as the KPI headline and as a header figure on all views at Large size

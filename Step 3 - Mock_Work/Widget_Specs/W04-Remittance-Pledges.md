@@ -260,3 +260,104 @@ Small additive iteration on the shipped Final (opt==='F', prefix remF); no rebui
 - **START is reserved:** with no visible receipts list in this build, the range START currently only drives the chip label. It is stored (`rStart` / `remFRangeStart`) and ready to scope a receipts list when one is added.
 - **Browser eyeball:** the From/To two-field layout inside the popover (spacing, the native date-picker widgets side by side), the caret-retention while typing a Custom date, and the ~800ms skeleton on a range change were not machine-verified.
 - **Untouched:** A/B/C branches and other widgets confirmed unchanged by diff (changes limited to the remf CSS block, the remF JS region, the fc-widget-4 Purpose + Logic note, and FC_VERSION[4]); the Table drill, Pacing Bars top-5 popup, Table/Pacing-bars toggle, YTD Paid column, Glance/Explore/Detail sizes, states, person Last,First names and the `REMF_USE_POPUP` rollback flag all keep working.
+
+---
+
+## 2026-08-24 — FINAL v3.0: repositioned as the EXCEPTION widget of the pledge pair (`build-final-widget`)
+
+> Additive entry. Nothing above was edited or removed.
+
+**Why this build happened.** Per direct instruction from the project owner: W04 and W17 use very similar data and had drifted into looking like the same widget. The two are now deliberately split by *role* rather than by data: **W04 answers "which pledges are not arriving as expected, and by how much"; W17 answers "how are we tracking against goal."** Every change below serves that separation.
+
+### Gate (Phase 0)
+
+`final-check-rules.py --widget 4 --step4` before any work: **0 HIGH**, 10 MED (pre-existing em dashes inside A/B/C option strings and dated Logic notes, out of scope per the skill; plus two F3 view-name heuristics that are the known view-list drift). Step 6 has a Confluence dossier pull for this widget but **no reconciliation file**, so there were no Accepted/Rejected/Disputed findings to honour — and equally, nothing in that dossier has been reviewed yet.
+
+**Open conflict resolved rather than worked around.** `Final Check - Items Needing Your Review.md` item 112 (W04/W05/W06 view lists drifted from the 2026-07-23 rebuilds) was still unchecked, and the skill forbids finalising around an open view conflict. This build **replaces W04's view set outright** (see below), so the drift is resolved for W04 by supersession, not waived. W05 and W06 remain open in that item.
+
+### Confirmed composition sheet (owner, 2026-08-24)
+
+| Component | Source | Decision |
+|---|---|---|
+| Framing | New, direct instruction | Exception widget; W17 owns goal progress |
+| Glance headline | Option C's KPI (2026-07-23) | Behind-pace shortfall in money, deliberately not a percentage |
+| Views | **Table only** | Owner chose table-only over Table + Pace Variance chart |
+| Row grouping | New | Behind pace / On track (collapsed) / No pledge in this range (collapsed) |
+| Behind ordering | New | Worst shortfall first |
+| Date range | Edward Eoff SME call, 2026-08-10 | Full two-jobs model, START made functional |
+| No-pledge rows | New, owner choice | Third group, pacing suppressed |
+| Pledge drill | Kept from remF v2.1/v2.2 | Unchanged, was already most-behind-first |
+| Pacing colour bands | Kept from v2.4 | Day-based scale, already owner-decided 2026-07-28 |
+| Sizes | Rule 12 | Glance / Explore / Detail |
+
+### What was built (`FC_VERSION[4]` 2.4 -> 3.0)
+
+1. **Glance headline is the behind-pace shortfall in money**, summed **per row** rather than netted across the portfolio, so a pledge running ahead cannot mask one running behind. Sub-line reads "N of M behind pace". The `% of pledged` goal pill is **removed from Glance and from the Explore/Detail header** — a percentage of a goal is W17's language. The graded progress bar is gone from Glance for the same reason (a fill toward total reads as goal progress). `FC_KPI_HEADLINE[4]` now states the exception, not the overall pace.
+2. **Exception grouping in the table.** Three groups: **Behind pace** (always open, never collapsible, sorted worst shortfall first, count badge plus total short), **On track** (collapsed to a count, expands on click) and **No pledge in this range** (collapsed, shows total received). When nothing is behind, a "Nothing behind pace" banner replaces the group. New state `REMF_STATE.grpOpen`, new handler `data-remf="grp"`. Totals still cross-foot **every** activity in scope including collapsed groups, and the caption says so.
+3. **TABLE ONLY.** The Table / Pacing bars toggle is removed and the chart-type switch block is hidden under `fc-fmode` (new `.fc-abc-only` class, so A/B/C keep theirs). This matches the legacy reality recorded in Step 1 (table, no chart) and removes the last progress-bar presentation from W04. `remFViewToggle` and `remFBars` stay defined but unreachable — the same rollback pattern used for `gpFDonut` on W17 — and a stale `view:'bars'` state falls through to the table. **Consequence, accepted by the owner:** the v2.3 top-5-most-behind popup hung off Pacing Bars row clicks and is therefore now unreachable. Its code is intact.
+4. **Two-jobs date range** (from Edward Eoff, 2026-08-10, who described the range as selecting which pledges are in scope *and* bounding the receipts). `remFPaid` gained an optional lower bound; `remFPledgeInRange` requires a pledge's own term to overlap the window. An activity with receipts but no overlapping pledge term becomes a **receipts-only row** with pacing suppressed rather than faked as zero-expected — which would otherwise inflate the behind-pace headline with activities carrying no commitment.
+5. **`remFPledgesFor` memo bug fixed.** It anchored reconciliation on `REMF_TODAY` regardless of the selected range, so moving the window put the drill's pledge paids out of step with the activity row above it. The memo is now keyed on the window.
+
+### Mid-build correction, recorded because it was a real error
+
+The first cut of the two-jobs change scoped `paid` to the window while leaving `expected` cumulative to the pledge's own term. Under **Last 30 days** that made every pledge read as catastrophically behind ($37,085 shortfall against $13,090 for the year) — a false reading, not an insight, and the same apples-to-oranges class of error already flagged against W17's Glance figure. Corrected to **two explicit paid figures**:
+
+- `paid` — all receipts on or before the window **end**, cumulative. Drives expected, outstanding, % paid, daysAhead and the shortfall, because pacing from a pledge's begin date is inherently cumulative.
+- `windowPaid` — receipts **inside** `[start, end]`. This is the "activity in this period" figure, the second of Edward's two jobs, surfaced in the Glance note, the header sr-text and the table caption.
+
+So START does real work twice (which pledges are in scope, and the window receipts figure) without corrupting the pacing maths. Verified: window receipts move from **$31,400** (This year) to **$3,300** (Last 30 days) while the shortfall stays stable at **$8,268**, 2 of 5 behind, in both.
+
+### Verification
+
+- `final-check-rules.py --widget 4 --step4`: **0 HIGH**, 10 MED (all pre-existing, as at the gate), F2 `node --check` pass on every script block.
+- **DOM-shim driver** (`outputs/_w04_driver.js`): **100 assertions, 0 failures.** Covers every size slot (k/m/l/x/s) rendering non-empty at the right tier; no view toggle, bar markup or legend anywhere; stale `view:'bars'` falling back to the table; the Glance showing the shortfall and *not* containing "of pledged"; the header likewise; the three groups with On track collapsed by default and expanding on toggle; receipts-only rows having expected 0, null pctPaid, null daysAhead and neutral status; `behindShortfall` equalling the sum of per-row shortfalls; `pacedCount` excluding no-pledge rows; This year vs Last 30 days differing on window receipts while paced cumulative paid and the shortfall stay identical; `remFPaid`'s lower bound matching a hand-computed window total; a pre-history window (2020) making every row receipts-only with zero shortfall and still rendering; all three range presets at all five sizes; drill paid reconciling to its parent row in both presets; expanded-row pledge panel and aria state; the empty state at every size; totals cross-footing; an em-dash sweep across every state x range x size x collapse combination; and an inverted custom range not throwing.
+- **Diff against backup:** 256 changed lines, all inside the remF block, the `fc-widget-4` chrome, its scoped CSS, `FC_VERSION` and `FC_KPI_HEADLINE[4]`. Nothing else in the file touched. Backup at `outputs/Dashboard Widget Mockups.BACKUP-2026-08-24.html`.
+- Data lives in the existing standalone `REMF_` constants, **not** `MOCK_DATA`, so `mock-data.master.js` needs no re-sync.
+
+### Left for an eyeball (not machine-verified)
+
+The group header styling (left severity accent, count pill, collapse caret rotation), how the collapsed groups read at Explore's height, and whether the Glance reads well at 288x176 now that it carries a money figure plus two sub-lines.
+
+### Rule 11 — caveats, doc only, nothing rendered on screen
+
+The pacing basis is still a **derived** figure, not a stored backend field: per the Developer Punch List, Pledge Due / Expected / % Due are not returned by the Modern API and are computed client-side. Making START functional adds no new backend dependency, but the receipts-only mode assumes receipts can be queried for a date window independently of pledges — which is exactly what Edward said the legacy widget does **not** do today ("it's not going to show anything at all unless a pledge exists"). **So receipts-only mode is forward design, not current behaviour**, and needs the API to support returning receipts without a pledge join. Recorded as a Sign-off Readiness row rather than resolved here.
+
+### 2026-08-24 — v3.1: owner corrections to the same-day v3.0
+
+Two owner changes plus one chrome fix, all additive to v3.0.
+
+**1. Three views restored, Table as the DEFAULT.** v3.0 removed the view toggle entirely on a misread of "table only" — the owner's intent was **table as the default**, with the charts still available for comparison. Corrected. Views are now:
+
+- **Table** (default) — the v3.0 grouped exception table, unchanged.
+- **Pacing bars** — the existing `remFBars`, re-reachable. This also makes the v2.3 top-5-most-behind popup reachable again, so the v3.0 note about it being unreachable no longer applies.
+- **Pace variance** — **new** `remFVariance`, building Option C's concept (2026-07-23, "Maximum Freedom") into the F branch for the first time: one diverging bar per activity for `paid − expected`, behind extending left and ahead right of a single continuous zero line, scaled to the largest absolute variance, worst variance first, dollar amount and status chip on every row. Receipts-only rows are **listed below the chart rather than drawn at zero**, because a zero-length bar on a zero axis reads as "on pace" when the truth is "not measurable".
+
+The header toggle and the 3-dot "Switch view" menu previously wrote different stores (`REMF_STATE.view` vs the generic per-option store `fcSetView` targets), so they could disagree. Both now write the same place, and `remFRender` adopts the generic value on entry. Shared `gs()` / `sv()` signatures untouched.
+
+**2. Third drill level: per-pledge payment schedule.** Owner request: clicking a pledge should show that donor's history — what they pledged, the payments, and *when a payment was skipped*. Built as `remFSchedule` / `remFPledgeHistoryHTML`:
+
+- The pledge's own term is divided into instalments at the activity's payment frequency, each due on its period date for `goal / n`.
+- The pledge's paid total is allocated **oldest first**, mirroring how the legacy system allocates receipts.
+- Each instalment resolves to **paid**, **part**, **missed** (due on or before the as-of date and still unfunded — the skipped payment) or **upcoming**.
+- The panel header states the pledge amount and term, "N of M due payments received", and either a red "N missed, $X" flag or a green "Nothing skipped" chip. Missed rows are tinted and labelled. The footer names the **first skipped payment** date and states that receipts are applied oldest first, so a gap shows as the earliest unfunded instalment.
+- Several pledges can be open at once; the schedule reconciles to that pledge's paid total.
+
+Worked example from the seeded data (General Fund Apportionment, Fairchild Nora, goal $683, paid $238, term Mar 2025 to Feb 2026): four instalments paid in full, one part-paid at $10 of $57, then seven missed — first skipped payment 1 Aug 2025, $445 outstanding across the skips.
+
+**3. Stale chrome fixed.** The Final's cards still carried the inherited titles "Progress Bars / Keep/Refresh" — the same label-vs-render mismatch this file flagged on 2026-07-23. Under `fc-fmode` they now read **"Remittance Pledges / Behind pace first"**, using the existing `.fc-szhd-abc` / `.fc-szhd-f` span pattern so A/B/C wording is untouched.
+
+**Rule 11 — new caveat, doc only, nothing rendered on screen.** The per-pledge schedule is **derived, not stored**. The mock carries payment frequency on the **activity**, not per pledge; the legacy pledge detail table's own instalment count has not been confirmed for *remittance* pledges (it has for GF pledges, via `GFPledge.PledgeDue`); and the individual receipt dates shown are synthesised. So the instalment **states** are real logic the backend could reproduce, but the specific dates are illustrative until the API exposes per-pledge receipt rows. Added as Sign-off Readiness row 10.
+
+**Verification.** `final-check-rules.py --widget 4`: **0 HIGH**, 8 MED (all pre-existing), F2 `node --check` pass. Driver extended to **146 assertions, 0 failures** — adding: the toggle present at Explore/Detail and absent at Glance; all three views rendering at every size; the three views producing genuinely different output; the variance chart's zero line, negative fill, behind/ahead scale labels, worst-first ordering and separate no-pledge list; an unknown view state falling back to the table; the schedule staying hidden until a pledge is clicked; the schedule's applied amounts summing to the pledge's paid total and its due amounts to the pledge goal; every instalment carrying a valid state; **oldest-first allocation proven** (no funded instalment appears after an unfunded due one); a pledge with a real skipped payment being found and its missed row, header count and first-skipped footer all rendering; and two schedules open simultaneously.
+
+### 2026-08-24 — v3.2: Pace variance dropped after review
+
+Owner reviewed the v3.1 three-view build and dropped **Pace variance** the same day. Views are now **two: Table (default) and Pacing bars.**
+
+Removed from the header toggle, from both 3-dot "Switch view" menus, and from the view bridge in `remFRender`. `remFVariance` and `remFVarNoPledge` **stay defined but unreachable** — the same rollback pattern used for `gpFDonut` on W17 — and a stale view state of `"variance"` falls back to the table with Table marked pressed rather than rendering blank. The `.rem-var-*` CSS is left in place, unused, so a rollback needs no style work.
+
+Nothing else changed: the exception grouping, the behind-pace Glance headline, the two-jobs date range and the per-pledge payment schedule are all as built in v3.0/v3.1.
+
+**Note for anyone reading the v3.1 entry above:** its claim that restoring Pacing Bars made the v2.3 top-5-most-behind popup reachable again still holds — that view survived this cut. Only the variance chart went.
+
+**Verification.** `final-check-rules.py --widget 4`: **0 HIGH**, 11 MED (all pre-existing), F2 `node --check` pass. Driver at **143 assertions, 0 failures**, with the variance assertions inverted to prove absence: no `rem-var-` markup at any size, no `data-v="variance"` segment in the toggle, a stale variance state falling back to the table while still rendering the toggle and marking Table pressed, and `remFVariance` still defined for rollback.

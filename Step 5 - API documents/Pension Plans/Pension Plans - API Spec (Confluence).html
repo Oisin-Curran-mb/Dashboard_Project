@@ -20,7 +20,7 @@ pre code { background: none; padding: 0; }
 <body>
 
 <h1>Pension Plans — API Spec</h1>
-<p><span class="status">Status: DRAFT — not final</span></p>
+<p><span class="status">Status: Complete at Step 5 — awaiting management sign-off</span></p>
 <h2>Overview</h2>
 <p>The widget is a snapshot of the conference's annual clergy-pension obligation: every ACTIVE pension appointment (person active, plan started, not yet ended), summed per plan, filterable by church district. This spec is deliberately 1-to-1 with the existing pension-plans endpoints; the only new field is <code>AppointeeCount</code> on the grid rows. The four endpoints that exist today (filters, grid, chart, details) keep their exact shapes and paths. The table, pie, grouped bar, KPI headline, share-of-total, and every total the widget shows are computed client-side from the grid data; nothing else is asked of the backend.</p>
 <p><strong>There is no time axis.</strong> Contributions are annual figures attached to appointments that are active as of today; the source data has no sub-year breakdown and no year scoping. This spec therefore has none of the Time Window Module machinery: no <code>window</code>, no <code>grain</code>, no <code>asOf</code>. Do not copy those parameters over from the Budget Compared to Actual spec; they do not exist here.</p>

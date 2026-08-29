@@ -5,6 +5,8 @@
 **Full history / rejected ideas:** [Widget_Specs/W11-Fixed-Asset-Values.md](../Step%203%20-%20Mock_Work/Widget_Specs/W11-Fixed-Asset-Values.md)
 **Data source & formulas:** [Step 1 - Dashboard Research/11 - Fixed Asset Values.md](../Step 1 - Dashboard Research/11%20-%20Fixed%20Asset%20Values.md)
 **Confluence dossier:** none yet
+**[2026-08-25, Feargal call] No design decision was made.** Oisin stated the fixed-assets widget has not been developed yet and the call reached no detailed decision on it. Recorded so nobody infers a design from the meeting notes: this widget is still undesigned, and the absence of decisions here is deliberate rather than an omission from the notes.
+
 **Last verified against build:** not yet audited
 
 > **Evidence key:** `[LIVE]` verified in beta1/test1 on a stated date · `[SME]` interview-sourced (name + date) · `[RESEARCH]` desktop/market research · `[BUILD]` true of the mockup build · `[DOC]` backed by a written source document (name it) · `[TO CONFIRM]` assumed, with the named owner who can confirm. Claims with no mark are template boilerplate only.

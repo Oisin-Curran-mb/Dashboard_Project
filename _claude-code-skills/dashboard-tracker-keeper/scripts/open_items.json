@@ -1,0 +1,459 @@
+{
+  "items": [
+    {
+      "id": "OI-b2706b46",
+      "category": "deviation (negative)",
+      "widget": "Payroll Distributions",
+      "step": "Step 5",
+      "detail": "Step 5 - API documents/Payroll Distributions/Payroll Distributions - API Spec.md still has the DRAFT line but the Step 5 index tracker status says \"✅ Complete\".",
+      "first_flagged": "2026-07-24",
+      "status": "closed",
+      "closed_date": "2026-08-19"
+    },
+    {
+      "id": "OI-a3eef181",
+      "category": "deviation (positive)",
+      "widget": "(Empty Slot)",
+      "step": "Step 4",
+      "detail": "Dashboard Tracker.xlsx Step 4 column says \"Not Started\" but Step 4 index's Tracker status column says \"➖ N/A\" - these should always match since one is synced from the other.",
+      "first_flagged": "2026-07-24",
+      "status": "open"
+    },
+    {
+      "id": "OI-9b0b5bac",
+      "category": "unreferenced file",
+      "widget": "Step 2",
+      "step": "Step 2",
+      "detail": "Market Research/W01 - Budget Compared to Actual.md isn't mentioned in Step 2's own index",
+      "first_flagged": "2026-07-24",
+      "status": "closed",
+      "closed_date": "2026-08-19"
+    },
+    {
+      "id": "OI-46f78deb",
+      "category": "unreferenced file",
+      "widget": "Step 2",
+      "step": "Step 2",
+      "detail": "Market Research/W02 - Pension Plans.md isn't mentioned in Step 2's own index",
+      "first_flagged": "2026-07-24",
+      "status": "closed",
+      "closed_date": "2026-08-19"
+    },
+    {
+      "id": "OI-c0ed84cd",
+      "category": "unreferenced file",
+      "widget": "Step 2",
+      "step": "Step 2",
+      "detail": "Market Research/W03 - Payroll Distributions.md isn't mentioned in Step 2's own index",
+      "first_flagged": "2026-07-24",
+      "status": "closed",
+      "closed_date": "2026-08-19"
+    },
+    {
+      "id": "OI-f0c18b6f",
+      "category": "unreferenced file",
+      "widget": "Step 2",
+      "step": "Step 2",
+      "detail": "Market Research/W04 - Remittance Pledges.md isn't mentioned in Step 2's own index",
+      "first_flagged": "2026-07-24",
+      "status": "closed",
+      "closed_date": "2026-08-19"
+    },
+    {
+      "id": "OI-3fea5ecc",
+      "category": "unreferenced file",
+      "widget": "Step 2",
+      "step": "Step 2",
+      "detail": "Market Research/W05 - Receivable Invoices Outstanding.md isn't mentioned in Step 2's own index",
+      "first_flagged": "2026-07-24",
+      "status": "closed",
+      "closed_date": "2026-08-19"
+    },
+    {
+      "id": "OI-269bf2e6",
+      "category": "unreferenced file",
+      "widget": "Step 2",
+      "step": "Step 2",
+      "detail": "Market Research/W06 - Insurance Billing Plans.md isn't mentioned in Step 2's own index",
+      "first_flagged": "2026-07-24",
+      "status": "closed",
+      "closed_date": "2026-08-19"
+    },
+    {
+      "id": "OI-1e0bc1ab",
+      "category": "unreferenced file",
+      "widget": "Step 2",
+      "step": "Step 2",
+      "detail": "Market Research/W07 - Deposit Accounts.md isn't mentioned in Step 2's own index",
+      "first_flagged": "2026-07-24",
+      "status": "closed",
+      "closed_date": "2026-08-19"
+    },
+    {
+      "id": "OI-b60d3744",
+      "category": "unreferenced file",
+      "widget": "Step 2",
+      "step": "Step 2",
+      "detail": "Market Research/W08 - My Status.md isn't mentioned in Step 2's own index",
+      "first_flagged": "2026-07-24",
+      "status": "closed",
+      "closed_date": "2026-08-19"
+    },
+    {
+      "id": "OI-19ba84f0",
+      "category": "unreferenced file",
+      "widget": "Step 2",
+      "step": "Step 2",
+      "detail": "Market Research/W09 - Payroll Scheduled Time Off.md isn't mentioned in Step 2's own index",
+      "first_flagged": "2026-07-24",
+      "status": "closed",
+      "closed_date": "2026-08-19"
+    },
+    {
+      "id": "OI-5d153966",
+      "category": "unreferenced file",
+      "widget": "Step 2",
+      "step": "Step 2",
+      "detail": "Market Research/W10 - Loans With Balance Due.md isn't mentioned in Step 2's own index",
+      "first_flagged": "2026-07-24",
+      "status": "closed",
+      "closed_date": "2026-08-19"
+    },
+    {
+      "id": "OI-2ccfaa60",
+      "category": "unreferenced file",
+      "widget": "Step 2",
+      "step": "Step 2",
+      "detail": "Market Research/W11 - Fixed Asset Values.md isn't mentioned in Step 2's own index",
+      "first_flagged": "2026-07-24",
+      "status": "closed",
+      "closed_date": "2026-08-19"
+    },
+    {
+      "id": "OI-c3585659",
+      "category": "unreferenced file",
+      "widget": "Step 2",
+      "step": "Step 2",
+      "detail": "Market Research/W13 - Purchasing Management.md isn't mentioned in Step 2's own index",
+      "first_flagged": "2026-07-24",
+      "status": "closed",
+      "closed_date": "2026-08-19"
+    },
+    {
+      "id": "OI-2bf73cc8",
+      "category": "unreferenced file",
+      "widget": "Step 2",
+      "step": "Step 2",
+      "detail": "Market Research/W14 - Main Content Tasks.md isn't mentioned in Step 2's own index",
+      "first_flagged": "2026-07-24",
+      "status": "closed",
+      "closed_date": "2026-08-19"
+    },
+    {
+      "id": "OI-618ab52d",
+      "category": "unreferenced file",
+      "widget": "Step 2",
+      "step": "Step 2",
+      "detail": "Market Research/W15 - Bank Balances.md isn't mentioned in Step 2's own index",
+      "first_flagged": "2026-07-24",
+      "status": "closed",
+      "closed_date": "2026-08-19"
+    },
+    {
+      "id": "OI-d2406895",
+      "category": "unreferenced file",
+      "widget": "Step 2",
+      "step": "Step 2",
+      "detail": "Market Research/W16 - Accounts Payable By Due Date.md isn't mentioned in Step 2's own index",
+      "first_flagged": "2026-07-24",
+      "status": "closed",
+      "closed_date": "2026-08-19"
+    },
+    {
+      "id": "OI-883ffc75",
+      "category": "unreferenced file",
+      "widget": "Step 2",
+      "step": "Step 2",
+      "detail": "Market Research/W17 - Gifts Pledges.md isn't mentioned in Step 2's own index",
+      "first_flagged": "2026-07-24",
+      "status": "closed",
+      "closed_date": "2026-08-19"
+    },
+    {
+      "id": "OI-f6130d53",
+      "category": "deviation (negative)",
+      "widget": "Budget Compared to Actual",
+      "step": "Step 5",
+      "detail": "Step 5 - API documents/Budget Compared to Actual/Budget Compared to Actual - API Spec.md still has the DRAFT line but the Step 5 index tracker status says \"✅ Complete\".",
+      "first_flagged": "2026-08-19",
+      "status": "closed",
+      "closed_date": "2026-08-19"
+    },
+    {
+      "id": "OI-fbcc1b60",
+      "category": "deviation (negative)",
+      "widget": "Pension Plans",
+      "step": "Step 5",
+      "detail": "Step 5 - API documents/Pension Plans/Pension Plans - API Spec.md still has the DRAFT line but the Step 5 index tracker status says \"✅ Complete\".",
+      "first_flagged": "2026-08-19",
+      "status": "closed",
+      "closed_date": "2026-08-19"
+    },
+    {
+      "id": "OI-d68da062",
+      "category": "deviation (negative)",
+      "widget": "Remittance Pledges",
+      "step": "Step 5",
+      "detail": "Step 5 - API documents/Remittance Pledges/Remittance Pledges - API Spec.md still has the DRAFT line but the Step 5 index tracker status says \"✅ Complete\".",
+      "first_flagged": "2026-08-19",
+      "status": "closed",
+      "closed_date": "2026-08-19"
+    },
+    {
+      "id": "OI-67059d74",
+      "category": "deviation (negative)",
+      "widget": "Receivable Invoices Outstanding",
+      "step": "Step 5",
+      "detail": "Step 5 - API documents/Receivable Invoices Outstanding/Receivable Invoices Outstanding - API Spec.md still has the DRAFT line but the Step 5 index tracker status says \"✅ Complete\".",
+      "first_flagged": "2026-08-19",
+      "status": "closed",
+      "closed_date": "2026-08-19"
+    },
+    {
+      "id": "OI-e96c5f3d",
+      "category": "deviation (negative)",
+      "widget": "Insurance Billing Plans",
+      "step": "Step 5",
+      "detail": "Step 5 - API documents/Insurance Billing Plans/Insurance Billing Plans - API Spec.md still has the DRAFT line but the Step 5 index tracker status says \"✅ Complete\".",
+      "first_flagged": "2026-08-19",
+      "status": "closed",
+      "closed_date": "2026-08-19"
+    },
+    {
+      "id": "OI-31baaf04",
+      "category": "deviation (negative)",
+      "widget": "Deposit Accounts",
+      "step": "Step 5",
+      "detail": "Step 5 - API documents/Deposit Accounts/Deposit Accounts - API Spec.md still has the DRAFT line but the Step 5 index tracker status says \"✅ Complete\".",
+      "first_flagged": "2026-08-19",
+      "status": "closed",
+      "closed_date": "2026-08-19"
+    },
+    {
+      "id": "OI-c62c4cfb",
+      "category": "deviation (positive)",
+      "widget": "Deposit Accounts",
+      "step": "Step 6",
+      "detail": "Sign-off export Deposits+On+Hand.doc exists on disk in Step 6, but Dashboard Tracker.xlsx column L (Step 6 - Design Sign Off) says \"Not Started\". Not auto-corrected: the project's own Step 6 index says the meaning of \"Complete\" in that column (document exists vs fully reconciled) is deliberately unsettled - owner to decide.",
+      "first_flagged": "2026-08-19",
+      "status": "closed",
+      "closed_date": "2026-08-19"
+    },
+    {
+      "id": "OI-05a3a6d4",
+      "category": "deviation (negative)",
+      "widget": "Payroll Distributions",
+      "step": "Step 6",
+      "detail": "Tracker column L says \"Complete\" but Reconciliation - Payroll Distributions.md findings 2 (comparison rejected), 3 (in-widget drill-through) and 4 (top-N amount-sort) are still marked Not actioned into Steps 1-5.",
+      "first_flagged": "2026-08-19",
+      "status": "open"
+    },
+    {
+      "id": "OI-f878cf6b",
+      "category": "staleness",
+      "widget": "Main Content Tasks",
+      "step": "Step 4",
+      "detail": "Step 4 index's W14 row still says \"In progress at Step 3\" but Step 3's own index and the tracker both say Step 3 is Complete.",
+      "first_flagged": "2026-08-19",
+      "status": "open"
+    },
+    {
+      "id": "OI-f9bfdbc5",
+      "category": "staleness",
+      "widget": "(index header)",
+      "step": "Step 4",
+      "detail": "Step 4 index's \"Built Finals\" note is dated 2026-08-04 and doesn't record the newer verified Final Check builds: W09 (v2.8, verified 2026-08-08) and W10 (verified 2026-08-11).",
+      "first_flagged": "2026-08-19",
+      "status": "open"
+    },
+    {
+      "id": "OI-507eeaa3",
+      "category": "staleness",
+      "widget": "(12 widgets)",
+      "step": "Step 4",
+      "detail": "All 17 widgets have Step 6 Confluence dossiers (pulled 2026-07-27) but only W07's Step 4 doc has a \"Sign-off Input (Jo)\" section - the other upgraded-template docs (W01, W02, W04, W05, W06, W09, W10, W11, W13, W15, W16, W17) haven't logged her input yet.",
+      "first_flagged": "2026-08-19",
+      "status": "open"
+    },
+    {
+      "id": "OI-b783219b",
+      "category": "unreferenced file",
+      "widget": "Step 3",
+      "step": "Step 3",
+      "detail": "Dashboard Widget Mockups.BACKUP-2026-08-08-W09.html isn't mentioned in Step 3's own index",
+      "first_flagged": "2026-08-19",
+      "status": "closed",
+      "closed_date": "2026-08-19"
+    },
+    {
+      "id": "OI-b3b56c00",
+      "category": "unreferenced file",
+      "widget": "Step 3",
+      "step": "Step 3",
+      "detail": "Dashboard Widget Mockups.BACKUP-W04-2026-08-08-popup.html isn't mentioned in Step 3's own index",
+      "first_flagged": "2026-08-19",
+      "status": "closed",
+      "closed_date": "2026-08-19"
+    },
+    {
+      "id": "OI-a8bb39e7",
+      "category": "unreferenced file",
+      "widget": "Step 3",
+      "step": "Step 3",
+      "detail": "Dashboard Widget Mockups.BACKUP-W04-2026-08-08-range.html isn't mentioned in Step 3's own index",
+      "first_flagged": "2026-08-19",
+      "status": "closed",
+      "closed_date": "2026-08-19"
+    },
+    {
+      "id": "OI-418c0ffb",
+      "category": "unreferenced file",
+      "widget": "Step 3",
+      "step": "Step 3",
+      "detail": "Dashboard Widget Mockups.BACKUP-W04-2026-08-11-run2.html isn't mentioned in Step 3's own index",
+      "first_flagged": "2026-08-19",
+      "status": "closed",
+      "closed_date": "2026-08-19"
+    },
+    {
+      "id": "OI-c17bf0e4",
+      "category": "unreferenced file",
+      "widget": "Step 3",
+      "step": "Step 3",
+      "detail": "Dashboard Widget Mockups.BACKUP-W04-2026-08-11.html isn't mentioned in Step 3's own index",
+      "first_flagged": "2026-08-19",
+      "status": "closed",
+      "closed_date": "2026-08-19"
+    },
+    {
+      "id": "OI-a02c02e7",
+      "category": "unreferenced file",
+      "widget": "Step 3",
+      "step": "Step 3",
+      "detail": "Dashboard Widget Mockups.BACKUP-W09-20260807-235013.html isn't mentioned in Step 3's own index",
+      "first_flagged": "2026-08-19",
+      "status": "closed",
+      "closed_date": "2026-08-19"
+    },
+    {
+      "id": "OI-776f7db3",
+      "category": "unreferenced file",
+      "widget": "Step 3",
+      "step": "Step 3",
+      "detail": "Dashboard Widget Mockups.BACKUP-W09-initials-20260808-003459.html isn't mentioned in Step 3's own index",
+      "first_flagged": "2026-08-19",
+      "status": "closed",
+      "closed_date": "2026-08-19"
+    },
+    {
+      "id": "OI-e445782e",
+      "category": "unreferenced file",
+      "widget": "Step 3",
+      "step": "Step 3",
+      "detail": "Dashboard Widget Mockups.BACKUP-W09-outstanding.html isn't mentioned in Step 3's own index",
+      "first_flagged": "2026-08-19",
+      "status": "closed",
+      "closed_date": "2026-08-19"
+    },
+    {
+      "id": "OI-8ba8c5c3",
+      "category": "unreferenced file",
+      "widget": "Step 3",
+      "step": "Step 3",
+      "detail": "Dashboard Widget Mockups.BACKUP-W09-ownerchanges-20260810-155740.html isn't mentioned in Step 3's own index",
+      "first_flagged": "2026-08-19",
+      "status": "closed",
+      "closed_date": "2026-08-19"
+    },
+    {
+      "id": "OI-48f23e84",
+      "category": "unreferenced file",
+      "widget": "Step 3",
+      "step": "Step 3",
+      "detail": "Dashboard Widget Mockups.BACKUP-W09-preinfo-20260808-005453.html isn't mentioned in Step 3's own index",
+      "first_flagged": "2026-08-19",
+      "status": "closed",
+      "closed_date": "2026-08-19"
+    },
+    {
+      "id": "OI-d2c64bdb",
+      "category": "unreferenced file",
+      "widget": "Step 3",
+      "step": "Step 3",
+      "detail": "Dashboard Widget Mockups.BACKUP-W09-statuscolour-20260810-100057.html isn't mentioned in Step 3's own index",
+      "first_flagged": "2026-08-19",
+      "status": "closed",
+      "closed_date": "2026-08-19"
+    },
+    {
+      "id": "OI-2f3eba1a",
+      "category": "unreferenced file",
+      "widget": "Step 3",
+      "step": "Step 3",
+      "detail": "Dashboard Widget Mockups.html.bak_W09F_20260808 isn't mentioned in Step 3's own index",
+      "first_flagged": "2026-08-19",
+      "status": "closed",
+      "closed_date": "2026-08-19"
+    },
+    {
+      "id": "OI-ffcd0c3f",
+      "category": "unreferenced file",
+      "widget": "Step 3",
+      "step": "Step 3",
+      "detail": "Widget_Specs/Time Window Module.md isn't mentioned in Step 3's own index",
+      "first_flagged": "2026-08-19",
+      "status": "closed",
+      "closed_date": "2026-08-19"
+    },
+    {
+      "id": "OI-360565eb",
+      "category": "unreferenced file",
+      "widget": "Step 3",
+      "step": "Step 3",
+      "detail": "w04_driver.scratch.js isn't mentioned in Step 3's own index",
+      "first_flagged": "2026-08-19",
+      "status": "closed",
+      "closed_date": "2026-08-19"
+    },
+    {
+      "id": "OI-38ece03b",
+      "category": "unreferenced file",
+      "widget": "Step 3",
+      "step": "Step 3",
+      "detail": "w09_driver.scratch.js isn't mentioned in Step 3's own index",
+      "first_flagged": "2026-08-19",
+      "status": "closed",
+      "closed_date": "2026-08-19"
+    },
+    {
+      "id": "OI-e4eff8c1",
+      "category": "unreferenced file",
+      "widget": "Step 3",
+      "step": "Step 3",
+      "detail": "w10_driver.scratch.js isn't mentioned in Step 3's own index",
+      "first_flagged": "2026-08-19",
+      "status": "closed",
+      "closed_date": "2026-08-19"
+    },
+    {
+      "id": "OI-f512612e",
+      "category": "unreferenced file",
+      "widget": "Step 5",
+      "step": "Step 5",
+      "detail": "Pending Questions - Codebase Findings (2026-07-30).md isn't mentioned in Step 5's own index",
+      "first_flagged": "2026-08-19",
+      "status": "closed",
+      "closed_date": "2026-08-19"
+    }
+  ]
+}

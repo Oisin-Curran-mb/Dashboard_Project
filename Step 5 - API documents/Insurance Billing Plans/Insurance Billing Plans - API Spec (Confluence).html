@@ -20,7 +20,7 @@ pre code { background: none; padding: 0; }
 <body>
 
 <h1>Insurance Billing Plans — API Spec</h1>
-<p><span class="status">Status: DRAFT — not final</span></p>
+<p><span class="status">Status: Complete at Step 5 — awaiting management sign-off</span></p>
 <h2>Overview</h2>
 <p>The widget is a snapshot of how many people are enrolled in each insurance plan, grouped by insurance type, filterable by a single insurance-type chip. It is read-only: nothing in this widget writes back. This spec is deliberately close to the existing insurance-billing read: the legacy widget already returned a per-plan enrolled count (employees plus dependents) for a pie and a table. The ONE genuinely new field in this contract is <code>cost</code> per plan. Everything else the widget shows is either that existing enrolled read or client-side arrangement of data the module already holds.</p>
 <p>The Type to Plan grouping is not new data: <code>IBPlan.TypeID</code> already links every plan to its insurance type. In this contract the API returns a single nested structure in ONE call: all insurance types at once, each type carrying its own name, its subtotals, and its plans inside it. The type grouping and the type subtotals that the client used to assemble are now server-provided, and the response also carries the grand total. The client still computes only the Share column (enrolled divided by the grand-total enrolled). This is a deliberate owner-requested shape (one call, all information, returned already nested by insurance type) rather than the strict flat-and-client-group minimal pattern used elsewhere in the project. There is no separate types endpoint: the insurance-type list for the filter chip derives from the <code>types[]</code> array in this same response.</p>

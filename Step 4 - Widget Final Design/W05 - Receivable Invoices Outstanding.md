@@ -5,6 +5,13 @@
 **Full history / rejected ideas:** [Widget_Specs/W05-Receivable-Invoices-Outstanding.md](../Step%203%20-%20Mock_Work/Widget_Specs/W05-Receivable-Invoices-Outstanding.md)
 **Data source & formulas:** [Step 1 - Dashboard Research/05 - Receivable Invoices Outstanding.md](../Step 1 - Dashboard Research/05%20-%20Receivable%20Invoices%20Outstanding.md)
 **Confluence dossier:** none yet
+**[2026-08-25, Feargal call] Navigation behaviour confirmed, plus one aging question that may be mis-attributed.**
+
+- **This widget is a navigation and prioritisation tool, not a replacement transaction screen.** Selecting an item should **open the existing invoice detail page** for editing or confirmation rather than duplicating the full transaction interface inside the dashboard. ⚠️ Worth a look: the v2.0 drill modal reproduces a good deal of the transaction screen (Details / Attachments / Note / Payments tabs, selection checkboxes, a Confirm action), which sits awkwardly against this.
+- **Opening behaviour:** the existing invoice screen, potentially in a **separate window or tab**, so the user keeps dashboard context.
+- **Known limitation, worth stating before UAT finds it:** the dashboard **will not refresh automatically** after changes made on that screen. The user must close and reopen, or refresh. This is a real UX caveat, not an implementation detail.
+- ⚠️ **Aging band: HELD.** Feargal identified a missing **90-to-120 day** band, with a further 120-plus category retained. But this build **already has 91-120 and 121+** (five buckets: Current, 31-60, 61-90, 91-120, 121+). What genuinely has a gap is **W10 Loans** (Current / 1-30 / 31-60 / 90+, skipping 61-89), and W16 also carries 91-120. So the band may have been attributed to the wrong widget. **Not changed pending confirmation** (action list item C1) rather than adding a duplicate band.
+
 **Last verified against build:** 2026-07-28 via build-final-widget (Final, Jo design: ~95-assertion Node driver, 0 failures + final-check-rules.py 0 HIGH + browser-faithful CSS parse, 0 dropped rules). Previous: not yet audited.
 
 **Evidence key:** `[LIVE]` verified in beta1/test1 on a stated date · `[SME]` interview-sourced (name + date) · `[RESEARCH]` desktop/market research · `[BUILD]` true of the mockup build · `[DOC]` backed by a named written source · `[TO CONFIRM]` assumed, with a named owner to confirm. Conflicting evidence coexists; neither side wins by default.

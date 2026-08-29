@@ -1,0 +1,2627 @@
+WEBVTT
+
+64f08a9e-918d-4de3-b37d-7ad5c249dbf2-0
+00:00:03.080 --> 00:00:11.540
+So we're updating the dashboard, right,
+to be more, more reusable basically,
+
+64f08a9e-918d-4de3-b37d-7ad5c249dbf2-1
+00:00:11.540 --> 00:00:12.200
+right.
+
+93de811e-3a22-4517-b0a0-8bde42d27e7b-0
+00:00:12.960 --> 00:00:16.461
+And so we are creating recalling on
+widgets,
+
+93de811e-3a22-4517-b0a0-8bde42d27e7b-1
+00:00:16.461 --> 00:00:21.520
+which are like small customizable
+elements that you can drag in.
+
+f3a4a175-3b02-4fd4-a0e4-f6a49c1001ed-0
+00:00:23.720 --> 00:00:25.440
+So it will look basically like this.
+
+f3b50550-2cf9-407d-adac-ff9fe6b0f192-0
+00:00:26.320 --> 00:00:31.180
+So you can pick which ones are being
+displayed like you have, like,
+
+f3b50550-2cf9-407d-adac-ff9fe6b0f192-1
+00:00:31.180 --> 00:00:34.040
+like your normal sidebar and everything.
+
+5d38719e-f721-47d0-854a-647b2246d39a-0
+00:00:34.040 --> 00:00:37.192
+But in here,
+you can pick and choose what you want to
+
+5d38719e-f721-47d0-854a-647b2246d39a-1
+00:00:37.192 --> 00:00:38.360
+be displayed, right.
+
+7011357e-5d19-44c7-b63c-ff11c9c8df1e-0
+00:00:38.360 --> 00:00:40.120
+And we can currently already do that.
+
+4f97d565-da2c-4dad-8a68-9fe97b9115b4-0
+00:00:40.840 --> 00:00:41.240
+Yeah, you can.
+
+dc1d1a4d-c187-4705-9cd5-35e22717e646-0
+00:00:41.320 --> 00:00:45.563
+You can pick one at a time,
+but you could technically have multiple
+
+dc1d1a4d-c187-4705-9cd5-35e22717e646-1
+00:00:45.563 --> 00:00:47.560
+in the new design if you wanted.
+
+b2c3d621-2867-43a3-897a-d22cad02f73e-0
+00:00:49.360 --> 00:00:51.837
+OK,
+so instead of being limited to just two,
+
+b2c3d621-2867-43a3-897a-d22cad02f73e-1
+00:00:51.837 --> 00:00:55.360
+one on top, one on bottom,
+you can actually add more than that.
+
+f301ecc6-93c1-42c7-ac2f-9e45624cf915-0
+00:00:55.360 --> 00:00:56.000
+That's what you're saying.
+
+6dce6eb1-17d6-4654-9ce1-4f725a727cd6-0
+00:00:56.000 --> 00:00:57.360
+Yeah, exactly.
+
+ddefd9d0-8261-442c-8d90-51e540783434-0
+00:00:59.400 --> 00:01:08.526
+And so I'm looking at updating this
+payroll schedule time off and the design
+
+ddefd9d0-8261-442c-8d90-51e540783434-1
+00:01:08.526 --> 00:01:12.320
+I came up with is this one here.
+
+d44c3af6-1afb-49e4-bd6b-b58654ddc448-0
+00:01:13.640 --> 00:01:18.325
+It's going to look a bit messy or a bit
+noisy because I still have to refine it a
+
+d44c3af6-1afb-49e4-bd6b-b58654ddc448-1
+00:01:18.325 --> 00:01:18.840
+bit more.
+
+9d85ae0b-1143-483e-9189-e74d5dabdd21-0
+00:01:19.480 --> 00:01:26.212
+But imagine where you have the employee,
+the employee name and you click down to
+
+9d85ae0b-1143-483e-9189-e74d5dabdd21-1
+00:01:26.212 --> 00:01:31.780
+see the information in here,
+you would have kind of the employee's
+
+9d85ae0b-1143-483e-9189-e74d5dabdd21-2
+00:01:31.780 --> 00:01:33.360
+name and the dates.
+
+94c5cbd1-9ecf-4299-b7f3-ae8059dfcc41-0
+00:01:33.360 --> 00:01:37.120
+So it's the 12th to the 14th consolidated
+to 1.
+
+73792786-8f15-4744-b15c-4e316844c5ff-0
+00:01:39.000 --> 00:01:44.907
+So the first question is, do you need,
+do we still need to bring probably do to
+
+73792786-8f15-4744-b15c-4e316844c5ff-1
+00:01:44.907 --> 00:01:50.520
+bring in for each date as in not each
+request, but each day of the request?
+
+67d1ac45-8ae3-425f-bdc6-1c4a53e30c94-0
+00:01:50.520 --> 00:01:51.200
+Does that make sense?
+
+c607b393-ff54-4ec9-aa73-fa8f674c141b-0
+00:01:51.320 --> 00:01:57.405
+So like if I'm going here, it's a first,
+a second, a fourth,
+
+c607b393-ff54-4ec9-aa73-fa8f674c141b-1
+00:01:57.405 --> 00:01:59.800
+or does that make sense?
+
+bc41abe3-7f87-4029-9f27-f971948db254-0
+00:02:00.760 --> 00:02:01.120
+Yeah.
+
+4578c53e-6248-4af3-9123-36b5532f2352-0
+00:02:01.120 --> 00:02:02.960
+Like is it OK, I'm gonna go look and see.
+
+935503f7-09ca-466e-be09-352bf7e7824a-0
+00:02:03.040 --> 00:02:15.420
+Oh, no, sorry.
+
+2214a858-36b2-4f57-95a8-2b58e70f3180-0
+00:02:21.660 --> 00:02:24.054
+OK,
+so they put it at a start and the end
+
+2214a858-36b2-4f57-95a8-2b58e70f3180-1
+00:02:24.054 --> 00:02:24.340
+date.
+
+1edd0b59-8081-417e-a103-f6aebd8a2ed3-0
+00:02:24.420 --> 00:02:27.780
+I'm just going through this real quick
+just to kind of see the various ways.
+
+ebd3d47e-b594-47d8-a2cd-b12fcab937c6-0
+00:02:33.820 --> 00:02:35.820
+All right, So that can gets.
+
+7266de5d-5edb-43a4-b63c-80f8f0b4b8cc-0
+00:02:47.830 --> 00:02:49.430
+Like, yeah.
+
+2f612855-41ed-48fc-9e4c-49cb212c8731-0
+00:02:49.430 --> 00:02:52.498
+And I'm,
+I'm just looking at how it looks like
+
+2f612855-41ed-48fc-9e4c-49cb212c8731-1
+00:02:52.498 --> 00:02:53.870
+it's doing it by day.
+
+89895b2a-e27f-4aab-91a1-214a53bb981a-0
+00:02:53.950 --> 00:02:57.750
+It's not doing it like a yeah,
+here's a date range.
+
+97956b0c-429a-400b-bbdc-dd83ba703608-0
+00:03:04.230 --> 00:03:08.379
+Yes, I think,
+I think just to be consistent with the
+
+97956b0c-429a-400b-bbdc-dd83ba703608-1
+00:03:08.379 --> 00:03:13.232
+payroll module itself,
+you'd want to show one row per day and
+
+97956b0c-429a-400b-bbdc-dd83ba703608-2
+00:03:13.232 --> 00:03:14.720
+not do date ranges.
+
+9c847f0e-7cd4-4739-80fa-bcf5682c8536-0
+00:03:14.920 --> 00:03:18.791
+I know in real life it makes a lot more
+sense to do a date range if they're
+
+9c847f0e-7cd4-4739-80fa-bcf5682c8536-1
+00:03:18.791 --> 00:03:21.440
+taking a whole week off or three days in
+a row off.
+
+c9390088-1557-4a9c-9688-7bf0c66db311-0
+00:03:22.040 --> 00:03:26.814
+But I think just to keep it consistent
+with the way it looks in the payroll
+
+c9390088-1557-4a9c-9688-7bf0c66db311-1
+00:03:26.814 --> 00:03:30.646
+module you might have,
+we might have to go back and display,
+
+c9390088-1557-4a9c-9688-7bf0c66db311-2
+00:03:30.646 --> 00:03:32.279
+you know, one row per day.
+
+aeacf195-9348-4c3e-aea7-271bb40fd875-0
+00:03:37.040 --> 00:03:42.960
+And then with this,
+we had a talk with let me get his name.
+
+0ac2c5f1-b321-4a0b-ae96-07e60a60550f-0
+00:03:42.960 --> 00:03:43.720
+I don't want to get wrong.
+
+267319d6-7885-403d-9809-7ed208632383-0
+00:03:44.120 --> 00:03:46.960
+I think it's Ben Lane or Yep, Ben Lane.
+
+1a06fa83-bb8e-43b6-aa11-14cc84b3a1d8-0
+00:03:47.520 --> 00:03:51.074
+Yeah,
+he was saying pay groups would be better
+
+1a06fa83-bb8e-43b6-aa11-14cc84b3a1d8-1
+00:03:51.074 --> 00:03:56.369
+the group by the department,
+but his department ever used or would it
+
+1a06fa83-bb8e-43b6-aa11-14cc84b3a1d8-2
+00:03:56.369 --> 00:04:00.000
+just better that default interest to pay
+group?
+
+fbbeb81a-9576-4ca9-98d1-eb9ccda9d5b5-0
+00:04:02.600 --> 00:04:04.280
+This was his feedback by the way.
+
+12f0306f-26af-43a0-97ca-64383f646f00-0
+00:04:07.120 --> 00:04:07.560
+Promise.
+
+f835fc0a-a0ac-4805-9433-9f8e607ff5f7-0
+00:04:08.400 --> 00:04:13.361
+Well,
+I know that the the time off approval is
+
+f835fc0a-a0ac-4805-9433-9f8e607ff5f7-1
+00:04:13.361 --> 00:04:16.000
+based on home department.
+
+dbf341e4-c0d4-42eb-a49d-59a72852d97a-0
+00:04:17.720 --> 00:04:21.548
+OK,
+so the way you assign a supervisor over
+
+dbf341e4-c0d4-42eb-a49d-59a72852d97a-1
+00:04:21.548 --> 00:04:26.160
+certain employees is handled by the home
+department.
+
+116e7aa8-3f16-4960-87c5-b89991b1422c-0
+00:04:27.640 --> 00:04:33.547
+So the pay group is just based on the pay
+group that's assigned to their
+
+116e7aa8-3f16-4960-87c5-b89991b1422c-1
+00:04:33.547 --> 00:04:34.680
+compensations.
+
+ce3c450c-fa24-4b36-a67a-bbf2256aa18f-0
+00:04:35.160 --> 00:04:35.360
+Yeah.
+
+4942f1f8-be62-4b48-ba1d-f2e2867c70c5-0
+00:04:35.520 --> 00:04:41.240
+And what makes it a little bit messy is
+that it would be possible to have one
+
+4942f1f8-be62-4b48-ba1d-f2e2867c70c5-1
+00:04:41.240 --> 00:04:46.080
+employee that's being paid compensations
+and multiple pay groups.
+
+91480c06-43cd-47c9-95b8-13029f50c230-0
+00:04:46.440 --> 00:04:52.331
+So using pay group as a filter would
+would not be as good as far as show me
+
+91480c06-43cd-47c9-95b8-13029f50c230-1
+00:04:52.331 --> 00:04:56.440
+who you know, like in your case,
+Marcus Bell, Right.
+
+205957e1-3469-4334-947c-e0756a47fd0d-0
+00:04:56.440 --> 00:04:58.440
+Like I'm only seeing it.
+
+1dfb9648-8dee-478e-914c-d172738ace8b-0
+00:04:58.440 --> 00:04:59.000
+I don't know.
+
+4469b5ca-da55-4f15-82ea-f9fd3ead2715-0
+00:04:59.320 --> 00:05:04.799
+The home department to me is better
+because each employee can only belong in
+
+4469b5ca-da55-4f15-82ea-f9fd3ead2715-1
+00:05:04.799 --> 00:05:09.212
+one home department,
+whereas an employee could have belong in
+
+4469b5ca-da55-4f15-82ea-f9fd3ead2715-2
+00:05:09.212 --> 00:05:10.920
+10 different pay groups.
+
+6a67bf5e-a2d5-41a5-83a6-0a7c6d72ef50-0
+00:05:11.880 --> 00:05:16.401
+So I I'm sure,
+I'm sure Ben's pulling on some real world
+
+6a67bf5e-a2d5-41a5-83a6-0a7c6d72ef50-1
+00:05:16.401 --> 00:05:22.827
+knowledge there and the fact that a lot
+of clients out-of-the-box don't use home
+
+6a67bf5e-a2d5-41a5-83a6-0a7c6d72ef50-2
+00:05:22.827 --> 00:05:26.080
+departments, but they all use pay groups.
+
+7039f7ca-4b20-40c4-9f9b-ef313c0cbc65-0
+00:05:26.800 --> 00:05:29.665
+So it might be more common to someone
+who's new,
+
+7039f7ca-4b20-40c4-9f9b-ef313c0cbc65-1
+00:05:29.665 --> 00:05:33.933
+but it's but the fact that we actually
+assign the security, if you will,
+
+7039f7ca-4b20-40c4-9f9b-ef313c0cbc65-2
+00:05:33.933 --> 00:05:38.027
+as far as the ability to for someone to
+approve the time off request,
+
+7039f7ca-4b20-40c4-9f9b-ef313c0cbc65-3
+00:05:38.027 --> 00:05:39.840
+that's all based on department.
+
+638720aa-b891-4bee-a444-5c1228390fe5-0
+00:05:40.120 --> 00:05:43.527
+I would kind of lean forward to the
+department side,
+
+638720aa-b891-4bee-a444-5c1228390fe5-1
+00:05:43.527 --> 00:05:48.605
+but then is our value on keeping the
+option to change the view on to whichever
+
+638720aa-b891-4bee-a444-5c1228390fe5-2
+00:05:48.605 --> 00:05:52.720
+1 you want or what's your,
+what would be your thinking on this?
+
+cb585d82-dd03-48fe-9a7c-350e94f47e99-0
+00:05:54.720 --> 00:05:59.120
+Well, yeah.
+
+758389ea-b5ea-4a52-910b-1b92291497e7-0
+00:05:59.120 --> 00:06:02.800
+And the time off request, of course,
+is also not specific to a pay group.
+
+8110f86b-47d9-4cba-83e6-074c90fe86b8-0
+00:06:02.800 --> 00:06:07.655
+You're just simply looking at their
+current compensations and seeing what
+
+8110f86b-47d9-4cba-83e6-074c90fe86b8-1
+00:06:07.655 --> 00:06:11.920
+their pay group is and then they're using
+as an employee filter.
+
+67f41992-4657-4dd5-a3e3-8d28f2f7c93d-0
+00:06:11.920 --> 00:06:12.920
+Right, Exactly.
+
+0049f093-b50f-4c24-aab7-bb10358d6a24-0
+00:06:12.920 --> 00:06:13.120
+Yeah.
+
+bd6686e3-206b-4d23-a90f-ab0dce877cca-0
+00:06:15.800 --> 00:06:19.533
+And then as far as the compensations they
+actually have,
+
+bd6686e3-206b-4d23-a90f-ab0dce877cca-1
+00:06:19.533 --> 00:06:24.839
+you have to go down to the detail level
+to see what the starting date is to make
+
+bd6686e3-206b-4d23-a90f-ab0dce877cca-2
+00:06:24.839 --> 00:06:29.358
+sure we're not pulling a pay group that
+they belong to 20 years ago,
+
+bd6686e3-206b-4d23-a90f-ab0dce877cca-3
+00:06:29.358 --> 00:06:31.520
+that they're no longer in, right.
+
+15ada220-78e5-4b52-bacb-17e16ee8550b-0
+00:06:31.840 --> 00:06:36.200
+So we're we're pulling in just their
+current active pay groups.
+
+4834dd4a-8494-4db8-ab06-0a3ae9f2670e-0
+00:06:39.520 --> 00:06:41.600
+So that that should be something else
+just to make sure.
+
+04d68a66-865b-4d25-9ecc-cdc2c832bdea-0
+00:06:42.120 --> 00:06:43.600
+Yeah, yeah.
+
+83585abd-1e5c-4e75-8b4b-955aef2db82c-0
+00:06:43.600 --> 00:06:47.014
+It's like,
+it's like in the and I don't have the the
+
+83585abd-1e5c-4e75-8b4b-955aef2db82c-1
+00:06:47.014 --> 00:06:52.104
+tables right in front of me in sequel,
+but I know on the header level is where
+
+83585abd-1e5c-4e75-8b4b-955aef2db82c-2
+00:06:52.104 --> 00:06:54.360
+you see if it's active or inactive.
+
+ec756483-5189-4feb-9217-4cf7bb5cb301-0
+00:06:54.560 --> 00:06:55.760
+So you'd have to check that.
+
+8b158eab-3577-42cf-8b0a-b4ae9ad1ce85-0
+00:06:55.760 --> 00:06:58.720
+And then at the detail level is where you
+would see the actual date.
+
+266c4e8c-4837-4760-bfeb-db0affda708c-0
+00:06:59.920 --> 00:07:03.071
+So if the same compensation is listed,
+you know,
+
+266c4e8c-4837-4760-bfeb-db0affda708c-1
+00:07:03.071 --> 00:07:07.960
+the up to detail Level 3 or 4 times,
+you want to grab the most recent date,
+
+266c4e8c-4837-4760-bfeb-db0affda708c-2
+00:07:07.960 --> 00:07:12.463
+or at least the date that that makes
+sense based on the system clock,
+
+266c4e8c-4837-4760-bfeb-db0affda708c-3
+00:07:12.463 --> 00:07:14.200
+which today is August 10th.
+
+9838aec5-54ac-4b51-a3c2-91d97f48cc81-0
+00:07:16.120 --> 00:07:19.880
+So as long as you're doing all that cool
+stuff, then I think pay group is fine.
+
+2c608c79-7b23-483d-8ce5-b2592a7c6f26-0
+00:07:20.120 --> 00:07:23.443
+We can go and we can go and let it,
+let it let that go,
+
+2c608c79-7b23-483d-8ce5-b2592a7c6f26-1
+00:07:23.443 --> 00:07:25.520
+especially if Ben recommended that.
+
+03db5ef1-f81e-4faa-8038-27640b6abf20-0
+00:07:25.800 --> 00:07:27.040
+You know, Ben's kind of like me.
+
+21415c3a-a356-43f1-8d93-773267b03492-0
+00:07:27.040 --> 00:07:29.760
+He's been around a long time,
+so he knows this stuff really well.
+
+71a39fe7-d222-4b54-858e-f635e86d14fd-0
+00:07:30.080 --> 00:07:33.064
+Maybe,
+maybe we could have it always default to
+
+71a39fe7-d222-4b54-858e-f635e86d14fd-1
+00:07:33.064 --> 00:07:36.360
+department 1st and just have pay group as
+an option.
+
+f775d60f-8171-42f0-8cd3-1863643f5ed7-0
+00:07:36.360 --> 00:07:40.800
+Yeah, or something that's totally fine.
+
+902b1bfe-6007-4998-8bed-c236a52c742f-0
+00:07:40.800 --> 00:07:47.829
+Like like that stuff is easily changed
+because again this is in the concepts
+
+902b1bfe-6007-4998-8bed-c236a52c742f-1
+00:07:47.829 --> 00:07:52.029
+phase,
+not a built out anything department as
+
+902b1bfe-6007-4998-8bed-c236a52c742f-2
+00:07:52.029 --> 00:07:52.760
+default.
+
+fbadcd5a-ba02-40e1-9a0b-fe15f99d118e-0
+00:07:53.640 --> 00:07:54.040
+OK.
+
+9a194e61-dab3-4705-9fa6-ff4e878ffbd5-0
+00:07:55.320 --> 00:07:58.720
+Next question then would be kind of on
+the calendar.
+
+98e9a48e-b08b-4537-a666-e12ac1dcc8ec-0
+00:07:59.640 --> 00:08:05.800
+And I know this looks messy because it is
+and right now we don't have any calendar
+
+98e9a48e-b08b-4537-a666-e12ac1dcc8ec-1
+00:08:05.800 --> 00:08:06.840
+at all, right?
+
+a9748107-75e7-482a-902d-fe8817a20052-0
+00:08:07.040 --> 00:08:11.456
+Is this something that would be brand new,
+OK, This would be new OK,
+
+a9748107-75e7-482a-902d-fe8817a20052-1
+00:08:11.456 --> 00:08:16.640
+because because we're revamping and kind
+of enhancing what was there originally.
+
+95bda0a2-b0d4-4390-91b9-002efa05fca3-0
+00:08:18.400 --> 00:08:20.511
+Again,
+this is messy because it should fit on
+
+95bda0a2-b0d4-4390-91b9-002efa05fca3-1
+00:08:20.511 --> 00:08:22.440
+one screen, but as you can see it doesn't.
+
+03523721-6ece-43fe-9410-f5784d34c76d-0
+00:08:24.000 --> 00:08:37.147
+So then the we have these different types,
+the vacation sick personal on the on the
+
+03523721-6ece-43fe-9410-f5784d34c76d-1
+00:08:37.147 --> 00:08:42.000
+where is it under compensation?
+
+e19455e4-4c47-442e-9f8e-c004522b4195-0
+00:08:42.000 --> 00:08:47.440
+It's under this was got from employees
+paid.
+
+4ff0b972-14e1-43e9-89f2-4541090aef80-0
+00:08:47.440 --> 00:08:49.600
+Yeah, it's a yeah.
+
+af72e132-7a1f-486a-b16e-bc239d58ac2b-0
+00:08:49.600 --> 00:08:53.007
+Employer is where you'd actually set up
+which ones you want to use,
+
+af72e132-7a1f-486a-b16e-bc239d58ac2b-1
+00:08:53.007 --> 00:08:54.360
+what you want to call them.
+
+bf11022a-d044-4c09-ac44-4d8ab52631de-0
+00:08:54.400 --> 00:08:55.160
+Yeah, kind of thing.
+
+2a86c838-fa19-4b69-9a98-eefc1ac382f3-0
+00:08:55.600 --> 00:08:56.200
+Yeah, exactly.
+
+f8d311fd-63fc-426e-b843-3251d6a3c6dc-0
+00:08:56.200 --> 00:08:56.360
+Yeah.
+
+8d8efbbd-5213-4a0e-86e4-041b5334640a-0
+00:09:00.000 --> 00:09:04.680
+And so just certain ones are under like
+sick and holiday.
+
+4493356e-1112-4747-9b69-784f8d487088-0
+00:09:05.320 --> 00:09:09.922
+I was going to keep this one possibly up,
+I'm not quite sure because it's kind of
+
+4493356e-1112-4747-9b69-784f8d487088-1
+00:09:09.922 --> 00:09:12.560
+hard to know if it's going to be in which
+one.
+
+efccbea6-7905-48fd-a060-9ddcd3c9f117-0
+00:09:13.800 --> 00:09:19.268
+But anyway,
+is it in your mind valuable to give the
+
+efccbea6-7905-48fd-a060-9ddcd3c9f117-1
+00:09:19.268 --> 00:09:24.000
+different icons for different reasons or
+no?
+
+9e116101-67e7-4e9e-9723-928f2c393910-0
+00:09:26.240 --> 00:09:32.934
+Well, The thing is, is that again,
+a user could make the first one be sick
+
+9e116101-67e7-4e9e-9723-928f2c393910-1
+00:09:32.934 --> 00:09:34.720
+and not vacation so.
+
+8e214fbc-b8d7-4929-a2ea-4bf1a783c329-0
+00:09:35.000 --> 00:09:41.078
+So in that case you'd be showing the cool
+umbrella for sick instead of the vacation
+
+8e214fbc-b8d7-4929-a2ea-4bf1a783c329-1
+00:09:41.078 --> 00:09:41.440
+time.
+
+04c30d4b-594c-4d2b-8b23-613a035e6325-0
+00:09:42.720 --> 00:09:45.320
+So again,
+that what you put down were the default
+
+04c30d4b-594c-4d2b-8b23-613a035e6325-1
+00:09:45.320 --> 00:09:48.440
+descriptions, your vacation, sick,
+personal, miscellaneous.
+
+3845422a-b072-453d-aa9a-85aa55e4d78f-0
+00:09:48.720 --> 00:09:53.112
+But the next client might have those
+completely reordered or call them
+
+3845422a-b072-453d-aa9a-85aa55e4d78f-1
+00:09:53.112 --> 00:09:57.320
+something totally different that might
+not match the the cool icon.
+
+4b762eb9-76db-480e-9e42-53eb35fe2407-0
+00:09:57.560 --> 00:09:59.000
+So true.
+
+9bd89ad6-b5f6-4f4c-ad94-17b1e72c83eb-0
+00:09:59.000 --> 00:09:59.360
+True.
+
+f6bc0bd5-d210-4845-b4b3-89bde90eb78d-0
+00:09:59.640 --> 00:09:59.920
+Yeah.
+
+5df3b89f-331a-4b44-b570-124378588398-0
+00:09:59.920 --> 00:10:03.200
+Because they can configure it any way
+they want or can.
+
+963848d3-f424-4394-9498-4c9462a656d6-0
+00:10:03.200 --> 00:10:05.240
+No, it's never fixed.
+
+013a41b5-4b27-42f2-b643-55d38cf0a3cf-0
+00:10:05.240 --> 00:10:06.240
+Let me check something.
+
+e890fe4b-de5f-4a61-9ca1-93394591abbd-0
+00:10:06.480 --> 00:10:09.520
+Actually, Yeah,
+if you go to modify employer.
+
+b24956c0-b4cf-403b-9577-6103eb654f42-0
+00:10:09.840 --> 00:10:10.160
+Yeah.
+
+00b766b3-15dd-422d-9b84-77e906af9668-0
+00:10:11.720 --> 00:10:15.720
+And then time off hours,
+the last tab up there.
+
+f1004cd4-fb5b-4652-bb8e-44c51851974c-0
+00:10:15.840 --> 00:10:16.200
+Yeah.
+
+4638c808-f12e-4b06-b5aa-4078b82fa4fc-0
+00:10:16.200 --> 00:10:20.575
+So they can actually rename the short
+long description to whatever they wanna
+
+4638c808-f12e-4b06-b5aa-4078b82fa4fc-1
+00:10:20.575 --> 00:10:20.800
+use.
+
+4784a584-513c-48f3-8c5e-14cc3f43cab6-0
+00:10:20.840 --> 00:10:24.520
+And they and those checkboxes dictate if
+they even want them to show at all or not.
+
+02937b26-e744-4ba0-9acc-ef792a4c43c7-0
+00:10:25.360 --> 00:10:26.240
+The ones that they're.
+
+43f3d12c-12b0-4582-9ac1-01efe1174549-0
+00:10:26.280 --> 00:10:27.680
+Yeah, those active checkboxes.
+
+9f805074-2655-4bae-aed0-203a207c1595-0
+00:10:28.360 --> 00:10:28.960
+So in this case.
+
+22b36ef7-bda6-4333-8240-9aa9d79c881b-0
+00:10:28.960 --> 00:10:32.835
+But then what about these ones here
+though,
+
+22b36ef7-bda6-4333-8240-9aa9d79c881b-1
+00:10:32.835 --> 00:10:38.648
+that just means if if they are choosing
+to accrue time off hours,
+
+22b36ef7-bda6-4333-8240-9aa9d79c881b-2
+00:10:38.648 --> 00:10:43.052
+meaning if you work, in other words,
+you accrue .
+
+22b36ef7-bda6-4333-8240-9aa9d79c881b-3
+00:10:43.052 --> 00:10:47.280
+1 time off hours per hour of work or
+something.
+
+85e13d36-2f00-431f-b9ce-d6a6856fe2d3-0
+00:10:47.640 --> 00:10:48.800
+And not everybody does that.
+
+8c247125-f67c-4802-ae53-5dbbf44fe7ed-0
+00:10:48.800 --> 00:10:53.022
+But if they do that,
+what types of pay will make that happen
+
+8c247125-f67c-4802-ae53-5dbbf44fe7ed-1
+00:10:53.022 --> 00:10:56.760
+is what those check boxes are doing right
+down there.
+
+d909b16c-4ad8-44f3-b4aa-1252b4b99309-0
+00:10:57.800 --> 00:11:01.431
+So that that would basically those check
+boxes below would not affect your
+
+d909b16c-4ad8-44f3-b4aa-1252b4b99309-1
+00:11:01.431 --> 00:11:02.400
+calendar whatsoever.
+
+e986a794-56e6-4970-b4e2-d60e512ceaed-0
+00:11:02.400 --> 00:11:05.520
+Your calendar would only care about the,
+you know, those top 4 fields.
+
+5426f45c-2f2f-4394-ab80-2eb6e36de5e4-0
+00:11:05.960 --> 00:11:07.343
+OK,
+so I need to scrap that then
+
+5426f45c-2f2f-4394-ab80-2eb6e36de5e4-1
+00:11:07.343 --> 00:11:09.440
+realistically,
+because this is not going to work.
+
+7232226c-28e6-48b0-b49b-9871e8dd223b-0
+00:11:10.080 --> 00:11:12.360
+But that's OK, I think.
+
+b6b5e03b-2108-439a-82f0-ca3a45a9e345-0
+00:11:12.400 --> 00:11:16.280
+I think even just showing them as
+different colors is definitely fine.
+
+d80b9833-2f7a-4989-8f59-61702fecc98d-0
+00:11:17.560 --> 00:11:23.969
+Also the different colors right now would
+be this is approved by whoever approves
+
+d80b9833-2f7a-4989-8f59-61702fecc98d-1
+00:11:23.969 --> 00:11:24.360
+this.
+
+0c2c3078-71a7-408b-ad00-ca4f4371c718-0
+00:11:24.960 --> 00:11:28.560
+This would be pending and then this would
+be again.
+
+0c7c6a42-69c9-44d3-a729-a5ec75e77500-0
+00:11:28.560 --> 00:11:32.640
+Then on rejection is rejection.
+
+4f999251-d431-4868-b040-e8e086307f3f-0
+00:11:32.640 --> 00:11:37.960
+Let me check again under how to do this
+again.
+
+d36e72dd-9898-4d50-8a16-22dc1875a055-0
+00:11:40.120 --> 00:11:41.520
+Are we going to employee?
+
+2bd411dc-694f-4c50-bb0a-c4da6b0e629d-0
+00:11:42.440 --> 00:11:47.386
+Yeah, I guess it's an employee,
+but how do you confirm again,
+
+2bd411dc-694f-4c50-bb0a-c4da6b0e629d-1
+00:11:47.386 --> 00:11:53.610
+someone's time off and they could either
+do it on the employee record or they
+
+2bd411dc-694f-4c50-bb0a-c4da6b0e629d-2
+00:11:53.610 --> 00:11:57.360
+would use the widget to say yes,
+I approve it.
+
+9bcc4531-0217-4efe-9722-ced9e8d69387-0
+00:11:57.360 --> 00:11:59.600
+They could actually technically do it in
+the portal too.
+
+964ab571-532e-42bb-ae45-a8c89d4f7276-0
+00:12:00.040 --> 00:12:07.821
+That's I guess three locations they could
+approve it and then here, right, Yes,
+
+964ab571-532e-42bb-ae45-a8c89d4f7276-1
+00:12:07.821 --> 00:12:08.600
+exactly.
+
+6c1bb1a0-1614-48cc-b229-407d5a5d797e-0
+00:12:11.240 --> 00:12:13.600
+So the question is there's no rejection.
+
+04d74bb2-9fba-46a2-a189-f21dbaba94cc-0
+00:12:14.200 --> 00:12:19.754
+So what happens then with like
+something's not approved and the date
+
+04d74bb2-9fba-46a2-a189-f21dbaba94cc-1
+00:12:19.754 --> 00:12:20.560
+goes past?
+
+7ed3cb1f-0d97-4b3e-83ac-17ab8ef834f5-0
+00:12:20.560 --> 00:12:22.400
+What would be the expectation there?
+
+7c9caef5-df8c-491a-ab8a-9ab2e9c4335f-0
+00:12:22.400 --> 00:12:27.440
+Kind of that's a good question.
+
+d6891717-b2fb-402a-a3a9-3e24df5a1023-0
+00:12:29.920 --> 00:12:33.458
+Like could they approve it later on what
+they get to pay later or how does that
+
+d6891717-b2fb-402a-a3a9-3e24df5a1023-1
+00:12:33.458 --> 00:12:33.680
+work?
+
+1e2ce01e-fc32-413e-98da-a3407859e3f9-0
+00:12:33.680 --> 00:12:36.440
+Like makes sense.
+
+def434de-3a8b-4ccc-a9eb-0a452b165696-0
+00:12:44.280 --> 00:12:46.488
+You're right,
+because pretty much they either just
+
+def434de-3a8b-4ccc-a9eb-0a452b165696-1
+00:12:46.488 --> 00:12:48.480
+approve it or just don't do anything with
+it.
+
+c9fc2576-a14c-462f-b2ad-4eea701aefde-0
+00:12:48.760 --> 00:12:49.040
+Yeah.
+
+9cc65274-f219-481a-9dc4-f3550fb0c296-0
+00:12:49.040 --> 00:12:50.040
+And it's kind of interesting.
+
+07978c61-e837-4903-bbd7-653b5220b218-0
+00:12:50.040 --> 00:12:51.480
+I never,
+I never thought about that before.
+
+01651286-9b7a-462d-a64f-dee4f19e1215-0
+00:12:51.480 --> 00:12:55.000
+It's one of those things where you're
+saying it, I'm like, well, you know,
+
+01651286-9b7a-462d-a64f-dee4f19e1215-1
+00:12:55.000 --> 00:12:56.080
+it makes perfect sense.
+
+23274ae8-f268-42fc-aaca-46f58e8a4eaa-0
+00:13:02.330 --> 00:13:07.570
+So like in in my mind, don't get me wrong,
+I'm not an expert in any of this,
+
+23274ae8-f268-42fc-aaca-46f58e8a4eaa-1
+00:13:07.570 --> 00:13:13.015
+but if the date had passed and it hadn't
+been accepted, would it just like, OK,
+
+23274ae8-f268-42fc-aaca-46f58e8a4eaa-2
+00:13:13.015 --> 00:13:17.506
+rejected is the wrong word,
+but like outstanding maybe would be a
+
+23274ae8-f268-42fc-aaca-46f58e8a4eaa-3
+00:13:17.506 --> 00:13:18.800
+better word for us.
+
+7d8985be-3389-45bb-ad6f-c5663a6d7ded-0
+00:13:27.590 --> 00:13:28.390
+Yeah, we could.
+
+782b73ce-7b0a-4aa5-b0f9-3f614e0a7d3e-0
+00:13:28.390 --> 00:13:30.890
+We could probably make up a word because
+you're right,
+
+782b73ce-7b0a-4aa5-b0f9-3f614e0a7d3e-1
+00:13:30.890 --> 00:13:33.390
+because pretty much everything is one of
+two statuses.
+
+43fe56f2-419c-4e15-9306-36eb5bf11e79-0
+00:13:33.390 --> 00:13:35.190
+It's either pending or it's approved.
+
+e20ec0b1-2f8c-4df6-a9b0-e9dd03f3120d-0
+00:13:35.190 --> 00:13:36.910
+We really don't have a third status.
+
+92a02b88-17ab-40a0-9c8b-0499aa77c525-0
+00:13:38.830 --> 00:13:45.222
+Like in purchasing management,
+your request can be approved or rejected
+
+92a02b88-17ab-40a0-9c8b-0499aa77c525-1
+00:13:45.222 --> 00:13:50.106
+and and there's,
+there's multiple organs to be open so
+
+92a02b88-17ab-40a0-9c8b-0499aa77c525-2
+00:13:50.106 --> 00:13:53.480
+it's easier to do something like that.
+
+6242a37e-37fe-42af-a842-9376cd1e7643-0
+00:13:53.480 --> 00:13:58.201
+But yeah, the time off,
+I guess like you said,
+
+6242a37e-37fe-42af-a842-9376cd1e7643-1
+00:13:58.201 --> 00:14:06.640
+if it's outstanding and the dates in the
+past, yeah, I, I, we could make up a word.
+
+470eb7d0-ef8e-4e03-9c15-f2085b624b21-0
+00:14:06.640 --> 00:14:12.180
+I'd be OK with you all come with any word
+you want to call it because it rejected
+
+470eb7d0-ef8e-4e03-9c15-f2085b624b21-1
+00:14:12.180 --> 00:14:17.720
+might be a little too strong, but I guess,
+I guess you could just say unapproved.
+
+67aea6f1-ee08-44d2-a9cd-6d7cd2c5a246-0
+00:14:17.720 --> 00:14:23.120
+I don't know if that's if that's too
+similar to outstanding.
+
+047b995a-b0c6-450f-834a-8d4d40283dff-0
+00:14:24.920 --> 00:14:28.353
+I don't know that that's I'd,
+I'd be OK with the Ben or Fergal,
+
+047b995a-b0c6-450f-834a-8d4d40283dff-1
+00:14:28.353 --> 00:14:31.680
+whoever wants to sit down,
+come up with a good word for that.
+
+e5978759-0c20-4b3b-a20e-010002fb21c7-0
+00:14:31.880 --> 00:14:34.480
+As far as a date that's passed,
+that was never approved.
+
+d992dd3b-b900-4357-9627-66477734117f-0
+00:14:37.880 --> 00:14:41.880
+And then this would be, again,
+kind of new functionality.
+
+261e6db2-c3da-4fb1-ae6f-c7d04d1991df-0
+00:14:42.040 --> 00:14:43.640
+Is it going to work for me?
+
+d6fc7455-3a14-4df4-b265-b98a37d19edd-0
+00:14:44.520 --> 00:14:45.800
+It's not going to work for me.
+
+bf2cd58a-5015-4e5e-8dc9-6a2b79a929b5-0
+00:14:45.800 --> 00:14:46.880
+Can I check here?
+
+2369fa61-180b-4606-89e6-1a9a41418ea6-0
+00:14:46.880 --> 00:14:47.680
+Is it working?
+
+c3eeccb5-f42c-41b3-bbb4-1852a1dc8812-0
+00:14:47.800 --> 00:14:48.560
+No, it's not.
+
+880c28de-3963-46a7-b247-0998cb0f4e0c-0
+00:14:48.800 --> 00:14:49.520
+Oh, sorry, it's here.
+
+e7a976e9-2d7e-4665-b69c-b3627e199922-0
+00:14:52.440 --> 00:14:54.720
+This then was another idea that I had.
+
+eb9ca783-5f94-4ac7-b8c3-515826d9e0f9-0
+00:14:54.720 --> 00:14:57.600
+Again, we're on the concept side of it.
+
+f93ae679-97f0-4175-9783-21d6979e3ca0-0
+00:14:57.600 --> 00:14:59.680
+Let me see.
+
+e7a3c497-5d3b-4646-8401-1a410330d428-0
+00:14:59.680 --> 00:15:01.320
+I should have one person.
+
+036907e6-a8c3-4ba9-b7f3-40d39eb39b48-0
+00:15:01.320 --> 00:15:01.520
+Yeah.
+
+a92fd947-3739-43b2-b104-b6baf6ba2905-0
+00:15:02.120 --> 00:15:08.231
+So another idea was you could click the
+information and this is then how many say
+
+a92fd947-3739-43b2-b104-b6baf6ba2905-1
+00:15:08.231 --> 00:15:12.480
+days on vacation,
+sick icons again will have to go away.
+
+2c0f669e-2f7a-4c3a-9b7c-7a0f7e1f32ba-0
+00:15:12.600 --> 00:15:20.456
+But as in whatever they've configured on
+their side for the employee time off,
+
+2c0f669e-2f7a-4c3a-9b7c-7a0f7e1f32ba-1
+00:15:20.456 --> 00:15:27.120
+whatever is scheduled here on this one,
+it would show all of them.
+
+e59b91ed-fa9f-45e9-867b-e2f76b8f7b78-0
+00:15:27.120 --> 00:15:33.880
+And how many days of the taken of these
+would that be a good idea or a bad idea?
+
+8cf0359b-849b-4229-ab34-1c35ec877b11-0
+00:15:34.360 --> 00:15:35.400
+Yeah, that sounds good.
+
+0addcdb2-2c4e-4dab-b434-8268b951efcd-0
+00:15:36.400 --> 00:15:41.105
+And because if someone had backed up a
+lot of say vacation or sick days that it
+
+0addcdb2-2c4e-4dab-b434-8268b951efcd-1
+00:15:41.105 --> 00:15:45.751
+would show here that the racking kind of
+higher numbers and then this the down
+
+0addcdb2-2c4e-4dab-b434-8268b951efcd-2
+00:15:45.751 --> 00:15:49.279
+below is people are also wanting to take
+the same time off.
+
+05ce8dc1-8b25-461a-98f7-c3ab605f6069-0
+00:15:50.320 --> 00:15:55.192
+And so before you even approve,
+you could see if there's any conflicts of
+
+05ce8dc1-8b25-461a-98f7-c3ab605f6069-1
+00:15:55.192 --> 00:15:58.551
+like, oh,
+I need one of you 2 for my team to stay,
+
+05ce8dc1-8b25-461a-98f7-c3ab605f6069-2
+00:15:58.551 --> 00:16:00.000
+stay here or whatever.
+
+3a58cce3-b9b7-43a8-a9a1-9c60e0d3215f-0
+00:16:00.000 --> 00:16:01.960
+You know,
+I can't have both you off same time.
+
+cc2faf52-2934-4d35-9656-d32ec9250940-0
+00:16:04.520 --> 00:16:06.360
+Yeah, that sounds good.
+
+484e2782-9784-4500-8e1c-149b7ab05d9f-0
+00:16:09.640 --> 00:16:12.880
+OK, perfect.
+
+ff91e687-b584-4e0a-a255-62c0a27533f4-0
+00:16:13.320 --> 00:16:14.920
+That's all I really had for you.
+
+94b723b6-f8e2-4091-9dc2-a77e032cf54f-0
+00:16:14.920 --> 00:16:20.280
+But if you're if you have free time for
+me, I'd have one more question for you.
+
+da92cd87-014e-40d7-89ea-8f34190e3667-0
+00:16:20.840 --> 00:16:21.840
+Sure, go for it.
+
+2c8472db-f77f-47bb-98b4-c0a227ec8888-0
+00:16:23.960 --> 00:16:30.138
+So remittance,
+let's make sure that I show what was
+
+2c8472db-f77f-47bb-98b4-c0a227ec8888-1
+00:16:30.138 --> 00:16:32.040
+currently there.
+
+768d80c4-cfa8-4910-b86b-81afd6cef2c1-0
+00:16:34.760 --> 00:16:41.113
+Maybe I'm being stupid,
+but is remittance from the start of year
+
+768d80c4-cfa8-4910-b86b-81afd6cef2c1-1
+00:16:41.113 --> 00:16:46.880
+to this date or is this from like this
+date receipts true?
+
+7fe88264-26a3-45d7-b0a6-8587e9b38833-0
+00:16:47.800 --> 00:16:50.720
+What exactly is this?
+
+902ea9e2-b21a-40d5-ae90-a6cfb9d28d18-0
+00:16:51.880 --> 00:16:54.440
+Like do you get what I'm saying?
+
+52f9bb7d-b993-48ad-ab36-6b71f1cdf7f6-0
+00:16:54.440 --> 00:16:56.960
+As in like from when to when is this
+going to be considered?
+
+469c148e-11ba-4aa4-873d-320b8b44c0d2-0
+00:16:57.080 --> 00:17:03.840
+Because if I go back two years and I pick
+a date, I have all these active.
+
+61555b97-9e0c-4bcc-b8cd-18469d3b0d82-0
+00:17:07.040 --> 00:17:08.200
+What are they called again?
+
+e4f31697-90bf-4370-9a35-04ae005e1e94-0
+00:17:08.560 --> 00:17:09.520
+No, I'm still in payroll.
+
+3b55cf8c-53ae-4703-bc4c-4d77ea99bd58-0
+00:17:10.120 --> 00:17:11.040
+Yeah, I guess.
+
+cee67dae-35df-41af-b6dc-52ec19b646cd-0
+00:17:11.280 --> 00:17:16.608
+I guess if our doing say a query on the
+database, I think I would, yeah,
+
+cee67dae-35df-41af-b6dc-52ec19b646cd-1
+00:17:16.608 --> 00:17:21.280
+take whatever date you're putting in the
+date receipts through.
+
+ac8cd8cc-23be-4ac1-a7d6-8ac9b3d06b45-0
+00:17:22.160 --> 00:17:28.077
+I think I would look for pledges with a
+pledge date that happened like right
+
+ac8cd8cc-23be-4ac1-a7d6-8ac9b3d06b45-1
+00:17:28.077 --> 00:17:29.000
+before that.
+
+45cc9beb-cbe2-438d-a5ac-6d6e42671ad0-0
+00:17:30.960 --> 00:17:35.150
+OK, so like in real life, Yeah,
+real life it's always a calendar year
+
+45cc9beb-cbe2-438d-a5ac-6d6e42671ad0-1
+00:17:35.150 --> 00:17:39.640
+that someone programmatically can choose
+something different they want to.
+
+f010fd5e-a547-4f4a-abe1-5ee7b2c695e9-0
+00:17:40.600 --> 00:17:46.689
+But in this case, if it's August 1, 2024,
+I need to then go back until I find the
+
+f010fd5e-a547-4f4a-abe1-5ee7b2c695e9-1
+00:17:46.689 --> 00:17:50.847
+first begin date that happened before
+August 1st, 2024,
+
+f010fd5e-a547-4f4a-abe1-5ee7b2c695e9-2
+00:17:50.847 --> 00:17:55.080
+which probably will be as far as the
+pledge begin dates.
+
+27c97e3c-61f6-47fe-8907-d0e20dfd7aad-0
+00:17:55.440 --> 00:17:59.280
+So it which would probably be January
+1/20/24.
+
+9a12eadc-760b-4926-be9b-b0e4a1b3c8a0-0
+00:17:59.280 --> 00:18:03.629
+So I would then go ahead and,
+and use that as my date range as far as
+
+9a12eadc-760b-4926-be9b-b0e4a1b3c8a0-1
+00:18:03.629 --> 00:18:05.680
+what's the display in the widget.
+
+25ff5c29-865d-499a-9ad3-77aa48735d3c-0
+00:18:06.840 --> 00:18:08.640
+Either that or we could just say forget
+it.
+
+85a3e164-11fa-430a-9ff7-503e06e07c96-0
+00:18:08.640 --> 00:18:12.085
+We're going to always assume it's a
+calendar year and it's always,
+
+85a3e164-11fa-430a-9ff7-503e06e07c96-1
+00:18:12.085 --> 00:18:15.068
+if they choose 81,
+we're always going to just assume it's
+
+85a3e164-11fa-430a-9ff7-503e06e07c96-2
+00:18:15.068 --> 00:18:16.560
+January 1 for the begin date.
+
+cab72ee0-0039-4616-b7e2-ecdf026d3b18-0
+00:18:18.080 --> 00:18:20.840
+So we, we could start off like that.
+
+41243a7e-233d-4fdb-9f48-ec588fd61b8c-0
+00:18:20.840 --> 00:18:23.640
+We could start off with just whatever
+date they choose.
+
+91675a41-bd1b-496d-9b5a-fd8b5be500b7-0
+00:18:23.640 --> 00:18:25.200
+We're just assuming it's a calendar year.
+
+63be854c-a274-4f78-95ed-4b9aa084f35f-0
+00:18:25.200 --> 00:18:27.840
+We're always going to use a January 1 for
+the begin date.
+
+dadc0ffa-4762-4c98-b1a9-7c7f293bb3e4-0
+00:18:29.440 --> 00:18:33.903
+But if someone it's possible,
+there's one really weird client out there
+
+dadc0ffa-4762-4c98-b1a9-7c7f293bb3e4-1
+00:18:33.903 --> 00:18:38.800
+who's doing something funky with the with
+this module that we were unaware of.
+
+20f56f2f-146f-4a47-b1f3-f09ba6d300b8-0
+00:18:39.360 --> 00:18:42.960
+And they have different begin dates on
+their pledges for some reason.
+
+cb9e4e53-61eb-4820-86d6-3f6a014204dc-0
+00:18:43.080 --> 00:18:46.233
+So,
+so like what you would say then here you
+
+cb9e4e53-61eb-4820-86d6-3f6a014204dc-1
+00:18:46.233 --> 00:18:51.628
+could have kind of not today then,
+but you could change it to kind of fiscal
+
+cb9e4e53-61eb-4820-86d6-3f6a014204dc-2
+00:18:51.628 --> 00:18:53.520
+year to date kind of thing.
+
+adf14fbc-725b-4781-9d20-b9407b8c3b1b-0
+00:18:53.520 --> 00:18:56.060
+Like,
+and then you don't want to use the word
+
+adf14fbc-725b-4781-9d20-b9407b8c3b1b-1
+00:18:56.060 --> 00:19:00.480
+fiscal because that makes people think
+about their general Ledger fiscal years.
+
+eb785fc9-cc5e-458c-b643-a25687863d99-0
+00:19:00.520 --> 00:19:02.960
+And this has nothing to do with the
+general Ledger fiscal year.
+
+21f5c035-a89e-40c8-a958-6e0805117459-0
+00:19:02.960 --> 00:19:07.007
+So you definitely want to,
+it's definitely a pledge year to date
+
+21f5c035-a89e-40c8-a958-6e0805117459-1
+00:19:07.007 --> 00:19:09.000
+year or a calendar year to date.
+
+ec5d6f01-df40-4bba-8372-ae47c523b767-0
+00:19:11.800 --> 00:19:15.280
+Either that or you could just give them a
+begin and an end date for the widget.
+
+20bb62d9-ce8f-42b0-8d58-15a86c104ee9-0
+00:19:15.520 --> 00:19:17.400
+And that way they're just in full control
+over it.
+
+45507e91-1ebc-4df7-b161-5ae2989e1562-0
+00:19:18.320 --> 00:19:20.840
+And that way we don't have to assume
+anything or look at anything.
+
+089f61e5-646e-40b1-a034-2e4ba93d3fc9-0
+00:19:20.840 --> 00:19:23.200
+They just put in a begin and an end date
+and we just go.
+
+b1b9fdcd-f3c8-4f05-a980-91c646b8b64e-0
+00:19:23.200 --> 00:19:26.120
+So that'd be an option.
+
+606bca73-4f94-44dd-a2a4-b260654950af-0
+00:19:27.960 --> 00:19:32.667
+It would be,
+I'm trying to think then how would you do
+
+606bca73-4f94-44dd-a2a4-b260654950af-1
+00:19:32.667 --> 00:19:35.920
+everything down below that would work?
+
+21b96458-ca87-4405-ba5d-3e4a2bf6bb79-0
+00:19:36.640 --> 00:19:38.440
+This would probably break though.
+
+45763fe6-a553-44ab-a171-ba4f1bda085c-0
+00:19:38.800 --> 00:19:39.600
+Would it break?
+
+943966c4-c971-4481-888d-2d4c2c5a0110-0
+00:19:40.760 --> 00:19:43.280
+Technically, you get the amount expected.
+
+fa619f1b-6529-4e1f-b139-1a18af1b59db-0
+00:19:43.720 --> 00:19:44.480
+Yeah, that could work.
+
+a66de589-32c2-4aff-a73d-4f4c555fac0a-0
+00:19:46.040 --> 00:19:51.801
+And if they do something silly like they
+put in July 1 to July 31, well,
+
+a66de589-32c2-4aff-a73d-4f4c555fac0a-1
+00:19:51.801 --> 00:19:57.800
+there's no pledges in that range,
+but there is some activity in that range.
+
+1992d0ae-ff2e-4253-9c9c-e061c151871c-0
+00:19:57.800 --> 00:19:59.640
+So we can at least show them the activity.
+
+42296123-7692-4c1d-b2ee-f937d201502c-0
+00:20:00.200 --> 00:20:05.408
+So the percentage, you know,
+the percentage paid and the pledge
+
+42296123-7692-4c1d-b2ee-f937d201502c-1
+00:20:05.408 --> 00:20:09.640
+amounts will be 0,
+but we could at least show paid.
+
+d1adb72d-9b46-49d9-83a6-f97234d11628-0
+00:20:10.160 --> 00:20:13.080
+A column if they did something crazy like
+that, the date range.
+
+dc52af5f-5d57-42cb-b532-24fc4dbc9e66-0
+00:20:14.080 --> 00:20:16.134
+So,
+but if they're date range actually
+
+dc52af5f-5d57-42cb-b532-24fc4dbc9e66-1
+00:20:16.134 --> 00:20:19.294
+include a pledge, well,
+then now we can actually display an
+
+dc52af5f-5d57-42cb-b532-24fc4dbc9e66-2
+00:20:19.294 --> 00:20:23.560
+amount for the pledge column expected
+column outstanding, a percent paid column.
+
+0b844afa-9acd-4a2f-8bb5-1145c0ecacd4-0
+00:20:25.720 --> 00:20:28.560
+So maybe that maybe that would be the
+most flexible.
+
+69709bef-edaa-4ba7-991e-068f270691fe-0
+00:20:28.920 --> 00:20:32.837
+They could use this widget both for just
+seeing activity in a time period,
+
+69709bef-edaa-4ba7-991e-068f270691fe-1
+00:20:32.837 --> 00:20:35.920
+or they can also use it for what you have
+it set up to do.
+
+c2c0d47a-7a6d-402f-a977-02ef0eb1e85f-0
+00:20:35.920 --> 00:20:39.938
+Where is the show pledge,
+how much they've given a pledge, balance,
+
+c2c0d47a-7a6d-402f-a977-02ef0eb1e85f-1
+00:20:39.938 --> 00:20:41.120
+all that good stuff.
+
+f0fdfa55-bf56-4e4c-b8d7-06edab962d1d-0
+00:20:41.920 --> 00:20:44.800
+So you're kind of talking about kind of
+the unposted remittance.
+
+736ac711-f8cc-477c-ba84-4d10946d8321-0
+00:20:44.800 --> 00:20:47.320
+Is that what you're trying to say?
+
+9a4c5c95-6e16-433b-b546-ec9cddaa1e2f-0
+00:20:47.400 --> 00:20:53.458
+Like you can show what hasn't been paid,
+what has been pledged for that time,
+
+9a4c5c95-6e16-433b-b546-ec9cddaa1e2f-1
+00:20:53.458 --> 00:20:55.400
+or am I misunderstanding?
+
+370b5e4e-3607-4e8d-9704-44c9b387b990-0
+00:20:56.480 --> 00:20:56.720
+Yeah.
+
+a9a40dba-f611-44e5-9bec-92a358e5a5dd-0
+00:20:56.760 --> 00:20:57.040
+What?
+
+9a9f9907-2d40-44d0-8ae6-4a012c481f63-0
+00:20:57.040 --> 00:20:57.200
+Yeah.
+
+72f79868-e4e9-4c02-b6db-e602e5f30468-0
+00:20:57.200 --> 00:21:00.320
+Unposted just means that they've created
+some remittances.
+
+676083c1-74df-409a-bf55-fa8989bd1f89-0
+00:21:00.320 --> 00:21:01.880
+They just haven't posted it to the
+database.
+
+aa2cc756-eecc-4548-872f-1667be675d6e-0
+00:21:01.920 --> 00:21:03.960
+It's not it's not been finalized yet.
+
+daf97757-fe91-4c1c-a571-00c47acdbb39-0
+00:21:04.200 --> 00:21:06.200
+So yeah, I'm just saying for the wizard.
+
+408ce91d-9684-447d-afce-660b576066b4-0
+00:21:06.200 --> 00:21:08.200
+True, but it's expected, right?
+
+78a2215a-3781-4fac-b560-08244efe05ac-0
+00:21:10.240 --> 00:21:12.592
+No, they,
+they typically wouldn't put it in here
+
+78a2215a-3781-4fac-b560-08244efe05ac-1
+00:21:12.592 --> 00:21:14.800
+unless they actually have received
+something.
+
+a348726e-f8b3-4499-8676-45469d410a98-0
+00:21:14.920 --> 00:21:19.811
+So it's more like a I'm in the process of
+entering the remittances and I just,
+
+a348726e-f8b3-4499-8676-45469d410a98-1
+00:21:19.811 --> 00:21:22.040
+I'm going to post them all together.
+
+faa79ed3-5cc8-41ab-bf8f-c87d95de4158-0
+00:21:22.040 --> 00:21:22.880
+I'm just not done.
+
+6668da72-49c9-4686-86c7-945a93a134c8-0
+00:21:23.480 --> 00:21:25.320
+I'm not finished entering them all in yet.
+
+888442c2-41d0-44c8-a170-e79e9dbb4822-0
+00:21:26.840 --> 00:21:29.720
+So it's just kind of in a limbo state
+until I actually post them.
+
+528a67f1-12c2-432e-863f-553f525b3559-0
+00:21:34.520 --> 00:21:34.680
+OK.
+
+8fbde0a6-6fd0-4f60-a336-bcbebc7e47fd-0
+00:21:34.680 --> 00:21:38.640
+But I'm trying to think right now that
+because it yeah.
+
+7e26041f-6a06-4532-9d21-ba4725f47f59-0
+00:21:39.880 --> 00:21:45.040
+And right now that does just say date
+receipts through yeah.
+
+ad70e126-c73c-4252-946f-295804d2f143-0
+00:21:45.040 --> 00:21:54.595
+Because for me, honestly,
+I am viewing in my mind this to be from
+
+ad70e126-c73c-4252-946f-295804d2f143-1
+00:21:54.595 --> 00:22:04.440
+this date to current date,
+what has been given to these activities.
+
+cde1f787-67fa-45ba-8d3e-6a954e945e9e-0
+00:22:08.960 --> 00:22:10.480
+I can't always just do this, can't I?
+
+409c651d-6406-4fa2-9f31-c1020c352090-0
+00:22:11.000 --> 00:22:15.503
+It looks like it looks like just assuming
+a January 1 for a begin date is how it's
+
+409c651d-6406-4fa2-9f31-c1020c352090-1
+00:22:15.503 --> 00:22:16.480
+currently working.
+
+e65758bd-8fb5-4511-9443-6bc8ec56bea4-0
+00:22:19.520 --> 00:22:24.200
+Oh,
+you think it's it's the start of the year.
+
+64207570-a83a-44d8-972a-7d4110c68197-0
+00:22:24.200 --> 00:22:27.080
+So it's from this date to January 1st.
+
+4a9100fc-d484-4556-bac2-d77553402c73-0
+00:22:27.600 --> 00:22:27.840
+Yeah.
+
+484c790d-16d7-4b40-a385-07eda1e328aa-0
+00:22:28.400 --> 00:22:30.320
+So it looks like that's how it's
+currently working.
+
+d632ff8f-de2f-4502-8718-a26b17905b7a-0
+00:22:31.920 --> 00:22:34.727
+If we wanted to enhance it or make it
+more flexible,
+
+d632ff8f-de2f-4502-8718-a26b17905b7a-1
+00:22:34.727 --> 00:22:37.640
+we could allow them to actually choose
+the begin date.
+
+3b7604dd-4832-442e-aa20-8fb03ee8bbf9-0
+00:22:37.640 --> 00:22:42.520
+But I think right now we choose date
+receipt through 81.
+
+b53618cc-ea4f-4c14-bb58-7bc4ef60dd00-0
+00:22:42.520 --> 00:22:46.160
+It's just assuming A11 to 81 date range.
+
+a0b4bac7-444b-4448-ace3-0e141c8c8a29-0
+00:22:48.280 --> 00:22:50.040
+OK, I get it now.
+
+fb722851-1410-4a5a-9647-f3b4078e0201-0
+00:22:50.400 --> 00:22:51.760
+I get it now how it's working.
+
+ee61d9d3-ae89-4a88-801a-35ce5544adef-0
+00:22:52.480 --> 00:22:54.040
+So I mean, they should all disappear now.
+
+3f485b0d-cd4d-45de-b386-f77a91af7457-0
+00:22:54.040 --> 00:22:55.400
+They did not disappear.
+
+42c3a2da-013d-4250-b553-6ee45f6575a5-0
+00:22:55.400 --> 00:22:55.840
+So there.
+
+892e1417-27ab-4289-a8a2-54219b91414c-0
+00:22:57.280 --> 00:23:01.784
+But I mean, activity happened in OK,
+I'm going to see if,
+
+892e1417-27ab-4289-a8a2-54219b91414c-1
+00:23:01.784 --> 00:23:07.453
+if you if you have enough patience,
+I'm going to see what happens if you
+
+892e1417-27ab-4289-a8a2-54219b91414c-2
+00:23:07.453 --> 00:23:12.269
+don't have a pledge,
+but you do have verbenets if it works or
+
+892e1417-27ab-4289-a8a2-54219b91414c-3
+00:23:12.269 --> 00:23:15.453
+not,
+because I'll be or have you already
+
+892e1417-27ab-4289-a8a2-54219b91414c-4
+00:23:15.453 --> 00:23:19.880
+tested that or No,
+I didn't test it in the normal sense.
+
+dd40e242-d09b-4968-b462-5f19267e34c5-0
+00:23:20.640 --> 00:23:22.160
+Give me one second.
+
+53ae265d-7fdc-4e19-8e74-e1ceb0fdb72c-0
+00:23:22.320 --> 00:23:22.920
+I.
+
+87eddb22-e7a9-4452-aac3-d2edfeb5612b-0
+00:23:28.040 --> 00:23:29.120
+That's fine.
+
+54e30361-2241-4100-a77f-8f45254232fe-0
+00:23:29.200 --> 00:23:30.280
+Yeah, I'll, I'll do it real quick.
+
+c39ebfc5-c421-4add-b3f8-5f80f1bec445-0
+00:23:30.280 --> 00:23:33.200
+It won't take me about 60 seconds.
+
+f06461ab-1ae4-4297-b6ff-da7bbe5aa89e-0
+00:23:35.320 --> 00:23:35.760
+That's wrong.
+
+fcb8588c-028d-42c3-b23c-12da8808e557-0
+00:23:35.760 --> 00:23:37.600
+One wrong, one wrong document.
+
+7ac0ddf5-d778-4c0b-8c9b-744784b78828-0
+00:23:39.800 --> 00:23:48.000
+Immense pledge legacy behavior because I
+sent my agent to quickly check to see how
+
+7ac0ddf5-d778-4c0b-8c9b-744784b78828-1
+00:23:48.000 --> 00:23:49.680
+that was working.
+
+6afc4f76-de6e-4ccf-aa6e-e694b1de4f7b-0
+00:23:49.680 --> 00:23:57.640
+But OK, taking up this now.
+
+893f0c02-66e0-46f3-8a9c-493f200cf01f-0
+00:24:07.100 --> 00:24:09.780
+OK, I'm about to post it over here.
+
+175951a4-94cf-4dbd-ad09-3db614114e2f-0
+00:24:27.950 --> 00:24:28.790
+It's posted.
+
+8ae87e45-efe6-4924-a5b4-2100d95b7e9d-0
+00:24:28.830 --> 00:24:30.230
+Let's try to go back.
+
+97706db6-dea6-4119-bcfc-3169287b685a-0
+00:24:34.510 --> 00:24:37.710
+OK, Yeah, OK, so forget what I said.
+
+7fea844e-abd1-436e-b0a5-277c7503d3b1-0
+00:24:38.470 --> 00:24:44.593
+So it does look like the widget currently
+is it's assuming and it's based on
+
+7fea844e-abd1-436e-b0a5-277c7503d3b1-1
+00:24:44.593 --> 00:24:45.230
+pledges.
+
+fd0051ea-bae4-45b6-a7ad-f3a012fc95ca-0
+00:24:45.560 --> 00:24:48.960
+So it's not going to show anything at all
+unless they pledge exists.
+
+5824fc7a-b0bc-41f2-b655-6464a018a3f8-0
+00:24:50.520 --> 00:24:53.610
+Once again,
+I was just kind of thinking outside the
+
+5824fc7a-b0bc-41f2-b655-6464a018a3f8-1
+00:24:53.610 --> 00:24:57.651
+box and can we make it more useful where
+it's not tied to a pledge,
+
+5824fc7a-b0bc-41f2-b655-6464a018a3f8-2
+00:24:57.651 --> 00:24:58.840
+it'll show anything.
+
+cbdb18a0-be3f-445a-a8f0-3eb4e11a3712-0
+00:25:00.200 --> 00:25:03.120
+So right now it looks like there's there
+has to be a pledge.
+
+adf38369-9e04-4506-ae8a-72b61e3ecd19-0
+00:25:03.480 --> 00:25:08.732
+The date range is assumed January 1
+through whatever date you select and it's
+
+adf38369-9e04-4506-ae8a-72b61e3ecd19-1
+00:25:08.732 --> 00:25:11.560
+looking at the pledges in that date range.
+
+052f7ebd-5d5d-45c9-b318-c1b209aafea6-0
+00:25:11.560 --> 00:25:16.432
+And then also it's showing you the
+activity between January 1 and in this
+
+052f7ebd-5d5d-45c9-b318-c1b209aafea6-1
+00:25:16.432 --> 00:25:19.526
+case August 1st,
+that once against the current
+
+052f7ebd-5d5d-45c9-b318-c1b209aafea6-2
+00:25:19.526 --> 00:25:23.213
+functionality,
+it's up to you if you want to enhance or
+
+052f7ebd-5d5d-45c9-b318-c1b209aafea6-3
+00:25:23.213 --> 00:25:26.440
+give them extra bells and whistles or
+something.
+
+b091834e-b4b7-43fd-a030-87ec3d1bd14d-0
+00:25:26.680 --> 00:25:33.869
+So all I did for my version of this was
+to see for on pace before the end of the
+
+b091834e-b4b7-43fd-a030-87ec3d1bd14d-1
+00:25:33.869 --> 00:25:36.000
+year to reach your goal.
+
+19069ead-7715-4783-b62e-4edf4cedcbd1-0
+00:25:38.680 --> 00:25:41.674
+You also have them here,
+the different activity,
+
+19069ead-7715-4783-b62e-4edf4cedcbd1-1
+00:25:41.674 --> 00:25:45.647
+because from my point of view,
+this is just realistically active
+
+19069ead-7715-4783-b62e-4edf4cedcbd1-2
+00:25:45.647 --> 00:25:46.320
+activities.
+
+6abd71a1-c374-4fea-8204-a7fc02e89922-0
+00:25:47.120 --> 00:25:59.309
+So it's whatever I have in here,
+the different activities and to see if
+
+6abd71a1-c374-4fea-8204-a7fc02e89922-1
+00:25:59.309 --> 00:26:03.880
+we'll reach that goal here.
+
+91834dd0-4c41-4b07-83bc-a525cc52c1d2-0
+00:26:04.960 --> 00:26:05.560
+That makes sense.
+
+eb0eadad-33c5-4d37-b48a-cdb02c2c1a42-0
+00:26:08.160 --> 00:26:13.755
+And so like all I was going to do was try
+to see if we could like I will be in pace
+
+eb0eadad-33c5-4d37-b48a-cdb02c2c1a42-1
+00:26:13.755 --> 00:26:19.150
+to reach that call by the end of the year
+or whatever activity because obviously
+
+eb0eadad-33c5-4d37-b48a-cdb02c2c1a42-2
+00:26:19.150 --> 00:26:22.548
+you can,
+you can have it be whatever date you want
+
+eb0eadad-33c5-4d37-b48a-cdb02c2c1a42-3
+00:26:22.548 --> 00:26:24.280
+it to be these activities.
+
+5b46eac9-a8d2-4b59-95f1-a2275236f086-0
+00:26:24.280 --> 00:26:31.557
+So if I go to the college fund,
+for example,
+
+5b46eac9-a8d2-4b59-95f1-a2275236f086-1
+00:26:31.557 --> 00:26:37.380
+I have a start date and an end date.
+
+760a3a77-793b-4a7b-8662-c39d6be8fbe7-0
+00:26:37.380 --> 00:26:39.180
+Yeah, it's not, It's not looking at that.
+
+b052be9a-e571-4b75-a10a-1979d7e16624-0
+00:26:39.640 --> 00:26:39.960
+Yeah.
+
+38ce30ad-cabe-4b6e-a100-7fcc61655849-0
+00:26:40.280 --> 00:26:43.200
+So it's actually looking at the pledge
+dates.
+
+aba96e7a-5ebd-4dcd-bce6-2a94c1b05fce-0
+00:26:44.040 --> 00:26:47.954
+So the pledge beginning end dates so that
+those activity dates don't really do
+
+aba96e7a-5ebd-4dcd-bce6-2a94c1b05fce-1
+00:26:47.954 --> 00:26:48.400
+anything.
+
+cae6bd1a-6c29-48aa-8ca4-34f38e01bdc3-0
+00:26:50.640 --> 00:26:53.736
+No,
+But would it not be the expectation to be
+
+cae6bd1a-6c29-48aa-8ca4-34f38e01bdc3-1
+00:26:53.736 --> 00:26:59.053
+let me open the sign new screen because
+maybe I'm misinterpreting kind of what
+
+cae6bd1a-6c29-48aa-8ca4-34f38e01bdc3-2
+00:26:59.053 --> 00:27:00.400
+people use this for.
+
+25a357b8-3ea2-4efc-9f70-9c43de76891f-0
+00:27:02.280 --> 00:27:06.485
+But isn't this time to see if the
+activity will reach the goal,
+
+25a357b8-3ea2-4efc-9f70-9c43de76891f-1
+00:27:06.485 --> 00:27:10.560
+but the goal is dictated by the pledges
+made to the activity.
+
+31c8d1cc-30b4-4eda-9929-8f4dabdc4449-0
+00:27:12.480 --> 00:27:16.360
+True, true.
+
+dd94c8a3-bf51-41d3-bb8a-673dae739e7e-0
+00:27:16.720 --> 00:27:21.786
+That's case I'm wrong in OK, yes,
+you you could ignore,
+
+dd94c8a3-bf51-41d3-bb8a-673dae739e7e-1
+00:27:21.786 --> 00:27:29.206
+you can ignore the fact there's a certain
+end date on the activity itself because
+
+dd94c8a3-bf51-41d3-bb8a-673dae739e7e-2
+00:27:29.206 --> 00:27:33.640
+that doesn't really affect any of the
+reporting.
+
+24321cdd-2332-405c-85e0-bd8e8439051e-0
+00:27:34.400 --> 00:27:37.520
+It's more just there to look pretty just
+information only.
+
+41e2222f-bda3-457c-b910-c3a200f634ca-0
+00:27:37.720 --> 00:27:40.635
+So but yeah,
+the widgets going to look at the
+
+41e2222f-bda3-457c-b910-c3a200f634ca-1
+00:27:40.635 --> 00:27:41.840
+individual pledges.
+
+fd21dedb-e498-4ed1-9aab-b551fae53eda-0
+00:27:41.960 --> 00:27:44.240
+They're set up under manage pledges.
+
+2a21222a-13c9-4e4f-b780-bab9ea8bfca3-0
+00:27:46.040 --> 00:27:50.414
+And then the pledge dates would typically
+start, you know,
+
+2a21222a-13c9-4e4f-b780-bab9ea8bfca3-1
+00:27:50.414 --> 00:27:54.640
+January 1 to end of the year for each
+individual church.
+
+33d3480d-66f3-4cb2-994e-5dabf1158e92-0
+00:27:56.400 --> 00:28:00.032
+And then therefore,
+the widget would only show remittance is
+
+33d3480d-66f3-4cb2-994e-5dabf1158e92-1
+00:28:00.032 --> 00:28:04.200
+actually being given to those pledges in
+order to show on the widget.
+
+f06bfd53-8aa5-41e5-b1a5-239890433a20-0
+00:28:05.240 --> 00:28:05.480
+Yeah.
+
+3a6844f8-b9a9-4c3c-814e-dc87f8f94cba-0
+00:28:05.760 --> 00:28:10.039
+And so just to be clear,
+then a pledge would be like,
+
+3a6844f8-b9a9-4c3c-814e-dc87f8f94cba-1
+00:28:10.039 --> 00:28:14.160
+I'm donating to €10 a month for the next
+12 months.
+
+c909631c-8091-429a-87a3-dffd5199ab86-0
+00:28:14.840 --> 00:28:20.040
+And then the remittance would be, oh,
+what's the definition of remittance again?
+
+e91bc0ee-e755-458a-b3b3-61f6147a2670-0
+00:28:20.560 --> 00:28:24.240
+Just basically the money that you paid
+against the pledge.
+
+5e3e1c32-a392-4694-8dc6-21be393d0375-0
+00:28:24.520 --> 00:28:38.720
+Yeah, OK, that means, OK,
+I'm a little bit confused.
+
+467dc351-97d5-4316-a194-73c321528d78-0
+00:28:38.720 --> 00:28:41.358
+OK,
+I've gone really far wrong in this and no,
+
+467dc351-97d5-4316-a194-73c321528d78-1
+00:28:41.358 --> 00:28:41.920
+it's fine.
+
+100bdbdc-e99a-4648-bdcc-33632736e8a4-0
+00:28:42.040 --> 00:28:45.253
+So you're so basically you have to pull
+like you know,
+
+100bdbdc-e99a-4648-bdcc-33632736e8a4-1
+00:28:45.253 --> 00:28:48.000
+in our building that is a is a database
+query.
+
+4a49ddff-4959-437c-89aa-ff2267b598a2-0
+00:28:48.000 --> 00:28:53.230
+I would start with the remit it's pledge
+table and and then grab the date range
+
+4a49ddff-4959-437c-89aa-ff2267b598a2-1
+00:28:53.230 --> 00:28:54.800
+for those pledges first.
+
+c22456a5-c715-4b88-a62e-126da1f610d0-0
+00:28:55.920 --> 00:29:01.082
+And then after I have that,
+that least gives me the year to date
+
+c22456a5-c715-4b88-a62e-126da1f610d0-1
+00:29:01.082 --> 00:29:06.005
+expected the, you know,
+the annual amount you're there at the
+
+c22456a5-c715-4b88-a62e-126da1f610d0-2
+00:29:06.005 --> 00:29:06.800
+beginning.
+
+03ac51d3-4846-445e-b6f9-748188aea66f-0
+00:29:06.800 --> 00:29:10.120
+So at least I have all that information
+upfront per activity.
+
+c8a8feb8-9748-402f-a53a-76a465662c0f-0
+00:29:10.520 --> 00:29:14.592
+And then from from that pledge,
+I'll then link from that over to the
+
+c8a8feb8-9748-402f-a53a-76a465662c0f-1
+00:29:14.592 --> 00:29:15.360
+actual orbit.
+
+b22b2d8a-1367-4825-802e-93f56d0a38e0-0
+00:29:15.360 --> 00:29:18.613
+It's history,
+the populate the year to date paid and
+
+b22b2d8a-1367-4825-802e-93f56d0a38e0-1
+00:29:18.613 --> 00:29:21.990
+then that can calculate all the other
+stuff, you know,
+
+b22b2d8a-1367-4825-802e-93f56d0a38e0-2
+00:29:21.990 --> 00:29:25.920
+the outstanding percent paid, all that,
+all that kind of thing.
+
+69cc1b9a-f344-4092-89b3-63b12aa10b69-0
+00:29:25.920 --> 00:29:31.807
+So, so the remittance history table,
+you wouldn't be pulling straight from
+
+69cc1b9a-f344-4092-89b3-63b12aa10b69-1
+00:29:31.807 --> 00:29:32.200
+that.
+
+8012b165-9a33-4509-a36e-7e4d67c5bda6-0
+00:29:32.200 --> 00:29:36.426
+You would actually be pulling from the
+pledge table 1st and then going from the
+
+8012b165-9a33-4509-a36e-7e4d67c5bda6-1
+00:29:36.426 --> 00:29:40.493
+pledge table over probably I guess to the
+remittance history detail table is
+
+8012b165-9a33-4509-a36e-7e4d67c5bda6-2
+00:29:40.493 --> 00:29:41.920
+probably where it's hooked.
+
+7d825627-6156-4802-ad79-42a859ae57b6-0
+00:29:42.960 --> 00:29:43.080
+Yeah.
+
+01f4c12b-1487-4c9c-8f3e-384f6c9c4a2c-0
+00:29:47.320 --> 00:29:50.688
+But like this, Yeah,
+this one's gonna have both begin and end
+
+01f4c12b-1487-4c9c-8f3e-384f6c9c4a2c-1
+00:29:50.688 --> 00:29:50.960
+date.
+
+409ad029-819e-4ae2-8147-5a43593c5321-0
+00:29:50.960 --> 00:29:53.800
+It's gonna have the activity ID in it.
+
+d73e06a3-3646-4413-ae1e-a9717ecd13d2-0
+00:29:56.640 --> 00:29:57.800
+OK, OK, OK.
+
+139591a8-303c-430d-ae2f-ce0395d2056a-0
+00:29:57.880 --> 00:29:59.560
+I'm getting, I'm sorry, the pledge.
+
+25f0cf7c-1f08-4740-a165-91c8ac68f6b4-0
+00:29:59.640 --> 00:29:59.840
+Yeah.
+
+ff13c59a-45cc-4bcc-9371-fb17e6fea896-0
+00:29:59.840 --> 00:30:02.320
+Pledge detail tables gonna have activity
+in it.
+
+cb0dc470-4924-4de3-8588-836a8dd765ed-0
+00:30:03.000 --> 00:30:03.120
+Yeah.
+
+d21b23c1-31e2-4375-a89e-4d56654556e1-0
+00:30:04.240 --> 00:30:09.160
+So this is where I've gone wrong, right?
+
+138b67f2-fda5-4d67-b698-425ea9875235-0
+00:30:09.160 --> 00:30:12.760
+And I'll tell you exactly what I was
+envisioning for this.
+
+b7b16098-7c9e-441f-9596-c7674d6cf2a7-0
+00:30:13.040 --> 00:30:15.290
+Yeah,
+because you're pulling it based on the
+
+b7b16098-7c9e-441f-9596-c7674d6cf2a7-1
+00:30:15.290 --> 00:30:19.040
+dates, on the activity itself, which,
+yeah, yes, kind of kind of bit more.
+
+e99b4b04-649b-4998-94e9-8bbb26336a78-0
+00:30:19.040 --> 00:30:23.991
+So I was kind of caring about the
+activities as activities would be the
+
+e99b4b04-649b-4998-94e9-8bbb26336a78-1
+00:30:23.991 --> 00:30:29.079
+buckish, you could say, you know,
+and this thing was just the amount that
+
+e99b4b04-649b-4998-94e9-8bbb26336a78-2
+00:30:29.079 --> 00:30:31.279
+God entered through the pledges.
+
+958b1e8b-36c3-4896-b65c-b4ec3638b9a8-0
+00:30:31.680 --> 00:30:34.600
+But what actually matters is the
+activities.
+
+dfd73676-84a9-4dbe-85c9-06112e2daef9-0
+00:30:35.200 --> 00:30:38.576
+But what you're saying to me is I don't
+actually care about the activities at all,
+
+dfd73676-84a9-4dbe-85c9-06112e2daef9-1
+00:30:38.576 --> 00:30:40.000
+what I care about with the pledges.
+
+69dca503-d281-4b0f-b715-3bb3c9f0e333-0
+00:30:40.800 --> 00:30:46.240
+And so actually this is just kind of it,
+what money has gone into my activity.
+
+8f458294-2662-4f00-86c3-06ad4d4b65f0-0
+00:30:46.240 --> 00:30:51.618
+But what you actually care about this
+kind of a breakdown on what pledges are
+
+8f458294-2662-4f00-86c3-06ad4d4b65f0-1
+00:30:51.618 --> 00:30:55.480
+outstanding or what pledges are behind
+their timetable.
+
+ff373984-e322-4e34-9004-7829fa3b7ffa-0
+00:30:56.520 --> 00:31:02.902
+Is that correct in kind of what people
+are trying to use this for more so the
+
+ff373984-e322-4e34-9004-7829fa3b7ffa-1
+00:31:02.902 --> 00:31:07.240
+way as far as visually what you're seeing
+right now?
+
+55d83db1-9a3a-48f9-a61b-20f52cb150ff-0
+00:31:07.320 --> 00:31:08.400
+Yeah, that's correct.
+
+33e7b652-6109-4544-83f5-6b9d11541d05-0
+00:31:08.520 --> 00:31:12.200
+I do want to see all this information
+broken down by activity.
+
+4b559d0b-0617-4a18-9693-d6f417f497d7-0
+00:31:12.200 --> 00:31:14.480
+It's just that I have to start with the
+pledge.
+
+86dd46f8-15d4-435e-8d2c-1f1774918b4e-0
+00:31:15.080 --> 00:31:18.240
+The pledge is what dictates which
+activities display.
+
+1874325b-b312-4c9c-a583-00f62a48137a-0
+00:31:20.320 --> 00:31:20.600
+Yeah.
+
+369a7f8a-fefb-4d96-b198-6a5bad5fa6f7-0
+00:31:20.600 --> 00:31:23.680
+And then after I have the pledge,
+then I can go look for it.
+
+922fffba-4480-462a-ac00-1eb1a199d9f4-0
+00:31:23.680 --> 00:31:28.816
+Can now show me the rabbits that's
+actually connected to this pledge to get
+
+922fffba-4480-462a-ac00-1eb1a199d9f4-1
+00:31:28.816 --> 00:31:29.560
+the totals.
+
+5fcc9ce7-afd0-4477-a968-e31ee4620d2e-0
+00:31:29.800 --> 00:31:32.200
+So would would this be better than right?
+
+4fc2e43d-fefa-4fcb-a2b5-87a5eb55b011-0
+00:31:32.240 --> 00:31:34.240
+So let's say I click on this, right?
+
+52dfbc28-e96e-48e5-895b-4cc4936888dd-0
+00:31:34.600 --> 00:31:36.240
+And then or let's say click on this.
+
+ba894a88-9a1e-4b14-beef-490fe26f9f04-0
+00:31:37.480 --> 00:31:41.398
+So in this design,
+I was thinking on just to see the amounts
+
+ba894a88-9a1e-4b14-beef-490fe26f9f04-1
+00:31:41.398 --> 00:31:43.840
+coming in, but this is actually wrong.
+
+88dde529-9e70-401d-b331-bfb1fa4eacfd-0
+00:31:43.920 --> 00:31:45.160
+I'm going the wrong direction here.
+
+4f7f3f75-7040-4c14-91ec-918b6a612c19-0
+00:31:45.920 --> 00:31:48.530
+What I would expect is like,
+let's say I drop down,
+
+4f7f3f75-7040-4c14-91ec-918b6a612c19-1
+00:31:48.530 --> 00:31:50.840
+so I click and say outreach and and so
+forth.
+
+03501732-fb56-4682-8b1d-895a5194c94f-0
+00:31:51.600 --> 00:31:56.472
+And inside you can see all the pledges
+that are for the activity and then see if
+
+03501732-fb56-4682-8b1d-895a5194c94f-1
+00:31:56.472 --> 00:31:59.600
+they're outstanding or what's the status
+with them.
+
+d604ee19-6148-47f3-922c-4937c0eb9120-0
+00:32:00.200 --> 00:32:03.280
+That would probably be a better approach
+to this, right?
+
+7f911158-3bd1-4a81-9423-19d9e8281d1e-0
+00:32:04.400 --> 00:32:11.230
+It would, but a lot of our customers,
+they may have 508 hundred pledges to one
+
+7f911158-3bd1-4a81-9423-19d9e8281d1e-1
+00:32:11.230 --> 00:32:12.960
+of these activities.
+
+f941e81f-caa3-420d-aa5d-e27c99a47ce3-0
+00:32:13.680 --> 00:32:18.015
+So just kind of keep in mind visually,
+if I click that and I have that many
+
+f941e81f-caa3-420d-aa5d-e27c99a47ce3-1
+00:32:18.015 --> 00:32:21.780
+pledges against activity,
+what's it going to look like or how are
+
+f941e81f-caa3-420d-aa5d-e27c99a47ce3-2
+00:32:21.780 --> 00:32:24.918
+we going to, you know,
+paginate or paginate, you know,
+
+f941e81f-caa3-420d-aa5d-e27c99a47ce3-3
+00:32:24.918 --> 00:32:27.600
+all that information or is that too much
+data?
+
+8d0433b9-475f-4339-85f4-a5e14a481f69-0
+00:32:28.200 --> 00:32:29.520
+But that's exactly how I did though.
+
+03847efb-df35-445c-816a-7ac8f368886a-0
+00:32:29.560 --> 00:32:35.440
+I would just basically limit to maybe the
+top 20, let's say, or top ten maybe.
+
+39f034d4-0d9e-4242-8e89-e57434c5561a-0
+00:32:35.560 --> 00:32:41.452
+And then if they want more information
+instead of what I'm being displayed here,
+
+39f034d4-0d9e-4242-8e89-e57434c5561a-1
+00:32:41.452 --> 00:32:46.835
+I can give a more detailed list or a way
+of querying like who is the most
+
+39f034d4-0d9e-4242-8e89-e57434c5561a-2
+00:32:46.835 --> 00:32:49.599
+outstanding, who's in an active maybe?
+
+f2528b6f-3fe5-4603-aa29-df87fbaf5351-0
+00:32:49.600 --> 00:32:55.815
+Or do I mean kind of going more so to
+find who's behind and maybe contact them
+
+f2528b6f-3fe5-4603-aa29-df87fbaf5351-1
+00:32:55.815 --> 00:32:59.120
+or reach out or whatever they normally do.
+
+58ca8f20-3b5b-47a9-968f-e85fbb1aec12-0
+00:33:00.200 --> 00:33:02.682
+OK,
+that was absolutely amazing because I
+
+58ca8f20-3b5b-47a9-968f-e85fbb1aec12-1
+00:33:02.682 --> 00:33:04.160
+went the wrong direction.
+
+dca1ecbd-4ccb-4d14-afdd-77d61f38729f-0
+00:33:04.160 --> 00:33:07.120
+So this is actually fixed my issue here.
+
+fe7b929d-aca3-4957-8166-a438a1826329-0
+00:33:08.360 --> 00:33:09.080
+It's all good.
+
+fa180f47-b46e-44cc-8e74-39a8035c5bfc-0
+00:33:09.120 --> 00:33:12.240
+Like I said,
+it's it's it's confusing that you have
+
+fa180f47-b46e-44cc-8e74-39a8035c5bfc-1
+00:33:12.240 --> 00:33:17.160
+dates on the activity and you have dates
+on the pledge and you have the dates for
+
+fa180f47-b46e-44cc-8e74-39a8035c5bfc-2
+00:33:17.160 --> 00:33:19.560
+the actual orbited centuries themselves.
+
+77c6b12e-038b-4567-b819-c136ad8a9e7e-0
+00:33:19.560 --> 00:33:23.160
+So there's a lot of dates floating around
+in those ribbon it's tables.
+
+17c728da-55ae-4d58-bedd-650328798041-0
+00:33:23.160 --> 00:33:26.840
+So it totally makes sense that you kind
+of went the way you went.
+
+c619c262-d451-4b2f-8377-1296d7aaea97-0
+00:33:29.320 --> 00:33:31.000
+OK, OK, perfect, perfect.
+
+a36ec5b5-319f-41e2-a6e4-ea6ce4ec938b-0
+00:33:31.200 --> 00:33:34.600
+You've sorted out two huge issues and now
+I know what I'm doing.
+
+6a3a7b9e-8359-4875-bd85-f16b82d1a4d8-0
+00:33:36.560 --> 00:33:39.688
+It's like in this, you can also,
+once you create your widget,
+
+6a3a7b9e-8359-4875-bd85-f16b82d1a4d8-1
+00:33:39.688 --> 00:33:43.825
+you should be able to put it right beside
+the current widget and kind of see that
+
+6a3a7b9e-8359-4875-bd85-f16b82d1a4d8-2
+00:33:43.825 --> 00:33:46.600
+the totals all match up and they're
+correct and stuff.
+
+0ec75caa-8fc9-4823-90e9-d536de6fe09d-0
+00:33:47.080 --> 00:33:47.200
+Yeah.
+
+13dbbabc-7931-42c3-bf86-851c0bf2cddf-0
+00:33:47.720 --> 00:33:51.680
+And if you need better data in that beta
+one environment or something, let me know.
+
+5acccf58-b125-4af5-8cb9-92e65e744711-0
+00:33:51.680 --> 00:33:56.531
+And I can go add a couple of pledges for
+2026 and put some abundance against them
+
+5acccf58-b125-4af5-8cb9-92e65e744711-1
+00:33:56.531 --> 00:33:58.720
+and do some various things like that.
+
+6bee91d7-25e0-412c-ab24-de821f35084c-0
+00:33:59.800 --> 00:34:03.717
+If someone if someone were QA ING this,
+they would put in a pledge with no
+
+6bee91d7-25e0-412c-ab24-de821f35084c-1
+00:34:03.717 --> 00:34:04.240
+abundance.
+
+0f128575-c9f3-42c7-ab52-60071ba93944-0
+00:34:04.560 --> 00:34:08.326
+They'll put in for minutes against no
+pledge and you would have a pledge with
+
+0f128575-c9f3-42c7-ab52-60071ba93944-1
+00:34:08.326 --> 00:34:09.920
+her, but it's tied to the pledge.
+
+ee072172-7203-4cbc-9d37-8a775db9072c-0
+00:34:10.800 --> 00:34:14.002
+And then you would so you have all the
+different weird environments you could
+
+ee072172-7203-4cbc-9d37-8a775db9072c-1
+00:34:14.002 --> 00:34:17.000
+think of and then go test the widget out
+and see how it's handling that.
+
+cd3e9ef0-cb76-44e2-b8a0-455483f56c1b-0
+00:34:18.640 --> 00:34:22.585
+And again, to me,
+it's like the the the widget is a pledge
+
+cd3e9ef0-cb76-44e2-b8a0-455483f56c1b-1
+00:34:22.585 --> 00:34:23.120
+widgets.
+
+1d9b3260-212d-4600-a07c-ed1984519c10-0
+00:34:23.120 --> 00:34:26.855
+I start with the pledge and the oiler,
+but it's I care about is there,
+
+1d9b3260-212d-4600-a07c-ed1984519c10-1
+00:34:26.855 --> 00:34:28.960
+but it's actually hooked to that pledge.
+
+4fe79eb4-4059-4e06-b5c2-a976a2fc478c-0
+00:34:28.960 --> 00:34:30.640
+I'm not going to actually show all rabbit.
+
+51caf86f-b9d1-401b-a23a-1784a4dad0ea-0
+00:34:30.640 --> 00:34:32.280
+It's in the date range.
+
+f9833075-f0d8-4284-9693-305fd3fe11db-0
+00:34:32.280 --> 00:34:33.760
+It has to be hooked to the pledge.
+
+a742a202-3fb4-427c-b4d1-5d267016b38d-0
+00:34:33.760 --> 00:34:38.360
+Yeah, yeah.
+
+5b6acdbe-6e85-4a9f-9620-588d63a7d9a3-0
+00:34:38.360 --> 00:34:42.019
+Let me know if you need any, but any,
+any other data or anything out there to
+
+5b6acdbe-6e85-4a9f-9620-588d63a7d9a3-1
+00:34:42.019 --> 00:34:44.600
+kind of help test it or something when
+you get closer.
+
+e05f2545-c535-4a86-9c28-d73cd058f98d-0
+00:34:45.440 --> 00:34:54.920
+So at the moment we're thinking about
+stealing the sales guys information.
+
+99c1ecbd-ab24-4813-b851-f4d8ce2d675e-0
+00:34:56.160 --> 00:34:58.800
+OK, I forget what it's called.
+
+b343bc97-bec9-46c7-9669-762084a1333d-0
+00:35:00.400 --> 00:35:01.520
+That's not goodwill.
+
+700a3db6-2ba1-496e-a153-c5e5c127c611-0
+00:35:01.520 --> 00:35:02.880
+It's what's it called.
+
+cba0566d-0898-4dc2-b0ea-970296444576-0
+00:35:03.760 --> 00:35:05.760
+I can open it up and I can just see it
+from there.
+
+6d049172-4ffd-4c61-b9f5-0b929325782b-0
+00:35:10.440 --> 00:35:11.800
+I don't know how good their data is.
+
+01e7bf85-8ead-4960-9a68-e55e1a914669-0
+00:35:11.800 --> 00:35:12.920
+I just know that they have a lot of it.
+
+248dcd62-7510-4b6d-997b-d2c8616aeeb9-0
+00:35:12.920 --> 00:35:19.588
+The Generations Church, OK,
+because we have not to be able to already
+
+248dcd62-7510-4b6d-997b-d2c8616aeeb9-1
+00:35:19.588 --> 00:35:20.160
+remit.
+
+65569372-d18d-4f24-912e-6d27612bf5c9-0
+00:35:20.160 --> 00:35:21.720
+It's might be one of those modules.
+
+9682b787-81a1-42dc-9222-30915683249d-0
+00:35:21.720 --> 00:35:24.320
+They don't have a lot of stuff in it just
+because.
+
+e935e3da-5be4-47d8-bb1e-d31461bc4ba9-0
+00:35:24.360 --> 00:35:24.520
+Yeah.
+
+2660dd14-0aec-42c4-ac61-063c5e50cd11-0
+00:35:25.560 --> 00:35:29.080
+It's more of a denominational
+headquarters type module.
+
+c2e3ea1e-4aee-4ddb-897c-9e06591f3fa0-0
+00:35:29.080 --> 00:35:34.706
+It's not used as often or sold as often
+as the standard modules that all churches
+
+c2e3ea1e-4aee-4ddb-897c-9e06591f3fa0-1
+00:35:34.706 --> 00:35:37.040
+and almost all of our clients use.
+
+39d4792b-9796-4b67-84f0-35188fec0eaf-0
+00:35:37.040 --> 00:35:41.095
+So again, if you find, if you look at it,
+there's really not a lot of data or not
+
+39d4792b-9796-4b67-84f0-35188fec0eaf-1
+00:35:41.095 --> 00:35:45.200
+enough data to do an adequate testing on
+it, just let me know because I'm kidding.
+
+455a28b0-5b45-4b3c-a0ab-29a090f26d4d-0
+00:35:45.920 --> 00:35:47.040
+We can add stuff to it.
+
+b1e3ed34-209b-4b4f-bba8-e15d194bb42e-0
+00:35:48.560 --> 00:35:49.720
+OK, perfect.
+
+1e015172-8507-4d63-9501-c0dcaa79be47-0
+00:35:50.320 --> 00:35:54.440
+I did not expect this to go so long,
+but it absolutely was amazing help.
+
+c9bb129d-9375-4712-be0f-47fc3f7a819d-0
+00:35:54.440 --> 00:35:55.120
+So thank you again.
+
+e320efb4-48da-468b-abb8-e88cdc4e1149-0
+00:35:55.560 --> 00:35:56.520
+Yeah, No sweat.
+
+45ae77e0-68a2-486e-ab6c-6abfb0efaf0c-0
+00:35:56.520 --> 00:35:57.080
+Anytime.
+
+a88e90b4-6ae0-403b-90b2-67ef3e6d4ea1-0
+00:35:57.080 --> 00:35:58.200
+All right.
+
+c3414adf-a7eb-44a4-ae5d-98684796dc9d-0
+00:35:58.520 --> 00:35:58.960
+Appreciate it.
+
+57a0ebac-1a82-4cda-91a2-9be92738a331-0
+00:35:59.000 --> 00:35:59.360
+Bye, bye.
+
+deba31f0-e60b-4615-9108-f4e8baaea0da-0
+00:35:59.520 --> 00:35:59.880
+Sure.
+
+714fd676-309a-4fec-90b8-f21d32b2fba1-0
+00:35:59.880 --> 00:36:00.520
+Talk to you later.
+
+4aac1bc3-b12e-4607-939f-5c5969f333cb-0
+00:36:00.520 --> 00:36:00.640
+Bye.
+
+55f7ef18-dd1c-43ab-bb49-60e1a1914de2-0
+00:36:00.640 --> 00:36:00.760
+Bye.

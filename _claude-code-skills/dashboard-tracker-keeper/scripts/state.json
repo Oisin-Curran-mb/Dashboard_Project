@@ -1,0 +1,351 @@
+{
+  "widgets": {
+    "1": {
+      "name": "Budget Compared to Actual",
+      "step1_hash": "c7b851d46ddb492d",
+      "step1_file": "Step 1 - Dashboard Research/01 - Budget Compared to Actual.md",
+      "step3_spec_hash": "4296639e9b7add20",
+      "step3_spec_file": "Step 3 - Mock_Work/Widget_Specs/W01-Budget-Compared-to-Actual.md",
+      "step3_mockup_hash": "2cf6a4b9c8349c08",
+      "step4_hash": "4042ad5164bba0eb",
+      "step4_file": "Step 4 - Widget Final Design/W01 - Budget Compared to Actual.md",
+      "step5_hash": "00e8683c8e4dfc2a",
+      "step5_file": "Step 5 - API documents/Budget Compared to Actual/Budget Compared to Actual - API Spec.md",
+      "step5_draft": false,
+      "step4_index_status": "\u2705 Done",
+      "step4_index_tracker_status": "\u2705 Complete",
+      "step5_index_tracker_status": "\u2705 Complete"
+    },
+    "2": {
+      "name": "Pension Plans",
+      "step1_hash": "706fca27359b38c6",
+      "step1_file": "Step 1 - Dashboard Research/02 - Pension Plans.md",
+      "step3_spec_hash": "4b79f8147248f858",
+      "step3_spec_file": "Step 3 - Mock_Work/Widget_Specs/W02-Pension-Plans.md",
+      "step3_mockup_hash": "d6e76119c995509a",
+      "step4_hash": "9f5cef69ddcf5822",
+      "step4_file": "Step 4 - Widget Final Design/W02 - Pension Plans.md",
+      "step5_hash": "b077a824b5918d27",
+      "step5_file": "Step 5 - API documents/Pension Plans/Pension Plans - API Spec.md",
+      "step5_draft": false,
+      "step4_index_status": "\u2705 Done",
+      "step4_index_tracker_status": "\u2705 Complete",
+      "step5_index_tracker_status": "\u2705 Complete"
+    },
+    "3": {
+      "name": "Payroll Distributions",
+      "step1_hash": "43bdde10ae2e352d",
+      "step1_file": "Step 1 - Dashboard Research/03 - Payroll Distributions.md",
+      "step3_spec_hash": "4e479f1cca82be85",
+      "step3_spec_file": "Step 3 - Mock_Work/Widget_Specs/W03-Payroll-Distributions.md",
+      "step3_mockup_hash": "cc1a6714add1164a",
+      "step4_hash": "f2234a1d0cd88f55",
+      "step4_file": "Step 4 - Widget Final Design/W03 - Payroll Distributions.md",
+      "step5_hash": "d5d706074c2e328b",
+      "step5_file": "Step 5 - API documents/Payroll Distributions/Payroll Distributions - API Spec.md",
+      "step5_draft": false,
+      "step4_index_status": "\u2705 Done",
+      "step4_index_tracker_status": "\u2705 Complete",
+      "step5_index_tracker_status": "\u2705 Complete"
+    },
+    "4": {
+      "name": "Remittance Pledges",
+      "step1_hash": "c72b43439df19f69",
+      "step1_file": "Step 1 - Dashboard Research/04 - Remittance Pledges.md",
+      "step3_spec_hash": "9b83452dfa04bd5b",
+      "step3_spec_file": "Step 3 - Mock_Work/Widget_Specs/W04-Remittance-Pledges.md",
+      "step3_mockup_hash": "378a9fa9b4533aab",
+      "step4_hash": "ae3df46354818d2e",
+      "step4_file": "Step 4 - Widget Final Design/W04 - Remittance Pledges.md",
+      "step5_hash": "d4c9933b92bbd879",
+      "step5_file": "Step 5 - API documents/Remittance Pledges/Remittance Pledges - API Spec.md",
+      "step5_draft": false,
+      "step4_index_status": "\u2705 Done",
+      "step4_index_tracker_status": "\u2705 Complete",
+      "step5_index_tracker_status": "\u2705 Complete"
+    },
+    "5": {
+      "name": "Receivable Invoices Outstanding",
+      "step1_hash": "dabf9ec6deb31c05",
+      "step1_file": "Step 1 - Dashboard Research/05 - Receivable Invoices Outstanding.md",
+      "step3_spec_hash": "4c5accce78c3b4ed",
+      "step3_spec_file": "Step 3 - Mock_Work/Widget_Specs/W05-Receivable-Invoices-Outstanding.md",
+      "step3_mockup_hash": "4c74c3f13ef38ae2",
+      "step4_hash": "574d4c69d8387a54",
+      "step4_file": "Step 4 - Widget Final Design/W05 - Receivable Invoices Outstanding.md",
+      "step5_hash": "615e3f716ce0a98e",
+      "step5_file": "Step 5 - API documents/Receivable Invoices Outstanding/Receivable Invoices Outstanding - API Spec.md",
+      "step5_draft": false,
+      "step4_index_status": "\u2705 Done",
+      "step4_index_tracker_status": "\u2705 Complete",
+      "step5_index_tracker_status": "\u2705 Complete"
+    },
+    "6": {
+      "name": "Insurance Billing Plans",
+      "step1_hash": "fdf59ab8a102d1c1",
+      "step1_file": "Step 1 - Dashboard Research/06 - Insurance Billing Plans.md",
+      "step3_spec_hash": "9788d628a3ce819f",
+      "step3_spec_file": "Step 3 - Mock_Work/Widget_Specs/W06-Insurance-Billing-Plans.md",
+      "step3_mockup_hash": "b6fa0fd1e319668c",
+      "step4_hash": "76ee6feb72e9fa2e",
+      "step4_file": "Step 4 - Widget Final Design/W06 - Insurance Billing Plans.md",
+      "step5_hash": "b822dd9622a3fd92",
+      "step5_file": "Step 5 - API documents/Insurance Billing Plans/Insurance Billing Plans - API Spec.md",
+      "step5_draft": false,
+      "step4_index_status": "\u2705 Done",
+      "step4_index_tracker_status": "\u2705 Complete",
+      "step5_index_tracker_status": "\u2705 Complete"
+    },
+    "7": {
+      "name": "Deposit Accounts",
+      "step1_hash": "332d06601beace64",
+      "step1_file": "Step 1 - Dashboard Research/07 - Deposit Accounts.md",
+      "step3_spec_hash": "f905367fbe32aca8",
+      "step3_spec_file": "Step 3 - Mock_Work/Widget_Specs/W07-Deposit-Accounts.md",
+      "step3_mockup_hash": "1ec582237ce1a29e",
+      "step4_hash": "f4b22e445c95dc5f",
+      "step4_file": "Step 4 - Widget Final Design/W07 - Deposit Accounts.md",
+      "step5_hash": "967bc1c6ce0746b4",
+      "step5_file": "Step 5 - API documents/Deposit Accounts/Deposit Accounts - API Spec.md",
+      "step5_draft": false,
+      "step4_index_status": "\u2705 Done",
+      "step4_index_tracker_status": "\u2705 Complete",
+      "step5_index_tracker_status": "\u2705 Complete"
+    },
+    "8": {
+      "name": "My Status",
+      "step1_hash": "22b56e46f5a8b8c9",
+      "step1_file": "Step 1 - Dashboard Research/08 - My Status.md",
+      "step3_spec_hash": "604a151aba516b72",
+      "step3_spec_file": "Step 3 - Mock_Work/Widget_Specs/W08-My-Status.md",
+      "step3_mockup_hash": null,
+      "step4_hash": null,
+      "step5_hash": null,
+      "step4_index_status": "\u26aa Not started \u2014 deferred",
+      "step4_index_tracker_status": "\u26aa Not started",
+      "step5_index_tracker_status": "\u26aa Not started"
+    },
+    "9": {
+      "name": "Payroll Scheduled Time Off",
+      "step1_hash": "726a234db5cae07c",
+      "step1_file": "Step 1 - Dashboard Research/09 - Payroll Scheduled Time Off.md",
+      "step3_spec_hash": "491d26f61d8f3d4c",
+      "step3_spec_file": "Step 3 - Mock_Work/Widget_Specs/W09-Payroll-Scheduled-Time-Off.md",
+      "step3_mockup_hash": "42dac32b0fe33dae",
+      "step4_hash": "2907dd8e430803f8",
+      "step4_file": "Step 4 - Widget Final Design/W09 - Payroll Scheduled Time Off.md",
+      "step5_hash": null,
+      "step4_index_status": "\ud83d\udd35 In progress",
+      "step4_index_tracker_status": "\u26aa Not started",
+      "step5_index_tracker_status": "\u26aa Not started"
+    },
+    "10": {
+      "name": "Loans With Balance Due",
+      "step1_hash": "64c03e9cb8f2c2a1",
+      "step1_file": "Step 1 - Dashboard Research/10 - Loans With Balance Due.md",
+      "step3_spec_hash": "a12519c12d180f1f",
+      "step3_spec_file": "Step 3 - Mock_Work/Widget_Specs/W10-Loans-With-Balance-Due.md",
+      "step3_mockup_hash": "9a11e393d9f8d49c",
+      "step4_hash": "79ffcaab9a9637f2",
+      "step4_file": "Step 4 - Widget Final Design/W10 - Loans With Balance Due.md",
+      "step5_hash": null,
+      "step4_index_status": "\ud83d\udd35 In progress",
+      "step4_index_tracker_status": "\u26aa Not started",
+      "step5_index_tracker_status": "\u26aa Not started"
+    },
+    "11": {
+      "name": "Fixed Asset Values",
+      "step1_hash": "cf350992e0050d56",
+      "step1_file": "Step 1 - Dashboard Research/11 - Fixed Asset Values.md",
+      "step3_spec_hash": "cf966027b7ccf706",
+      "step3_spec_file": "Step 3 - Mock_Work/Widget_Specs/W11-Fixed-Asset-Values.md",
+      "step3_mockup_hash": "2e58db0445820121",
+      "step4_hash": "8e98a931c868a2d2",
+      "step4_file": "Step 4 - Widget Final Design/W11 - Fixed Asset Values.md",
+      "step5_hash": null,
+      "step4_index_status": "\ud83d\udd35 In progress",
+      "step4_index_tracker_status": "\u26aa Not started",
+      "step5_index_tracker_status": "\u26aa Not started"
+    },
+    "12": {
+      "name": "None",
+      "step1_hash": "db73fdf47b096de4",
+      "step1_file": "Step 1 - Dashboard Research/12 - None.md",
+      "step3_spec_hash": "33bb757a9af420ef",
+      "step3_spec_file": "Step 3 - Mock_Work/Widget_Specs/W12-None.md",
+      "step3_mockup_hash": null,
+      "step4_hash": null,
+      "step5_hash": null,
+      "step4_index_status": "N/A \u2014 no widget assigned to this slot",
+      "step4_index_tracker_status": "\u2796 N/A",
+      "step5_index_tracker_status": "\u2796 N/A"
+    },
+    "13": {
+      "name": "Purchasing Management",
+      "step1_hash": "e771ac6d99ca0976",
+      "step1_file": "Step 1 - Dashboard Research/13 - Purchasing Management.md",
+      "step3_spec_hash": "f0dee81a30024947",
+      "step3_spec_file": "Step 3 - Mock_Work/Widget_Specs/W13-Purchasing-Management.md",
+      "step3_mockup_hash": "802b8934c5132911",
+      "step4_hash": "5a07fcb4ee60fd04",
+      "step4_file": "Step 4 - Widget Final Design/W13 - Purchasing Management.md",
+      "step5_hash": null,
+      "step4_index_status": "\ud83d\udd35 In progress",
+      "step4_index_tracker_status": "\u26aa Not started",
+      "step5_index_tracker_status": "\u26aa Not started"
+    },
+    "14": {
+      "name": "Main Content Tasks",
+      "step1_hash": "4f79cf1e2d2d0300",
+      "step1_file": "Step 1 - Dashboard Research/14 - Main Content Tasks.md",
+      "step3_spec_hash": "f5b9232911eff4c0",
+      "step3_spec_file": "Step 3 - Mock_Work/Widget_Specs/W14-Main-Content-Tasks.md",
+      "step3_mockup_hash": "1c0879188a8d4806",
+      "step4_hash": null,
+      "step5_hash": null,
+      "step4_index_status": "\u26aa Not started (no longer deferred \u2014 \ud83d\udd35 In progress at Step 3, not eligible for Step 4 yet)",
+      "step4_index_tracker_status": "\u26aa Not started",
+      "step5_index_tracker_status": "\u26aa Not started"
+    },
+    "15": {
+      "name": "Bank Balances",
+      "step1_hash": "0a63878bb80609c8",
+      "step1_file": "Step 1 - Dashboard Research/15 - Bank Balances.md",
+      "step3_spec_hash": "20a76163ec42f6fa",
+      "step3_spec_file": "Step 3 - Mock_Work/Widget_Specs/W15-Bank-Balances.md",
+      "step3_mockup_hash": "bacb1290cd0e4481",
+      "step4_hash": "f3b9beceaf9f2593",
+      "step4_file": "Step 4 - Widget Final Design/W15 - Bank Balances.md",
+      "step5_hash": null,
+      "step4_index_status": "\ud83d\udd35 In progress",
+      "step4_index_tracker_status": "\u26aa Not started",
+      "step5_index_tracker_status": "\u26aa Not started"
+    },
+    "16": {
+      "name": "Accounts Payable By Due Date",
+      "step1_hash": "cb84afd4bc54893d",
+      "step1_file": "Step 1 - Dashboard Research/16 - Accounts Payable By Due Date.md",
+      "step3_spec_hash": "7abf3b9807fba1d4",
+      "step3_spec_file": "Step 3 - Mock_Work/Widget_Specs/W16-Accounts-Payable-By-Due-Date.md",
+      "step3_mockup_hash": "5c94128f375e4596",
+      "step4_hash": "8e9bbafe5e13039c",
+      "step4_file": "Step 4 - Widget Final Design/W16 - Accounts Payable By Due Date.md",
+      "step5_hash": null,
+      "step4_index_status": "\ud83d\udd35 In progress",
+      "step4_index_tracker_status": "\u26aa Not started",
+      "step5_index_tracker_status": "\u26aa Not started"
+    },
+    "17": {
+      "name": "Gifts Pledges",
+      "step1_hash": "7b735986e560ee37",
+      "step1_file": "Step 1 - Dashboard Research/17 - Gifts Pledges.md",
+      "step3_spec_hash": "95dedc5cd4db8148",
+      "step3_spec_file": "Step 3 - Mock_Work/Widget_Specs/W17-Gifts-Pledges.md",
+      "step3_mockup_hash": "9f377dd2a8bdd006",
+      "step4_hash": "033a4df637e76036",
+      "step4_file": "Step 4 - Widget Final Design/W17 - Gifts Pledges.md",
+      "step5_hash": null,
+      "step4_index_status": "\ud83d\udd35 In progress",
+      "step4_index_tracker_status": "\u26aa Not started",
+      "step5_index_tracker_status": "\u26aa Not started"
+    }
+  },
+  "root_files": {
+    "PROJECT INDEX.md": "5917a8e1e3e439e8",
+    "Dashboard Tracker.xlsx": "044f6a1da4319979"
+  },
+  "orphan_scan": {
+    "Step 1": [],
+    "Step 2": [],
+    "Step 3": [],
+    "Step 4": [],
+    "Step 5": []
+  },
+  "tracker_rows": {
+    "1": {
+      "step3": "Complete",
+      "step4": "Complete",
+      "step5": "Complete"
+    },
+    "2": {
+      "step3": "Complete",
+      "step4": "Complete",
+      "step5": "Complete"
+    },
+    "3": {
+      "step3": "Complete",
+      "step4": "Complete",
+      "step5": "Complete"
+    },
+    "4": {
+      "step3": "Complete",
+      "step4": "Complete",
+      "step5": "Complete"
+    },
+    "5": {
+      "step3": "Complete",
+      "step4": "Complete",
+      "step5": "Complete"
+    },
+    "6": {
+      "step3": "Complete",
+      "step4": "Complete",
+      "step5": "Complete"
+    },
+    "7": {
+      "step3": "Complete",
+      "step4": "Complete",
+      "step5": "Complete"
+    },
+    "8": {
+      "step3": "Not Started",
+      "step4": "Not Started",
+      "step5": "Not Started"
+    },
+    "9": {
+      "step3": "In Progress",
+      "step4": "Not Started",
+      "step5": "Not Started"
+    },
+    "10": {
+      "step3": "In Progress",
+      "step4": "Not Started",
+      "step5": "Not Started"
+    },
+    "11": {
+      "step3": "In Progress",
+      "step4": "Not Started",
+      "step5": "Not Started"
+    },
+    "12": {
+      "step3": "Not Started",
+      "step4": "Not Started",
+      "step5": "N/A"
+    },
+    "13": {
+      "step3": "In Progress",
+      "step4": "Not Started",
+      "step5": "Not Started"
+    },
+    "14": {
+      "step3": "Complete",
+      "step4": "Not Started",
+      "step5": "Not Started"
+    },
+    "15": {
+      "step3": "In Progress",
+      "step4": "Not Started",
+      "step5": "Not Started"
+    },
+    "16": {
+      "step3": "In Progress",
+      "step4": "Not Started",
+      "step5": "Not Started"
+    },
+    "17": {
+      "step3": "In Progress",
+      "step4": "Not Started",
+      "step5": "Not Started"
+    }
+  }
+}

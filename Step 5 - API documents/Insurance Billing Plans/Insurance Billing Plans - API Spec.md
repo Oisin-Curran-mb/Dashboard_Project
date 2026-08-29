@@ -1,6 +1,6 @@
 # Insurance Billing Plans — API Spec
 
-**Status: DRAFT — not final**
+**Status: Complete at Step 5 — awaiting management sign-off** *(DRAFT header removed 2026-08-19, owner decision: status now matches the index)*
 
 ## Overview
 

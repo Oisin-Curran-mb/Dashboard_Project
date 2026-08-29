@@ -1,3 +1,9 @@
+**[v2.1 — 2026-08-25, Feargal call] Employee level added, permission-gated.** Feargal asked for the full chain: distribution group to pay types to an individual employee to that employee's pay breakdown, with export, and stated access is limited to users with payroll permission. Built as an **Employees** view; each employee row expands to their own pay breakdown by pay type, with export at both the list and the individual level. **`PRF_PAYROLL_PERM`** (default true) gates it at four points: the toggle segment, the view dispatch, every handler, and `prFEmpTable` itself, so an unauthorised viewer has no route to per-person pay and sees no dead control.
+
+**Data note (Rule 11).** The mock had no employee data at all, only distribution x pay-type totals. Employees are therefore **generated deterministically** from those totals (seeded per distribution, 3 to 7 people, stable across re-renders) and allocated **in cents** with the remainder walked back onto real rows, so every employee's pay type sums **exactly** to the distribution x pay-type figure. The reconciliation is real; the individual names and headcounts are illustrative until the API exposes employee-level rows. Verified: 93-assertion driver, 0 failures, including cents-exact reconciliation for every distribution x pay type and the permission gate proven from all four directions.
+
+**Terminology confirmed in the same call:** a distribution (or staff) group is an organisational grouping; a pay type is a component of pay such as regular, overtime, housing allowance or vacation.
+
 # W03 — Payroll Distributions
 
 **Module:** Payroll

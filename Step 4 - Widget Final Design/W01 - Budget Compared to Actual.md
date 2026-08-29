@@ -5,6 +5,8 @@
 **Full history / rejected ideas:** [Widget_Specs/W01-Budget-Compared-to-Actual.md](../Step%203%20-%20Mock_Work/Widget_Specs/W01-Budget-Compared-to-Actual.md)
 **Data source & formulas:** [Step 1 - Dashboard Research/01 - Budget Compared to Actual.md](../Step 1 - Dashboard Research/01%20-%20Budget%20Compared%20to%20Actual.md)
 **Confluence dossier:** none yet
+**[2026-08-25, Feargal call] Account-level drilldown is OUT OF SCOPE for phase one.** Oisin and Feargal discussed drilling from income and expense totals down to individual accounts. Feargal decided it is **not required for the initial phase**, on the grounds that the current design already materially improves the existing view. The possibility can be **revisited during UAT**. Record this as a deliberate scope decision, not a gap: a later audit should not flag the absence of account drilldown as an oversight. Documentation only, no build change.
+
 **Last verified against build:** 2026-07-27 via build-final-widget (Final v2, Jo design: 159-assertion Node driver + final-check-rules.py + full-flow modal test). Previous: 2026-07-21 via widget-final-check-audit.
 
 **Evidence key:** `[LIVE]` verified in beta1/test1 on a stated date · `[SME]` interview-sourced (name + date) · `[RESEARCH]` desktop/market research · `[BUILD]` true of the mockup build · `[DOC]` backed by a named written source · `[TO CONFIRM]` assumed, with a named owner to confirm. Marks appear only on the sections added in the 2026-07-27 template upgrade; pre-existing text is intentionally unmarked.

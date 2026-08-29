@@ -5,6 +5,8 @@
 **Full history / rejected ideas:** [Widget_Specs/W06-Insurance-Billing-Plans.md](../Step%203%20-%20Mock_Work/Widget_Specs/W06-Insurance-Billing-Plans.md)
 **Data source & formulas:** [Step 1 - Dashboard Research/06 - Insurance Billing Plans.md](../Step 1 - Dashboard Research/06%20-%20Insurance%20Billing%20Plans.md)
 **Confluence dossier:** none yet
+**[v2.1 — 2026-08-25, Feargal call]** The enrolment percentage column is now labelled **"Share of total"** in both the flat Explore table and the grouped Detail table, so it reads against the Total enrolled row rather than leaving the basis implied. Label only, no maths changed. Also confirmed in the same call and needing no work: multiple plans under one insurance type are already exposed, which is exactly what the Detail grouped table does (parents are insurance types, children are the plans within them). FC_VERSION[6] = 2.1.
+
 **Last verified against build:** 2026-07-30 via build-final-widget (Final, Jo design: ~202-assertion Node driver, 0 failures + final-check-rules.py 0 HIGH + browser-faithful CSS parse, 0 dropped rules). Previous: not yet audited.
 
 **Evidence key:** `[LIVE]` verified in beta1/test1 on a stated date · `[SME]` interview-sourced (name + date) · `[RESEARCH]` desktop/market research · `[BUILD]` true of the mockup build · `[DOC]` backed by a named written source · `[CODE]` confirmed by a codebase trace on a stated date · `[TO CONFIRM]` assumed, with a named owner to confirm. Conflicting evidence coexists; neither side wins by default.

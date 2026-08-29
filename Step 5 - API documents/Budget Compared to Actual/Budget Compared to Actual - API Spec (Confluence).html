@@ -20,7 +20,7 @@ pre code { background: none; padding: 0; }
 <body>
 
 <h1>Budget Compared to Actual — API Spec</h1>
-<p><span class="status">Status: DRAFT — not final</span></p>
+<p><span class="status">Status: Complete at Step 5 — awaiting management sign-off</span></p>
 <h2>Overview</h2>
 <p>The widget compares budgeted amounts against posted actuals for a chosen scope: Income Accounts, Expense Accounts, or a single Special Report Line. Time selection follows the <a href="../../Step%203%20-%20Mock_Work/Widget_Specs/Time%20Window%20Module.md">Time Window Module</a> contract: a <code>window</code> (the slice of time shown), a <code>grain</code> (what each bucket represents), and an optional <code>asOf</code> anchor date. One endpoint serves every window and grain, returning a chronological array of <code>{start, end, budget, actual, partial}</code> buckets plus a pre-computed <code>total</code> for the window. The Time Window Module document is the authority for all time logic in this spec.</p>
 <h2>Tables</h2>

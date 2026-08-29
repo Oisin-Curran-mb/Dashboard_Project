@@ -6,26 +6,91 @@
 
 | ID | Category | Widget | Step | First flagged | Detail |
 |---|---|---|---|---|---|
-| OI-b2706b46 | deviation (negative) | Payroll Distributions | Step 5 | 2026-07-24 | Step 5 - API documents/Payroll Distributions/Payroll Distributions - API Spec.md still has the DRAFT line but the Step 5 index tracker status says "✅ Complete". |
 | OI-a3eef181 | deviation (positive) | (Empty Slot) | Step 4 | 2026-07-24 | Dashboard Tracker.xlsx Step 4 column says "Not Started" but Step 4 index's Tracker status column says "➖ N/A" - these should always match since one is synced from the other. |
-| OI-9b0b5bac | unreferenced file | Step 2 | Step 2 | 2026-07-24 | Market Research/W01 - Budget Compared to Actual.md isn't mentioned in Step 2's own index |
-| OI-46f78deb | unreferenced file | Step 2 | Step 2 | 2026-07-24 | Market Research/W02 - Pension Plans.md isn't mentioned in Step 2's own index |
-| OI-c0ed84cd | unreferenced file | Step 2 | Step 2 | 2026-07-24 | Market Research/W03 - Payroll Distributions.md isn't mentioned in Step 2's own index |
-| OI-f0c18b6f | unreferenced file | Step 2 | Step 2 | 2026-07-24 | Market Research/W04 - Remittance Pledges.md isn't mentioned in Step 2's own index |
-| OI-3fea5ecc | unreferenced file | Step 2 | Step 2 | 2026-07-24 | Market Research/W05 - Receivable Invoices Outstanding.md isn't mentioned in Step 2's own index |
-| OI-269bf2e6 | unreferenced file | Step 2 | Step 2 | 2026-07-24 | Market Research/W06 - Insurance Billing Plans.md isn't mentioned in Step 2's own index |
-| OI-1e0bc1ab | unreferenced file | Step 2 | Step 2 | 2026-07-24 | Market Research/W07 - Deposit Accounts.md isn't mentioned in Step 2's own index |
-| OI-b60d3744 | unreferenced file | Step 2 | Step 2 | 2026-07-24 | Market Research/W08 - My Status.md isn't mentioned in Step 2's own index |
-| OI-19ba84f0 | unreferenced file | Step 2 | Step 2 | 2026-07-24 | Market Research/W09 - Payroll Scheduled Time Off.md isn't mentioned in Step 2's own index |
-| OI-5d153966 | unreferenced file | Step 2 | Step 2 | 2026-07-24 | Market Research/W10 - Loans With Balance Due.md isn't mentioned in Step 2's own index |
-| OI-2ccfaa60 | unreferenced file | Step 2 | Step 2 | 2026-07-24 | Market Research/W11 - Fixed Asset Values.md isn't mentioned in Step 2's own index |
-| OI-c3585659 | unreferenced file | Step 2 | Step 2 | 2026-07-24 | Market Research/W13 - Purchasing Management.md isn't mentioned in Step 2's own index |
-| OI-2bf73cc8 | unreferenced file | Step 2 | Step 2 | 2026-07-24 | Market Research/W14 - Main Content Tasks.md isn't mentioned in Step 2's own index |
-| OI-618ab52d | unreferenced file | Step 2 | Step 2 | 2026-07-24 | Market Research/W15 - Bank Balances.md isn't mentioned in Step 2's own index |
-| OI-d2406895 | unreferenced file | Step 2 | Step 2 | 2026-07-24 | Market Research/W16 - Accounts Payable By Due Date.md isn't mentioned in Step 2's own index |
-| OI-883ffc75 | unreferenced file | Step 2 | Step 2 | 2026-07-24 | Market Research/W17 - Gifts Pledges.md isn't mentioned in Step 2's own index |
+| OI-05a3a6d4 | deviation (negative) | Payroll Distributions | Step 6 | 2026-08-19 | Tracker column L says "Complete" but Reconciliation - Payroll Distributions.md findings 2 (comparison rejected), 3 (in-widget drill-through) and 4 (top-N amount-sort) are still marked Not actioned into Steps 1-5. |
+| OI-f878cf6b | staleness | Main Content Tasks | Step 4 | 2026-08-19 | Step 4 index's W14 row still says "In progress at Step 3" but Step 3's own index and the tracker both say Step 3 is Complete. |
+| OI-f9bfdbc5 | staleness | (index header) | Step 4 | 2026-08-19 | Step 4 index's "Built Finals" note is dated 2026-08-04 and doesn't record the newer verified Final Check builds: W09 (v2.8, verified 2026-08-08) and W10 (verified 2026-08-11). |
+| OI-507eeaa3 | staleness | (12 widgets) | Step 4 | 2026-08-19 | All 17 widgets have Step 6 Confluence dossiers (pulled 2026-07-27) but only W07's Step 4 doc has a "Sign-off Input (Jo)" section - the other upgraded-template docs (W01, W02, W04, W05, W06, W09, W10, W11, W13, W15, W16, W17) haven't logged her input yet. |
 
 ## Run history
+
+### Run: 2026-08-19 (decisions pass, same day)
+
+Owner decisions applied:
+
+- **Step 5 DRAFT headers removed (7 specs):** W01-W07's `- API Spec.md` files no longer say "Status: DRAFT — not final"; each now reads "Complete at Step 5 — awaiting management sign-off" with a dated note. The 7 matching Confluence `.html` files were updated to match. Items closed (resolved by action).
+- **W07 Step 6 tracker set to Complete** (owner: "Complete" = sign-off document exists, matching W03's treatment). `Dashboard Tracker.xlsx` column L updated; item closed.
+- **W03 Step 6 kept Complete, item left open** as the standing reminder that reconciliation findings 2-4 are not yet actioned into Steps 1-5.
+
+Baseline snapshot refreshed after the tracker and spec edits.
+
+
+### Run: 2026-08-19 (cleanup pass, same day)
+
+Closed by project owner: 33 items (all 20 "unreferenced file" findings plus the 13 Step 3 backup/scratch flags), resolved by action rather than dismissal:
+
+- **Deleted (15 files):** the archived `Step 3 - Mock_Work/_Archive/` backups and scratch drivers (11 `Dashboard Widget Mockups.BACKUP-*.html`, `Dashboard Widget Mockups.html.bak_W09F_20260808`, `w04/w09/w10_driver.scratch.js`), owner-approved. The `_Archive/` folder itself was removed too.
+- **Indexed (18 files):** Step 2's index now lists all 16 `Market Research/WNN - *.md` files (and corrects its stale "empty placeholder" note - all were researched by 2026-07-23); Step 3's index gained a row for `Widget_Specs/Time Window Module.md`; Step 5's index gained an entry for `Pending Questions - Codebase Findings (2026-07-30).md`.
+
+Orphan scan is now clean across Steps 1-5. Baseline snapshot refreshed after these changes.
+
+
+### Run: 2026-08-19 03:20
+
+First run - nothing to diff against yet. Everything below is baseline, not drift.
+
+**Deviations found (10):**
+- [↓ negative] Budget Compared to Actual (Step 5): Step 5 - API documents/Budget Compared to Actual/Budget Compared to Actual - API Spec.md still has the DRAFT line but the Step 5 index tracker status says "✅ Complete".
+- [↓ negative] Pension Plans (Step 5): Step 5 - API documents/Pension Plans/Pension Plans - API Spec.md still has the DRAFT line but the Step 5 index tracker status says "✅ Complete".
+- [↓ negative] Payroll Distributions (Step 5): Step 5 - API documents/Payroll Distributions/Payroll Distributions - API Spec.md still has the DRAFT line but the Step 5 index tracker status says "✅ Complete".
+- [↓ negative] Remittance Pledges (Step 5): Step 5 - API documents/Remittance Pledges/Remittance Pledges - API Spec.md still has the DRAFT line but the Step 5 index tracker status says "✅ Complete".
+- [↓ negative] Receivable Invoices Outstanding (Step 5): Step 5 - API documents/Receivable Invoices Outstanding/Receivable Invoices Outstanding - API Spec.md still has the DRAFT line but the Step 5 index tracker status says "✅ Complete".
+- [↓ negative] Insurance Billing Plans (Step 5): Step 5 - API documents/Insurance Billing Plans/Insurance Billing Plans - API Spec.md still has the DRAFT line but the Step 5 index tracker status says "✅ Complete".
+- [↓ negative] Deposit Accounts (Step 5): Step 5 - API documents/Deposit Accounts/Deposit Accounts - API Spec.md still has the DRAFT line but the Step 5 index tracker status says "✅ Complete".
+- [↑ positive] (Empty Slot) (Step 4): Dashboard Tracker.xlsx Step 4 column says "Not Started" but Step 4 index's Tracker status column says "➖ N/A" - these should always match since one is synced from the other.
+- [↑ positive] Deposit Accounts (Step 6): Sign-off export Deposits+On+Hand.doc exists on disk in Step 6, but Dashboard Tracker.xlsx column L (Step 6 - Design Sign Off) says "Not Started". Not auto-corrected: the project's own Step 6 index says the meaning of "Complete" in that column (document exists vs fully reconciled) is deliberately unsettled - owner to decide.
+- [↓ negative] Payroll Distributions (Step 6): Tracker column L says "Complete" but Reconciliation - Payroll Distributions.md findings 2 (comparison rejected), 3 (in-widget drill-through) and 4 (top-N amount-sort) are still marked Not actioned into Steps 1-5.
+
+**Being worked on, not reflected (3):**
+- Main Content Tasks (Step 4): Step 4 index's W14 row still says "In progress at Step 3" but Step 3's own index and the tracker both say Step 3 is Complete.
+- (index header) (Step 4): Step 4 index's "Built Finals" note is dated 2026-08-04 and doesn't record the newer verified Final Check builds: W09 (v2.8, verified 2026-08-08) and W10 (verified 2026-08-11).
+- (12 widgets) (Step 4): All 17 widgets have Step 6 Confluence dossiers (pulled 2026-07-27) but only W07's Step 4 doc has a "Sign-off Input (Jo)" section - the other upgraded-template docs (W01, W02, W04, W05, W06, W09, W10, W11, W13, W15, W16, W17) haven't logged her input yet.
+
+**Unreferenced files spotted (33):**
+- [still present] Step 2: `Market Research/W01 - Budget Compared to Actual.md`
+- [still present] Step 2: `Market Research/W02 - Pension Plans.md`
+- [still present] Step 2: `Market Research/W03 - Payroll Distributions.md`
+- [still present] Step 2: `Market Research/W04 - Remittance Pledges.md`
+- [still present] Step 2: `Market Research/W05 - Receivable Invoices Outstanding.md`
+- [still present] Step 2: `Market Research/W06 - Insurance Billing Plans.md`
+- [still present] Step 2: `Market Research/W07 - Deposit Accounts.md`
+- [still present] Step 2: `Market Research/W08 - My Status.md`
+- [still present] Step 2: `Market Research/W09 - Payroll Scheduled Time Off.md`
+- [still present] Step 2: `Market Research/W10 - Loans With Balance Due.md`
+- [still present] Step 2: `Market Research/W11 - Fixed Asset Values.md`
+- [still present] Step 2: `Market Research/W13 - Purchasing Management.md`
+- [still present] Step 2: `Market Research/W14 - Main Content Tasks.md`
+- [still present] Step 2: `Market Research/W15 - Bank Balances.md`
+- [still present] Step 2: `Market Research/W16 - Accounts Payable By Due Date.md`
+- [still present] Step 2: `Market Research/W17 - Gifts Pledges.md`
+- [still present] Step 3: `Dashboard Widget Mockups.BACKUP-2026-08-08-W09.html`
+- [still present] Step 3: `Dashboard Widget Mockups.BACKUP-W04-2026-08-08-popup.html`
+- [still present] Step 3: `Dashboard Widget Mockups.BACKUP-W04-2026-08-08-range.html`
+- [still present] Step 3: `Dashboard Widget Mockups.BACKUP-W04-2026-08-11-run2.html`
+- [still present] Step 3: `Dashboard Widget Mockups.BACKUP-W04-2026-08-11.html`
+- [still present] Step 3: `Dashboard Widget Mockups.BACKUP-W09-20260807-235013.html`
+- [still present] Step 3: `Dashboard Widget Mockups.BACKUP-W09-initials-20260808-003459.html`
+- [still present] Step 3: `Dashboard Widget Mockups.BACKUP-W09-outstanding.html`
+- [still present] Step 3: `Dashboard Widget Mockups.BACKUP-W09-ownerchanges-20260810-155740.html`
+- [still present] Step 3: `Dashboard Widget Mockups.BACKUP-W09-preinfo-20260808-005453.html`
+- [still present] Step 3: `Dashboard Widget Mockups.BACKUP-W09-statuscolour-20260810-100057.html`
+- [still present] Step 3: `Dashboard Widget Mockups.html.bak_W09F_20260808`
+- [still present] Step 3: `Widget_Specs/Time Window Module.md`
+- [still present] Step 3: `w04_driver.scratch.js`
+- [still present] Step 3: `w09_driver.scratch.js`
+- [still present] Step 3: `w10_driver.scratch.js`
+- [still present] Step 5: `Pending Questions - Codebase Findings (2026-07-30).md`
+
 
 ### Run: 2026-07-24 00:00
 

@@ -70,12 +70,14 @@ Compiled from the overnight Final Check pass (W01–W17, minus W08/W12/W14 which
 
 ## W13 — Purchasing Management
 
-- [ ] Biggest item overall: the entire PO-status vocabulary in the render (Pending Approval / Approved / Overdue) is exactly the "earlier invented" set the doc says was replaced by four real approval stages (Awaiting my approval next / Awaiting my approval / Unapproved / Approved). Touches mock data, every Kanban/colour map, and the filter itself.
-- [ ] This page uses Option B instead of Option A, since only B's code actually defaults to the Kanban board the doc calls for — worth confirming that's the right option to build forward from.
-- [ ] Status Donut (doc's View 2) isn't built — no option renders a donut by approval stage.
-- [ ] Approval Path filter (dynamic, depends on Status) is missing entirely.
-- [ ] Department/Year/Overdue aren't scoped to the Table view only, as the doc specifies — Department and Year are both global filters today.
-- [ ] Data Table Sort (proposed Date Issued, most recent first) not explicitly confirmed.
+**All six items below resolved or decided by the owner on 2026-08-19, during the Final (purF, v2.0) build — see the dated entry in Widget_Specs/W13-Purchasing-Management.md.**
+
+- [x] Biggest item overall: the entire PO-status vocabulary in the render (Pending Approval / Approved / Overdue) is exactly the "earlier invented" set the doc says was replaced by four real approval stages (Awaiting my approval next / Awaiting my approval / Unapproved / Approved). Touches mock data, every Kanban/colour map, and the filter itself. *Resolved 2026-08-19: the Final's Kanban columns, filter, table chips, Glance cards and mock data all use the four real stages; the old set survives only in the untouched A/B/C branches.*
+- [x] This page uses Option B instead of Option A, since only B's code actually defaults to the Kanban board the doc calls for — worth confirming that's the right option to build forward from. *Confirmed 2026-08-19: the owner chose the Kanban design; the Final was built forward from Option B's Kanban.*
+- [x] Status Donut (doc's View 2) isn't built — no option renders a donut by approval stage. *Decided 2026-08-19: dropped from the Final by owner decision; recorded in Step 4's What Got Cut.*
+- [x] Approval Path filter (dynamic, depends on Status) is missing entirely. *Resolved 2026-08-19: built in the Final (dynamic per status, disabled when only one path).*
+- [x] Department/Year/Overdue aren't scoped to the Table view only, as the doc specifies — Department and Year are both global filters today. *Resolved 2026-08-19: Table-view-only in the Final (visible at Detail), Rule 11 caveats recorded.*
+- [x] Data Table Sort (proposed Date Issued, most recent first) not explicitly confirmed. *Settled 2026-08-19 by owner decision: oldest first (aging), defining "top" in trimmed views.*
 
 ## W15 — Bank Balances
 
@@ -84,10 +86,14 @@ Compiled from the overnight Final Check pass (W01–W17, minus W08/W12/W14 which
 
 ## W16 — Accounts Payable By Due Date
 
-- [ ] No option groups cards by urgency tier (Overdue / Due This Week / Due This Month) as three visual sections — today it's a flat, capped list of invoice cards.
-- [ ] Aging Donut (doc's View 2) only exists in Option B, uses 30-day age bands instead of the widget's own three Due Date categories, and is filtered by Due Date when the doc says it should always show all due dates — a real bug, not yet fixed since Option B isn't the option shown on the Final Check page.
-- [ ] Option C ("Vendor Breakdown") is exactly the by-vendor donut idea the doc says was considered and explicitly **not** adopted — yet it's fully live and selectable today.
-- [ ] Drill-through to the AP module: doc is "leaning yes," pending expert/dev confirmation.
+- [x] No option groups cards by urgency tier (Overdue / Due This Week / Due This Month) as three visual sections — today it's a flat, capped list of invoice cards.
+  - **RESOLVED 2026-08-19** by the Final build (1-to-1 copy of Jo's v2 design, per direct instruction): the Final's hero table groups by four aging bands (Overdue / Due this week / Due this month / Due later) with per-band subtotals. Options A/B/C untouched.
+- [x] Aging Donut (doc's View 2) only exists in Option B, uses 30-day age bands instead of the widget's own three Due Date categories, and is filtered by Due Date when the doc says it should always show all due dates — a real bug, not yet fixed since Option B isn't the option shown on the Final Check page.
+  - **SUPERSEDED 2026-08-19:** Jo's v2 design (adopted as the Final, per direct instruction) has no donut and no charts at all; the cash-out read is a synced values-as-text Cash requirements panel. Option B's donut bug stays as-is in the untouched B branch.
+- [x] Option C ("Vendor Breakdown") is exactly the by-vendor donut idea the doc says was considered and explicitly **not** adopted — yet it's fully live and selectable today.
+  - **SUPERSEDED 2026-08-19:** the Final carries the vendor read as Jo's "Top vendors owed" text panel (top 5, no donut). Option C stays selectable in the untouched C branch, clearly not the Final.
+- [x] Drill-through to the AP module: doc is "leaning yes," pending expert/dev confirmation.
+  - **SETTLED FOR THE BUILD 2026-08-19, per direct instruction:** the Final was built without a drill-through (Jo's view-only design); the expert/dev question stays open in the Step 4 doc's Sign-off Readiness row 1, no longer blocking.
 
 ## W17 — Gifts & Pledges
 
@@ -103,7 +109,8 @@ These came out of the 2026-07-27 restructure of the Step 4 docs to the upgraded 
 - [ ] **W05 — fourth KPI tile.** The Step 4 doc says the fourth tile is "Oldest Invoice"; the Step 3 build record (2026-07-23) says the built Design 2 tiles are "Total Outstanding, Overdue, Current, **121+ days**." Related: "Oldest Invoice" doesn't exist in mock data at all (see W05's earlier item above). Recorded in `W05 - Receivable Invoices Outstanding.md`'s Views section. Which tile should the design carry?
 - [x] **W04 — KPI-size filter contradiction (internal).** The same doc says "KPI size shows Fiscal Year only" in Filters, but "No filter (Fiscal Year removed)" in the Size behaviour table — and elsewhere records the Fiscal Year filter as removed. The Step 3 spec supports the older "Fiscal Year only" wording. Recorded in `W04 - Remittance Pledges.md`, Sign-off Readiness row 3. Which is current?
   - **RESOLVED 2026-07-28** by the built Final's receipts-through date-chip model: the widget now uses a single receipts-through filter at every size and has no Fiscal Year filter at all, so there is no KPI-size filter contradiction left to reconcile. Reflected in `W04 - Remittance Pledges.md`, Sign-off Readiness row 3 (now Resolved) and its superseded Filters/Views sections.
-- [ ] **W04 / W05 / W06 — view lists have drifted from the 2026-07-23 mockup rebuilds.** Each of these three Step 4 docs' locked view set no longer matches the three designs the 2026-07-23 rebuild produced (W04: Remittance Table / Pacing Bars / Pace Variance; W05: three new designs; W06: three sets that don't line up 1:1). Recorded in each doc's Views section. Recommend running `widget-final-check-audit` on these three once the conflicts above are settled, rather than deciding view-by-view here.
+- [ ] **W04 / W05 / W06 — view lists have drifted from the 2026-07-23 mockup rebuilds.**
+  - **W04 RESOLVED 2026-08-24 by supersession, not by reconciliation.** The v3.0 exception-widget build replaces W04's view set outright: the widget is now TABLE ONLY (no Pacing Bars, no Pace Variance, no view toggle, chart-type switch hidden under `fc-fmode`), matching Step 1's record that the live widget is table-only. There is no longer a drifted view list for W04 to reconcile. **W05 and W06 remain open** in this item. Each of these three Step 4 docs' locked view set no longer matches the three designs the 2026-07-23 rebuild produced (W04: Remittance Table / Pacing Bars / Pace Variance; W05: three new designs; W06: three sets that don't line up 1:1). Recorded in each doc's Views section. Recommend running `widget-final-check-audit` on these three once the conflicts above are settled, rather than deciding view-by-view here.
 
 ---
 

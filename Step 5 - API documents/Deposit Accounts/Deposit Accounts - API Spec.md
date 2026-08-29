@@ -1,6 +1,6 @@
 # Deposit Accounts — API Spec
 
-**Status: DRAFT — not final**
+**Status: Complete at Step 5 — awaiting management sign-off** *(DRAFT header removed 2026-08-19, owner decision: status now matches the index)*
 
 > The widget is titled **Deposits on Hand** in the build. This spec's folder and file keep the legacy `Deposit Accounts` name pending the project-wide rename pass; the module and tables are unchanged.
 
