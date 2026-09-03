@@ -361,3 +361,150 @@ Nothing else changed: the exception grouping, the behind-pace Glance headline, t
 **Note for anyone reading the v3.1 entry above:** its claim that restoring Pacing Bars made the v2.3 top-5-most-behind popup reachable again still holds — that view survived this cut. Only the variance chart went.
 
 **Verification.** `final-check-rules.py --widget 4`: **0 HIGH**, 11 MED (all pre-existing), F2 `node --check` pass. Driver at **143 assertions, 0 failures**, with the variance assertions inverted to prove absence: no `rem-var-` markup at any size, no `data-v="variance"` segment in the toggle, a stale variance state falling back to the table while still rendering the toggle and marking Table pressed, and `remFVariance` still defined for rollback.
+
+---
+
+## v3.3 — 2026-08-30, per direct instruction: the activity drill becomes a screen, styling moves onto Jo's language
+
+**The instruction.** "The change is more for styling improvements to match Jo styling but keep the content we have currently. But when you click on a fund, instead of a drop down it opens into a screen like Jo's, but inside you have the list of pledges inside. The pop up can be bigger and download is still very much needed."
+
+**Build gate — waived, on the record.** `final-check-rules.py --widget 4` reports one HIGH: Sign-off Readiness **row 7**, receipts-only mode is forward design rather than current behaviour (Edward Eoff, live, 2026-08-10: legacy "won't show anything at all unless a pledge exists", so serving receipts without a pledge join is a new API capability). The project owner **explicitly waived this gate for this build only**, on the grounds that the pass touches neither the receipts-only data path nor row 7's API question. **Row 7 stays open and stays blocking** for any future build that does touch it. No other gate was waived; there is no Step 6 reconciliation file for W04, only the 2026-07-27 Confluence pull, so there were no Accepted/Disputed findings to honour.
+
+### Confirmed composition sheet
+
+| Component | Source | Why |
+|---|---|---|
+| Drill shell (`rem-drill-modal`) | **Jo's pattern**, her `bank-drill-modal` / `pur-drill-modal` in the Widget Container Demo | `modal-wide` overlay that sizes to its content up to an 88vh cap with a block-scrolling body, rather than the fixed 84vh two-pane modal. This is her established drill-screen shell; attribution matters because it is hers, not ours. |
+| Drill width 1240px / 96vw | **New, per instruction** ("the pop up can be bigger") | Wider than the standard `modal-wide` 1080px because the pledge table carries six columns and each row can expand to a schedule underneath. |
+| Drill layout order: summary strip, then the list | **Jo's pattern**, her `remDetailModalHTML` | Her remittance drill leads with a `rem-sum` strip and puts the list under it. We already had the `rem-sum` classes ported, so this is her language reused, not re-implemented. |
+| Summary strip, term line, pace note | **Existing v3.1 code**, lifted from `remFDetailModalHTML` | Owner said keep the content. These are the same six cells, the same term sentence and the same catch-up note the history modal already showed. |
+| Pledge list, pager, third drill level | **Existing `remFPledgePanel`, REUSED VERBATIM** | The single most important decision in this build. Not re-implemented, not copied — the same function, called from the modal instead of the card. Per-pledge-term pacing, the cumulative expected-vs-paid basis Feargal confirmed 2026-08-25, the cents reconciliation to the activity row, oldest-first receipt allocation and the skipped-instalment flagging therefore cannot have drifted, because none of that code was touched. |
+| Inline expand on the card | **Removed, per instruction** ("instead of a drop down") | Owner chose "replace it" over keeping both and over a rollback flag. The caret and `aria-expanded` go with it; the row gains `aria-haspopup="dialog"` because a button that opens a dialog is not an expandable region. |
+| Export inside the drill | **Jo's contract**, her fix 11.4 | Scoped to THIS activity's pledges, so the export matches the view shown. Her own comment: "Export to Excel here exports THIS detail". Rule 11 toast stub, as with every other export in this file. |
+| Modal body refresh on state change | **Jo's pattern**, her `bgtReportModalInner` | While the drill is mounted, only `.modal-b` is re-rendered, never the backdrop, so the entry animation cannot replay when the pager moves or a pledge schedule opens. |
+| `REMF_USE_POPUP` history route | **Unchanged** | Still routes the activity click to the preserved receipts modal when set true. The rollback discipline the file has used since v2.1 is intact. |
+
+### What was added
+
+`remFDrillModalBody(w,r)` and `remFDrillModalHTML()`; modal mode `'drill'`; an `export-drill` handler; `remFRerender` now repaints an open drill screen so the pager and pledge schedules update; CSS for the drill shell and for `remFPledgePanel` losing its inset card framing when it is the modal's main content rather than a panel hanging off a row.
+
+### What was removed
+
+The inline panel insertion in `remFTable`, and the caret plus expand state in `remFRow`. `remFPledgePanel` itself is untouched. The now-unused `.rem-caret` / `.is-exp` rules on activity rows are left in place rather than deleted, since pledge rows and group headers still use those classes.
+
+**Verification.** `final-check-rules.py --widget 4`: **1 HIGH (the waived row 7)**, 13 MED all pre-existing (F7 em-dash hits sit in option A/B/C strings and dated historical Logic notes, both out of scope; F3's "Paired Bars" and "Summary Table" are names from superseded doc sections), F2 `node --check` pass. DOM-shim driver at **74 assertions, 0 failures**: renders at all of Glance/Explore/Detail plus the hidden mid tier; no inline pledge panel and no activity-row caret at any size; rows marked `rem-row-drill` with `aria-haspopup="dialog"`; all three date ranges render and This year differs from Last 30 days; the drill screen renders for **every** activity including the receipts-only row, carries the summary strip, the pledge list, the pager, the export and `Open in Remittance`, and is a proper `role="dialog"` with `aria-modal`; a pledge schedule opens inside the drill and adds content; the click routing opens mode `drill` on the right activity and resets the pager to page 1; `export-drill` fires a stub toast that says it is a stub; close clears the modal; the empty dataset renders a clean empty state without throwing; the preserved history modal still renders; and an em-dash sweep across every state, size and range combination.
+
+⚠️ **Not machine-verified:** the visual result. Modal width, the summary strip's spacing against the pledge table, and how the drill feels at 96vw are cascade and markup facts here, not measured renders. Needs an eyeball in the browser.
+
+⚠️ **Concurrency during this build.** Another writer was editing `Dashboard Widget Mockups.html` while this build ran: `FC_VERSION[3]` moved 2.4 → 2.5 → 2.6 between 02:01 and 02:20, refactoring W03's export button, with no involvement from this build. Both sets of changes survived, but this file cannot safely take two concurrent writers, since edits here are whole-file rewrites from a snapshot. Pre-build backup: `outputs/W04-build/Dashboard-Widget-Mockups.BACKUP-W04-preJoDrill.html` (02:01).
+
+---
+
+## v3.4 — 2026-08-30, per direct instruction: tidier first open, and the pacing-bars popup fixed
+
+**The instruction.** "Reduce the amount of pledges so it naturally fits on screen and can scroll down after you open one, but when it first opens it should look tidier. The pacing bars pop up seems to not work the same as table pop, try to fix it."
+
+### (1) Tidier first open
+
+`REMF_PAGE_SIZE` **20 → 8**. Eight pledge rows plus the summary strip, term line, pace note, caption, head and pager sit inside the drill's 88vh cap, so the screen opens at a natural height; expanding a pledge schedule then scrolls, which is what the owner asked for.
+
+**What did NOT change:** the seeded pledge count per activity. That matters — activity Paid and Outstanding are aggregates that reconcile to the sum of the seeded pledges, so shrinking the data would have broken the reconciliation the drill exists to demonstrate. Only how many are visible at once changed, and the pager still reaches the rest. The driver now asserts both halves of this: at most 8 rows on open, and the seeded set still summing cents-exact to the activity row.
+
+### (2) The pacing-bars popup — a real bug, present since v2.3
+
+The owner's read was right, and the cause was not styling.
+
+```
+show.map(remFPledgeRowHTML)          // the bug
+```
+
+`remFPledgeRowHTML(item, w, act)` takes three arguments. `Array.prototype.map` calls its callback with `(item, index, array)`. So **`w` received the index** and **`act` received the array**. Two consequences, both matching what the owner saw:
+
+- `(0).plOpen` is `undefined`, so `exp` was permanently `false` — **a pledge could never expand its payment schedule in that popup**, while the identical row in the Table drill expanded fine.
+- `act.seq` on an array is `undefined`, so every row rendered `data-seq="undefined"`.
+
+Fixed by passing `w` and `act` explicitly: `show.map(function(it){return remFPledgeRowHTML(it,w,act);})`. This is the classic `.map(fn)` arity trap, and it is worth noting the Table drill never hit it because `remFPledgePanel` always called the function explicitly.
+
+**Also brought into line, so the two routes behave identically:**
+
+| Was | Now |
+|---|---|
+| `rem-detail-modal` shell (fixed 84vh, two-pane body) | `rem-drill-modal` / `rem-drill-b`, the same content-sized 88vh scrolling shell as the Table drill |
+| No export | The same activity-scoped `export-drill` export |
+| Body inline in the HTML builder, so it could not refresh | Body extracted as `remFBehindModalBody(w,r)`; `remFRenderModal` and `remFRerender` now cover mode `'behind'` as well as `'drill'`, so it refreshes in place without re-creating the backdrop |
+
+**What stays deliberately different** is only the content, which is this route's whole purpose: the Table drill pages through every pledge, the bars popup lists the five furthest behind pace. If the owner wants them identical in content too, that is a one-line change to call `remFDrillModalBody` instead.
+
+**Verification.** `final-check-rules.py --widget 4`: 1 HIGH (the row 7 waiver carried over from v3.3), 13 MED all pre-existing, F2 `node --check` pass. Driver at **108 assertions, 0 failures** (up from 74), the new ones covering: page size is 8; the drill opens with at most 8 pledge rows and at least one; the pager still reports pages; the seeded pledge count is unchanged and still sums cents-exact to both the activity pledge total and the activity paid; `remFBehindModalBody` exists; the bars popup uses the drill shell and body, carries the export, and renders no `data-seq="undefined"`; it shows at most the top 5; **a pledge can now expand its schedule there and reports `aria-expanded="true"`**, with the output growing, which is the direct regression test for the arity bug; a bar-row click opens mode `behind`; export fires from the popup; close clears it; and the popup renders for every activity with an em-dash sweep throughout.
+
+⚠️ **Not machine-verified:** whether 8 rows is the right number visually. It fits the cap by calculation, not by measurement. Adjust `REMF_PAGE_SIZE` if it still reads long.
+
+---
+
+## v3.5 — 2026-08-30, per direct instruction: Jo's pace cards replace the group headers
+
+**The instruction.** "Jo's filter option on top, where it just shows what's outstanding, on track and ahead, is cleaner and moves between pages. I want mine to work the same."
+
+**Build gate.** Sign-off Readiness row 7 waived again by the owner, **this build only**, same reasoning as v3.3: this pass changes how rows are grouped and filtered for display, not the receipts-only data path. Row 7 stays open and blocking.
+
+### Confirmed composition sheet
+
+| Component | Source | Why |
+|---|---|---|
+| Three pace cards | **Jo's `remFPaceCards`** | Behind / On track / Ahead, each with a count and the outstanding money in that band. Toggle filter: the active card's own `data-v` carries `"all"`, so the card is its own clear control, exactly as hers is. |
+| Flat filtered table | **Owner decision** — cards replace the groups | The v3.0 collapsible Behind pace / On track / No pledge headers and the cards do the same job; having both is what made ours busier than hers. `remFGroups` / `remFGrpHead` retained but unreachable (gpFDonut rollback pattern). |
+| Card action: filter in place | **Jo's `remF-set-pacef` mode** | She built two modes; the owner confirmed filter-in-place, which is what the reference screenshot shows (AHEAD active). Her `remF-drill` mode is not used. |
+| Receipts-only as a footer line | **Owner decision** | Those activities have no pace, so they cannot sit in a band. They render below the table with their count and money, and are never filtered away. Not a fourth card, keeping visual parity with Jo's three. |
+
+### The one deliberate departure from Jo, and why
+
+Her `remFPaceBand` classifies by **day band** — `behind` only begins past 30 days behind pace. This widget's header headline counts **"N of M behind pace"** from the v3.0 exception rule, `shortfall > 0`, meaning *any* money short.
+
+Porting her mapping unchanged would have put **two contradicting counts on the same screen**: an activity 10 days behind would read "On track" on the card while the headline directly above counted it as behind. So:
+
+- **Behind** keeps this widget's own rule, `shortfall > 0`, matching `remFTotals.behindCount`.
+- The remainder splits her way: **Ahead** (`ahead` or `full`), **On track** (`onpace`).
+
+Her three-card shape is preserved; the threshold is ours, because ours is what the rest of the widget already reports. The driver asserts `remFBandStats().behind.n === remFTotals().behindCount` **under every date range**, so this cannot silently drift apart later.
+
+### Other decisions worth recording
+
+- **The Total row is untouched** and still covers every activity in scope, including rows hidden by a card filter and the receipts-only rows. No totals maths was touched by this build. Because a filtered table sitting above an unfiltered total reads as an error, the caption now states it explicitly and names how many of how many paced activities are showing.
+- **An empty band explains itself** rather than rendering a blank table, and tells the user to tap the card again to get back.
+- **Cards are Explore and Detail only**, hidden at Glance, where 3 columns × 176px cannot hold three cards.
+- **Colour is never the only signal**: band colour sits on the card's icon only, and every card states its count and money as text.
+
+**Verification.** `final-check-rules.py --widget 4`: 1 HIGH (the waived row 7), 13 MED all pre-existing, F2 `node --check` pass. Driver at **160 assertions, 0 failures** (up from 108). New coverage: three cards exist with the right labels; each card's count matches `remFBandStats`; **the Behind card agrees with the headline's behind count under every date range**; the three bands partition every paced activity exactly once; receipts-only rows land outside the cards; no group headers remain; each filter shows exactly its band's rows and the three filters together account for every paced row exactly once; the active card reports `aria-pressed` and carries `data-v="all"`; clearing restores everything; the receipts-only footer survives every filter; the Total is unchanged under a filter and the caption says so; an empty band explains itself; and the click handler sets and clears the filter. Also newly locked in: **a range change puts the widget into its real loading state, where the skeleton renders and the cards do not** — found while debugging the driver, and correct behaviour worth asserting.
+
+⚠️ **Not machine-verified:** the visual result. Card sizing, the active-state ring and how three cards sit at Explore's width are markup and cascade facts here, not measured renders.
+
+⚠️ **Concurrency:** the other writer on this file remains at `FC_VERSION[3]` = 2.6, unchanged during this build.
+
+### v3.5a — 2026-08-30, same day: the cards stacked vertically. Cause and fix.
+
+**Owner report:** "failed, it stacks vertical and not horizontal."
+
+**Cause, and it was introduced by this build.** The v3.5 CSS was inserted using `.rem-pledge-panel{background:var(--am-50);` as its anchor. In this file that rule is written as `.remf-root .rem-pledge-panel{...}` **across a line break**, so the insertion landed *between the selector and its own body*. The result:
+
+```
+.remf-root                                          <- orphaned prefix
+.remf-root .rem-pcards{display:grid; ... }          <- becomes .remf-root .remf-root .rem-pcards
+...
+.rem-pledge-panel{background:var(--am-50); ... }    <- lost its .remf-root scope
+```
+
+The grid rule's selector became **`.remf-root .remf-root .rem-pcards`** — a `.remf-root` nested inside a `.remf-root`, which never matches anything. So `display:grid` never applied. The `.rem-pcard` rules that follow are separate rules and kept working, which is exactly why the cards looked *styled* but were not *laid out*: a `<button>` with `display:flex` is block-level with fit-content width, so three of them in a plain block container stack vertically at their content width. That is precisely the reported symptom. Second, quieter breakage: `.rem-pledge-panel` lost its widget scope and went global.
+
+**Fix:** removed the orphaned `.remf-root ` prefix and restored `.remf-root .rem-pledge-panel`.
+
+**Why neither gate caught it.** This is pure cascade. `node --check` passes because the JS is fine. The DOM-shim driver passes because the markup is correct — it asserts `rem-pcards` is present, which it was. Nothing either tool inspects can see that a selector can never match. Note the same pattern already existed in the file before this build, at `.penf-root /* comment */ .pen-distrow`, which happens to be harmless because the comment sits *after* the prefix rather than a whole rule block.
+
+**New guard, added so this cannot recur silently:** `Step 3 - Mock_Work/css-split-selector-check.py`. It parses the style blocks and flags (a) any selector containing the same `*-root` class token twice consecutively, which is the split-selector signature, and (b) any empty selector, then asserts a short list of rules the current builds depend on actually carry their expected declarations. Run it alongside `final-check-rules.py` after any CSS insertion:
+
+```
+cd "Step 3 - Mock_Work" && python3 css-split-selector-check.py
+```
+
+Current result: clean, and the three checked rules resolve correctly.
+
+**Lesson for future CSS edits in this file:** never anchor an insertion on a rule body. Anchor on a complete rule including its selector, or on a newline immediately before a selector, and run the split-selector check afterwards.

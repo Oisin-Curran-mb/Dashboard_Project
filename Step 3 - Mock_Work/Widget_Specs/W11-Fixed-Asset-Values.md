@@ -131,3 +131,72 @@ The real data supports only Asset Category / Original / Accumulated Depreciation
 
 ### Where written
 `Dashboard Widget Mockups.html` — `WRENDER[11]` (scaffold + 3 branches), `MOCK_DATA.options[11]`, the three `opt-11-*` cards, and the shared filter-scoping branches. `mock-data.master.js` re-synced for `options[11]` (`series[11]` unchanged — no fabricated data added). Final Check tab `#fc-widget-11` not edited (known shared-render carryover). Built via `_build/W11/` fragments + `assemble-mock-widget.py`.
+
+---
+
+## 2026-08-30 — build-final-widget run: Final (option F) is Jo's faF build, ported 1-to-1, then made reachable and consistent
+
+Run in four passes: the port itself (v2.0), a reachability fix (also v2.0), the section chrome (v2.1), and two defects the Phase 3 driver found (v2.2). Owner direction for the whole run was **"ok just copy jos 1 to 1 and then leave it like that"** / **"fitting with our current style and setup"**, so this is a port rather than a composition of A/B/C.
+
+### Composition sheet (confirmed by the standing 1-to-1 instruction, not re-litigated)
+
+| Component | Source | Why |
+|---|---|---|
+| Asset register (12 assets, FA- tag numbers) | Jo's `FA_ASSETS` | Her build is the only source with per-asset records; A/B/C are category-level |
+| Group By, 6 dimensions | Jo's `FA_DIMS` | Matches the locked doc's six dimensions exactly |
+| Specific Group (dependent field) | Jo's `faGroupOptions` | The doc's dependent-field requirement; repopulates on dimension change |
+| Financial Measure, 5 figures | Jo's `FA_MEASURES` | Matches the doc's five money figures exactly |
+| Per-asset table | Jo's `faTable` + `faTableAssets` | The doc's View 3, Asset Detail Table |
+| Donut | Jo's `faPie` | Shown beside the table at Detail only, as in her build |
+| Glance card | Jo's kpi branch | Measure total plus asset count plus dimension context |
+| Empty state, loading skeleton | Jo's `faEmptyState`, `faSkeletonBody` | Ported unchanged |
+| Filter chips and popovers | Jo's `faChip`, `faControls`, `faOpenPop` | Ported unchanged |
+| Size ladder Glance / Explore / Detail | Rule 12 | Her `kpi` / `wide` / `xwide` tiers map straight onto it |
+| Wiring only (prefixes, state, handlers) | Ours | `faF`/`FAF_` prefixes, `FAF_STATE` replacing her registry `find(id)`, `FAF_POP`/`FAF_TIMER`, `data-faf` for the delegated handler |
+| CSS | Resolved against this file's existing roots | 42 shared families resolved from `.arf-root`/`.prf-root`/`.penf-root` etc., per "fitting with our current style and setup" |
+| A/B/C branches | Untouched | Kept for comparison; they still carry the flat Asset Category filter |
+
+### Recorded conflicts
+
+- **Conflict 1** (doc's filter model not built) and **Conflict 2** (Asset Detail Table / View 3 not built) — **closed by the owner 2026-08-30** as resolved by Jo's build. Both ticked in `Final Check - Items Needing Your Review.md` with dated notes.
+- **Conflict 3** (Data Table Sort, proposed Tag # ascending) — **left open**. Jo's build does not sort that way and 1-to-1 was the instruction, so adopting the doc's proposal would have meant changing her build on an unconfirmed decision. Recorded in the widget's Logic note as open.
+
+### What v2.1 and v2.2 fixed, and why the port alone was not enough
+
+The port's own 26 checks all passed while the feature was invisible in the browser. Each called `faFRender()` directly in a Node shim; none asked whether the **page** could reach it. It could not: `fcInitState(11,'A')` meant `FC_STATE[11].opt` was never `'F'`, there was no `#fc-optsw-11` switcher, and no `.fc-fmode` block. The lesson recorded for future runs: **verifying the unit is not verifying the feature.** The v2.2 driver's section 0 now executes the real `WRENDER[11]` through the same call shape `fcRenderSlot` uses and asserts the Final is what comes back.
+
+Then, found by that driver:
+
+1. **The section chrome still described the pre-port widget** (v2.1). The blurb told the reader in bold that the doc's filter model "isn't built", and the Logic panel carried both conflicts as open Flags plus an A/B/C description reading as current. All corrected, with the A/B/C text scoped to A/B/C rather than deleted.
+2. **A dead control** (v2.1). The "Switch chart type" menu offered Group Bars / Donut by Group / Table and called `fcSetView(11,...)`, but the faF block contains no view state at all: Jo's composition is size-driven. Her build has no bar chart, so the menu is hidden in F mode rather than wired to a view she never drew. A/B/C keep it.
+3. **`FAF_STATE` declared four keys nothing reads** (v2.2). It was hand-authored during the port while every access was rewritten by regex, so it declared `faGroupBy`/`faGroup`/`faMeasure`/`faLoading` while all 12 readers read the `faF`-prefixed forms. The widget worked on its fallbacks, so nothing caught it; this driver's own filter assertions failed against it first. Renamed to the names actually read, with a permanent guard (check 7.9) that no declared key is unread.
+4. **Rule 12 labels were 1 of 14** (v2.2). The reachability fix wrapped only the KPI heading. W01/W05/W09 carry 11 label pairs, W13 12, W10 14, and W11 carried one, so in F mode three of four cards still said "Small / Medium / Large". The 12 switcher labels and the side-by-side heading now carry the abc/f two-span pattern, copied verbatim from W10. "Small" labels stay bare exactly as W10 leaves them, since that button is hidden in F mode.
+
+### Driver results — `driver-W11-v2.2.js`, 78 checks, 0 failures
+
+- **Reachability**: real routing path returns the Final, switcher present with Final pressed, F-mode CSS present, Small slot hidden, dead menu hidden and scoped to W11 alone.
+- **Sizes**: Glance / Explore / Detail all render, all three genuinely distinct, correct tier attributes; Glance is the metric with no table wrapper, Explore is the table alone in `class="single"`, Detail is table plus donut in `class="full"` with two panels. The hidden Small slot still renders safely.
+- **Filters**: 6 dimensions each produce a distinct render; 5 measures each produce a distinct render and each label appears in the Glance context line; the Specific Group option list changes with the dimension; narrowing to a real group cuts 12 assets to 3, and that count matches what the filter menu advertises.
+- **Asset detail**: 12 per-asset rows, unique `FA-` tags reaching the rendered output, all five measures numeric on every asset, and the measure total equal to the sum of the rows shown.
+- **States**: bogus group selection renders a real empty state with no fabricated total and no NaN; loading renders a skeleton.
+- **Sweep**: 210 combinations of size x dimension x measure x loading. Zero throws, zero em dashes, zero NaN or undefined leaks.
+- **Containment**: no `FA_` globals leaked, no unprefixed `ICON(`/`money(`, every emitted `data-faf` action is one the handler compares against, A/B/C branches intact with the F branch returning before them, one version stamp changed.
+
+Static gate: **0 HIGH**, 4 MED, 1 LOW. The 4 MEDs are em dashes in pre-existing prose: two house-convention headings copied verbatim from W10 ("KPI Card — shown as a header bar", "Customer Research — What We're Working Off") and two dated historical "Fix made —" notes preserved per the locked-doc rule. The LOW (no obvious empty-data guard) is answered by driver checks 4.1 to 4.4.
+
+### Rule 11 — data caveats, and a direct contradiction of this file's 2026-07-23 entry
+
+The 2026-07-23 entry above states that the doc's richer filter model "is **not** backed by the current data and is not offered". **The Final now offers it**, because Jo's build ships its own mock asset register carrying all six dimensions and all five measures. That register is mock data, not proven backend data. So the position has changed in what is *rendered*, not in what is *known*:
+
+- The 12-asset register, its tag numbers, and the Building/Room/Asset Account/Accumulated Depreciation Account/Expense Account values are **illustrative mock data from Jo's build**. Nothing in this run verified them against Shelby's real fixed-asset tables.
+- Whether the backend can actually serve six groupable dimensions, a dependent group list, and five distinct money measures per asset **remains unconfirmed** and belongs on the developer punch list, not in this file's claims.
+- The mockup renders as if real, per Rule 11; this caveat is the disclosure.
+- The previously removed invented "Depreciation method" filter (hardcoded 1.3x/1.4x multiplier) has **not** returned. Jo's build does not have it.
+
+### Status, deliberately not changed
+
+The owner chose **"Leave the status alone"** on 2026-08-30. `PROJECT INDEX.md` (Step 4 "Not started", Step 3 "In progress"), `Dashboard Tracker.xlsx`, and the Step 4 doc's Status line are all untouched. The recorded contradiction in the Step 4 doc, which says "🟢 Final design — locked" and "this widget is still undesigned" in the same file, therefore **remains open by explicit choice**, as does its "Last verified against build" line.
+
+### Where written
+
+`Dashboard Widget Mockups.html` only: the `faF` block and `FAF_*` constants before `WRENDER[11]`, the `if(opt==='F') return faFRender(wid,sz);` branch, the `.faf-root` CSS families, `fcInitState(11,'F')`, `#fc-optsw-11`, the `#fc-widget-11.fc-fmode` rules, and the `#fc-widget-11` section's blurb, Logic panel and size labels. `MOCK_DATA` was **not** touched (the faF data is standalone constants), so `mock-data.master.js` needs no re-sync. A/B/C branches, their cards, and every other widget are unchanged. Scripts: `port-W11.py`, `fix-W11-reach.py`, `apply-W11-v2.1.py`, `apply-W11-v2.2.py`, `driver-W11-v2.2.js`.

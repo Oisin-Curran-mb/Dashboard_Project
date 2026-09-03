@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Insurance Billing Plans - API Spec</title>
+<style>
+body { font-family: -apple-system, Helvetica, Arial, sans-serif; max-width: 900px; margin: 30px auto; line-height: 1.5; color: #172B4D; }
+h1 { font-size: 24px; }
+h2 { font-size: 19px; border-bottom: 1px solid #DFE1E6; padding-bottom: 6px; margin-top: 32px; }
+h3 { font-size: 16px; margin-top: 20px; }
+table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+th, td { border: 1px solid #DFE1E6; padding: 6px 10px; text-align: left; vertical-align: top; }
+th { background: #F4F5F7; }
+code { background: #F4F5F7; padding: 1px 5px; border-radius: 3px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 90%; }
+pre { background: #F4F5F7; padding: 12px; border-radius: 4px; overflow-x: auto; }
+pre code { background: none; padding: 0; }
+.status { background: #FFF0B3; display: inline-block; padding: 3px 10px; border-radius: 3px; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<h1>Insurance Billing Plans - API Spec</h1>
+<p><span class="status">Status: DRAFT - not final</span></p>
+<hr />
+<h2>Overview</h2>
+<p>The widget answers two questions for a benefits or HQ billing administrator: how many people are enrolled in each insurance plan (employees and their dependents together), and what that enrolment costs per plan and per insurance type. A single insurance-type filter narrows the whole widget; a grouped type-to-plan table and a proportional enrolment chart both read from the same data. The widget is read-only: nothing writes back.</p>
+<p>This contract defines <strong>two APIs</strong>: a rarely-changing insurance-type lookup that feeds the filter control (the existing filters endpoint, reused unchanged), and one bounded data read that returns the full nested dataset (types, plans, enrolled counts, costs, subtotals and the grand total) on render and again on every filter change. The justification lives in the API inventory below.</p>
+<p>There is no time axis. Enrolment is a live count computed at request time (<code>COUNT(IBEmployeePlan)</code> plus <code>COUNT(IBEmployeeDependent)</code> per plan), not a stored snapshot [CODE 2026-07-30], so this contract has no window, grain or asOf machinery. There is also no enrolment status: no active/inactive, pending, COBRA or approval field exists on plan enrolment anywhere in the real IB module [CODE 2026-07-30], so no status field or status filter appears here.</p>
+<hr />
+<h2>Design → API coverage</h2>
+<p>Every element of the built Final, mapped to what feeds it.</p>
+<table>
+<thead>
+<tr>
+<th>Design element</th>
+<th>Type</th>
+<th>API</th>
+<th>Field(s)</th>
+<th>Provenance</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Glance KPI: total enrolled</td>
+<td>KPI</td>
+<td>API 2</td>
+<td><code>total.enrolled</code></td>
+<td>DERIVED (sum of plan counts) [CODE]</td>
+</tr>
+<tr>
+<td>Glance plan-count pill</td>
+<td>KPI</td>
+<td>API 2</td>
+<td>count of entries across <code>types[].plans[]</code> (client arithmetic)</td>
+<td>DERIVED client [BUILD]</td>
+</tr>
+<tr>
+<td>Glance caption ("employees and dependents", current type)</td>
+<td>state text</td>
+<td>none (static client copy plus the client's current filter value)</td>
+<td>none</td>
+<td>[BUILD]</td>
+</tr>
+<tr>
+<td>Type parent row: insurance type name</td>
+<td>table column</td>
+<td>API 2</td>
+<td><code>types[].typeName</code></td>
+<td>STORED <code>IBType.Name</code> [CODE]</td>
+</tr>
+<tr>
+<td>Type parent row: plan-count tag</td>
+<td>table column</td>
+<td>API 2</td>
+<td>length of <code>types[].plans[]</code> (client arithmetic)</td>
+<td>DERIVED client [BUILD]</td>
+</tr>
+<tr>
+<td>Type parent row: Enrolled subtotal</td>
+<td>table column</td>
+<td>API 2</td>
+<td><code>types[].enrolled</code></td>
+<td>DERIVED (sum of its plans) [CODE]</td>
+</tr>
+<tr>
+<td>Type parent row: Cost subtotal</td>
+<td>table column</td>
+<td>API 2</td>
+<td><code>types[].cost</code></td>
+<td>DERIVED (sum of its plans) / NEW</td>
+</tr>
+<tr>
+<td>Plan child row: plan name</td>
+<td>table column</td>
+<td>API 2</td>
+<td><code>plans[].planName</code></td>
+<td>STORED <code>IBPlan.Name</code> [CODE]</td>
+</tr>
+<tr>
+<td>Plan child row: Enrolled</td>
+<td>table column</td>
+<td>API 2</td>
+<td><code>plans[].enrolled</code></td>
+<td>DERIVED (live count) [CODE]</td>
+</tr>
+<tr>
+<td>Plan child row: Cost</td>
+<td>table column</td>
+<td>API 2</td>
+<td><code>plans[].cost</code></td>
+<td>NEW (see Tables)</td>
+</tr>
+<tr>
+<td>Share of total column (type and plan rows)</td>
+<td>table column</td>
+<td>none (client derivation over API 2)</td>
+<td>row <code>enrolled</code> divided by <code>total.enrolled</code></td>
+<td>DERIVED client [BUILD]</td>
+</tr>
+<tr>
+<td>Zero-enrolment row marker</td>
+<td>table state</td>
+<td>API 2</td>
+<td><code>plans[].enrolled</code> equal to 0</td>
+<td>DERIVED client [BUILD]</td>
+</tr>
+<tr>
+<td>Footer total row: enrolled and cost</td>
+<td>grand total</td>
+<td>API 2</td>
+<td><code>total.enrolled</code>, <code>total.cost</code></td>
+<td>DERIVED (sums) [CODE]</td>
+</tr>
+<tr>
+<td>Insurance type filter chip and its option list</td>
+<td>filter</td>
+<td>API 1</td>
+<td><code>typeId</code>, <code>name</code></td>
+<td>STORED <code>IBType</code> [CODE]</td>
+</tr>
+<tr>
+<td>Table / Pie segment control</td>
+<td>view toggle</td>
+<td>none (client view state only)</td>
+<td>none</td>
+<td>[BUILD]</td>
+</tr>
+<tr>
+<td>Initial view, sort and expansion state</td>
+<td>client state</td>
+<td>none (no server default)</td>
+<td>Table view, enrolled descending, all type groups collapsed</td>
+<td>[BUILD]</td>
+</tr>
+<tr>
+<td>Chart segments (one per plan with at least one enrolment)</td>
+<td>chart series</td>
+<td>API 2</td>
+<td><code>plans[].planName</code>, <code>plans[].enrolled</code> (client keeps rows with <code>enrolled</code> above 0)</td>
+<td>DERIVED client [BUILD]</td>
+</tr>
+<tr>
+<td>Chart centre figure (charted total)</td>
+<td>chart</td>
+<td>API 2</td>
+<td>client sum of charted <code>plans[].enrolled</code></td>
+<td>DERIVED client [BUILD]</td>
+</tr>
+<tr>
+<td>Chart legend rows (plan, count, percent)</td>
+<td>chart</td>
+<td>API 2</td>
+<td><code>plans[].planName</code>, <code>plans[].enrolled</code>, client percent</td>
+<td>DERIVED client [BUILD]</td>
+</tr>
+<tr>
+<td>Uncharted-plans note</td>
+<td>state</td>
+<td>API 2</td>
+<td>client count of <code>plans[].enrolled</code> equal to 0</td>
+<td>DERIVED client [BUILD]</td>
+</tr>
+<tr>
+<td>Chart-empty state (no plan chartable for the filter)</td>
+<td>state</td>
+<td>API 2</td>
+<td>absence of any <code>plans[].enrolled</code> above 0</td>
+<td>DERIVED client [BUILD]</td>
+</tr>
+<tr>
+<td>Expand / collapse of a type group</td>
+<td>interaction</td>
+<td>none (client state over API 2 rows)</td>
+<td>keyed by <code>types[].typeId</code></td>
+<td>[BUILD]</td>
+</tr>
+<tr>
+<td>Column sort (plan name ascending, enrolled descending, either direction on click)</td>
+<td>interaction</td>
+<td>none (client re-order of API 2 rows)</td>
+<td>none</td>
+<td>[BUILD]</td>
+</tr>
+<tr>
+<td>Row identity keys</td>
+<td>plumbing</td>
+<td>API 2</td>
+<td><code>plans[].planId</code>, <code>types[].typeId</code></td>
+<td>STORED <code>IBPlan.PlanID</code>, <code>IBType.TypeID</code> [CODE]</td>
+</tr>
+<tr>
+<td>Empty state ("No insurance plans yet")</td>
+<td>state</td>
+<td>API 2</td>
+<td>empty <code>types[]</code> with zero <code>total</code></td>
+<td>[BUILD]</td>
+</tr>
+<tr>
+<td>Loading skeleton</td>
+<td>state</td>
+<td>none (client, while API 2 is in flight)</td>
+<td>none</td>
+<td>[BUILD]</td>
+</tr>
+<tr>
+<td>Refresh control</td>
+<td>action</td>
+<td>API 1 + API 2 refired</td>
+<td>none</td>
+<td>[BUILD]</td>
+</tr>
+</tbody>
+</table>
+<p>Nothing on screen is unfunded; every response field below appears in at least one row above.</p>
+<hr />
+<h2>Tables</h2>
+<table>
+<thead>
+<tr>
+<th>Table / repository</th>
+<th>Fields and members used</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>IBType</code></td>
+<td><code>TypeID</code>, <code>Name</code>, <code>Active</code>: the insurance-type categories. Source of the filter option list (API 1) and of each <code>types[]</code> entry (API 2); <code>Active</code> filtered</td>
+</tr>
+<tr>
+<td><code>IBPlan</code></td>
+<td><code>PlanID</code>, <code>Name</code>, <code>TypeID</code>, <code>Active</code>: the plan rows; <code>TypeID</code> is the existing link that places each plan under its type; <code>Active</code> filtered</td>
+</tr>
+<tr>
+<td><code>IBEmployeePlan</code></td>
+<td><code>PlanID</code>, <code>Rate</code>, <code>RateIndividual</code>, <code>PreTax</code>, <code>EmployerBilled</code>, <code>TypeElectionID</code>, <code>UseNonStandardRate</code>: employee enrolment rows, counted into <code>enrolled</code> and summed into <code>cost</code></td>
+</tr>
+<tr>
+<td><code>IBEmployeeDependent</code></td>
+<td><code>PlanID</code>: dependent enrolment rows, counted into <code>enrolled</code></td>
+</tr>
+<tr>
+<td><code>IBPlanRate</code></td>
+<td><code>PlanID</code>, <code>TypeElectionID</code>, <code>Rate</code>, <code>RateIndividual</code>, <code>Starting</code>: the standard rate by plan plus coverage tier, used for an enrolment's rate when it does not carry a non-standard rate</td>
+</tr>
+<tr>
+<td><code>IBTypeElection</code></td>
+<td>Coverage tier (Employee / Family / Waived and so on). Part of the real hierarchy and of the rate lookup, but not surfaced by this contract</td>
+</tr>
+</tbody>
+</table>
+<p>No new tables and no schema changes are needed: the contract is new queries against existing tables. <code>enrolled</code> is the existing live read; <code>cost</code> is a new SUM over columns that already exist.</p>
+<p>Core formulas, quotable in isolation:</p>
+<ul>
+<li><strong>Enrolled per plan</strong> = <code>COUNT(IBEmployeePlan WHERE PlanID = plan) + COUNT(IBEmployeeDependent WHERE PlanID = plan)</code>, a live count computed at request time. [CODE 2026-07-30]</li>
+<li><strong>Cost per plan</strong> is the total premium: the SUM, over the plan's enrolments, of the enrolment rate, where the rate is <code>IBEmployeePlan.Rate</code> when <code>UseNonStandardRate</code> is set on that enrolment, and otherwise the standard <code>IBPlanRate.Rate</code> for the plan plus the enrolment's coverage tier (<code>TypeElectionID</code>). The employer share (<code>Rate</code> minus <code>RateIndividual</code>) and the employee share (<code>RateIndividual</code>) are derivable from the same rows if product wants a split later; <code>EmployerBilled</code> and <code>PreTax</code> are flags on the row. [CODE - <code>IBEmployeeRepository</code>, <code>IBPlanRate</code>] Whether dependent enrolment rows contribute rate rows to this SUM is under sign-off (see Still needs sign-off item 2).</li>
+<li><strong>Type subtotal</strong> = SUM of its plans' <code>enrolled</code> / <code>cost</code>; <strong>grand total</strong> = SUM of the type subtotals. Both server-computed in API 2.</li>
+</ul>
+<p>Filters applied to every read: company scoping on every query (see Auth and scoping); <code>IBType.Active</code> and <code>IBPlan.Active</code> filter types and plans out of both responses. [CODE 2026-07-30]</p>
+<hr />
+<h2>Old vs. new</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Old (live today)</th>
+<th>New (needed)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Enrolled per plan</td>
+<td>Legacy <code>InsuranceBillingPlans : DataPanelControl</code> (<code>/InsuranceBilling</code>) and the modern <code>GET /api/dashboard/insurance-billing-plans/grid</code> both return <code>NumberEnrolled</code> per plan: <code>COUNT(IB_EmployeePlan)</code> plus <code>COUNT(IB_EmployeeDependent)</code>, a live count [DOC - Widget_Comparison_Classic]</td>
+<td>Same figure, unchanged: <code>enrolled</code> in API 2. Re-shaped read, not new data (DERIVED)</td>
+</tr>
+<tr>
+<td>Cost per plan</td>
+<td>Not returned anywhere today</td>
+<td><code>cost</code> (NEW): per-plan SUM of the enrolment rate (see Tables). The one genuinely new backend field in this contract</td>
+</tr>
+<tr>
+<td>Type-to-plan grouping and subtotals</td>
+<td>The modern grid returns flat rows <code>{PlanId, Name, TypeName, NumberEnrolled}</code>; no subtotals, no grand total on the wire</td>
+<td>API 2 returns one nested structure: <code>types[]</code> each carrying subtotals and its <code>plans[]</code>, plus the grand <code>total</code> (DERIVED, server-assembled)</td>
+</tr>
+<tr>
+<td>Type filter list</td>
+<td><code>GET /api/dashboard/insurance-billing-plans/filters</code> returns the type list from <code>IB_Type WHERE CompanyID = ctx</code> with an "All Types" (<code>Guid.Empty</code>) entry prepended [DOC - Widget_Comparison_Classic]</td>
+<td>Reused unchanged (API 1). The client maps the <code>Guid.Empty</code> entry to omitting <code>typeId</code> on API 2</td>
+</tr>
+<tr>
+<td>Chart data</td>
+<td><code>GET /api/dashboard/insurance-billing-plans/chart</code> returns <code>{Name, NumberEnrolled}</code> per plan</td>
+<td>Not called. The chart renders client-side from the same API 2 rows the table uses, so table and chart can never disagree</td>
+</tr>
+<tr>
+<td>Status / pending / COBRA</td>
+<td>None in the real module</td>
+<td>Still none. No status field exists on enrolment; none is added</td>
+</tr>
+<tr>
+<td>Drill / mutation</td>
+<td>No drill-down; read-only</td>
+<td>Unchanged: read-only, no drill, no write</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>API inventory</h2>
+<table>
+<thead>
+<tr>
+<th>API</th>
+<th>Purpose</th>
+<th>Trigger (when it fires)</th>
+<th>Cardinality</th>
+<th>R/W</th>
+<th>Cache posture</th>
+<th>Split trigger</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>API 1: type filter lookup</td>
+<td>Options for the insurance-type filter chip</td>
+<td>Widget render; refresh</td>
+<td>One row per active insurance type (single digits typical)</td>
+<td>R</td>
+<td>Cacheable, rarely changes (TTL acceptable)</td>
+<td>Lifetime gap: a rarely-changing lookup vs a live count. Also pre-existing: this endpoint already exists and is reused unchanged</td>
+</tr>
+<tr>
+<td>API 2: plans data read</td>
+<td>The full widget dataset: nested types and plans with enrolled, cost, subtotals and grand total</td>
+<td>Widget render; every type-filter change; refresh</td>
+<td>One row per active plan of the company (single digits typical)</td>
+<td>R</td>
+<td>LIVE per request (enrolment is a live count)</td>
+<td>Lifetime gap from API 1; this is the only data read</td>
+</tr>
+</tbody>
+</table>
+<p>Merging API 1 into API 2 was considered and rejected: a filtered API 2 response (one type) cannot carry the full option list the chip must always show, and the lookup's cache lifetime differs from a live count. Splitting API 2 further (summary vs rows, or table vs chart) was considered and rejected: the whole dataset is one bounded response, the chart consumes the same rows as the table, and a split would force two calls that must reconcile with no gain.</p>
+<p>There is no shared <code>asOf</code> anchor and none is needed: the two calls carry no figures that must reconcile with each other (the option list is names, the data read is counts), and drift between them is acceptable and self-healing (see Edge cases 10).</p>
+<hr />
+<h2>Call sequence</h2>
+<table>
+<thead>
+<tr>
+<th>Interaction</th>
+<th>Calls fired</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Initial widget load</td>
+<td>API 1 + API 2 (in parallel)</td>
+<td>API 2 with <code>typeId</code> omitted (all types), or with a restored selection if the platform restores one</td>
+</tr>
+<tr>
+<td>Change filter: insurance type</td>
+<td>API 2 only, with <code>typeId</code> (or omitted for the all-types entry)</td>
+<td>One round trip; the option list does not refetch</td>
+</tr>
+<tr>
+<td>Switch view (Table / Pie segment)</td>
+<td>none</td>
+<td>Instant client re-render over data already held</td>
+</tr>
+<tr>
+<td>Expand / collapse a type group</td>
+<td>none</td>
+<td>Client state over API 2 rows</td>
+</tr>
+<tr>
+<td>Sort a column</td>
+<td>none</td>
+<td>Client re-order of API 2 rows</td>
+</tr>
+<tr>
+<td>Open drill / expand row detail</td>
+<td>none</td>
+<td>No drill exists in this design</td>
+</tr>
+<tr>
+<td>Submit action</td>
+<td>none</td>
+<td>Read-only widget; there is no write</td>
+</tr>
+<tr>
+<td>Refresh</td>
+<td>API 1 + API 2</td>
+<td>Both refired with the current <code>typeId</code></td>
+</tr>
+</tbody>
+</table>
+<p>Every API in the inventory appears above. No two calls must reconcile numerically on screen, so no shared asOf anchor is defined.</p>
+<hr />
+<h2>Filter architecture</h2>
+<table>
+<thead>
+<tr>
+<th>Filter</th>
+<th>Option source</th>
+<th>Cardinality</th>
+<th>Execution</th>
+<th>Aggregate effect</th>
+<th>Cascade</th>
+<th>"All" wire form</th>
+<th>Round trips</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Insurance type</td>
+<td>LOOKUP: API 1 (existing filters endpoint over <code>IBType</code>)</td>
+<td>4 types in the demo dataset [BUILD] and 4 live-verified on beta1 [DOC - dossier]; worst realistic count [TO CONFIRM - Marvin]</td>
+<td>SERVER: <code>typeId</code> param on API 2; every filter change re-queries</td>
+<td>Yes: <code>types[]</code>, every subtotal and the grand <code>total</code> are recomputed server-side for the filtered population</td>
+<td>None (single filter)</td>
+<td>Omit <code>typeId</code>. The option list's <code>Guid.Empty</code> "All Types" entry is a sentinel the client maps to omission</td>
+<td>1 (API 2 only)</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Why server-side:</strong> Framework 1 condition 2 fails for a client-side verdict. The set the filter operates on (all plans of the company) is bounded only by org configuration, and no maximum has a citable basis yet, so the filter is a server param and the server recomputes every aggregate per call. This also keeps condition 3 trivially satisfied: rows and totals in one response always describe the same population.</li>
+<li><strong>Combination semantics:</strong> there is exactly one filter; nothing combines.</li>
+<li><strong>Conflict rule:</strong> a <code>typeId</code> that is unknown, inactive, or belongs to another company returns the well-formed zero response (empty <code>types[]</code>, zero <code>total</code>), never an error. With a single optional param no precedence question arises.</li>
+<li><strong>Blank handling:</strong> every plan reaches the response through its <code>IBPlan.TypeID</code> link; omitting <code>typeId</code> includes every active type's plans. Whether orphaned plans (a <code>TypeID</code> that resolves to no active type) exist in production is [TO CONFIRM - Oisin Curran] (see Edge cases 9); a blank link must not behave as a wildcard.</li>
+<li><strong>Cascade invalidation:</strong> not applicable; there is no dependent filter.</li>
+<li><strong>Empty result:</strong> a legitimate filter value with no enrolments is a normal response with zero counts, not an error (see State contracts).</li>
+</ul>
+<hr />
+<h2>Volume and performance</h2>
+<table>
+<thead>
+<tr>
+<th>Dataset</th>
+<th>Typical rows</th>
+<th>Worst realistic rows (basis)</th>
+<th>Row width</th>
+<th>Payload at worst</th>
+<th>Verdict</th>
+<th>Server cost model</th>
+<th>Cache posture</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>API 1 option list</td>
+<td>4 types [BUILD demo; live beta1 capture in the dossier]</td>
+<td>[TO CONFIRM - Marvin]</td>
+<td>2 fields, ~60 bytes</td>
+<td>A few KB at any plausible ceiling</td>
+<td>BOUNDED</td>
+<td>Single indexed scan of <code>IBType</code> by company</td>
+<td>Rarely changes; TTL acceptable; refetched on render and refresh</td>
+</tr>
+<tr>
+<td>API 2 nested dataset</td>
+<td>5 plans across 4 types [BUILD demo]</td>
+<td>[TO CONFIRM - Marvin]</td>
+<td>~5 fields, ~120 bytes per plan row plus ~4 per type wrapper</td>
+<td>Tens of KB at any plausible ceiling</td>
+<td>BOUNDED</td>
+<td>One grouped aggregate pass: COUNT over <code>IBEmployeePlan</code> and <code>IBEmployeeDependent</code> grouped by <code>PlanID</code>, plus one SUM of the per-enrolment rate with the <code>IBPlanRate</code> fallback join. The multiplier is the company's enrolment row count, scanned once per request, never per-plan subqueries. Worst realistic enrolment row count [TO CONFIRM - Marvin]</td>
+<td>LIVE per request: enrolment is a live count [CODE], so no precompute and no snapshot staleness</td>
+</tr>
+</tbody>
+</table>
+<p>The BOUNDED verdicts rest on the plan catalogue being org configuration (an organisation offers a fixed handful of plans), not on the demo dataset's size; the demo figures are typical-case only. The [TO CONFIRM] ceilings condition the verdicts: if Marvin's numbers come back large, API 2's verdict must be revisited before build.</p>
+<p>The client-side sort, grouping, chart derivation and Share arithmetic are all views over one complete response the client holds in full, change no server-computed aggregate, and are legitimate for a BOUNDED set.</p>
+<h3>Pagination contract</h3>
+<p>Nothing paginates: both responses are bounded and returned whole, so there are no page, pageSize, sortBy or totalCount params anywhere in this contract.</p>
+<hr />
+<h2>Where computation lives</h2>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Server or client</th>
+<th>Basis</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>enrolled</code> per plan</td>
+<td>SERVER</td>
+<td>COUNT + COUNT live at request time [CODE]</td>
+<td>Spans enrolment rows the client never receives</td>
+</tr>
+<tr>
+<td><code>cost</code> per plan</td>
+<td>SERVER</td>
+<td>SUM of per-enrolment rate with standard-rate fallback [CODE]</td>
+<td>Spans enrolment and rate rows the client never receives</td>
+</tr>
+<tr>
+<td>Type subtotals (<code>types[].enrolled</code>, <code>types[].cost</code>)</td>
+<td>SERVER</td>
+<td>Sum of the type's plans</td>
+<td>One authoritative computation; rows and subtotals always describe the same population</td>
+</tr>
+<tr>
+<td>Grand <code>total.enrolled</code>, <code>total.cost</code></td>
+<td>SERVER</td>
+<td>Sum of the subtotals</td>
+<td>Same as above; the footer and Glance KPI read it directly</td>
+</tr>
+<tr>
+<td>Share of total percent (type and plan rows)</td>
+<td>CLIENT</td>
+<td>row <code>enrolled</code> divided by <code>total.enrolled</code> from the same response, rounded to a whole percent</td>
+<td>Pure arithmetic over two values already present. Division-by-zero rule: when <code>total.enrolled</code> is zero the client renders 0%, never null or an error</td>
+</tr>
+<tr>
+<td>Chart segment fractions and legend percents</td>
+<td>CLIENT</td>
+<td>row <code>enrolled</code> divided by the charted total (sum of rows with <code>enrolled</code> above 0)</td>
+<td>Pure arithmetic over the same response; the charted total equals the table's total whenever no zero-enrolment plan exists, and the note explains the difference when one does</td>
+</tr>
+<tr>
+<td>Zero-enrolment exclusion from the chart, and the uncharted-plans note count</td>
+<td>CLIENT</td>
+<td>count of rows with <code>enrolled</code> equal to 0</td>
+<td>Presentation rule over data in hand</td>
+</tr>
+<tr>
+<td>Plan-count figures (Glance pill, per-type tag)</td>
+<td>CLIENT</td>
+<td>array lengths</td>
+<td>Counting rows already held</td>
+</tr>
+<tr>
+<td>Sort order (plan name or enrolled, either direction; zero-enrolment rows always last)</td>
+<td>CLIENT</td>
+<td>re-order of the full response</td>
+<td>The full set is in hand; sort changes no aggregate</td>
+</tr>
+<tr>
+<td>Type group ordering (by subtotal, descending)</td>
+<td>CLIENT</td>
+<td><code>types[].enrolled</code></td>
+<td>Same</td>
+</tr>
+<tr>
+<td>Empty / loading / chart-empty states</td>
+<td>CLIENT</td>
+<td>response shape</td>
+<td>Presentation</td>
+</tr>
+</tbody>
+</table>
+<p>No server-computed percentage exists in this contract, so the only division-by-zero rule is the client Share rule above (zero denominator renders 0%). There are no deltas and no comparison baselines. No presentation threshold exists in this design (enrolment counts are neutral; there is no banding).</p>
+<hr />
+<h2>API 1: Insurance-type filter lookup</h2>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/insurance-billing-plans/filters
+</code></pre>
+<p>This endpoint exists today [DOC - Widget_Comparison_Classic] and is reused unchanged. It returns the company's insurance types with an "All Types" (<code>Guid.Empty</code>) entry prepended by the server.</p>
+<h3>Parameters</h3>
+<p>None beyond the company context header (see Auth and scoping). There is nothing to filter a filter list by.</p>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/insurance-billing-plans/filters
+</code></pre>
+<p>One form only; the endpoint takes no query parameters, so no second variant exists. Nothing needs URL encoding.</p>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>typeId</code></td>
+<td>guid</td>
+<td>STORED <code>IBType.TypeID</code> [CODE]</td>
+<td>The type's id; <code>Guid.Empty</code> marks the server-prepended "All Types" sentinel entry</td>
+</tr>
+<tr>
+<td><code>name</code></td>
+<td>string</td>
+<td>STORED <code>IBType.Name</code> [CODE]</td>
+<td>The type's display name, org-configured</td>
+</tr>
+</tbody>
+</table>
+<p>The response is a JSON array of these entries, active types only, ordered by name, sentinel first. The exact wire property names of the existing <code>DropDownItem</code> DTO are UNVERIFIED (Oisin Curran); the logical fields above are the contract.</p>
+<h3>Example response</h3>
+<pre><code>[
+  { &quot;typeId&quot;: &quot;00000000-0000-0000-0000-000000000000&quot;, &quot;name&quot;: &quot;All Types&quot; },
+  { &quot;typeId&quot;: &quot;3b2d5f70-9c1e-4a3b-8d7f-2e4c6b8d0f21&quot;, &quot;name&quot;: &quot;Dental&quot; },
+  { &quot;typeId&quot;: &quot;2a1c4e6f-8b0d-4f2a-9c6e-1d3b5a7c9e10&quot;, &quot;name&quot;: &quot;Medical&quot; },
+  { &quot;typeId&quot;: &quot;5d4f7192-1e30-4c5d-af91-4a6e8d0f2143&quot;, &quot;name&quot;: &quot;Property&quot; },
+  { &quot;typeId&quot;: &quot;4c3e6081-0d2f-4b4c-9e80-3f5d7c9e1032&quot;, &quot;name&quot;: &quot;Vision&quot; }
+]
+</code></pre>
+<p>Reconciliation: the four real entries carry the same <code>typeId</code> values as the four <code>types[]</code> entries in the API 2 example below, and the sentinel entry maps to omitting <code>typeId</code> there; no figure in this response sums to anything.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty (org has no active types)</td>
+<td><code>[ { "typeId": "00000000-0000-0000-0000-000000000000", "name": "All Types" } ]</code>, the sentinel alone; the client still renders the chip</td>
+</tr>
+<tr>
+<td>Partial</td>
+<td>Not applicable: there is no requested span to be partial over</td>
+</tr>
+<tr>
+<td>Not-yet-existing entity</td>
+<td>Not applicable: the call takes no entity id</td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td>HTTP 403; the widget is not shown to unentitled users (see Auth and scoping), so the client never renders a denied body. Response body shape [TO CONFIRM - Oisin Curran]</td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td>HTTP 5xx; client error presentation is not yet designed [TO CONFIRM - Product]</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>API 2: Plans data read</h2>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/insurance-billing-plans/data
+</code></pre>
+<p>One bounded read returning the full nested dataset for the current filter: a grand <code>total</code>, then <code>types[]</code>, each type carrying its name, its subtotals, and its <code>plans[]</code>.</p>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>typeId</code></td>
+<td>guid</td>
+<td>No</td>
+<td>Any active <code>IBType.TypeID</code> of the company</td>
+<td>Omitted (all types)</td>
+<td>Narrows the response to one insurance type; every subtotal and the grand <code>total</code> are recomputed for the filtered population. Unknown, inactive or foreign values return the zero response, not an error</td>
+</tr>
+</tbody>
+</table>
+<p>The company context header applies to every call (see Auth and scoping).</p>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/insurance-billing-plans/data
+GET /api/dashboard/insurance-billing-plans/data?typeId=2a1c4e6f-8b0d-4f2a-9c6e-1d3b5a7c9e10   (Medical only)
+</code></pre>
+<p>A guid needs no URL encoding; nothing else appears on the query string.</p>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>total</code></td>
+<td>object</td>
+<td>DERIVED (sum of the <code>types[]</code> subtotals) [CODE basis]</td>
+<td>Grand total for the filtered population: <code>{ enrolled, cost }</code></td>
+</tr>
+<tr>
+<td><code>total.enrolled</code></td>
+<td>int</td>
+<td>DERIVED: sum of <code>types[].enrolled</code> [CODE]</td>
+<td>Grand-total enrolment; the Share denominator and the Glance KPI</td>
+</tr>
+<tr>
+<td><code>total.cost</code></td>
+<td>number</td>
+<td>NEW: sum of <code>types[].cost</code></td>
+<td>Grand-total cost; plain decimal, no currency formatting</td>
+</tr>
+<tr>
+<td><code>types[]</code></td>
+<td>array</td>
+<td>STORED <code>IBType</code> rows (Active, company-scoped) [CODE]</td>
+<td>One entry per active insurance type in scope; empty when nothing is in scope</td>
+</tr>
+<tr>
+<td><code>types[].typeId</code></td>
+<td>guid</td>
+<td>STORED <code>IBType.TypeID</code> [CODE]</td>
+<td>The type's id; expand-state and row key</td>
+</tr>
+<tr>
+<td><code>types[].typeName</code></td>
+<td>string</td>
+<td>STORED <code>IBType.Name</code> [CODE]</td>
+<td>The type's display name</td>
+</tr>
+<tr>
+<td><code>types[].enrolled</code></td>
+<td>int</td>
+<td>DERIVED: sum of its plans' <code>enrolled</code> [CODE]</td>
+<td>The type's subtotal enrolment</td>
+</tr>
+<tr>
+<td><code>types[].cost</code></td>
+<td>number</td>
+<td>NEW: sum of its plans' <code>cost</code></td>
+<td>The type's subtotal cost</td>
+</tr>
+<tr>
+<td><code>types[].plans[]</code></td>
+<td>array</td>
+<td>STORED <code>IBPlan</code> rows (Active) [CODE]</td>
+<td>The plans under this type; empty array when the type has no active plans</td>
+</tr>
+<tr>
+<td><code>plans[].planId</code></td>
+<td>guid</td>
+<td>STORED <code>IBPlan.PlanID</code> [CODE]</td>
+<td>The plan's id; the row key</td>
+</tr>
+<tr>
+<td><code>plans[].planName</code></td>
+<td>string</td>
+<td>STORED <code>IBPlan.Name</code> [CODE]</td>
+<td>The plan's display name, org-configured, not an enum</td>
+</tr>
+<tr>
+<td><code>plans[].enrolled</code></td>
+<td>int</td>
+<td>DERIVED: <code>COUNT(IBEmployeePlan) + COUNT(IBEmployeeDependent)</code> for the plan [CODE]</td>
+<td>The existing live count, employees plus dependents</td>
+</tr>
+<tr>
+<td><code>plans[].cost</code></td>
+<td>number</td>
+<td>NEW: SUM of the per-enrolment rate (see Tables) [CODE for derivability]</td>
+<td>The one new backend field. Plain decimal, no currency formatting. The dependent-row question in Still needs sign-off item 2 conditions the final SUM</td>
+</tr>
+</tbody>
+</table>
+<h3>Example response</h3>
+<p>Mock figures shaped like the built Final's demo dataset [BUILD]; the shapes and the reconciliation are the contract, not the amounts.</p>
+<pre><code>{
+  &quot;total&quot;: { &quot;enrolled&quot;: 349, &quot;cost&quot;: 95367 },
+  &quot;types&quot;: [
+    {
+      &quot;typeId&quot;: &quot;2a1c4e6f-8b0d-4f2a-9c6e-1d3b5a7c9e10&quot;,
+      &quot;typeName&quot;: &quot;Medical&quot;,
+      &quot;enrolled&quot;: 182,
+      &quot;cost&quot;: 91080,
+      &quot;plans&quot;: [
+        { &quot;planId&quot;: &quot;a1000000-0000-4000-8000-000000000001&quot;, &quot;planName&quot;: &quot;Medical Base&quot;,   &quot;enrolled&quot;: 128, &quot;cost&quot;: 57600 },
+        { &quot;planId&quot;: &quot;a1000000-0000-4000-8000-000000000002&quot;, &quot;planName&quot;: &quot;Medical Buy Up&quot;, &quot;enrolled&quot;: 54,  &quot;cost&quot;: 33480 }
+      ]
+    },
+    {
+      &quot;typeId&quot;: &quot;3b2d5f70-9c1e-4a3b-8d7f-2e4c6b8d0f21&quot;,
+      &quot;typeName&quot;: &quot;Dental&quot;,
+      &quot;enrolled&quot;: 96,
+      &quot;cost&quot;: 3648,
+      &quot;plans&quot;: [
+        { &quot;planId&quot;: &quot;a1000000-0000-4000-8000-000000000003&quot;, &quot;planName&quot;: &quot;Delta Dental&quot;, &quot;enrolled&quot;: 96, &quot;cost&quot;: 3648 }
+      ]
+    },
+    {
+      &quot;typeId&quot;: &quot;4c3e6081-0d2f-4b4c-9e80-3f5d7c9e1032&quot;,
+      &quot;typeName&quot;: &quot;Vision&quot;,
+      &quot;enrolled&quot;: 71,
+      &quot;cost&quot;: 639,
+      &quot;plans&quot;: [
+        { &quot;planId&quot;: &quot;a1000000-0000-4000-8000-000000000004&quot;, &quot;planName&quot;: &quot;Vision&quot;, &quot;enrolled&quot;: 71, &quot;cost&quot;: 639 }
+      ]
+    },
+    {
+      &quot;typeId&quot;: &quot;5d4f7192-1e30-4c5d-af91-4a6e8d0f2143&quot;,
+      &quot;typeName&quot;: &quot;Property&quot;,
+      &quot;enrolled&quot;: 0,
+      &quot;cost&quot;: 0,
+      &quot;plans&quot;: [
+        { &quot;planId&quot;: &quot;a1000000-0000-4000-8000-000000000005&quot;, &quot;planName&quot;: &quot;Building&quot;, &quot;enrolled&quot;: 0, &quot;cost&quot;: 0 }
+      ]
+    }
+  ]
+}
+</code></pre>
+<p>Reconciliation: plan enrolled 128 + 54 + 96 + 71 + 0 = 349 = <code>total.enrolled</code>; type enrolled subtotals 182 + 96 + 71 + 0 = 349; plan cost 57600 + 33480 + 3648 + 639 + 0 = 95367 = <code>total.cost</code>; type cost subtotals 91080 + 3648 + 639 + 0 = 95367; within Medical, 128 + 54 = 182 and 57600 + 33480 = 91080. The four <code>types[].typeId</code> values match the four real entries in the API 1 example. Client Share over this response: Medical 52%, Medical Base 37%, Medical Buy Up 15%, Delta Dental 28%, Vision 20%, Building 0% (each row's <code>enrolled</code> divided by 349).</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty (org has no plans or enrolments)</td>
+<td><code>{ "total": { "enrolled": 0, "cost": 0 }, "types": [] }</code>; the client renders its empty state. Not an error</td>
+</tr>
+<tr>
+<td>Empty for the filter (valid <code>typeId</code>, nothing enrolled)</td>
+<td>The type's entry with its plans at zero, or an empty <code>types[]</code> if the type has no active plans; <code>total</code> zero. Not an error</td>
+</tr>
+<tr>
+<td>Partial</td>
+<td>Not applicable: there is no requested span to be partial over; enrolment is a point-in-time live count</td>
+</tr>
+<tr>
+<td>Not-yet-existing entity (unknown / inactive / foreign <code>typeId</code>)</td>
+<td>The zero response: <code>{ "total": { "enrolled": 0, "cost": 0 }, "types": [] }</code>. Not an error</td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td>HTTP 403; the widget is not shown to unentitled users, so the client never renders a denied body. Response body shape [TO CONFIRM - Oisin Curran]</td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td>HTTP 5xx; client error presentation is not yet designed [TO CONFIRM - Product]</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>Auth and scoping</h2>
+<ul>
+<li><strong>Company / tenant scoping:</strong> both endpoints take the <code>X-Company-ID</code> context header [DOC - Widget_Comparison_Classic], and every query is scoped by it: types, plans, enrolments and rates are all read for that company only.</li>
+<li><strong>Permission right to read:</strong> the legacy widget is gated on the Inquiry right for its access URI <code>/InsuranceBilling</code>, enforced by the shared dashboard-control gate, which hides the widget body and omits the widget from the picker for unentitled users [DOC - Widget_Comparison_Classic; Pending Questions - Codebase Findings 2026-07-30, <code>DataPanelControl.cs</code>]. The right protecting these two REST endpoints is UNVERIFIED (Oisin Curran).</li>
+<li><strong>Write right:</strong> none needed; this contract has no write.</li>
+<li><strong>What a user without the right sees:</strong> defaulted to the widget being hidden entirely, matching the legacy gate. Confirming that presentation for the new dashboard is a product decision [TO CONFIRM - Product] (Still needs sign-off item 5).</li>
+</ul>
+<hr />
+<h2>Edge cases</h2>
+<ol>
+<li><strong>Zero-enrolment plan:</strong> returned inside its type with <code>enrolled</code> 0 and <code>cost</code> 0, never omitted. The client lists it, keeps it out of the chart, and counts it into the uncharted-plans note. Its type still appears with a correct subtotal.</li>
+<li><strong>Type with no active plans:</strong> still returned in <code>types[]</code> with an empty <code>plans[]</code> and zero subtotals. Selecting it in the filter is legitimate and yields the near-empty response, not an error.</li>
+<li><strong>Inactive type or plan:</strong> filtered out of both responses by the <code>Active</code> flags; an inactive type's plans never appear under any filter value.</li>
+<li><strong>Org with no insurance data at all:</strong> API 1 returns the sentinel alone; API 2 returns the zero response; the client renders its empty state.</li>
+<li><strong>Unknown, inactive or foreign-company <code>typeId</code>:</strong> the zero response, never an error, and never another company's data (the company scope applies before the type match).</li>
+<li><strong>Every plan under the filter has zero enrolment:</strong> a normal response; the table lists zero rows, the chart has nothing chartable, and the chart-empty state is a client presentation over this data.</li>
+<li><strong>Filtered totals:</strong> <code>total</code> and every subtotal always describe the same filtered population as the rows in the same response, so Share and the footer always reconcile within one response by construction. How the client labels a filtered footer is a presentation concern outside this contract.</li>
+<li><strong>Count basis vs cost basis:</strong> <code>enrolled</code> counts employee and dependent rows; the rate columns behind <code>cost</code> sit on <code>IBEmployeePlan</code>. A plan's headcount and the row set behind its cost can therefore differ legitimately. Definitional remainder under Still needs sign-off item 2, not a bug.</li>
+<li><strong>Orphaned plan (TypeID resolving to no active type):</strong> whether such rows exist in production is [TO CONFIRM - Oisin Curran]. If they exist, the contract needs a stated home for them (an "Unassigned" wrapper or exclusion, decided then); they must not silently vanish from totals while appearing in a count elsewhere.</li>
+<li><strong>Drift between the two calls:</strong> a type created, renamed or deactivated between API 1 and API 2 can leave the option list and the dataset momentarily out of step. Selecting a type absent from the data yields the zero response, and the next render or refresh heals the list. No shared asOf anchor is needed because no figure must reconcile across the two calls.</li>
+<li><strong>Concurrent enrolment changes:</strong> two API 2 calls straddling an enrolment write can return different counts. That is the nature of a live count; within any single response the arithmetic is consistent.</li>
+</ol>
+<hr />
+<h2>Not in scope</h2>
+<ul>
+<li><strong>No write.</strong> Read-only widget: no confirm, no move, no mutation of any kind.</li>
+<li><strong>No status / pending / COBRA / approval field or filter.</strong> No such concept exists on plan enrolment in the real IB module [CODE 2026-07-30]; none is added. Recorded so nobody specs one to fill the gap.</li>
+<li><strong>No coverage-tier breakdown.</strong> The real hierarchy has a third level (<code>IBTypeElection</code>); this contract stops at type-to-plan. Surfacing tiers is a possible future enhancement, not this contract.</li>
+<li><strong>No employee-vs-dependent split.</strong> The design shows one bundled count. The split is derivable from the same two COUNTs with no schema work if the owner adopts the dossier's suggestion later; it would add fields, so it is a contract change, not a client tweak.</li>
+<li><strong>No participation rate.</strong> No eligible-population denominator exists in the module; this would be NEW backend work and is not in the design.</li>
+<li><strong>No drill to enrollees and no individual names.</strong> The widget never surfaces a person, matching the legacy behaviour and the locked design.</li>
+<li><strong>No export.</strong> The design carries no export control.</li>
+<li><strong>The existing grid and chart endpoints</strong> (<code>.../grid</code>, <code>.../chart</code>) are not part of this contract; nothing in this widget's design calls them. They remain live for anything else that uses them.</li>
+<li><strong>Last-selected-type persistence.</strong> The legacy widget stores the last <code>TypeID</code> per widget and restores it on refresh (<code>IBDataPanelRecord.TypeID</code>) [DOC - Widget_Comparison_Classic]. Whether and where the new dashboard persists per-widget filter state is a platform concern, not a field in these responses [TO CONFIRM - Product].</li>
+<li><strong>No time window machinery.</strong> No <code>window</code>, <code>grain</code> or <code>asOf</code> params: enrolment is a live count at request time.</li>
+</ul>
+<hr />
+<h2>Still needs sign-off</h2>
+<ol>
+<li><strong>Sign-off dossier findings are all unstatused.</strong> The widget's dossier exists but no reconciliation file assigns Accepted / Rejected / Disputed statuses. The flags that would touch this contract if accepted: employee-vs-dependent split, participation rate, a drill to enrollees (sibling parity with Pension Plans), and a data-as-of stamp. Who decides: the project owner statuses each finding. Blocked until then: nothing in the current contract; adopting any of them adds fields or endpoints.</li>
+<li><strong>Dependent rows in <code>cost</code>.</strong> Whether dependent enrolments contribute rate rows to the cost SUM. <code>cost</code> is the total premium (settled; see Tables), but <code>Rate</code> sits on <code>IBEmployeePlan</code> while <code>enrolled</code> includes <code>IBEmployeeDependent</code> rows, and the treatment of any dependent-carried premium needs the final word. Who decides: backend dev with the SME. Blocked until then: the final cost query (the field, its name and its meaning are stable either way).</li>
+<li><strong>Explore default view.</strong> Whether the chart becomes the default view at the mid tier has not been put to the owner; the table is the default in this contract's call-sequence assumptions. Who decides: the project owner. Blocked until then: nothing in the contract (pure client view state); recorded so the default is not flipped silently.</li>
+<li><strong>Fetch posture.</strong> This contract makes the type filter a server param with a re-query per change, because no plan-volume bound has a citable basis (Filter architecture). An owner instruction on record for the earlier contract chose a fetch-once shape with a client-side filter instead. Who decides: the project owner rules which posture stands. Blocked until then: nothing (the response shape is identical either way); a fetch-once ruling would remove the <code>typeId</code> param and make API 1 derivable from API 2's unfiltered response.</li>
+<li><strong>Entitlement presentation and the modern permission right.</strong> What an unentitled user sees in the new dashboard (defaulted here to hidden, matching legacy), and which right protects the two REST endpoints. Who decides: Product (presentation) and Oisin Curran (the right, from code). Blocked until then: the Auth section's final wording and the 403 state-contract rows.</li>
+<li><strong>Volume ceilings.</strong> Worst realistic counts for types, plans and enrolment rows at a large organisation. Who decides: Marvin. Blocked until then: the BOUNDED verdicts stand on org-configuration reasoning alone; large numbers would reopen them.</li>
+</ol>
+
+</body>
+</html>

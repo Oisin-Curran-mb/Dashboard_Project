@@ -231,3 +231,84 @@ Final Explore/Detail nested-table columns: Insurance type / plan | Share | Enrol
 **Verification:** ~202-assertion per-widget Node DOM-shim driver, 0 failures. It asserts the type subtotals, the grand total, expand/collapse behaviour, the cost math, the Share percents on both tiers (parent and child), `aria-expanded` on the type rows, and no-fetch-on-toggle. Browser-faithful CSS parse: 0 dropped rules. `final-check-rules.py`: 0 HIGH. W01-W05 plus W06 Final regressions green; the A/B/C options still render at every size and the Dashboard tab is byte-identical before and after. `FC_VERSION[6]` = 2.0.
 
 **Backend confirmed from codebase (2026-07-30):** the Insurance Billing (IB) module's enrollment is a LIVE count (`IBEmployeePlan` plus `IBEmployeeDependent`), computed at query time, not a stored snapshot. There is NO status / pending / COBRA / approval concept on plan enrollment in the real IB module: the "1 plan pending: COBRA" idea from the project's own mock Option C is a design invention, not real data or a real workflow (recorded here so nobody treats it as real). Cost per plan is derivable with query logic only: `SUM(IBEmployeePlan.Rate)` grouped by PlanID (Rate is already on the enrollment rows, with a standard-rate fallback via `IBPlanRate`). A real hierarchy exists: Type -> Plan -> coverage tier (`IBType` -> `IBPlan` via TypeID -> `IBTypeElection`); the nested table uses the Type -> Plan level, and there is no self-referencing sub-plan tree (no ParentPlanID on IBPlan). **One open question (not resolved here):** which figure "total cost" means (total premium vs employer share `EmployerBilled` / `RateIndividual` vs employee share, and `PreTax` handling) is a definition choice, not a data gap; it is left to the Step 5 API doc / SME.
+
+---
+
+## v2.2 — 2026-08-30, per direct instruction: the legacy pie restored
+
+**The instruction.** "Just add a pie chart just like it was on the original widget."
+
+**Starting point.** `insF` had **no chart at all** — flat table, nested Type→Plan table, glance. The pie was not "changed" at some point; it was never built into the Final.
+
+**Reference used:** `Step 1 - Dashboard Research/06 - Insurance Billing Plans.md`, which documents the original as a side-by-side table and pie with four specific behaviours. All four are honoured, and each is asserted by the driver:
+
+| Original behaviour (Step 1) | How it is built |
+|---|---|
+| One segment per plan that has at least one enrolment, labelled with the plan name | `insFPieChart` filters `enroll > 0`, sorts by count descending, labels each legend row with the plan name |
+| Plans with zero enrolments appear in the table but **not** in the pie | The filter above excludes them; the table is untouched and still lists every plan. A note under the chart states how many are uncharted and why, so table and chart never silently disagree |
+| Hovering a segment shows that plan's enrolment count | An SVG `<title>` per segment carrying plan, count and percent; the legend row carries the same as a `title` |
+| **No drill-down** from a row or a segment | Legend rows are plain text with `cursor:default`, deliberately NOT the clickable `role="button"` legend that `penFPieChart` uses. This is the one place the pie departs from the file's other donut, and it departs on purpose |
+
+The type filter drives the pie as well as the table, as it did originally.
+
+### Tiers
+
+- **Detail** — the original side-by-side reading: table left (58%), pie right (42%), divided by a rule. No view toggle here, because both views are visible at once and a toggle would control nothing.
+- **Explore** — a **Table / Pie** segment in the header's existing toggle slot, with **Table as the default**. Six columns cannot hold both legibly. Table stayed the default because the instruction arrived with "don't post the main page until I confirm"; the owner then said to push it directly, and the pie is on the page at Detail, reachable at Explore. If the pie should become Explore's default too, that is one line: `insView:'pie'` in `INSF_STATE`.
+- **Glance** — unchanged, charts nothing.
+
+### Notes
+
+- Donut and legend CSS is **re-declared under `.insf-root`**, because this file scopes those classes per widget root (`.penf-root` and `.prf-root` each carry their own copy). Values are copied from the penF donut so the two charts read identically rather than diverging.
+- Colour is never the only signal: every legend row states its count and percent as text.
+- **No maths touched.** The driver asserts the pie's charted total equals the table's Total enrolled for the same filter, which holds precisely because zero-enrolment plans contribute nothing.
+- CSS was appended **after a complete rule**, per the discipline the W04 v3.5a split-selector bug established, and `css-split-selector-check.py` is clean.
+
+**Verification.** `final-check-rules.py --widget 6`: **0 HIGH**, 8 MED all pre-existing, F2 `node --check` pass. New W06 DOM-shim driver at **56 assertions, 0 failures**, covering all four legacy rules, the zero-enrolment plan by name in both directions (absent from the pie, present in the table), one `<title>` per segment, absence of any drill action, the three tiers, Table-as-default and the switch to Pie, the type filter driving the pie including the empty-chart case, pie-total-equals-table-total, the empty dataset, and the click handler. Also asserted: the nested table's collapse-by-default behaviour is unchanged by this build. W04's driver re-run at 160 assertions, 0 failures, confirming no cross-widget damage.
+
+⚠️ **Not machine-verified:** the visual result. Slice proportions, the 58/42 split at Detail and legend legibility are markup and cascade facts here, not measured renders.
+
+---
+
+## v2.3 / v2.4 — 2026-08-30, per direct instruction: pie sizing and padding, done by measurement
+
+**The instruction.** "Come up with some way of getting the pie charts to use up the space they have with also having padding on different size screens. First come up with a way for yours and check it, make sure it's good, and then we see if it works for others." Plus a standing instruction: use the skills and check, rather than inventing an approach alone.
+
+**Composition decision (owner, via the skill's Phase 1):** Jo's per-tier fixed pixels over a CSS-fluid cap or container queries, and verification by real browser measurement rather than driver assertions. Recorded because the measurement then argued against the fixed-pixel half of that choice, and the final build is a hybrid.
+
+### What v2.3 shipped, and what measuring it revealed
+
+v2.3 replaced a flat 170px donut with Jo's own per-tier scale, `DS = ({wide:250, xwide:280})[w.size] || 190`. That was faithful to her build and still wrong, which only became visible once measured:
+
+| Fault | Measured evidence |
+|---|---|
+| Explore wasted nearly half its chart area | Container 1400: content 826px, donut 250px, legend **box 558px** for **166px of ink**. 392px (47%) empty. |
+| Detail truncated its plan names when narrow | Container 1100 and below: legend box squeezed to 64px then 0px while its ink needs 106px. At 900 and 760 the donut itself shrank (280 → 225). |
+| The stacking rule was dead code | `@media (max-width:900px)` never fired at any container width, because a widget's width comes from its CARD, not the viewport. The `mq` column read `-` throughout. |
+
+### The measurement itself, and the trap in it
+
+`Step 3 - Mock_Work/chart-fill-check.js`. **Two earlier versions of this script reported "0px empty" for a chart area that was visibly half blank.** The cause is worth recording, because it is the same blind spot that let the stacked pace cards and the unstyled toggle through: measuring a flex child's **bounding box** tells you nothing, since `flex:1` makes the box fill the row whatever its contents. Only measuring **text ink** — the union of every text node's client rects via a Range, plus the non-text colour dots — matched what the eye and the screenshot showed. A third fault was found on the next pass: once the legend **wraps**, `content - (chart + gap + ink)` double-counts and produces meaningless negatives (it reported -138%), so the script now detects wrap by comparing vertical positions, and reports leftover as **actual left/right gutters** so that slack shared evenly is not flagged as a defect while slack piled on one edge is.
+
+### What v2.4 does
+
+1. **The legend is capped per tier** — 250px at Explore, 200px at Detail — with a `min-width` above its measured ink so plan names can never truncate. For a chart whose defining legacy requirement is "labelled with the plan name", losing labels is worse than being small.
+2. **The donut grows into what is left**, via `flex-basis` with `min-width:0` and `max-width:100%`, so it can neither clip nor overflow its column. Jo's numbers survive as the ceiling rather than the fixed value.
+3. **Stacking is container-driven** through `flex-wrap`, replacing the dead viewport media query. No container queries needed.
+4. **Leftover is centred on both axes** — `justify-content` plus `align-content`. The latter matters: `align-items:flex-start` is required so a wrapped legend sits under the donut, but on its own it pinned the whole chart to the top of the card and left the vertical space empty, which the screenshot caught after the horizontal fix.
+5. **Per-tier legend caps were themselves a fix for a regression this build introduced**: a single 250px cap forced Detail (494px column) to wrap at its *normal* width, destroying the side-by-side legacy reading. Caught by re-measuring, not by eye.
+
+### Measured result
+
+| Tier | Donut | Horizontal gutters | Vertical gutters | Side by side |
+|---|---|---|---|---|
+| Explore | 320px (was 250) | 119 / 203 | 104 / 104 | yes to ~900px container |
+| Detail | 240px | 15 / 49 | 84 / 84 | yes at normal width |
+
+Across containers 1400 → 600: **no truncation, no clipping, no lopsided gutters**, and `FINDINGS: none` from the check.
+
+**Verification.** Static gate `--widget 6`: **0 HIGH**, 8 MED all pre-existing. DOM-shim driver **78 assertions, 0 failures**. `css-split-selector-check.py` clean. `chart-fill-check.js` clean across five container widths at both tiers. W04's driver unaffected at 160/0.
+
+⚠️ **Honest limits.** The check measures WIDTH thoroughly and height only via the ad-hoc pass recorded above; it does not yet assert vertical fill automatically. It also cannot resize the browser window (a maximized window refuses programmatic resize), so it varies `.fc-content`'s width instead — which is the right variable for card-driven layout, but means genuine viewport media queries are not exercised.
+
+**Not rolled out to other widgets.** Per instruction, no other widget was touched. W02's pension donut and the other charts still use fixed sizes and would very likely show the same faults; `chart-fill-check.js` takes selector arguments so they can each be measured before anything is changed.

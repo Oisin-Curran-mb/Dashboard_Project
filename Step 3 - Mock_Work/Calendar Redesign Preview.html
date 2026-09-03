@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>W09 Leave Calendar - redesign preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Red+Hat+Text:wght@400;500;600;700&family=Red+Hat+Display:wght@700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<style>
+/* Tokens lifted from Dashboard Widget Mockups.html so the preview is faithful. */
+:root{
+  --wn-0:#ffffff; --wn-100:#fbfaf8; --wn-200:#f7f5f3; --wn-300:#eeebe6;
+  --surface-widget:var(--wn-0); --surface-header:var(--wn-200); --stroke-widget:var(--wn-300);
+  --txt-primary:#202020; --txt-secondary:#484848; --txt-subtle:#606060;
+  --brand-100:#4b6ec3; --pos-100:#36a14f; --pos-10:#f0faf1; --green-120:#1f602e;
+  --am-400:#7a72ba;
+  /* v3.1 proposal: status colours become tokens instead of the 7 loose hexes */
+  --st-appr:#2e7d32; --st-pend:#c77d00; --st-out:#c0392b;
+  --st-out-wash:rgba(192,57,43,.04);
+}
+*{box-sizing:border-box}
+body{margin:0;padding:26px;background:#f2f0ee;font-family:'Red Hat Text',sans-serif;color:var(--txt-primary)}
+h1{font-family:'Red Hat Display',sans-serif;font-size:19px;margin:0 0 4px}
+.sub{font-size:12.5px;color:var(--txt-subtle);margin:0 0 22px;max-width:900px;line-height:1.5}
+.lane{margin-bottom:30px}
+.lane-h{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--txt-subtle);margin:0 0 9px;padding-bottom:5px;border-bottom:1px solid var(--wn-300)}
+.pair{display:flex;gap:22px;align-items:flex-start;flex-wrap:wrap}
+.card{background:var(--surface-widget);border:1px solid var(--stroke-widget);border-radius:12px;padding:13px 15px 15px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.card-h{font-size:12px;font-weight:700;color:var(--txt-secondary);margin-bottom:2px}
+.card-w{font-size:10px;color:var(--txt-subtle);margin-bottom:11px;font-variant-numeric:tabular-nums}
+.explore{width:440px}
+.detail{width:880px}
+.note{font-size:11.5px;color:var(--txt-secondary);line-height:1.6;background:var(--wn-100);border-left:3px solid var(--am-400);padding:9px 12px;border-radius:0 6px 6px 0;margin:0 0 16px;max-width:900px}
+.note b{color:var(--txt-primary)}
+.material-symbols-rounded{font-variation-settings:'FILL' 0,'wght' 500,'GRAD' 0,'opsz' 20}
+
+/* ============================================================
+   SHARED: nav, summary, legend
+   ============================================================ */
+.cal-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+.cal-nav{display:inline-flex;align-items:center;gap:2px}
+.navbtn{width:22px;height:22px;border:none;background:transparent;border-radius:5px;cursor:pointer;color:var(--txt-subtle);display:inline-flex;align-items:center;justify-content:center}
+.navbtn:hover{background:var(--wn-200);color:var(--txt-primary)}
+.navbtn .material-symbols-rounded{font-size:17px}
+.cal-title{font-size:12px;font-weight:700;min-width:104px;text-align:center;font-variant-numeric:tabular-nums}
+.hint{font-size:11px;color:var(--txt-subtle);margin-bottom:7px}
+.hint strong{color:var(--txt-primary)}
+
+/* ============================================================
+   BEFORE - reproduced from the live build, verbatim values
+   ============================================================ */
+.b .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.b .wk{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:3px}
+.b .wkc{font-size:9px;font-weight:700;text-transform:uppercase;color:var(--txt-subtle);text-align:center}
+.b .day{border:.5px solid var(--stroke-widget);border-radius:5px;background:var(--surface-widget);padding:3px 3px 2px;display:flex;flex-direction:column;overflow:hidden}
+.b .daynum{font-size:9px;font-weight:600;color:var(--txt-subtle);text-align:right;line-height:1.2}
+.b .day.oth{background:var(--wn-100);opacity:.55}
+.b .day.has{background:#fbf6ee}
+.b .day.st-approved{background:#eef7ee;box-shadow:inset 3px 0 0 #2e7d32}
+.b .day.st-pending{background:#fff4d6;box-shadow:inset 3px 0 0 #c77d00}
+.b .day.st-outstanding{background:#fdecea;box-shadow:inset 3px 0 0 #c0392b}
+.b .day.today{border:1.5px solid var(--brand-100)}
+.b .marks{display:flex;flex-wrap:wrap;gap:1px;margin-top:1px}
+.b .mk{font-size:8px;font-weight:700;border-radius:3px;padding:0 2px;color:#fff;line-height:1.5}
+.b .more{font-size:8px;font-weight:700;color:var(--txt-subtle);padding:0 2px;line-height:1.4}
+.b .legend{display:flex;flex-wrap:wrap;gap:5px 12px;margin-top:9px;padding-top:8px;border-top:1px solid var(--stroke-widget)}
+.b .leg-cap{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--txt-subtle);margin-right:2px}
+.b .leg-item{display:inline-flex;align-items:center;gap:4px;font-size:9.5px;color:var(--txt-secondary)}
+.b .leg-sw{width:10px;height:10px;border-radius:3px;flex:0 0 auto}
+
+/* ============================================================
+   AFTER - the v3.1 proposal
+   ------------------------------------------------------------
+   1. Uniform row floor via grid-auto-rows, so weeks stop being ragged and the
+      +N chip can never be clipped. Tier-scaled (44px Explore / 62px Detail)
+      rather than square: a square cell in an 880px Detail card would be ~120px
+      tall x 6 rows = 720px, taller than the card.
+   2. Day number is 11px (the file's norm; it was 9px, the smallest text in the
+      widget) and top-left, which is where the eye looks first.
+   3. ONE status channel: the left accent bar. Background is freed for
+      interaction. Outstanding is the single exception that also gets a wash,
+      so the only loud thing on the month is the state that needs acting on.
+   4. today no longer changes the border width (which resized the cell against
+      its .5px-bordered siblings) - the number gets a brand pill instead.
+   5. Real hover and selected states, which the old cell had no channel for.
+   6. Tiered chrome: 1-letter weekdays and 2 markers at Explore, 3-letter and
+      3 markers at Detail; legend on one line.
+   ============================================================ */
+.a .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;grid-auto-rows:minmax(var(--cell,44px),auto)}
+.a .wk{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px}
+.a .wkc{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--txt-subtle);text-align:center}
+.a .day{border:1px solid var(--stroke-widget);border-radius:6px;background:var(--surface-widget);padding:4px 5px;display:flex;flex-direction:column;gap:2px;position:relative;transition:background .12s,border-color .12s}
+.a .daynum{font-size:11px;font-weight:600;color:var(--txt-secondary);line-height:1.1;font-variant-numeric:tabular-nums}
+/* leading/trailing days: no box at all, just a ghosted number */
+.a .day.oth{border-color:transparent;background:transparent}
+.a .day.oth .daynum{color:var(--wn-300)}
+/* ONE status channel: the accent bar */
+.a .day.st-approved{box-shadow:inset 3px 0 0 var(--st-appr)}
+.a .day.st-pending{box-shadow:inset 3px 0 0 var(--st-pend)}
+/* the single exception: Outstanding also gets a wash */
+.a .day.st-outstanding{box-shadow:inset 3px 0 0 var(--st-out);background:var(--st-out-wash)}
+/* today: a pill on the number, so the cell size never changes */
+.a .day.today .daynum{background:var(--brand-100);color:#fff;border-radius:999px;padding:0 5px;align-self:flex-start;font-weight:700}
+/* interaction, now that the background is free */
+.a .day[data-click]{cursor:pointer}
+.a .day[data-click]:hover{background:var(--wn-200);border-color:var(--txt-subtle)}
+.a .day.st-outstanding[data-click]:hover{background:rgba(192,57,43,.09)}
+.a .day.sel{border-color:var(--brand-100);box-shadow:inset 3px 0 0 var(--brand-100),0 0 0 2px rgba(75,110,195,.18)}
+.a .marks{display:flex;flex-wrap:wrap;gap:2px;margin-top:auto}
+.a .mk{font-size:9px;font-weight:700;border-radius:4px;padding:1px 3px;color:#fff;line-height:1.35;letter-spacing:.2px}
+.a .more{font-size:9px;font-weight:700;color:var(--txt-secondary);background:var(--wn-300);border-radius:4px;padding:1px 4px;line-height:1.35}
+.a .legend{display:flex;flex-wrap:wrap;align-items:center;gap:4px 14px;margin-top:10px;padding-top:8px;border-top:1px solid var(--stroke-widget);font-size:10px;color:var(--txt-secondary)}
+.a .leg-cap{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--txt-subtle)}
+.a .leg-item{display:inline-flex;align-items:center;gap:5px}
+.a .leg-bar{width:3px;height:12px;border-radius:2px;flex:0 0 auto}
+</style>
+</head>
+<body>
+
+<h1>W09 Leave Calendar &mdash; redesign preview</h1>
+<p class="sub">Before and after, at both tiers, from the same data. Nothing in the live build has changed &mdash;
+this is a preview so you can judge it first. The day&nbsp;popover, Group&nbsp;by and the status filters are untouched by this proposal.</p>
+
+<div class="note">
+<b>What changes.</b> A uniform row floor so weeks stop being ragged (and the <b>+N</b> chip can never be clipped);
+day number up from 9px to 11px, the file&rsquo;s norm, and moved top-left;
+<b>one</b> status channel &mdash; the left accent bar &mdash; freeing the background for hover and selected, which the cell previously had no room for;
+<b>today</b> gets a pill on the number instead of a thicker border that resized the cell;
+and tiered chrome, so Explore and Detail are no longer the same drawing stretched.
+The tint is reserved for <b>Outstanding</b> alone, so the one loud thing on the month is the state that needs acting on.
+</div>
+
+<div class="lane">
+  <div class="lane-h">Explore &mdash; 440px panel</div>
+  <div class="pair">
+    <div class="card explore b"><div class="card-h">Before</div><div class="card-w">current build</div><div id="b-ex"></div></div>
+    <div class="card explore a" style="--cell:44px"><div class="card-h">After</div><div class="card-w">proposal &middot; 44px row floor, 2 markers, 1-letter weekdays</div><div id="a-ex"></div></div>
+  </div>
+</div>
+
+<div class="lane">
+  <div class="lane-h">Detail &mdash; 880px card</div>
+  <div class="pair">
+    <div class="card detail b"><div class="card-h">Before</div><div class="card-w">current build &mdash; note the ragged week heights</div><div id="b-de"></div></div>
+  </div>
+  <div class="pair" style="margin-top:22px">
+    <div class="card detail a" style="--cell:62px"><div class="card-h">After</div><div class="card-w">proposal (tint weakened to .04) &middot; 62px row floor, 3 markers, 3-letter weekdays, hover the 12th and 21st</div><div id="a-de"></div></div>
+  </div>
+</div>
+
+<script>
+/* Representative August 2026 leave, in the same shape the widget uses.
+   d/dEnd are day-of-month spans; st is the per-day status. */
+var MONTH='August', YEAR=2026, FIRST_DOW=6, DIM=31, PREV_DIM=31, TODAY=7;
+var PEOPLE=[
+  {ini:'DW',c:'#4b6ec3',d:3,e:5,st:'pending'},
+  {ini:'MB',c:'#7a72ba',d:4,e:4,st:'approved'},
+  {ini:'RA',c:'#2e9e4f',d:5,e:7,st:'approved'},
+  {ini:'TN',c:'#d24d8c',d:6,e:6,st:'outstanding'},
+  {ini:'GO',c:'#1f8f8f',d:12,e:16,st:'pending'},
+  {ini:'SP',c:'#c77d00',d:12,e:13,st:'approved'},
+  {ini:'ER',c:'#8e6cc0',d:12,e:12,st:'approved'},
+  {ini:'DC',c:'#5b6b7f',d:12,e:14,st:'pending'},
+  {ini:'MF',c:'#b75a00',d:13,e:13,st:'approved'},
+  {ini:'AP',c:'#4b6ec3',d:19,e:21,st:'approved'},
+  {ini:'LB',c:'#2e9e4f',d:21,e:21,st:'outstanding'},
+  {ini:'GH',c:'#d24d8c',d:21,e:22,st:'pending'},
+  {ini:'CD',c:'#7a72ba',d:26,e:28,st:'approved'},
+  {ini:'SW',c:'#1f8f8f',d:27,e:27,st:'pending'}
+];
+var RANK={approved:1,pending:2,outstanding:3};
+function onDay(d){return PEOPLE.filter(function(p){return d>=p.d&&d<=p.e;});}
+function worst(hits){var w='',r=0;hits.forEach(function(h){if(RANK[h.st]>r){r=RANK[h.st];w=h.st;}});return w;}
+
+function nav(){
+  return '<div class="cal-top"><span></span><div class="cal-nav">'+
+    '<button class="navbtn" aria-label="Previous month"><span class="material-symbols-rounded">chevron_left</span></button>'+
+    '<span class="cal-title">'+MONTH+' '+YEAR+'</span>'+
+    '<button class="navbtn" aria-label="Next month"><span class="material-symbols-rounded">chevron_right</span></button>'+
+    '</div><span></span></div>';
+}
+function hint(){
+  var n={};PEOPLE.forEach(function(p){n[p.ini]=1;});
+  return '<div class="hint"><strong>'+Object.keys(n).length+' people</strong> out across 4 departments in '+MONTH+'. Click a day for detail.</div>';
+}
+
+/* ---------------- BEFORE ---------------- */
+function before(maxMarks){
+  var wk='<div class="wk">'+['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(function(d){return '<div class="wkc">'+d+'</div>';}).join('')+'</div>';
+  var cells='';
+  for(var i=0;i<FIRST_DOW;i++) cells+='<div class="day oth"><div class="daynum">'+(PREV_DIM-FIRST_DOW+1+i)+'</div></div>';
+  for(var d=1;d<=DIM;d++){
+    var hit=onDay(d), st=hit.length?worst(hit):'';
+    var cls='day'+(hit.length?' has':'')+(st?' st-'+st:'')+(d===TODAY?' today':'');
+    var marks='';
+    if(hit.length){
+      marks='<div class="marks">';
+      hit.slice(0,maxMarks).forEach(function(p){marks+='<span class="mk" style="background:'+p.c+'">'+p.ini+'</span>';});
+      if(hit.length>maxMarks) marks+='<span class="more">+'+(hit.length-maxMarks)+'</span>';
+      marks+='</div>';
+    }
+    cells+='<div class="'+cls+'"><div class="daynum">'+d+'</div>'+marks+'</div>';
+  }
+  var tot=FIRST_DOW+DIM, tr=(7-(tot%7))%7;
+  for(var t=1;t<=tr;t++) cells+='<div class="day oth"><div class="daynum">'+t+'</div></div>';
+  var legend='<div class="legend"><span class="leg-cap">Colour = status</span>'+
+    [['Approved','#2e7d32'],['Pending','#c77d00'],['Outstanding','#c0392b']].map(function(o){
+      return '<span class="leg-item"><span class="leg-sw" style="background:'+o[1]+'"></span>'+o[0]+'</span>';}).join('')+'</div>';
+  return nav()+hint()+wk+'<div class="grid">'+cells+'</div>'+legend;
+}
+
+/* ---------------- AFTER ---------------- */
+function after(maxMarks,dowLen,selDays){
+  var dows=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var wk='<div class="wk">'+dows.map(function(d){return '<div class="wkc">'+d.slice(0,dowLen)+'</div>';}).join('')+'</div>';
+  var cells='';
+  for(var i=0;i<FIRST_DOW;i++) cells+='<div class="day oth"><div class="daynum">'+(PREV_DIM-FIRST_DOW+1+i)+'</div></div>';
+  for(var d=1;d<=DIM;d++){
+    var hit=onDay(d), st=hit.length?worst(hit):'';
+    var cls='day'+(st?' st-'+st:'')+(d===TODAY?' today':'')+((selDays||[]).indexOf(d)>-1?' sel':'');
+    var marks='';
+    if(hit.length){
+      marks='<div class="marks">';
+      hit.slice(0,maxMarks).forEach(function(p){marks+='<span class="mk" style="background:'+p.c+'">'+p.ini+'</span>';});
+      if(hit.length>maxMarks) marks+='<span class="more" title="'+(hit.length-maxMarks)+' more out this day">+'+(hit.length-maxMarks)+'</span>';
+      marks+='</div>';
+    }
+    cells+='<div class="'+cls+'"'+(hit.length?' data-click="1" role="button" tabindex="0"':'')+'><div class="daynum">'+d+'</div>'+marks+'</div>';
+  }
+  var tot=FIRST_DOW+DIM, tr=(7-(tot%7))%7;
+  for(var t=1;t<=tr;t++) cells+='<div class="day oth"><div class="daynum">'+t+'</div></div>';
+  var legend='<div class="legend"><span class="leg-cap">Status</span>'+
+    [['Approved','var(--st-appr)'],['Pending','var(--st-pend)'],['Outstanding','var(--st-out)']].map(function(o){
+      return '<span class="leg-item"><span class="leg-bar" style="background:'+o[1]+'"></span>'+o[0]+'</span>';}).join('')+
+    '<span class="leg-item" style="color:var(--txt-subtle)">Tint = needs acting on</span></div>';
+  return nav()+hint()+wk+'<div class="grid">'+cells+'</div>'+legend;
+}
+
+document.getElementById('b-ex').innerHTML=before(2);
+document.getElementById('a-ex').innerHTML=after(2,1);
+document.getElementById('b-de').innerHTML=before(3);
+document.getElementById('a-de').innerHTML=after(3,3,[21]);
+</script>
+</body>
+</html>

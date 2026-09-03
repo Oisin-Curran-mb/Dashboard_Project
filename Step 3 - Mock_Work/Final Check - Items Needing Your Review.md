@@ -64,9 +64,11 @@ Compiled from the overnight Final Check pass (W01–W17, minus W08/W12/W14 which
 
 ## W11 — Fixed Asset Values
 
-- [ ] The doc's real filter model — Group By (dimension switcher) / Specific Group (dependent field) / Financial Measure (which of 5 $ figures) — isn't built. Today there's just one flat "Asset Category" filter.
-- [ ] Asset Detail Table (doc's View 3 — individual assets, Tag #, Name, all 5 measures) isn't built; the Table view today is a category-level summary.
-- [ ] Data Table Sort (proposed Tag # ascending) not explicitly confirmed in the old design.
+**Items 1 and 2 closed by the owner on 2026-08-30, during the Final (faF, v2.0 to v2.2) build — see the dated entry in Widget_Specs/W11-Fixed-Asset-Values.md. Item 3 stays open.**
+
+- [x] The doc's real filter model — Group By (dimension switcher) / Specific Group (dependent field) / Financial Measure (which of 5 $ figures) — isn't built. Today there's just one flat "Asset Category" filter. *Resolved 2026-08-30: all three are live in the Final, which is Jo Lopez's Fixed Asset Values build ported 1-to-1 on the owner's instruction. Group By covers the doc's six dimensions (Class, Building, Room, Asset Account, Accumulated Depreciation Account, Expense Account), Specific Group is a genuinely dependent field whose options repopulate when the dimension changes, and Financial Measure covers exactly the doc's five money figures. Driver-verified: each of the 6 dimensions and each of the 5 measures produces a distinct render, and the dependent option list changes with the dimension. The flat "Asset Category" filter survives only in the untouched A/B/C branches.*
+- [x] Asset Detail Table (doc's View 3 — individual assets, Tag #, Name, all 5 measures) isn't built; the Table view today is a category-level summary. *Resolved 2026-08-30: the Final's table is built from per-asset records, each carrying a unique FA- Tag number and all five measures, and the measure total equals the sum of the rows displayed. The category-level summary survives only in A/B/C.*
+- [ ] Data Table Sort (proposed Tag # ascending) not explicitly confirmed in the old design. *Still open 2026-08-30: deliberately left open. Jo's build does not sort by Tag # ascending, and porting it 1-to-1 was the instruction, so adopting the doc's proposed sort would have meant changing her build on an unconfirmed decision. Recorded in the widget's Logic note as an open question rather than silently decided.*
 
 ## W13 — Purchasing Management
 

@@ -67,8 +67,10 @@ Recording these because several are things we had been treating as open.
 
 ### B6 — W02 Pension Plans
 
-- [x] **DONE, as a new Districts view; districts were previously only a filter value.** Expand a district to see participating people.
-- [x] **DONE, scoped to the expanded district.** Make the expanded view exportable to Excel.
+> ⚠️ **REVERSED 2026-08-30 by direct owner decision.** Both items below were built on 2026-08-25 and have now been **cut** at the owner's instruction: "cut districts completely, it's not needed." District stays as the top-left **filter** chip only; the view toggle is back to Table / Pie / By district. Recorded as W02 v2.2. If Feargal asks why his ask is not in the build, this is the reason — the decision overrides the call, it is not an oversight.
+
+- [x] ~~**DONE, as a new Districts view; districts were previously only a filter value.** Expand a district to see participating people.~~ **CUT 2026-08-30.**
+- [x] ~~**DONE, scoped to the expanded district.** Make the expanded view exportable to Excel.~~ **CUT 2026-08-30** (went with the view).
 
 ### B7 — W06 Insurance Billing Plans
 

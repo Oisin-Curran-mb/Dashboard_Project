@@ -1,0 +1,1568 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Deposit Accounts - API Spec</title>
+<style>
+body { font-family: -apple-system, Helvetica, Arial, sans-serif; max-width: 900px; margin: 30px auto; line-height: 1.5; color: #172B4D; }
+h1 { font-size: 24px; }
+h2 { font-size: 19px; border-bottom: 1px solid #DFE1E6; padding-bottom: 6px; margin-top: 32px; }
+h3 { font-size: 16px; margin-top: 20px; }
+table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+th, td { border: 1px solid #DFE1E6; padding: 6px 10px; text-align: left; vertical-align: top; }
+th { background: #F4F5F7; }
+code { background: #F4F5F7; padding: 1px 5px; border-radius: 3px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 90%; }
+pre { background: #F4F5F7; padding: 12px; border-radius: 4px; overflow-x: auto; }
+pre code { background: none; padding: 0; }
+.status { background: #FFF0B3; display: inline-block; padding: 3px 10px; border-radius: 3px; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<h1>Deposit Accounts - API Spec</h1>
+<p><span class="status">Status: DRAFT - not final</span></p>
+<blockquote>
+<p>Naming: the widget is titled <strong>Deposits on Hand</strong>. The modern API key, this folder and every path below use <code>deposit-accounts</code> [CODE, Widget_Comparison_Classic.html].</p>
+</blockquote>
+<h2>Overview</h2>
+<p>The widget shows the balances the organisation holds in deposit accounts (depositor money it manages, distinct from operational cash), grouped by account type, as of a chosen date, with a comparison against a prior point and a balance-over-time view. Staff use it to see where depositor money sits, whether it is moving, and to inspect any one account. The scope is a single bank account context, and depositor accounts run to the hundreds or thousands at large organisations, so the account list is a paginated server read and every figure on screen is a server aggregate over the full scoped set, never over a visible page.</p>
+<p>This contract defines four APIs: a scope lookup that feeds the searchable All Accounts / type / account filter (API 1), a bounded balances summary fired on render and on every scope or comparison change (API 2), a paginated, server-sorted, server-searched account row list for the table (API 3), and a balance series read for the sparkline and the Trend view (API 4). The justification for exactly four lives in the API inventory. There are no writes.</p>
+<h2>Design → API coverage</h2>
+<table>
+<thead>
+<tr>
+<th>Design element</th>
+<th>Type</th>
+<th>API</th>
+<th>Field(s)</th>
+<th>Provenance</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Glance headline balance (also the Explore/Detail header figure)</td>
+<td>KPI</td>
+<td>API 2</td>
+<td><code>total.balance</code></td>
+<td>DERIVED <code>SUM(DH_Transaction.Amount WHERE TransactionDate &lt;= asOfDate)</code> per account, summed over the scoped set [CODE, Widget_Comparison_Classic.html]</td>
+</tr>
+<tr>
+<td>Delta pill beside the headline (signed percent, up/down direction)</td>
+<td>KPI</td>
+<td>API 2</td>
+<td><code>total.diffPct</code>, <code>total.diffAmount</code> (the sign drives the direction cue)</td>
+<td>NEW (no endpoint returns a non-today balance); formula in Tables [BUILD]</td>
+</tr>
+<tr>
+<td>Compare To control ("vs week / month / period / quarter / fiscal year / calendar year")</td>
+<td>filter</td>
+<td>none (static enum)</td>
+<td><code>compareTo</code> param, echoed in API 2 and API 4 responses</td>
+<td>STATIC enum [BUILD]; fiscal period ordering per the Time Window Module [DOC, Step 4]</td>
+</tr>
+<tr>
+<td>Glance sparkline of the total over the chosen window, with the point-by-point readout</td>
+<td>chart series</td>
+<td>API 4</td>
+<td><code>points</code>, <code>series[].values</code> at <code>groupBy=total</code></td>
+<td>NEW (no historical endpoint exists today) [BUILD]</td>
+</tr>
+<tr>
+<td>Scope chip label (All Accounts / Account Type: X / Account: Y)</td>
+<td>filter</td>
+<td>API 1</td>
+<td>client filter state, labels from <code>types[].name</code> / <code>accounts[].name</code></td>
+<td>STORED DH_Type.Name, DH_Account.Name [CODE]</td>
+</tr>
+<tr>
+<td>Scope popover options (All Accounts, type list, account list, with search)</td>
+<td>filter</td>
+<td>API 1</td>
+<td><code>types[]</code>, <code>accounts[]</code> (each row <code>accountId</code>, <code>name</code>, <code>accountNumber</code>, <code>typeId</code>, <code>typeName</code>)</td>
+<td>STORED DH_Type / DH_Account [CODE]; search is a server param because the account set is unbounded</td>
+</tr>
+<tr>
+<td>Scope popover result-count disclosure when matches exceed the returned page</td>
+<td>filter</td>
+<td>API 1</td>
+<td><code>totalAccountMatches</code></td>
+<td>NEW (the lookup today returns types only) [CODE, Widget_Comparison_Classic.html]</td>
+</tr>
+<tr>
+<td>View toggle (Table / Distribution / Trend at Explore; Balances / Trend at Detail)</td>
+<td>view toggle</td>
+<td>none</td>
+<td>none needed: client view state; see Call sequence for which switches fetch</td>
+<td>client state [BUILD]</td>
+</tr>
+<tr>
+<td>Table Name column with the account number under the name</td>
+<td>table column</td>
+<td>API 3</td>
+<td><code>rows[].name</code>, <code>rows[].accountNumber</code></td>
+<td>STORED DH_Account.Name, DH_Account.AccountNumber [CODE]; the number is mandatory because names are not unique [DOC, Step 6 dossier gap 14]</td>
+</tr>
+<tr>
+<td>Table Type badge column</td>
+<td>table column</td>
+<td>API 3</td>
+<td><code>rows[].typeName</code>, <code>rows[].typeId</code></td>
+<td>STORED DH_Type.Name / DH_Type.TypeID via DH_Account.TypeID [CODE]</td>
+</tr>
+<tr>
+<td>Table Trend column (signed percent change across the selected window)</td>
+<td>table column</td>
+<td>API 3</td>
+<td><code>rows[].windowChangePct</code></td>
+<td>NEW; formula in Tables; pre-signed, null when the baseline balance is zero [BUILD]</td>
+</tr>
+<tr>
+<td>Table Balance column</td>
+<td>table column</td>
+<td>API 3</td>
+<td><code>rows[].balance</code></td>
+<td>DERIVED, same balance formula per account [CODE]</td>
+</tr>
+<tr>
+<td>Table sort (all four columns; default Balance descending)</td>
+<td>interaction</td>
+<td>API 3</td>
+<td><code>sortBy</code>, <code>sortDir</code> params</td>
+<td>contract (the table paginates, so sort is server-side) [BUILD default]</td>
+</tr>
+<tr>
+<td>Table Total row</td>
+<td>table column</td>
+<td>API 3</td>
+<td><code>totalBalance</code> (full scoped set, never the page, and deliberately ignoring <code>q</code>)</td>
+<td>NEW aggregate [BUILD]</td>
+</tr>
+<tr>
+<td>Pager ("Showing X to Y of Z accounts", "Page N of M")</td>
+<td>interaction</td>
+<td>API 3</td>
+<td><code>totalCount</code>, <code>page</code>, <code>pageSize</code> echo</td>
+<td>contract [BUILD]</td>
+</tr>
+<tr>
+<td>Table search box</td>
+<td>filter</td>
+<td>API 3</td>
+<td><code>q</code> param</td>
+<td>contract (the table paginates, so search is server-side; see Still needs sign-off item 10)</td>
+</tr>
+<tr>
+<td>Distribution donut slices and legend rows (name and amount as text)</td>
+<td>chart series</td>
+<td>API 2</td>
+<td><code>groups[]</code> (each <code>kind</code>, <code>id</code>, <code>name</code>, <code>balance</code>, <code>accountNumber</code> for account-kind rows)</td>
+<td>DERIVED per-type or per-account balance aggregates [CODE formula, BUILD shape]</td>
+</tr>
+<tr>
+<td>Distribution legend percent per slice, and the Others bucket</td>
+<td>chart series</td>
+<td>none</td>
+<td>client derivation: share = group <code>balance</code> over <code>total.balance</code>; Others = <code>total.balance</code> minus the sum of returned groups</td>
+<td>DERIVED client [BUILD]</td>
+</tr>
+<tr>
+<td>Donut centre total</td>
+<td>chart series</td>
+<td>API 2</td>
+<td><code>total.balance</code> (client-formatted)</td>
+<td>DERIVED [BUILD]</td>
+</tr>
+<tr>
+<td>Breakdown toggle (Total / By Account Type at All Accounts; Total / By Account at a type)</td>
+<td>view toggle</td>
+<td>API 4</td>
+<td><code>groupBy</code> param on the series read; the donut side is a client view over held <code>groups[]</code> and <code>total</code></td>
+<td>contract [BUILD]</td>
+</tr>
+<tr>
+<td>Trend multi-line chart, x-axis point labels, legend rows with last values</td>
+<td>chart series</td>
+<td>API 4</td>
+<td><code>points</code>, <code>series[]</code> (each <code>kind</code>, <code>id</code>, <code>name</code>, <code>accountNumber</code>, <code>values</code>)</td>
+<td>NEW (no historical endpoint exists today) [BUILD]</td>
+</tr>
+<tr>
+<td>Chart drill: a type slice or type line click re-scopes the widget to that type and switches the breakdown to By Account; account-series clicks and the Others bucket are inert</td>
+<td>drill</td>
+<td>none new</td>
+<td>a normal re-request with <code>accountTypeId</code> set; no drill endpoint</td>
+<td>contract [BUILD]</td>
+</tr>
+<tr>
+<td>Table row (account name) click opens the account detail modal (that account's Trend / Table)</td>
+<td>drill</td>
+<td>API 4</td>
+<td><code>accountId</code>-scoped series; the modal's other figures are the already-held API 3 row</td>
+<td>contract [BUILD]</td>
+</tr>
+<tr>
+<td>KPI card title reflecting the active scope</td>
+<td>state</td>
+<td>none</td>
+<td>client filter state</td>
+<td>client state [BUILD]</td>
+</tr>
+<tr>
+<td>Empty state ("No deposit accounts", with the Add account prompt)</td>
+<td>state</td>
+<td>API 2</td>
+<td><code>accountCount</code> = 0 at All Accounts scope is the trigger</td>
+<td>contract [BUILD]</td>
+</tr>
+<tr>
+<td>Filter-matches-none state (a scoped type with no accounts)</td>
+<td>state</td>
+<td>API 2 + API 3</td>
+<td>well-formed zero shapes (<code>total.balance</code> 0, <code>groups</code> empty, <code>rows</code> empty, <code>totalCount</code> 0)</td>
+<td>contract [BUILD; DOC, Step 6 dossier state 4]</td>
+</tr>
+<tr>
+<td>Loading and error states, with Retry</td>
+<td>state</td>
+<td>none</td>
+<td>client transitions; Retry re-fires the failed call</td>
+<td>client state [BUILD]</td>
+</tr>
+<tr>
+<td>Add account action (opens a prompt pointing to the module's New deposit account form)</td>
+<td>action</td>
+<td>none</td>
+<td>navigation intent only; no dashboard write</td>
+<td>client [BUILD]</td>
+</tr>
+<tr>
+<td>Refresh control</td>
+<td>action</td>
+<td>all four</td>
+<td>re-fires the active calls with a fresh <code>asOfDate</code> anchor</td>
+<td>contract [DOC, Step 1 research: legacy refresh clears cache and reloads]</td>
+</tr>
+</tbody>
+</table>
+<h2>Tables</h2>
+<table>
+<thead>
+<tr>
+<th>Table / repository</th>
+<th>Fields and members used</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>DH_Account</code></td>
+<td><code>AccountId</code>, <code>AccountNumber</code>, <code>Name</code>, <code>TypeID</code>, <code>Active</code>: the account rows, identity, and the active predicate [CODE, Widget_Comparison_Classic.html]</td>
+</tr>
+<tr>
+<td><code>DH_Type</code></td>
+<td><code>TypeID</code>, <code>Name</code>, <code>BankAccountID</code>: the type dimension, the type lookup, and the bank-account scope chain [CODE, Widget_Comparison_Classic.html]</td>
+</tr>
+<tr>
+<td><code>DH_Transaction</code></td>
+<td><code>AccountID</code>, <code>TransactionDate</code>, <code>Amount</code>: every balance at every date is a sum over these rows [CODE, Widget_Comparison_Classic.html]</td>
+</tr>
+</tbody>
+</table>
+<p>No new tables and no schema changes are needed: the contract is new queries against existing tables. The new query shapes are the comparison-date balance, the point-in-time series reconstruction, the paginated/sorted/searched row read, and the account typeahead.</p>
+<p>Core formulas and always-applied filters, each quotable in isolation:</p>
+<ul>
+<li><strong>Balance of an account as of a date:</strong> <code>SUM(DH_Transaction.Amount) WHERE AccountID = account AND TransactionDate &lt;= asOfDate</code>. [CODE, Widget_Comparison_Classic.html] Caveat: the legacy widget computes balances through <code>DHAccount.CalcBalance()</code>, which may apply adjustments beyond this plain sum; balances must be verified to tie out before build (Still needs sign-off item 5). [DOC, Step 1 - Dashboard Research/07 - Deposit Accounts.md]</li>
+<li><strong>Active filter, applied to every read of account rows:</strong> <code>DH_Account.Active = true</code>. [CODE, Widget_Comparison_Classic.html]</li>
+<li><strong>Bank-account scoping, applied to every query:</strong> accounts are in scope when their type's <code>DH_Type.BankAccountID</code> equals the <code>X-BankAccountID</code> context header. This widget is scoped by bank account, not by company. [CODE, Widget_Comparison_Classic.html]</li>
+<li><strong>Baseline date:</strong> the as-of date one <code>compareTo</code> unit before <code>asOfDate</code>, on the organisation's fiscal calendar for <code>period</code>, <code>quarter</code> and <code>fiscalYear</code> (Time Window Module). The exact anchor rule per unit is [TO CONFIRM] (dev team + Oisin Curran); see Still needs sign-off item 8.</li>
+<li><strong><code>comparisonBalance</code>:</strong> the same balance formula evaluated at the baseline date.</li>
+<li><strong><code>diffAmount</code> = <code>balance - comparisonBalance</code></strong>, pre-signed. <strong><code>diffPct</code> = <code>diffAmount / comparisonBalance * 100</code></strong>, one decimal, pre-signed, <code>null</code> when <code>comparisonBalance</code> is zero.</li>
+<li><strong><code>windowChangePct</code> (per account):</strong> the same <code>diffPct</code> formula per account: that account's balance against its own baseline-date balance, pre-signed, <code>null</code> when the baseline balance is zero. The series window starts at the baseline date, so the KPI delta, the table Trend column and the series endpoints agree by construction.</li>
+</ul>
+<h2>Old vs. new</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Old (live today)</th>
+<th>New (needed)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Endpoints</td>
+<td>Three reads: <code>GET /api/dashboard/deposit-accounts/filters</code> (type list, "Show All" prepended server-side), <code>GET .../grid?accountTypeId={guid}</code> (all account rows, unpaginated), <code>GET .../chart</code> (per-type sums, always all types, ignoring the filter) [CODE, Widget_Comparison_Classic.html]</td>
+<td>Four reads (this contract). The grid read is reshaped into API 3 (paginated, sorted, searched); the chart read's aggregation moves into API 2 and respects the scope; the filters read is reshaped into API 1 (types plus account typeahead)</td>
+</tr>
+<tr>
+<td>Balance</td>
+<td>Today only, single point per account (<code>EndingBalance</code>) [CODE]</td>
+<td>DERIVED at any <code>asOfDate</code>, plus a NEW baseline-date balance behind every comparison field</td>
+</tr>
+<tr>
+<td>Comparison / delta</td>
+<td>None [CODE]</td>
+<td>NEW: <code>comparisonBalance</code>, <code>diffAmount</code>, <code>diffPct</code> at total level; <code>windowChangePct</code> per account row. All pre-signed server-side</td>
+</tr>
+<tr>
+<td>History / series</td>
+<td>None; no endpoint returns more than one point in time [CODE]</td>
+<td>NEW capability: API 4 reconstructs point-in-time balances per total / type / account from <code>DH_Transaction</code></td>
+</tr>
+<tr>
+<td>Pagination, sort, search</td>
+<td>None; the grid returns every account, ordered Name then InceptionDate, fixed [CODE]</td>
+<td>NEW: <code>page</code>/<code>pageSize</code>, <code>sortBy</code>/<code>sortDir</code> (whitelist, unique tiebreaker), <code>q</code>, <code>totalCount</code>, <code>totalBalance</code> over the full scoped set</td>
+</tr>
+<tr>
+<td>Account lookup</td>
+<td>Type list only; account-level scoping does not exist [CODE]</td>
+<td>NEW: server-side account typeahead in API 1 (<code>q</code>, <code>limit</code>, <code>totalAccountMatches</code>), because the account set is unbounded</td>
+</tr>
+<tr>
+<td>Type breakdown vs the filter</td>
+<td>The chart always shows all types regardless of the dropdown [CODE]</td>
+<td>The distribution respects the scope: one scope state drives every view [BUILD]</td>
+</tr>
+<tr>
+<td>Snapshot anchor</td>
+<td>None</td>
+<td>NEW: <code>asOfDate</code> accepted by and echoed from every API, so the summary, rows and series reconcile</td>
+</tr>
+</tbody>
+</table>
+<h2>API inventory</h2>
+<table>
+<thead>
+<tr>
+<th>API</th>
+<th>Purpose</th>
+<th>Trigger (when it fires)</th>
+<th>Cardinality</th>
+<th>R/W</th>
+<th>Cache posture</th>
+<th>Split trigger</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>API 1: Scope lookup</td>
+<td>The scope popover: type list plus server-searched account matches</td>
+<td>Popover open, and each (debounced) search keystroke</td>
+<td>Types: 12 in the demo set [BUILD], org-configured, ceiling [TO CONFIRM] (Marvin); accounts capped at <code>limit</code> per response</td>
+<td>R</td>
+<td>LIVE (cheap capped read; types change rarely but the account list changes on every account add)</td>
+<td>Trigger gap (fires on popover interaction, never on render) and lifetime gap versus the balance reads</td>
+</tr>
+<tr>
+<td>API 2: Balances summary</td>
+<td>The bounded aggregates behind the KPI, delta, donut and empty-state trigger</td>
+<td>Widget render, every scope change, every Compare To change, Refresh</td>
+<td>1 total + at most max(type count, <code>maxGroups</code>) group rows</td>
+<td>R</td>
+<td>LIVE per request</td>
+<td>Cardinality gap: the bounded summary must never pay for the unbounded row list</td>
+</tr>
+<tr>
+<td>API 3: Account rows</td>
+<td>The paginated table: rows, full-set total, match count</td>
+<td>Table/Balances view render, page turn, sort, search, and every scope or Compare To change while a table is visible</td>
+<td>One page (<code>pageSize</code> rows, default 50); underlying set hundreds to thousands [DOC, Step 6 dossier]</td>
+<td>R</td>
+<td>LIVE per request</td>
+<td>Cardinality gap from API 2; trigger gap (never fetched for Glance or a chart-only view)</td>
+</tr>
+<tr>
+<td>API 4: Balance series</td>
+<td>Point-in-time balance series for the sparkline and the Trend view</td>
+<td>Glance render, Trend view render, breakdown change, and every scope or Compare To change while either is visible</td>
+<td>Series count × points: 1 × M at total grain, T types × M at type grain, A accounts × M at account grain (M is 8 to 12)</td>
+<td>R</td>
+<td>LIVE per request (standing ruling: series are computed on demand; precompute only if performance forces it)</td>
+<td>Grain gap (time series versus snapshot) and conditional weight (heavy reconstruction only some views need)</td>
+</tr>
+</tbody>
+</table>
+<p>Merges considered, closed: API 2 and API 3 fire together whenever a table is visible and could be one response, but they are kept separate because Glance and the chart-only views must never pay for a row page, and a page turn must never re-pay for the aggregates: the cardinality and trigger gaps both fire. API 4's total-grain series could ride inside API 2 for Glance, but the series is the single most expensive read in the contract (M point reconstructions per entity) and the Table and Distribution views never need it: conditional weight keeps it out. API 1 stays separate from API 2 because it serves interaction, not render, and its account search is its own query shape.</p>
+<h2>Call sequence</h2>
+<table>
+<thead>
+<tr>
+<th>Interaction</th>
+<th>Calls fired</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Initial load, Glance</td>
+<td>API 2 + API 4 (<code>groupBy=total</code>)</td>
+<td>API 2's <code>asOfDate</code> echo is the anchor; the client passes the same <code>asOfDate</code> to API 4</td>
+</tr>
+<tr>
+<td>Initial load, Explore (Table default)</td>
+<td>API 2 + API 3</td>
+<td>Same shared <code>asOfDate</code> anchor across both</td>
+</tr>
+<tr>
+<td>Initial load, Detail (Balances: table beside donut)</td>
+<td>API 2 + API 3</td>
+<td>The donut renders from API 2 <code>groups[]</code>; no extra call</td>
+</tr>
+<tr>
+<td>Change scope (chip: All Accounts / a type / an account)</td>
+<td>API 2 + the active view's data call (API 3 for Table/Balances, API 4 for Trend or Glance; none extra for Distribution)</td>
+<td><code>page</code> resets to 1; a fresh <code>asOfDate</code> anchor is taken from API 2</td>
+</tr>
+<tr>
+<td>Change Compare To</td>
+<td>Same set as a scope change</td>
+<td>Every comparison-derived field and the series window change</td>
+</tr>
+<tr>
+<td>Open the scope popover / type in its search</td>
+<td>API 1 (per debounced keystroke)</td>
+<td><code>q</code> searches account names, account numbers and type names server-side</td>
+</tr>
+<tr>
+<td>Switch view Table ↔ Distribution</td>
+<td>none</td>
+<td>Distribution renders from held API 2 <code>groups[]</code> and <code>total</code></td>
+</tr>
+<tr>
+<td>Switch view to Trend</td>
+<td>API 4 with the current <code>groupBy</code></td>
+<td>Held responses stay valid; the series is fetched on demand</td>
+</tr>
+<tr>
+<td>Breakdown toggle (Total ↔ By Account Type / By Account) on Trend</td>
+<td>API 4 with the new <code>groupBy</code></td>
+<td>On the donut the same toggle is a client re-render over held data</td>
+</tr>
+<tr>
+<td>Chart drill (click a type slice / type line)</td>
+<td>Same as a scope change to that type</td>
+<td>The client sets <code>accountTypeId</code> and the breakdown to By Account; account-series clicks and Others are inert, no call</td>
+</tr>
+<tr>
+<td>Table sort, page turn, search input</td>
+<td>API 3 only</td>
+<td>Aggregates and charts do not change: <code>totalBalance</code> and API 2 figures span the full scoped set regardless of page, sort or <code>q</code></td>
+</tr>
+<tr>
+<td>Open account detail modal (table row name click)</td>
+<td>API 4 (<code>accountId</code>, <code>groupBy=total</code>)</td>
+<td>The modal's balance, type and window-change figures are the already-held API 3 row</td>
+</tr>
+<tr>
+<td>Add account (empty state)</td>
+<td>none</td>
+<td>Client prompt; navigation to the module form is outside this contract</td>
+</tr>
+<tr>
+<td>Retry (error state)</td>
+<td>The failed call again</td>
+<td>Client keeps the last good <code>asOfDate</code> anchor if any</td>
+</tr>
+<tr>
+<td>Refresh</td>
+<td>The active view's calls, without an <code>asOfDate</code> param</td>
+<td>The server anchors to today and the client adopts the new echoed <code>asOfDate</code></td>
+</tr>
+</tbody>
+</table>
+<p>Consistency across calls: <code>asOfDate</code> is the shared snapshot anchor. API 2 (or the first call of a load) echoes the date it evaluated at; the client passes that date to every companion call so the table total, donut, KPI and series final point are computed over the same as-of date. The anchor is date-grain: two calls anchored to the same date can still straddle a same-day posting, because balances include rows with <code>TransactionDate</code> equal to the anchor date. That residual intraday drift is accepted; Refresh is the recovery.</p>
+<h2>Filter architecture</h2>
+<table>
+<thead>
+<tr>
+<th>Filter</th>
+<th>Option source</th>
+<th>Cardinality</th>
+<th>Execution</th>
+<th>Aggregate effect</th>
+<th>Cascade</th>
+<th>"All" wire form</th>
+<th>Round trips</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Account scope (All Accounts / type / account)</td>
+<td>LOOKUP: API 1</td>
+<td>Types: 12 [BUILD], ceiling [TO CONFIRM] (Marvin); accounts: hundreds to thousands [DOC, Step 6 dossier], so the account list is a searchable server-side lookup</td>
+<td>SERVER: <code>accountTypeId</code> or <code>accountId</code> on APIs 2, 3, 4</td>
+<td>Yes: every total, group, row set and series re-scopes</td>
+<td>None: the popover always offers the full scope space (types and accounts are not narrowed by the current selection)</td>
+<td>Omit both scope params [CODE precedent: the grid read omits <code>accountTypeId</code> for all]</td>
+<td>API 2 + the active view's data call (1 to 2)</td>
+</tr>
+<tr>
+<td>Compare To</td>
+<td>STATIC enum: <code>week</code>, <code>month</code>, <code>period</code>, <code>quarter</code>, <code>fiscalYear</code>, <code>calendarYear</code></td>
+<td>6, fixed [BUILD]</td>
+<td>SERVER: <code>compareTo</code> on APIs 2, 3, 4</td>
+<td>Yes: <code>comparisonBalance</code>, <code>diffAmount</code>, <code>diffPct</code>, every <code>windowChangePct</code>, and the series window</td>
+<td>None</td>
+<td>Not applicable: there is no "All"; the default is <code>quarter</code> [BUILD]</td>
+<td>API 2 + the active view's data call (1 to 2)</td>
+</tr>
+<tr>
+<td>Table search box</td>
+<td>Free text</td>
+<td>Unbounded input</td>
+<td>SERVER: <code>q</code> on API 3. The table paginates, so search must span the full scoped set server-side</td>
+<td>On <code>rows</code> and <code>totalCount</code> only. <code>totalBalance</code> deliberately ignores <code>q</code>: the Total row is the scope total, and the search is a locate aid, not a scope change [BUILD semantics]</td>
+<td>None</td>
+<td>Omit <code>q</code></td>
+<td>1 (API 3 only)</td>
+</tr>
+<tr>
+<td>Legend find (Distribution / Trend legends)</td>
+<td>Free text, same input control</td>
+<td>Over the held groups or series</td>
+<td>CLIENT: the full set is already present in the held response, it is bounded (type count at type grain, <code>maxGroups</code> at account grain), and hiding legend rows changes no server-computed aggregate: all three Framework 1 conditions hold</td>
+<td>No</td>
+<td>None</td>
+<td>Empty input shows all</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Combination semantics:</strong> all filters combine with AND and narrow. Scope and Compare To are independent; <code>q</code> further narrows API 3's rows within the scope.</li>
+<li><strong>Conflict rule:</strong> <code>accountId</code> and <code>accountTypeId</code> sent together is rejected with a named 400 error <code>scope_conflict</code>; the two params are mutually exclusive by contract. A <code>groupBy</code> invalid for the scope (<code>type</code> outside All Accounts, <code>account</code> outside a single-type scope) is rejected with a named 400 error <code>invalid_groupBy</code>. Nothing is left undefined.</li>
+<li><strong>Blank values:</strong> every active account has a <code>TypeID</code> (the type join is the scope chain), so there is no blank-type population for "All" to include or a type value to exclude. An account with no transactions is a legitimate zero-balance row, included in every scope it belongs to; a zero balance never drops a row.</li>
+<li><strong>Overlapping value spaces:</strong> API 1's <code>q</code> matches account names, account numbers and type names at once, so one query can legitimately match a type and no account, or the reverse; each list simply renders its own matches, and no combination is an error.</li>
+<li><strong>Cascade invalidation:</strong> there is no cascading lookup. A stale scope value (an account or type deactivated since the popover was fetched) yields a well-formed empty response; the client refetches API 1 and resets the scope to All Accounts.</li>
+<li><strong>Empty-result semantics:</strong> any valid scope matching nothing returns well-formed zeros (see each API's State contracts), never an error.</li>
+</ul>
+<h2>Volume and performance</h2>
+<table>
+<thead>
+<tr>
+<th>Dataset</th>
+<th>Typical rows</th>
+<th>Worst realistic rows (basis)</th>
+<th>Row width</th>
+<th>Payload at worst</th>
+<th>Verdict</th>
+<th>Server cost model</th>
+<th>Cache posture</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>API 1 lookup response</td>
+<td>12 types + a handful of account matches [BUILD: 12 types, 125 accounts]</td>
+<td>Types ceiling [TO CONFIRM] (Marvin); account matches capped at <code>limit</code> (default 50) regardless of the underlying set (hundreds to thousands [DOC, Step 6 dossier])</td>
+<td>5 fields, ~120 bytes per account row</td>
+<td>~10 KB at the cap</td>
+<td>BOUNDED (server-capped search page)</td>
+<td>Single indexed scan of <code>DH_Type</code> + name/number-filtered scan of <code>DH_Account</code>, both bank-account scoped</td>
+<td>LIVE</td>
+</tr>
+<tr>
+<td>API 2 summary</td>
+<td>12 type groups [BUILD]</td>
+<td>Type count [TO CONFIRM] (Marvin) at All Accounts; at a type scope, at most <code>maxGroups</code> (14) account groups</td>
+<td>5 fields, ~110 bytes per group</td>
+<td>A few KB at any plausible type count</td>
+<td>MUST AGGREGATE SERVER-SIDE (the client never holds the account rows behind the total or the ranking)</td>
+<td>One pass over active scoped accounts joining <code>DH_Transaction</code>, two windowed SUM reconstructions per account (asOfDate + baseline date), grouped and ranked</td>
+<td>LIVE</td>
+</tr>
+<tr>
+<td>API 3 account rows</td>
+<td>125 accounts in the demo set [BUILD], one 50-row page per response</td>
+<td>Hundreds to thousands of depositor accounts [DOC, Step 6 dossier]; exact ceiling [TO CONFIRM] (Marvin)</td>
+<td>7 fields, ~200 bytes per row</td>
+<td>~10 KB per 50-row page; <code>totalCount</code> bounds the pager, not the payload</td>
+<td>MUST PAGINATE</td>
+<td>Full-set pass for <code>totalBalance</code>/<code>totalCount</code> plus two windowed SUM reconstructions per returned row (balance + baseline for <code>windowChangePct</code>); sort on the computed columns happens before the page slice</td>
+<td>LIVE</td>
+</tr>
+<tr>
+<td>API 4 series</td>
+<td>Total grain: 1 × M (M = 8 to 12 points) [BUILD]; type grain: 12 × M ≈ 108 values [BUILD]</td>
+<td>Account grain is N accounts in the scoped type × M points, per request. N per type is [TO CONFIRM] (Marvin); at 500 accounts and M = 12 that is 6,000 point reconstructions in one request. Pagination does not reduce it: type- and total-grain series sum over every account in scope, not a visible page</td>
+<td>1 number per point + ~80 bytes of series identity</td>
+<td>Tens of KB at type grain; account grain scales with N × M</td>
+<td>Total and type grain: BOUNDED (config-defined dimensions). Account grain: BOUNDED only conditionally on the [TO CONFIRM] per-type ceiling; if that ceiling is materially large this flips to MUST AGGREGATE SERVER-SIDE with a capped top-N contract, which must be written before build (Still needs sign-off item 7)</td>
+<td>N entities × M points, each point one windowed SUM over <code>DH_Transaction</code>; this is the contract's heaviest read and the reason it is its own API</td>
+<td>LIVE (standing ruling: computed on demand; precompute later only if performance forces it)</td>
+</tr>
+</tbody>
+</table>
+<p>Series windows per <code>compareTo</code> [BUILD; production grain to confirm, Still needs sign-off item 9]: <code>week</code> = 8 daily points; <code>month</code>, <code>period</code>, <code>quarter</code> = 9 weekly points; <code>fiscalYear</code> = 12 fiscal-period points; <code>calendarYear</code> = 12 monthly points. The N × M product at account grain is stated above and in the API 4 section.</p>
+<h3>Pagination contract</h3>
+<p>API 3 paginates; nothing else does.</p>
+<ul>
+<li><strong>Params:</strong> <code>page</code> (1-based, default 1), <code>pageSize</code> (default 50 [BUILD, owner-accepted]; maximum [TO CONFIRM] (Oisin Curran), and the server must enforce one so an unbounded <code>pageSize</code> cannot re-create the problem pagination solves).</li>
+<li><strong>What paginates:</strong> exactly the <code>rows[]</code> array.</li>
+<li><strong>What does not:</strong> <code>totalBalance</code> and <code>totalCount</code> compute over the full scoped set (<code>totalCount</code> over the <code>q</code>-matched set), and every API 2 aggregate and API 4 series spans the full scoped set. Switching pages changes no total, donut, KPI or trend line.</li>
+<li><strong>Sort params:</strong> <code>sortBy</code> whitelist <code>name</code>, <code>typeName</code>, <code>windowChangePct</code>, <code>balance</code>; <code>sortDir</code> <code>asc</code> or <code>desc</code>. Default <code>balance</code> <code>desc</code> [BUILD].</li>
+<li><strong>Deterministic total order:</strong> every sort ends in <code>accountId</code> ascending as the unique tiebreaker, so page boundaries are stable across requests.</li>
+<li><strong><code>totalCount</code></strong> is returned alongside every page, with the <code>page</code>/<code>pageSize</code> echo, so the client renders the pager without a second call.</li>
+<li><strong>Past the last page:</strong> empty <code>rows[]</code>, correct <code>totalCount</code> and <code>totalBalance</code>, not an error.</li>
+</ul>
+<h2>Where computation lives</h2>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Server or client</th>
+<th>Basis</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Per-account balance</td>
+<td>SERVER</td>
+<td>Windowed SUM over <code>DH_Transaction</code></td>
+<td>Spans rows the client never holds</td>
+</tr>
+<tr>
+<td>Total balance (KPI, donut centre, table Total row)</td>
+<td>SERVER</td>
+<td>Aggregate over the full scoped set</td>
+<td>The row list is paginated; a client sum would cover one page</td>
+</tr>
+<tr>
+<td><code>comparisonBalance</code>, <code>diffAmount</code>, <code>diffPct</code></td>
+<td>SERVER</td>
+<td>Baseline-date reconstruction</td>
+<td>Spans data the client never holds; deltas are returned pre-signed so the client formats and never does math or sign-checking</td>
+</tr>
+<tr>
+<td>Division-by-zero rule</td>
+<td>SERVER</td>
+<td><code>diffPct</code> and <code>windowChangePct</code> are <code>null</code> when their baseline balance is zero; never <code>0</code>, never omitted</td>
+<td>One explicit rule, owned by the divider</td>
+</tr>
+<tr>
+<td>Per-account <code>windowChangePct</code> (table Trend column)</td>
+<td>SERVER</td>
+<td>Same formula per account</td>
+<td>Sortable server-side, so it must be computed server-side</td>
+</tr>
+<tr>
+<td>Group balances (per type / top accounts)</td>
+<td>SERVER</td>
+<td>GROUP BY over the scoped set</td>
+<td>Same</td>
+</tr>
+<tr>
+<td>Top-accounts ranking at a type scope (<code>maxGroups</code>)</td>
+<td>SERVER</td>
+<td>ORDER BY balance descending over all accounts in the type</td>
+<td>The client cannot rank a set it holds one page of</td>
+</tr>
+<tr>
+<td>Donut share percentages</td>
+<td>CLIENT</td>
+<td>Group <code>balance</code> over held <code>total.balance</code></td>
+<td>Pure arithmetic over held values; the zero-total case renders the empty state, so no division occurs</td>
+</tr>
+<tr>
+<td>Others bucket value</td>
+<td>CLIENT</td>
+<td><code>total.balance</code> minus the sum of returned groups</td>
+<td>Pure arithmetic over held values</td>
+</tr>
+<tr>
+<td>Series points</td>
+<td>SERVER</td>
+<td>One windowed SUM per entity per point</td>
+<td>Spans full transaction history</td>
+</tr>
+<tr>
+<td>Sparkline readout values and the delta pill direction</td>
+<td>CLIENT</td>
+<td>Held series values; the pill direction is the sign of held <code>diffAmount</code></td>
+<td>Presentation over held, pre-signed values; the up/down cue is always paired with the signed number, never a lone signal</td>
+</tr>
+<tr>
+<td>Slice-count trimming below <code>maxGroups</code> and legend find</td>
+<td>CLIENT</td>
+<td>Held bounded groups/series</td>
+<td>View logic over a held bounded set</td>
+</tr>
+<tr>
+<td>Page count (Page N of M)</td>
+<td>CLIENT</td>
+<td><code>ceil(totalCount / pageSize)</code></td>
+<td>Pure arithmetic over returned values</td>
+</tr>
+<tr>
+<td>Presentation thresholds</td>
+<td>CLIENT</td>
+<td>The only band in the design is the sign of a delta</td>
+<td>No numeric threshold exists in the design; the declining-account flag is unfunded and open (Still needs sign-off item 4), not silently defaulted</td>
+</tr>
+</tbody>
+</table>
+<h2>API 1: Scope lookup</h2>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/deposit-accounts/scope-options
+</code></pre>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>q</code></td>
+<td>string</td>
+<td>no</td>
+<td>free text</td>
+<td>omitted (no text filter)</td>
+<td>Case-insensitive contains-match against type names, account names and account numbers</td>
+</tr>
+<tr>
+<td><code>limit</code></td>
+<td>int</td>
+<td>no</td>
+<td>1 to the server maximum ([TO CONFIRM] (Oisin Curran))</td>
+<td>50</td>
+<td>Caps the <code>accounts[]</code> list; <code>types[]</code> is never capped (bounded by config)</td>
+</tr>
+</tbody>
+</table>
+<p>Context header: <code>X-BankAccountID</code> (see Auth and scoping).</p>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/deposit-accounts/scope-options
+GET /api/dashboard/deposit-accounts/scope-options?q=res&amp;limit=50
+</code></pre>
+<p>Nothing here needs URL-encoding beyond normal query encoding of <code>q</code> (spaces and punctuation in search text must be percent-encoded).</p>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>types[]</code></td>
+<td>array</td>
+<td>DERIVED container (see child rows)</td>
+<td>Every type in the bank-account scope, ordered by name, filtered by <code>q</code> when present</td>
+</tr>
+<tr>
+<td><code>types[].typeId</code></td>
+<td>guid</td>
+<td>STORED DH_Type.TypeID [CODE]</td>
+<td>Type identity</td>
+</tr>
+<tr>
+<td><code>types[].name</code></td>
+<td>string</td>
+<td>STORED DH_Type.Name [CODE]</td>
+<td>Type display name</td>
+</tr>
+<tr>
+<td><code>accounts[]</code></td>
+<td>array</td>
+<td>DERIVED container (see child rows)</td>
+<td>Active accounts matching <code>q</code>, ordered by name then <code>accountId</code>, capped at <code>limit</code></td>
+</tr>
+<tr>
+<td><code>accounts[].accountId</code></td>
+<td>guid</td>
+<td>STORED DH_Account.AccountId [CODE]</td>
+<td>Account identity</td>
+</tr>
+<tr>
+<td><code>accounts[].name</code></td>
+<td>string</td>
+<td>STORED DH_Account.Name [CODE]</td>
+<td>Account name; not unique, so never an identity</td>
+</tr>
+<tr>
+<td><code>accounts[].accountNumber</code></td>
+<td>string</td>
+<td>STORED DH_Account.AccountNumber [CODE]</td>
+<td>Full account number; the client decides its display treatment</td>
+</tr>
+<tr>
+<td><code>accounts[].typeId</code></td>
+<td>guid</td>
+<td>STORED DH_Account.TypeID [CODE]</td>
+<td>The account's type</td>
+</tr>
+<tr>
+<td><code>accounts[].typeName</code></td>
+<td>string</td>
+<td>STORED DH_Type.Name [CODE]</td>
+<td>Denormalised for the popover's type badge</td>
+</tr>
+<tr>
+<td><code>totalAccountMatches</code></td>
+<td>int</td>
+<td>NEW (COUNT over the matched set)</td>
+<td>How many accounts matched <code>q</code> before the <code>limit</code> cap, so the client can disclose truncation</td>
+</tr>
+</tbody>
+</table>
+<h3>Example response</h3>
+<pre><code>{
+  &quot;types&quot;: [
+    { &quot;typeId&quot;: &quot;7d3f0a52-1c9e-4b8a-9f21-3e5d8c440a11&quot;, &quot;name&quot;: &quot;Restricted Funds&quot; }
+  ],
+  &quot;accounts&quot;: [
+    { &quot;accountId&quot;: &quot;b4a1f6c2-9d0e-4f7b-8a35-6c2e9d114b02&quot;, &quot;name&quot;: &quot;Memorial&quot;, &quot;accountNumber&quot;: &quot;0044171234&quot;, &quot;typeId&quot;: &quot;7d3f0a52-1c9e-4b8a-9f21-3e5d8c440a11&quot;, &quot;typeName&quot;: &quot;Restricted Funds&quot; },
+    { &quot;accountId&quot;: &quot;c9e2d7a4-3b1f-4c6d-9e58-7f3a1b225c13&quot;, &quot;name&quot;: &quot;Capital&quot;, &quot;accountNumber&quot;: &quot;0044175610&quot;, &quot;typeId&quot;: &quot;2a6b9e17-5d4c-4a3f-8b62-9c1d7e330f24&quot;, &quot;typeName&quot;: &quot;Operating Reserve&quot; }
+  ],
+  &quot;totalAccountMatches&quot;: 2
+}
+</code></pre>
+<p>Reconciliation: 2 account rows returned and <code>totalAccountMatches</code> is 2, so 2 + 0 = 2 matches are shown and none are truncated.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty (no rows match <code>q</code>)</td>
+<td><code>types: []</code>, <code>accounts: []</code>, <code>totalAccountMatches: 0</code>; the popover renders its no-matches message</td>
+</tr>
+<tr>
+<td>Partial (more matches than <code>limit</code>)</td>
+<td><code>accounts[]</code> holds the first <code>limit</code> matches; <code>totalAccountMatches</code> carries the full count</td>
+</tr>
+<tr>
+<td>Not-yet-existing entity (org has no deposit accounts)</td>
+<td><code>types[]</code> still lists configured types; <code>accounts: []</code>, <code>totalAccountMatches: 0</code></td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td>403 with a machine-readable error code; widget-level behaviour is undecided (Still needs sign-off item 6)</td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td>5xx with a machine-readable error code; the client shows the error state with Retry</td>
+</tr>
+</tbody>
+</table>
+<h2>API 2: Balances summary</h2>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/deposit-accounts/summary
+</code></pre>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>accountTypeId</code></td>
+<td>guid</td>
+<td>no</td>
+<td>a <code>typeId</code> from API 1</td>
+<td>omitted (all accounts)</td>
+<td>Scopes to one type; mutually exclusive with <code>accountId</code></td>
+</tr>
+<tr>
+<td><code>accountId</code></td>
+<td>guid</td>
+<td>no</td>
+<td>an <code>accountId</code> from API 1 or API 3</td>
+<td>omitted</td>
+<td>Scopes to one account; mutually exclusive with <code>accountTypeId</code></td>
+</tr>
+<tr>
+<td><code>compareTo</code></td>
+<td>enum</td>
+<td>no</td>
+<td><code>week</code>, <code>month</code>, <code>period</code>, <code>quarter</code>, <code>fiscalYear</code>, <code>calendarYear</code></td>
+<td><code>quarter</code></td>
+<td>Comparison unit; <code>period</code> is a fiscal period on the org fiscal calendar, ordered between month and quarter</td>
+</tr>
+<tr>
+<td><code>asOfDate</code></td>
+<td>date</td>
+<td>no</td>
+<td>any date not after today</td>
+<td>today</td>
+<td>Snapshot anchor; a future date is rejected with a named 400 error <code>invalid_asOfDate</code></td>
+</tr>
+<tr>
+<td><code>maxGroups</code></td>
+<td>int</td>
+<td>no</td>
+<td>1 to 14</td>
+<td>14</td>
+<td>Applies only at a single-type scope: caps the ranked account groups returned [BUILD: no view renders more than 14 slices]</td>
+</tr>
+</tbody>
+</table>
+<p>Context header: <code>X-BankAccountID</code>.</p>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/deposit-accounts/summary?compareTo=quarter
+GET /api/dashboard/deposit-accounts/summary?accountTypeId=7d3f0a52-1c9e-4b8a-9f21-3e5d8c440a11&amp;compareTo=quarter&amp;asOfDate=2026-09-02
+</code></pre>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>asOfDate</code></td>
+<td>date</td>
+<td>DERIVED echo of the request</td>
+<td>The snapshot date the balances were evaluated at; the anchor the client passes to APIs 3 and 4</td>
+</tr>
+<tr>
+<td><code>compareTo</code></td>
+<td>enum</td>
+<td>DERIVED echo of the request</td>
+<td>The comparison unit applied</td>
+</tr>
+<tr>
+<td><code>scope</code></td>
+<td>object</td>
+<td>DERIVED container (see child rows)</td>
+<td>Echo of the applied scope</td>
+</tr>
+<tr>
+<td><code>scope.accountTypeId</code></td>
+<td>guid or null</td>
+<td>DERIVED echo of the request</td>
+<td>Applied type scope, <code>null</code> at All Accounts</td>
+</tr>
+<tr>
+<td><code>scope.accountId</code></td>
+<td>guid or null</td>
+<td>DERIVED echo of the request</td>
+<td>Applied account scope</td>
+</tr>
+<tr>
+<td><code>total</code></td>
+<td>object</td>
+<td>DERIVED container (see child rows)</td>
+<td>The scoped aggregate</td>
+</tr>
+<tr>
+<td><code>total.balance</code></td>
+<td>number</td>
+<td>DERIVED windowed SUM over <code>DH_Transaction</code> per account, summed over scope [CODE]</td>
+<td>The headline figure</td>
+</tr>
+<tr>
+<td><code>total.comparisonBalance</code></td>
+<td>number or null</td>
+<td>NEW baseline-date reconstruction</td>
+<td>Balance as of the baseline date; <code>null</code> when no transaction history reaches the baseline date</td>
+</tr>
+<tr>
+<td><code>total.diffAmount</code></td>
+<td>number or null</td>
+<td>NEW, <code>balance - comparisonBalance</code>, pre-signed</td>
+<td><code>null</code> when <code>comparisonBalance</code> is <code>null</code></td>
+</tr>
+<tr>
+<td><code>total.diffPct</code></td>
+<td>number or null</td>
+<td>NEW, <code>diffAmount / comparisonBalance * 100</code>, pre-signed, one decimal</td>
+<td><code>null</code> when <code>comparisonBalance</code> is zero or <code>null</code></td>
+</tr>
+<tr>
+<td><code>accountCount</code></td>
+<td>int</td>
+<td>DERIVED COUNT of active accounts in scope</td>
+<td>The empty-state trigger: 0 at All Accounts means the org has no deposit accounts</td>
+</tr>
+<tr>
+<td><code>groups[]</code></td>
+<td>array</td>
+<td>DERIVED container (see child rows)</td>
+<td>At All Accounts: one row per type with at least one active account. At a type scope: the top <code>maxGroups</code> accounts by balance descending. At an account scope: empty</td>
+</tr>
+<tr>
+<td><code>groups[].kind</code></td>
+<td>enum</td>
+<td>NEW: <code>type</code> or <code>account</code></td>
+<td>Which dimension the row is</td>
+</tr>
+<tr>
+<td><code>groups[].id</code></td>
+<td>guid</td>
+<td>STORED DH_Type.TypeID or DH_Account.AccountId [CODE]</td>
+<td>Group identity; the chart drill sends it back as <code>accountTypeId</code></td>
+</tr>
+<tr>
+<td><code>groups[].name</code></td>
+<td>string</td>
+<td>STORED DH_Type.Name or DH_Account.Name [CODE]</td>
+<td>Display name</td>
+</tr>
+<tr>
+<td><code>groups[].accountNumber</code></td>
+<td>string or null</td>
+<td>STORED DH_Account.AccountNumber [CODE]</td>
+<td>Present on account-kind rows for disambiguation; <code>null</code> on type-kind rows</td>
+</tr>
+<tr>
+<td><code>groups[].balance</code></td>
+<td>number</td>
+<td>DERIVED, same balance formula grouped [CODE]</td>
+<td>The slice value; the client derives shares and the Others bucket from these plus <code>total.balance</code></td>
+</tr>
+</tbody>
+</table>
+<h3>Example response</h3>
+<p>All Accounts, <code>compareTo=quarter</code> (a three-type example org):</p>
+<pre><code>{
+  &quot;asOfDate&quot;: &quot;2026-09-02&quot;,
+  &quot;compareTo&quot;: &quot;quarter&quot;,
+  &quot;scope&quot;: { &quot;accountTypeId&quot;: null, &quot;accountId&quot;: null },
+  &quot;total&quot;: { &quot;balance&quot;: 3602980, &quot;comparisonBalance&quot;: 3344120, &quot;diffAmount&quot;: 258860, &quot;diffPct&quot;: 7.7 },
+  &quot;accountCount&quot;: 37,
+  &quot;groups&quot;: [
+    { &quot;kind&quot;: &quot;type&quot;, &quot;id&quot;: &quot;5f2e8b31-4a7d-4c9e-8d16-2b9f6a558e01&quot;, &quot;name&quot;: &quot;Checking&quot;, &quot;accountNumber&quot;: null, &quot;balance&quot;: 1412500 },
+    { &quot;kind&quot;: &quot;type&quot;, &quot;id&quot;: &quot;8c4d1f72-6e3a-4b5c-9a28-4d7e2c669f12&quot;, &quot;name&quot;: &quot;Savings&quot;, &quot;accountNumber&quot;: null, &quot;balance&quot;: 986300 },
+    { &quot;kind&quot;: &quot;type&quot;, &quot;id&quot;: &quot;7d3f0a52-1c9e-4b8a-9f21-3e5d8c440a11&quot;, &quot;name&quot;: &quot;Restricted Funds&quot;, &quot;accountNumber&quot;: null, &quot;balance&quot;: 1204180 }
+  ]
+}
+</code></pre>
+<p>Reconciliation: the type groups sum to the total, 1,412,500 + 986,300 + 1,204,180 = 3,602,980; and the comparison plus the pre-signed diff rebuilds the balance, 3,344,120 + 258,860 = 3,602,980. <code>total.balance</code> here must equal API 3's <code>totalBalance</code> and API 4's final total-grain series value for the same scope and <code>asOfDate</code>.</p>
+<p>Single-type scope (Restricted Funds), showing account-kind groups:</p>
+<pre><code>{
+  &quot;asOfDate&quot;: &quot;2026-09-02&quot;,
+  &quot;compareTo&quot;: &quot;quarter&quot;,
+  &quot;scope&quot;: { &quot;accountTypeId&quot;: &quot;7d3f0a52-1c9e-4b8a-9f21-3e5d8c440a11&quot;, &quot;accountId&quot;: null },
+  &quot;total&quot;: { &quot;balance&quot;: 1204180, &quot;comparisonBalance&quot;: 1168400, &quot;diffAmount&quot;: 35780, &quot;diffPct&quot;: 3.1 },
+  &quot;accountCount&quot;: 16,
+  &quot;groups&quot;: [
+    { &quot;kind&quot;: &quot;account&quot;, &quot;id&quot;: &quot;b4a1f6c2-9d0e-4f7b-8a35-6c2e9d114b02&quot;, &quot;name&quot;: &quot;Memorial&quot;, &quot;accountNumber&quot;: &quot;0044171234&quot;, &quot;balance&quot;: 402300 },
+    { &quot;kind&quot;: &quot;account&quot;, &quot;id&quot;: &quot;e1c8a5d3-7f2b-4e9a-b647-8a4c3d771e25&quot;, &quot;name&quot;: &quot;Capital&quot;, &quot;accountNumber&quot;: &quot;0044178842&quot;, &quot;balance&quot;: 318750 },
+    { &quot;kind&quot;: &quot;account&quot;, &quot;id&quot;: &quot;f6b3d9e4-2a8c-4d1f-9c53-5e9b4f882d36&quot;, &quot;name&quot;: &quot;Benevolence&quot;, &quot;accountNumber&quot;: &quot;0044172219&quot;, &quot;balance&quot;: 296880 }
+  ]
+}
+</code></pre>
+<p>Reconciliation: the client's Others bucket is the total minus the returned groups, and 402,300 + 318,750 + 296,880 + 186,250 = 1,204,180; and 1,168,400 + 35,780 = 1,204,180.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty (org has no deposit accounts)</td>
+<td><code>accountCount: 0</code>, <code>total.balance: 0</code>, comparison fields <code>null</code>, <code>groups: []</code>; at All Accounts the client renders the "No deposit accounts" state</td>
+</tr>
+<tr>
+<td>Empty (a scoped type or account matches no active accounts)</td>
+<td>Same zero shape with the scope echoed; the client renders the filter-matches-none state, not an error</td>
+</tr>
+<tr>
+<td>Partial (history does not reach the baseline date)</td>
+<td><code>total.balance</code> valid; <code>comparisonBalance</code>, <code>diffAmount</code>, <code>diffPct</code> all <code>null</code>; the client renders the balance without a delta pill</td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td>403 with a machine-readable error code; widget-level behaviour undecided (Still needs sign-off item 6)</td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td>5xx with a machine-readable error code; the client shows the error state with Retry</td>
+</tr>
+</tbody>
+</table>
+<h2>API 3: Account rows</h2>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/deposit-accounts/accounts
+</code></pre>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>accountTypeId</code></td>
+<td>guid</td>
+<td>no</td>
+<td>a <code>typeId</code> from API 1</td>
+<td>omitted (all accounts)</td>
+<td>Mutually exclusive with <code>accountId</code></td>
+</tr>
+<tr>
+<td><code>accountId</code></td>
+<td>guid</td>
+<td>no</td>
+<td>an <code>accountId</code></td>
+<td>omitted</td>
+<td>Scopes the table to one account (the detail modal's table)</td>
+</tr>
+<tr>
+<td><code>compareTo</code></td>
+<td>enum</td>
+<td>no</td>
+<td><code>week</code>, <code>month</code>, <code>period</code>, <code>quarter</code>, <code>fiscalYear</code>, <code>calendarYear</code></td>
+<td><code>quarter</code></td>
+<td>Drives every row's <code>windowChangePct</code></td>
+</tr>
+<tr>
+<td><code>asOfDate</code></td>
+<td>date</td>
+<td>no</td>
+<td>any date not after today</td>
+<td>today</td>
+<td>The anchor echoed by API 2; a future date is rejected with <code>invalid_asOfDate</code></td>
+</tr>
+<tr>
+<td><code>q</code></td>
+<td>string</td>
+<td>no</td>
+<td>free text</td>
+<td>omitted (no search)</td>
+<td>Server-side contains-match on account name; narrows <code>rows[]</code> and <code>totalCount</code>, never <code>totalBalance</code></td>
+</tr>
+<tr>
+<td><code>sortBy</code></td>
+<td>enum</td>
+<td>no</td>
+<td><code>name</code>, <code>typeName</code>, <code>windowChangePct</code>, <code>balance</code></td>
+<td><code>balance</code></td>
+<td>Whitelisted sortable fields</td>
+</tr>
+<tr>
+<td><code>sortDir</code></td>
+<td>enum</td>
+<td>no</td>
+<td><code>asc</code>, <code>desc</code></td>
+<td><code>desc</code></td>
+<td>Sort direction; the total order always ends in <code>accountId</code> ascending as the unique tiebreaker</td>
+</tr>
+<tr>
+<td><code>page</code></td>
+<td>int</td>
+<td>no</td>
+<td>1 or greater</td>
+<td>1</td>
+<td>1-based page index</td>
+</tr>
+<tr>
+<td><code>pageSize</code></td>
+<td>int</td>
+<td>no</td>
+<td>1 to the server maximum ([TO CONFIRM] (Oisin Curran))</td>
+<td>50</td>
+<td>Rows per page [BUILD, owner-accepted]</td>
+</tr>
+</tbody>
+</table>
+<p>Context header: <code>X-BankAccountID</code>.</p>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/deposit-accounts/accounts?compareTo=quarter&amp;page=1&amp;pageSize=50
+GET /api/dashboard/deposit-accounts/accounts?accountTypeId=7d3f0a52-1c9e-4b8a-9f21-3e5d8c440a11&amp;compareTo=quarter&amp;q=mem&amp;sortBy=name&amp;sortDir=asc&amp;page=1&amp;pageSize=50&amp;asOfDate=2026-09-02
+</code></pre>
+<p><code>q</code> values must be percent-encoded.</p>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>asOfDate</code></td>
+<td>date</td>
+<td>DERIVED echo of the request</td>
+<td>The snapshot date applied</td>
+</tr>
+<tr>
+<td><code>page</code></td>
+<td>int</td>
+<td>DERIVED echo of the request</td>
+<td>The page returned</td>
+</tr>
+<tr>
+<td><code>pageSize</code></td>
+<td>int</td>
+<td>DERIVED echo of the request</td>
+<td>The page size applied</td>
+</tr>
+<tr>
+<td><code>totalCount</code></td>
+<td>int</td>
+<td>NEW COUNT over the scoped, <code>q</code>-matched set</td>
+<td>Feeds the pager ("of Z accounts", "Page N of M")</td>
+</tr>
+<tr>
+<td><code>totalBalance</code></td>
+<td>number</td>
+<td>NEW aggregate over the full scoped set, ignoring <code>q</code> and paging</td>
+<td>The table Total row; must equal API 2 <code>total.balance</code> for the same scope and <code>asOfDate</code></td>
+</tr>
+<tr>
+<td><code>rows[]</code></td>
+<td>array</td>
+<td>DERIVED container (see child rows)</td>
+<td>One page of accounts, sorted then sliced</td>
+</tr>
+<tr>
+<td><code>rows[].accountId</code></td>
+<td>guid</td>
+<td>STORED DH_Account.AccountId [CODE]</td>
+<td>Identity and the sort tiebreaker</td>
+</tr>
+<tr>
+<td><code>rows[].name</code></td>
+<td>string</td>
+<td>STORED DH_Account.Name [CODE]</td>
+<td>Account name; not unique</td>
+</tr>
+<tr>
+<td><code>rows[].accountNumber</code></td>
+<td>string</td>
+<td>STORED DH_Account.AccountNumber [CODE]</td>
+<td>Always present: same-named accounts differ only by number [DOC, Step 6 dossier gap 14]</td>
+</tr>
+<tr>
+<td><code>rows[].typeId</code></td>
+<td>guid</td>
+<td>STORED DH_Account.TypeID [CODE]</td>
+<td>The account's type</td>
+</tr>
+<tr>
+<td><code>rows[].typeName</code></td>
+<td>string</td>
+<td>STORED DH_Type.Name [CODE]</td>
+<td>The Type badge text</td>
+</tr>
+<tr>
+<td><code>rows[].balance</code></td>
+<td>number</td>
+<td>DERIVED windowed SUM as of <code>asOfDate</code> [CODE]</td>
+<td>The Balance column</td>
+</tr>
+<tr>
+<td><code>rows[].windowChangePct</code></td>
+<td>number or null</td>
+<td>NEW, per-account <code>diffPct</code> over the <code>compareTo</code> window, pre-signed, one decimal</td>
+<td>The Trend column; <code>null</code> when the account's baseline balance is zero</td>
+</tr>
+</tbody>
+</table>
+<h3>Example response</h3>
+<pre><code>{
+  &quot;asOfDate&quot;: &quot;2026-09-02&quot;,
+  &quot;page&quot;: 1,
+  &quot;pageSize&quot;: 50,
+  &quot;totalCount&quot;: 37,
+  &quot;totalBalance&quot;: 3602980,
+  &quot;rows&quot;: [
+    { &quot;accountId&quot;: &quot;a7e4c2b9-1f6d-4a3e-8c25-9b5f7d663a47&quot;, &quot;name&quot;: &quot;General&quot;, &quot;accountNumber&quot;: &quot;0044177734&quot;, &quot;typeId&quot;: &quot;5f2e8b31-4a7d-4c9e-8d16-2b9f6a558e01&quot;, &quot;typeName&quot;: &quot;Checking&quot;, &quot;balance&quot;: 412500, &quot;windowChangePct&quot;: 4.2 },
+    { &quot;accountId&quot;: &quot;b4a1f6c2-9d0e-4f7b-8a35-6c2e9d114b02&quot;, &quot;name&quot;: &quot;Memorial&quot;, &quot;accountNumber&quot;: &quot;0044171234&quot;, &quot;typeId&quot;: &quot;7d3f0a52-1c9e-4b8a-9f21-3e5d8c440a11&quot;, &quot;typeName&quot;: &quot;Restricted Funds&quot;, &quot;balance&quot;: 402300, &quot;windowChangePct&quot;: -2.8 }
+  ]
+}
+</code></pre>
+<p>Reconciliation: the two excerpt rows sum to 412,500 + 402,300 = 814,800, a page slice, never the total; <code>totalBalance</code> 3,602,980 must equal API 2's <code>total.balance</code> 3,602,980 for the same scope and <code>asOfDate</code>, and <code>totalCount</code> 37 spans the full matched set, not the page.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty (scope or <code>q</code> matches nothing)</td>
+<td><code>rows: []</code>, <code>totalCount: 0</code>; <code>totalBalance</code> still carries the scope total (0 when the scope itself is empty)</td>
+</tr>
+<tr>
+<td>Partial (history does not reach the baseline date for some accounts)</td>
+<td>Those rows carry <code>windowChangePct: null</code>; <code>balance</code> stays valid</td>
+</tr>
+<tr>
+<td>Not-yet-existing entity (unknown or out-of-scope <code>accountId</code> / <code>accountTypeId</code>)</td>
+<td>Well-formed empty shape (<code>rows: []</code>, <code>totalCount: 0</code>, <code>totalBalance: 0</code>); the client resets to All Accounts and refetches API 1</td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td>403 with a machine-readable error code; widget-level behaviour undecided (Still needs sign-off item 6)</td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td>5xx with a machine-readable error code; the client shows the error state with Retry</td>
+</tr>
+</tbody>
+</table>
+<h2>API 4: Balance series</h2>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/deposit-accounts/series
+</code></pre>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>accountTypeId</code></td>
+<td>guid</td>
+<td>no</td>
+<td>a <code>typeId</code> from API 1</td>
+<td>omitted (all accounts)</td>
+<td>Mutually exclusive with <code>accountId</code></td>
+</tr>
+<tr>
+<td><code>accountId</code></td>
+<td>guid</td>
+<td>no</td>
+<td>an <code>accountId</code></td>
+<td>omitted</td>
+<td>Scopes the series to one account (the sparkline in the detail modal)</td>
+</tr>
+<tr>
+<td><code>compareTo</code></td>
+<td>enum</td>
+<td>no</td>
+<td><code>week</code>, <code>month</code>, <code>period</code>, <code>quarter</code>, <code>fiscalYear</code>, <code>calendarYear</code></td>
+<td><code>quarter</code></td>
+<td>Sets the window, grain and point count (see Volume and performance)</td>
+</tr>
+<tr>
+<td><code>groupBy</code></td>
+<td>enum</td>
+<td>no</td>
+<td><code>total</code>, <code>type</code>, <code>account</code></td>
+<td><code>total</code></td>
+<td><code>type</code> is valid only at All Accounts; <code>account</code> only at a single-type scope; anything else is rejected with <code>invalid_groupBy</code></td>
+</tr>
+<tr>
+<td><code>asOfDate</code></td>
+<td>date</td>
+<td>no</td>
+<td>any date not after today</td>
+<td>today</td>
+<td>The window ends here; a future date is rejected with <code>invalid_asOfDate</code></td>
+</tr>
+</tbody>
+</table>
+<p>Context header: <code>X-BankAccountID</code>.</p>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/deposit-accounts/series?compareTo=week&amp;groupBy=total&amp;asOfDate=2026-09-02
+GET /api/dashboard/deposit-accounts/series?accountTypeId=7d3f0a52-1c9e-4b8a-9f21-3e5d8c440a11&amp;compareTo=quarter&amp;groupBy=account&amp;asOfDate=2026-09-02
+</code></pre>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>asOfDate</code></td>
+<td>date</td>
+<td>DERIVED echo of the request</td>
+<td>The window end</td>
+</tr>
+<tr>
+<td><code>compareTo</code></td>
+<td>enum</td>
+<td>DERIVED echo of the request</td>
+<td>The window applied</td>
+</tr>
+<tr>
+<td><code>groupBy</code></td>
+<td>enum</td>
+<td>DERIVED echo of the request</td>
+<td>The grain returned</td>
+</tr>
+<tr>
+<td><code>points[]</code></td>
+<td>array</td>
+<td>NEW: the as-of date of each point, first = the baseline date, last = <code>asOfDate</code></td>
+<td>The x-axis; point count follows <code>compareTo</code> (8 daily, 9 weekly, 12 period, 12 monthly)</td>
+</tr>
+<tr>
+<td><code>series[]</code></td>
+<td>array</td>
+<td>DERIVED container (see child rows)</td>
+<td>One entry at <code>total</code>; one per type at <code>type</code>; one per account in the scoped type at <code>account</code></td>
+</tr>
+<tr>
+<td><code>series[].kind</code></td>
+<td>enum</td>
+<td>NEW: <code>total</code>, <code>type</code> or <code>account</code></td>
+<td>Which dimension the line is</td>
+</tr>
+<tr>
+<td><code>series[].id</code></td>
+<td>guid or null</td>
+<td>STORED DH_Type.TypeID / DH_Account.AccountId [CODE]; <code>null</code> for the total line</td>
+<td>The chart drill sends a type line's <code>id</code> back as <code>accountTypeId</code></td>
+</tr>
+<tr>
+<td><code>series[].name</code></td>
+<td>string</td>
+<td>STORED names [CODE]; "All Accounts" for the total line</td>
+<td>Legend text</td>
+</tr>
+<tr>
+<td><code>series[].accountNumber</code></td>
+<td>string or null</td>
+<td>STORED DH_Account.AccountNumber [CODE]</td>
+<td>Present on account-kind series; <code>null</code> otherwise</td>
+</tr>
+<tr>
+<td><code>series[].values[]</code></td>
+<td>array of numbers</td>
+<td>NEW: the balance formula evaluated at each point date</td>
+<td>One value per entry of <code>points[]</code>; the final value equals that entity's current balance for the same <code>asOfDate</code></td>
+</tr>
+</tbody>
+</table>
+<h3>Example response</h3>
+<p>All Accounts, <code>compareTo=week</code>, <code>groupBy=total</code> (8 daily points):</p>
+<pre><code>{
+  &quot;asOfDate&quot;: &quot;2026-09-02&quot;,
+  &quot;compareTo&quot;: &quot;week&quot;,
+  &quot;groupBy&quot;: &quot;total&quot;,
+  &quot;points&quot;: [&quot;2026-08-26&quot;, &quot;2026-08-27&quot;, &quot;2026-08-28&quot;, &quot;2026-08-29&quot;, &quot;2026-08-30&quot;, &quot;2026-08-31&quot;, &quot;2026-09-01&quot;, &quot;2026-09-02&quot;],
+  &quot;series&quot;: [
+    { &quot;kind&quot;: &quot;total&quot;, &quot;id&quot;: null, &quot;name&quot;: &quot;All Accounts&quot;, &quot;accountNumber&quot;: null, &quot;values&quot;: [3571200, 3566900, 3580450, 3575300, 3588100, 3594700, 3599850, 3602980] }
+  ]
+}
+</code></pre>
+<p>Reconciliation: the first value is the week baseline balance and the last rebuilds from it, 3,571,200 + 31,780 = 3,602,980, where 31,780 is the week-window <code>diffAmount</code> API 2 returns for <code>compareTo=week</code>; the final value 3,602,980 must equal API 2's <code>total.balance</code> and API 3's <code>totalBalance</code> for the same scope and <code>asOfDate</code>.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty (scope matches no active accounts)</td>
+<td><code>points[]</code> populated for the window; <code>series: []</code></td>
+</tr>
+<tr>
+<td>Partial (an entity's history starts inside the window)</td>
+<td>Points before its first transaction are <code>0</code> (the sum over no rows); the series is never truncated or padded with <code>null</code></td>
+</tr>
+<tr>
+<td>Not-yet-existing entity (unknown or out-of-scope id)</td>
+<td><code>series: []</code> with <code>points[]</code> populated; the client resets to All Accounts</td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td>403 with a machine-readable error code; widget-level behaviour undecided (Still needs sign-off item 6)</td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td>5xx with a machine-readable error code; the client shows the error state with Retry</td>
+</tr>
+</tbody>
+</table>
+<h2>Auth and scoping</h2>
+<ul>
+<li><strong>Context scoping:</strong> every request carries the <code>X-BankAccountID</code> header, and every query is scoped through <code>DH_Type.BankAccountID</code> to that bank account. This widget is bank-account scoped, not company scoped like most Finance widgets [CODE, Widget_Comparison_Classic.html].</li>
+<li><strong>Permission right:</strong> the module right that gates these reads is [TO CONFIRM] (Oisin Curran); the sign-off dossier marks entitlement detection and rights-based widget visibility as unconfirmed for this module [DOC, Step 6 dossier states 1 and 2].</li>
+<li><strong>What a user without the right sees:</strong> undecided, a product decision (hidden widget, empty widget, or an explanatory state); until decided, the APIs return 403 with a machine-readable code and no data. Tracked in Still needs sign-off item 6.</li>
+<li><strong>Writes:</strong> none in this contract, so no write permission applies. The empty state's Add account action is navigation intent toward the module's own form, which enforces its own rights.</li>
+</ul>
+<h2>Edge cases</h2>
+<ol>
+<li>A scoped type with no active accounts returns well-formed zeros everywhere (API 2 zero shape, API 3 <code>rows: []</code> with <code>totalCount: 0</code>, API 4 <code>series: []</code>), never an error.</li>
+<li><code>comparisonBalance</code> of zero makes <code>diffPct</code> <code>null</code>; a zero per-account baseline makes that row's <code>windowChangePct</code> <code>null</code>. The client renders no delta rather than a percent.</li>
+<li>An account younger than the comparison window has a baseline balance of <code>0</code> (the sum over no rows), so its <code>windowChangePct</code> is <code>null</code>; its series points before inception are <code>0</code>.</li>
+<li>A deactivated account (<code>Active = false</code>) is excluded from every read at request time, including historical series aggregation, so a type or total series recomputes history over the currently active set and can differ from what the same window showed while the account was active. This is the formula's behaviour, stated so nobody assumes point-in-time membership.</li>
+<li>A <code>page</code> past the last page returns empty <code>rows[]</code> with correct <code>totalCount</code> and <code>totalBalance</code>, not an error.</li>
+<li><code>accountId</code> and <code>accountTypeId</code> together: rejected, named 400 error <code>scope_conflict</code>. Neither param silently wins.</li>
+<li>An unknown <code>accountId</code> or <code>accountTypeId</code>, or one belonging to another bank-account context, returns the well-formed empty shape; the client resets the scope to All Accounts and refetches API 1.</li>
+<li>Two accounts sharing a name are distinguished by <code>accountId</code> and <code>accountNumber</code>, both always present on every account row in every API [DOC, Step 6 dossier gap 14].</li>
+<li>A <code>q</code> matching nothing returns <code>rows: []</code>, <code>totalCount: 0</code>, and the unchanged scope <code>totalBalance</code>: an empty search result under a real total is correct, because <code>q</code> is a locate aid, not a scope change.</li>
+<li>A negative balance (transactions summing below zero) is returned as-is at every level; how the distribution treats a negative group is undecided and tracked in Still needs sign-off item 11.</li>
+<li>A future <code>asOfDate</code> is rejected with the named 400 error <code>invalid_asOfDate</code>; a past <code>asOfDate</code> is legitimate and evaluates every formula at that date.</li>
+<li>Same-date drift: two calls anchored to the same <code>asOfDate</code> can straddle a posting dated that same day. Accepted at date grain; Refresh re-anchors.</li>
+</ol>
+<h2>Not in scope</h2>
+<ul>
+<li><strong>Transaction-level detail.</strong> Nothing here exposes which <code>DH_Transaction</code> rows compose a balance or a series point.</li>
+<li><strong>Drill-out to a module screen.</strong> The module has no read layer to land on [DOC, Step 6 dossier]; the in-widget re-scope and the account detail modal are the whole drill surface, and no navigation endpoint exists in this contract.</li>
+<li><strong>Writes.</strong> The Add account action is navigation intent only; account creation belongs to the Deposits module's own form and rights.</li>
+<li><strong>Export.</strong> The design has no export action, so no export endpoint exists here.</li>
+<li><strong>Reconciliation status.</strong> The data has no reconciliation concept [DOC, Step 1 research], and balance is the primary read [SME, Ben Lane, 2026-07-13]; reconciliation belongs to bank-reconciliation screens, not this widget.</li>
+<li><strong>Interest / unposted-interest status.</strong> That data lives only in the reports application today [DOC, Step 6 dossier gap 3]; no field here carries it, pending the sign-off decision.</li>
+<li><strong>Inception date.</strong> Stored on <code>DH_Account</code> but consumed by nothing in the design, so no API returns it.</li>
+<li><strong>User preference persistence.</strong> Scope, Compare To, view and sort choices are client-managed; no server preference store exists in the modern API [CODE, Widget_Comparison_Classic.html].</li>
+<li><strong>Locale formatting.</strong> Currency and date rendering from the organisation's locale is a client concern; the APIs return raw numbers and ISO dates [DOC, Step 6 dossier gap 12 is a client-side defect investigation].</li>
+</ul>
+<h2>Still needs sign-off</h2>
+<ol>
+<li><strong>Disputed - dashboard grain (dossier design direction).</strong> The dossier holds that the dashboard grain should be the account TYPE, with a type summary at its L2 and the account grid only at L3, backed by its live audit and benchmark review [DOC, Step 6 dossier, live audit 2026-07-13]. The built Final keeps the account-level table alongside a By Account Type breakdown, backed by the build and the SME evidence that account-level balance is the primary read [BUILD; SME, Ben Lane, 2026-07-13]. Both positions stand with their evidence; this contract funds the built Final's surface and picks no side. If the dossier direction is adopted, API 3's account rows and API 4's account grain leave the dashboard contract and survive only behind a drill. Decider: Oisin Curran with management sign-off. Blocked: nothing in the build, but the shape of APIs 3 and 4 is at stake.</li>
+<li><strong>Trend overlay: the Step 4 doc and the build disagree.</strong> The Step 4 doc states Compare To drives "the overlaid line in Trend" [DOC, Step 4 - Widget Final Design/W07, Interaction Spec and Filters]; the built Final's Trend renders current-window series only, with no comparison overlay anywhere in its chart data [BUILD, depFTrend]. This contract funds no overlay; if the doc's sentence is the intent, API 4 gains a per-series comparison values array and the point count doubles. Decider: Oisin Curran. Blocked: the overlay element only.</li>
+<li><strong>Unreviewed dossier findings need statuses</strong> (gaps 2, 3, 6, 8, 10, 11, 12, 13, 14). The ones touching this contract: gap 3 would add an interest-status field that has no data surface today; gap 6's data-freshness ask is partly answered by the <code>asOfDate</code> echo on every response, but the visible stamp and Refresh behaviour are undecided; gap 13's empty-state copy parity is a client concern over the zero shapes specced here; gap 14 is honoured (<code>accountNumber</code> on every account row). Decider: Oisin Curran. Blocked: only the parts each finding touches.</li>
+<li><strong>Declining-account flag</strong> (three or more consecutive periods down): not in the built Final and not funded here; adopting it adds a per-account server flag and needs the threshold approved. Decider: SME + Oisin Curran.</li>
+<li><strong>Balance tie-out.</strong> Whether <code>DHAccount.CalcBalance()</code> applies adjustments beyond the plain transaction sum, so the widget and the module never disagree. [TO CONFIRM] (backend dev team). Blocked: trusting every balance figure in this contract.</li>
+<li><strong>Entitlement.</strong> The permission right's name, and what a user without it sees. [TO CONFIRM] (Oisin Curran). Blocked: the permission-denied rows of every state contract.</li>
+<li><strong>Volume ceilings.</strong> Total active depositor accounts, the largest single type's account count, and the type count at the largest org. [TO CONFIRM] (Marvin). Blocked: API 4's account-grain verdict; if the per-type ceiling is materially large, the account-grain series needs a capped top-N contract written before build.</li>
+<li><strong>Baseline date rule.</strong> The exact Time Window Module anchor per <code>compareTo</code> unit (fiscal period and quarter boundaries; same-date-prior versus period-end). [TO CONFIRM] (dev team + Oisin Curran). Blocked: implementing <code>comparisonBalance</code> and the series window start.</li>
+<li><strong>Series grain and point counts.</strong> The 8-daily / 9-weekly / 12-period / 12-monthly windows are the build's shape [BUILD]; confirm them as the production contract or set different grains. [TO CONFIRM] (dev team).</li>
+<li><strong>Server-side table search.</strong> The table paginates, so this contract makes <code>q</code> span the full scoped set server-side; the built Final's search box narrows only the rows on the visible page. The contract's behaviour is the framework verdict, and it is a visible change from the build. Decider: Oisin Curran.</li>
+<li><strong>Distribution treatment of negative balances</strong>, and the <code>pageSize</code> / <code>limit</code> maximums. Decider: Oisin Curran with the dev team.</li>
+</ol>
+
+</body>
+</html>

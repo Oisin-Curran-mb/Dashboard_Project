@@ -1,0 +1,3040 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Payroll Scheduled Time Off - API Spec</title>
+<style>
+body { font-family: -apple-system, Helvetica, Arial, sans-serif; max-width: 900px; margin: 30px auto; line-height: 1.5; color: #172B4D; }
+h1 { font-size: 24px; }
+h2 { font-size: 19px; border-bottom: 1px solid #DFE1E6; padding-bottom: 6px; margin-top: 32px; }
+h3 { font-size: 16px; margin-top: 20px; }
+table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+th, td { border: 1px solid #DFE1E6; padding: 6px 10px; text-align: left; vertical-align: top; }
+th { background: #F4F5F7; }
+code { background: #F4F5F7; padding: 1px 5px; border-radius: 3px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 90%; }
+pre { background: #F4F5F7; padding: 12px; border-radius: 4px; overflow-x: auto; }
+pre code { background: none; padding: 0; }
+.status { background: #FFF0B3; display: inline-block; padding: 3px 10px; border-radius: 3px; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<h1>Payroll Scheduled Time Off - API Spec</h1>
+<p><span class="status">Status: DRAFT - not final</span></p>
+<hr />
+<h2>Overview</h2>
+<p>Payroll Scheduled Time Off is the dashboard's time-off approval queue. It answers two questions for a supervisor: <em>what time off is waiting for my approval</em>, and <em>who is out when</em>. It is the only widget in the set that writes, and the approval action is its reason for existing, so the write is a first-class part of this contract rather than an afterthought.</p>
+<p>The data grain is the <strong>day-line</strong>: one row per employee per calendar day of time off. A request covering three days is three day-lines, each shown, counted and approved on its own.</p>
+<p>This contract defines <strong>seven APIs</strong>: a rarely-changing label lookup, a bounded snapshot summary that feeds the compact tier, a paginated person-grain approval queue, a server-aggregated month day-map for the Leave Calendar, a paginated single-day detail read, a per-employee context read fired only when a supervisor asks for it, and a single-entry approval write. The count is derived from the decomposition triggers in the API inventory, not chosen. Three of the reads and the whole of the write are backend work that does not exist today.</p>
+<p>Framework verdicts, stated once and justified in their own sections below:</p>
+<ul>
+<li><strong>Filter execution.</strong> Every filter except the person expander and the initials shown on a marker executes <strong>SERVER</strong>-side. The queue paginates, so nothing over it may be filtered client-side.</li>
+<li><strong>Volume.</strong> Three datasets are <code>MUST PAGINATE</code>, one is <code>MUST AGGREGATE SERVER-SIDE</code>, three are <code>BOUNDED</code>. No worst-realistic row count has a documented basis, so four are <code>[TO CONFIRM]</code> against a named owner.</li>
+<li><strong>Decomposition.</strong> Seven APIs, each citing a trigger. Two merges were considered and rejected; one was considered and taken.</li>
+<li><strong>Computation.</strong> Every count, every status classification and the whole sort order are server-side. The client derives initials and picks between two badge labels, and nothing else.</li>
+</ul>
+<hr />
+<h2>Design → API coverage</h2>
+<table>
+<thead>
+<tr>
+<th>Design element</th>
+<th>Type</th>
+<th>API</th>
+<th>Field(s)</th>
+<th>Provenance</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Pending figure (compact tier)</td>
+<td>KPI</td>
+<td>API 2, API 7</td>
+<td><code>pendingUpcomingCount</code>, <code>summary.pendingUpcomingCount</code></td>
+<td>DERIVED count(<code>ApprovedDate IS NULL AND OffDate &gt;= date(asOf)</code>) [BUILD]</td>
+</tr>
+<tr>
+<td>Outstanding figure (compact tier)</td>
+<td>KPI</td>
+<td>API 2, API 7</td>
+<td><code>pendingOutstandingCount</code>, <code>summary.pendingOutstandingCount</code></td>
+<td>DERIVED count(<code>ApprovedDate IS NULL AND OffDate &lt; date(asOf)</code>) [BUILD]</td>
+</tr>
+<tr>
+<td>Compact-tier zero state</td>
+<td>State</td>
+<td>API 2</td>
+<td><code>pendingUpcomingCount</code>, <code>pendingOutstandingCount</code> both <code>0</code></td>
+<td>DERIVED [BUILD]</td>
+</tr>
+<tr>
+<td>View toggle (Approval Queue / Leave Calendar)</td>
+<td>View</td>
+<td>API 3, API 4</td>
+<td>switches which endpoint is called; no field</td>
+<td>DERIVED client state [BUILD]</td>
+</tr>
+<tr>
+<td>Queue header count line</td>
+<td>KPI</td>
+<td>API 3</td>
+<td><code>pendingTotalCount</code>, <code>scheduledDayCount</code></td>
+<td>DERIVED count over the full window, ignoring <code>status</code> [BUILD]</td>
+</tr>
+<tr>
+<td>Status filter (All / Pending / Approved)</td>
+<td>Filter</td>
+<td>API 3</td>
+<td><code>status</code> param, echoed as <code>status</code></td>
+<td>DERIVED from <code>ApprovedDate</code> [DOC - Step 1 research]</td>
+</tr>
+<tr>
+<td>Group by (Department / Pay Group)</td>
+<td>Filter</td>
+<td>API 3</td>
+<td><code>groupBy</code> param, echoed as <code>groupBy</code></td>
+<td>DERIVED [BUILD]</td>
+</tr>
+<tr>
+<td>Group subheading label</td>
+<td>Table heading</td>
+<td>API 3</td>
+<td><code>groups[].groupLabel</code>, <code>people[].groupKey</code></td>
+<td>STORED HomeDepartment, or STORED <code>PRCompany.PayGroupName</code> [DOC - Step 1 research]</td>
+</tr>
+<tr>
+<td>Group pending badge / all-approved badge</td>
+<td>KPI</td>
+<td>API 3</td>
+<td><code>groups[].groupPendingCount</code>, <code>groups[].groupKey</code></td>
+<td>DERIVED count over the full window, ignoring <code>status</code> [BUILD]</td>
+</tr>
+<tr>
+<td>Person row name</td>
+<td>Table column</td>
+<td>API 3</td>
+<td><code>people[].employeeName</code>, <code>people[].employeeId</code></td>
+<td>UNVERIFIED (backend team) employee display name [TO CONFIRM]</td>
+</tr>
+<tr>
+<td>Person row secondary label</td>
+<td>Table column</td>
+<td>API 3</td>
+<td><code>people[].department</code>, <code>people[].payGroup</code></td>
+<td>STORED HomeDepartment [DOC]; UNVERIFIED (backend team) <code>PREmployeeCompensationDetail.PayGroup</code> join [TO CONFIRM]</td>
+</tr>
+<tr>
+<td>Person pending badge / all-resolved badge</td>
+<td>KPI</td>
+<td>API 3</td>
+<td><code>people[].pendingCount</code>, <code>people[].dayLineCount</code></td>
+<td>DERIVED count over the full window, ignoring <code>status</code> [BUILD]</td>
+</tr>
+<tr>
+<td>Person expander (open / closed)</td>
+<td>Drill</td>
+<td>API 3</td>
+<td><code>people[].dayLines[]</code> already present in the row; client-side toggle</td>
+<td>DERIVED client state [BUILD]</td>
+</tr>
+<tr>
+<td>Day-line date</td>
+<td>Table column</td>
+<td>API 3</td>
+<td><code>people[].dayLines[].offDate</code></td>
+<td>STORED <code>PR_EmployeeOffSchedule.OffDate</code> [DOC - Step 1 research]</td>
+</tr>
+<tr>
+<td>Day-line leave type</td>
+<td>Table column</td>
+<td>API 3, API 1</td>
+<td><code>people[].dayLines[].leaveType</code>, <code>leaveTypes[]</code></td>
+<td>STORED <code>PR_EmployeeOffSchedule</code> [DOC]; label NEW from <code>PRCompany</code> [DOC - Step 1 research]</td>
+</tr>
+<tr>
+<td>Day-line hours</td>
+<td>Table column</td>
+<td>API 3</td>
+<td><code>people[].dayLines[].hours</code></td>
+<td>STORED <code>PR_EmployeeOffSchedule</code> hours by leave type [DOC - Step 1 research]</td>
+</tr>
+<tr>
+<td>Day-line status badge</td>
+<td>Table column</td>
+<td>API 3</td>
+<td><code>people[].dayLines[].approvalStatus</code>, <code>people[].dayLines[].approvedBy</code>, <code>people[].dayLines[].approvedDate</code></td>
+<td>DERIVED from <code>ApprovedDate</code> [DOC]; approver identity UNVERIFIED (backend team) [TO CONFIRM]</td>
+</tr>
+<tr>
+<td>Outstanding tag on a queue day-line</td>
+<td>State</td>
+<td>API 3</td>
+<td><code>people[].dayLines[].isOutstanding</code></td>
+<td>DERIVED <code>ApprovedDate IS NULL AND OffDate &lt; date(asOf)</code> [BUILD]</td>
+</tr>
+<tr>
+<td>Approve action on a pending day-line</td>
+<td>Action</td>
+<td>API 7</td>
+<td><code>offScheduleId</code>, <code>approved</code> (request), <code>approvalStatus</code></td>
+<td>NEW [DOC - Step 1 research: not implemented]</td>
+</tr>
+<tr>
+<td>Undo action on an approved day-line</td>
+<td>Action</td>
+<td>API 7</td>
+<td><code>offScheduleId</code>, <code>approved: false</code> (request), <code>approvalStatus</code></td>
+<td>NEW [DOC - Step 1 research: not implemented]</td>
+</tr>
+<tr>
+<td>Approve affordance suppressed without authority</td>
+<td>State</td>
+<td>API 3</td>
+<td><code>people[].canApprove</code></td>
+<td>NEW [DOC - Step 1 research]</td>
+</tr>
+<tr>
+<td>Compact-tier person cap and remaining-people note</td>
+<td>State</td>
+<td>API 3</td>
+<td><code>pageSize</code>, <code>totalCount</code>, <code>page</code></td>
+<td>DERIVED <code>totalCount - (page * pageSize)</code> [BUILD]</td>
+</tr>
+<tr>
+<td>Queue empty-for-this-filter state</td>
+<td>State</td>
+<td>API 3</td>
+<td><code>people[]</code> empty with <code>groups[]</code> empty</td>
+<td>DERIVED [BUILD]</td>
+</tr>
+<tr>
+<td>Queue column header row</td>
+<td>Table heading</td>
+<td>API 3</td>
+<td>static labels over <code>people[].dayLines[]</code>; no field</td>
+<td>DERIVED client-side [BUILD]</td>
+</tr>
+<tr>
+<td>Month navigation title</td>
+<td>Heading</td>
+<td>API 4</td>
+<td><code>year</code>, <code>month</code></td>
+<td>DERIVED echo [BUILD]</td>
+</tr>
+<tr>
+<td>Calendar Department filter</td>
+<td>Filter</td>
+<td>API 4</td>
+<td><code>department</code> param, <code>departments[]</code>, <code>unfilteredPeopleOut</code></td>
+<td>DERIVED distinct HomeDepartment with per-option people counts [BUILD]</td>
+</tr>
+<tr>
+<td>Calendar summary line</td>
+<td>KPI</td>
+<td>API 4</td>
+<td><code>peopleOut</code>, <code>departmentsOut</code>, <code>dayLineCount</code>, <code>department</code></td>
+<td>DERIVED over the filtered month [BUILD]</td>
+</tr>
+<tr>
+<td>Weekday header row and adjacent-month cells</td>
+<td>Table heading</td>
+<td>API 4</td>
+<td>calendar arithmetic over <code>year</code>, <code>month</code>; no field</td>
+<td>DERIVED client-side [BUILD]</td>
+</tr>
+<tr>
+<td>Day cell status band</td>
+<td>State</td>
+<td>API 4</td>
+<td><code>days[].dayStatus</code>, <code>days[].date</code></td>
+<td>DERIVED priority any-outstanding, else any-pending, else all-approved [BUILD]</td>
+</tr>
+<tr>
+<td>Today marker on a day cell</td>
+<td>State</td>
+<td>API 4</td>
+<td><code>asOf</code> compared to <code>days[].date</code> client-side</td>
+<td>DERIVED client-side from the shared anchor [BUILD]</td>
+</tr>
+<tr>
+<td>Day marker (person initials, status band)</td>
+<td>Table cell</td>
+<td>API 4</td>
+<td><code>days[].markers[]</code></td>
+<td>DERIVED per marker from that row's <code>ApprovedDate</code> and <code>OffDate</code> [BUILD]</td>
+</tr>
+<tr>
+<td>Marker overflow chip</td>
+<td>Table cell</td>
+<td>API 4</td>
+<td><code>days[].overflowCount</code>, <code>days[].peopleOut</code></td>
+<td>DERIVED <code>peopleOut - count(markers)</code> over the full day [BUILD]</td>
+</tr>
+<tr>
+<td>Calendar legend</td>
+<td>Table heading</td>
+<td>API 4</td>
+<td>fixed three-state key over <code>days[].dayStatus</code>; no field</td>
+<td>DERIVED client-side [BUILD]</td>
+</tr>
+<tr>
+<td>Empty-month state</td>
+<td>State</td>
+<td>API 4</td>
+<td><code>days[]</code> empty, <code>department</code> null</td>
+<td>DERIVED [BUILD]</td>
+</tr>
+<tr>
+<td>Filtered-empty-month state</td>
+<td>State</td>
+<td>API 4</td>
+<td><code>days[]</code> empty with <code>department</code> set and <code>unfilteredPeopleOut &gt; 0</code></td>
+<td>DERIVED [BUILD]</td>
+</tr>
+<tr>
+<td>Day detail popover title and footer count</td>
+<td>Drill</td>
+<td>API 5</td>
+<td><code>date</code>, <code>peopleOut</code></td>
+<td>DERIVED [BUILD]</td>
+</tr>
+<tr>
+<td>Day detail person rows</td>
+<td>Drill</td>
+<td>API 5</td>
+<td><code>people[]</code></td>
+<td>STORED and DERIVED per field, as API 5's schema states [DOC / BUILD]</td>
+</tr>
+<tr>
+<td>Person Info popover header</td>
+<td>Drill</td>
+<td>API 6</td>
+<td><code>employeeName</code>, <code>department</code>, <code>payGroup</code>, <code>employeeId</code></td>
+<td>STORED [DOC]; pay group UNVERIFIED (backend team) [TO CONFIRM]</td>
+</tr>
+<tr>
+<td>Info: time off this year by leave type</td>
+<td>Drill</td>
+<td>API 6</td>
+<td><code>leaveTypeTotals[]</code>, <code>totalDays</code>, <code>year</code></td>
+<td>NEW aggregation over <code>PR_EmployeeOffSchedule</code> [TO CONFIRM - backend team]</td>
+</tr>
+<tr>
+<td>Info: same-dates coverage overlap list</td>
+<td>Drill</td>
+<td>API 6</td>
+<td><code>overlaps[]</code></td>
+<td>NEW aggregation over <code>PR_EmployeeOffSchedule</code> [TO CONFIRM - backend team]</td>
+</tr>
+<tr>
+<td>Info: no-one-overlaps state</td>
+<td>State</td>
+<td>API 6</td>
+<td><code>overlaps[]</code> empty with <code>totalCount</code> <code>0</code></td>
+<td>NEW [TO CONFIRM - backend team]</td>
+</tr>
+<tr>
+<td>Refresh control</td>
+<td>Action</td>
+<td>API 2, API 3, API 4</td>
+<td>re-issues the active reads with a fresh <code>asOf</code></td>
+<td>DERIVED [BUILD]</td>
+</tr>
+<tr>
+<td>Loading state</td>
+<td>State</td>
+<td>all reads</td>
+<td>no field; request in flight</td>
+<td>DERIVED client-side [TO CONFIRM - presentation unspecified]</td>
+</tr>
+<tr>
+<td>Error state</td>
+<td>State</td>
+<td>all reads</td>
+<td>HTTP status plus <code>partialReason</code> where the read still returns</td>
+<td>NEW [TO CONFIRM - presentation unspecified]</td>
+</tr>
+<tr>
+<td>Partial state</td>
+<td>State</td>
+<td>API 3, API 4, API 5, API 6</td>
+<td><code>partial</code>, <code>partialReason</code></td>
+<td>NEW [TO CONFIRM - presentation unspecified]</td>
+</tr>
+<tr>
+<td>No-approval-authority state</td>
+<td>State</td>
+<td>API 2</td>
+<td><code>authorisedDepartmentCount</code> <code>0</code> with every count <code>0</code></td>
+<td>NEW [TO CONFIRM - project owner]</td>
+</tr>
+<tr>
+<td>Pay group labels for the Group by dimension</td>
+<td>Table heading</td>
+<td>API 1</td>
+<td><code>payGroups[]</code></td>
+<td>STORED <code>PRCompany.PayGroupName</code> [DOC - Step 1 research]</td>
+</tr>
+<tr>
+<td>Hidden leave-type slots omitted from labelling</td>
+<td>State</td>
+<td>API 1</td>
+<td><code>leaveTypes[].hidden</code></td>
+<td>NEW [DOC - Step 1 research]</td>
+</tr>
+<tr>
+<td>Data freshness anchor shared by every call</td>
+<td>State</td>
+<td>all APIs</td>
+<td><code>asOf</code></td>
+<td>DERIVED server clock at request time [TO CONFIRM - time zone basis]</td>
+</tr>
+<tr>
+<td>Window echoed by the counting reads</td>
+<td>State</td>
+<td>API 2, API 3, API 7</td>
+<td><code>windowFrom</code>, <code>windowTo</code></td>
+<td>DERIVED echo [TO CONFIRM - default window]</td>
+</tr>
+</tbody>
+</table>
+<p>Nothing on screen is unfunded. The three elements with no field are the weekday header row, the queue's static column header and the fixed legend key: all three are constants the client owns, and all three appear in <em>Where computation lives</em>.</p>
+<hr />
+<h2>Tables</h2>
+<table>
+<thead>
+<tr>
+<th>Table / repository</th>
+<th>Fields and members used</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PR_EmployeeOffSchedule</code></td>
+<td>The day-line itself: primary key, <code>CompanyID</code>, <code>EmployeeID</code>, <code>OffDate</code>, hours by leave type, <code>ApprovedDate</code>. Read by every API; the write updates <code>ApprovedDate</code></td>
+</tr>
+<tr>
+<td><code>PREmployeeTimeOffApprovals</code></td>
+<td><code>HomeDepartmentIDs</code> for the logged-in user. The approval-authority scope for every read and the write</td>
+</tr>
+<tr>
+<td>Employee master and home department</td>
+<td><code>HomeDepartmentID</code> and the employee display name. Neither the table nor the display-name column is named in any source, so both are <code>UNVERIFIED (backend team)</code></td>
+</tr>
+<tr>
+<td><code>PREmployeeCompensationDetail</code></td>
+<td><code>PayGroup</code> (smallint, <code>0</code> = Normal Payroll, <code>1</code> to <code>5</code> = A to E). The only route from an employee to a pay group</td>
+</tr>
+<tr>
+<td><code>PRCompany</code></td>
+<td><code>PayGroupName</code> for pay-group labels; the leave-type custom name fields, for example <code>VacationLongName</code>, for leave-type labels</td>
+</tr>
+<tr>
+<td><code>SSUserTenantPreference</code></td>
+<td>Key <code>PayrollScheduledTimeOffFilters</code>. Per-user filter persistence</td>
+</tr>
+<tr>
+<td><code>PRTimeCardRepository</code></td>
+<td>Not read by this contract. Cited as the existing precedent for filtering payroll data by pay group</td>
+</tr>
+</tbody>
+</table>
+<p><strong>No new tables and no new columns are required for the reads.</strong> Every read is a new query or a new aggregation over the tables above. The write updates an existing column. The one thing that may force a schema change is the approver identity behind the "Approved by" stamp: no source names the column that holds it, so if none exists it has to be added.</p>
+<p>Core formulas, each quotable on its own:</p>
+<ol>
+<li><strong>Row filter.</strong> <code>PR_EmployeeOffSchedule WHERE CompanyID = &lt;X-Company-ID&gt; AND OffDate BETWEEN from AND to</code>. [DOC - Step 1 research, which states the same filter at <code>OffDate.Year = selectedYear</code> grain]</li>
+<li><strong>Approval authority filter.</strong> <code>AND EmployeeID IN (employees whose HomeDepartmentID appears in the caller's PREmployeeTimeOffApprovals.HomeDepartmentIDs)</code>. Applied to every read and re-checked on the write. [DOC - Step 1 research] <code>NEW</code> in the Modern API.</li>
+<li><strong>Pending.</strong> <code>ApprovedDate IS NULL</code>. <strong>Approved.</strong> <code>ApprovedDate IS NOT NULL</code>. There is no third stored status. [DOC - Step 1 research]</li>
+<li><strong>Outstanding.</strong> <code>ApprovedDate IS NULL AND OffDate &lt; date(asOf)</code>. A past date that is approved is not outstanding; a pending date on or after the anchor date is not outstanding. Approving an outstanding day-line clears it. [BUILD]</li>
+<li><strong>Compact-tier partition.</strong> <code>pendingUpcomingCount + pendingOutstandingCount = pendingTotalCount</code>, and the two are mutually exclusive by construction, so nothing is double counted. [BUILD]</li>
+<li><strong>Day-line grain.</strong> One response row per <code>OffDate</code>. <code>PR_EmployeeOffSchedule</code> already stores per-<code>OffDate</code> rows, so this needs no expansion step and no schema change. Per-day <code>hours</code> are <code>STORED</code>, never a request total divided across its span. [DOC - Step 4 design; BUILD]</li>
+<li><strong>Day cell priority.</strong> Any outstanding day-line on that date wins; else any pending; else all approved; a date with no day-lines is not returned at all. [BUILD]</li>
+<li><strong>Coverage overlap.</strong> Two entries overlap when they share the same month and year and their day ranges intersect, <code>startA &lt;= endB AND startB &lt;= endA</code>. At day-line grain that reduces to the same <code>OffDate</code>. [DOC - Step 4 design; BUILD]</li>
+<li><strong>Year totals by leave type.</strong> For one employee, the count of day-lines per leave type across the requested year. The counting unit is the day-line, which is a design choice rather than a documented legacy formula. [BUILD]</li>
+<li><strong>Queue order.</strong> Group dimension alphabetical, then employee name alphabetical, then <code>OffDate</code> chronological. [DOC - Step 4 design, Data Table Sort]</li>
+</ol>
+<hr />
+<h2>Old vs. new</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Old (live today)</th>
+<th>New (needed)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Filter lookup</td>
+<td><code>GET .../filters</code> returns <code>PayrollTimeOffFiltersDto {Years:[string]}</code></td>
+<td>A label lookup returning leave-type labels from <code>PRCompany</code> and pay-group labels from <code>PRCompany.PayGroupName</code>. The year list is not consumed, because there is no Calendar Year control. <code>NEW</code></td>
+</tr>
+<tr>
+<td>Grid read</td>
+<td><code>GET .../grid?year={int}&amp;view={0,1,2}</code> returns <code>List&lt;PayrollTimeOffDeptGroupDto&gt;</code> with <code>{HomeDepartment, Employees[EmployeeId, Name, AllApproved, Details[]]}</code></td>
+<td>Four purpose-shaped reads: a snapshot summary, a paginated person-grain queue, a month day-map and a single-day detail. Re-shaped existing read plus <code>NEW</code> aggregation</td>
+</tr>
+<tr>
+<td>Scope of the read</td>
+<td>All company schedules for the year</td>
+<td>The window, scoped to the caller's authorised departments. The authority filter is <strong>not implemented today</strong>, so every supervisor currently sees every employee's time off. <code>NEW</code></td>
+</tr>
+<tr>
+<td>Employee approval roll-up</td>
+<td><code>AllApproved</code> boolean per employee</td>
+<td><code>pendingCount</code> per person and <code>groupPendingCount</code> per group, because the badge shows a number, and a group's badge has to be right on every page it appears on. <code>DERIVED</code></td>
+</tr>
+<tr>
+<td>Approval action</td>
+<td>No endpoint. The legacy control approves inline via checkboxes</td>
+<td><code>PUT .../entries/{offScheduleId}/approval</code> with an idempotent desired-state body, a stale-anchor guard and a conflict response. <code>NEW</code></td>
+</tr>
+<tr>
+<td>Leave-type labels</td>
+<td>Static labels returned; the <code>PRCompany</code> custom names are <strong>not implemented</strong></td>
+<td><code>leaveTypes[]</code> carrying the configured label and whether the slot is hidden. <code>NEW</code></td>
+</tr>
+<tr>
+<td>Pay group</td>
+<td>Not exposed. <code>PR_EmployeeOffSchedule</code> has no pay-group field</td>
+<td>Joined through <code>PREmployeeCompensationDetail.PayGroup</code> so the queue can group by it. <code>UNVERIFIED (backend team)</code>, an indirect join rather than a confirmed direct field</td>
+</tr>
+<tr>
+<td>Coverage view</td>
+<td>A month calendar grid exists in the legacy control</td>
+<td>A server-aggregated day-map: per-date status priority, distinct-people count, a bounded marker list and an overflow count. <code>NEW</code></td>
+</tr>
+<tr>
+<td>Per-person context</td>
+<td>Nothing equivalent</td>
+<td>Year totals by leave type and a same-dates coverage-overlap list. <code>NEW</code></td>
+</tr>
+<tr>
+<td>Freshness</td>
+<td>None returned</td>
+<td>A shared <code>asOf</code> anchor on every call, which is also what the outstanding boundary is measured against. <code>NEW</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>API inventory</h2>
+<table>
+<thead>
+<tr>
+<th>API</th>
+<th>Purpose</th>
+<th>Trigger (when it fires)</th>
+<th>Cardinality</th>
+<th>R/W</th>
+<th>Cache posture</th>
+<th>Split trigger</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>API 1 labels</td>
+<td>Leave-type and pay-group labels from <code>PRCompany</code></td>
+<td>Once per session, before or alongside the first data read</td>
+<td>4 leave types, 6 pay groups</td>
+<td>R</td>
+<td><code>TTL</code> 1 hour</td>
+<td>Lifetime gap: organisation configuration changes rarely and is shared by four other reads, so repeating it on every data response would cost payload and lose cacheability</td>
+</tr>
+<tr>
+<td>API 2 summary</td>
+<td>The two compact-tier figures and the shared <code>asOf</code> anchor</td>
+<td>Widget render, at every tier; and on Refresh</td>
+<td>1 object</td>
+<td>R</td>
+<td><code>LIVE</code></td>
+<td>Cardinality gap: two integers must not pay for an unbounded row list. Trigger gap: at the compact tier this is the only call. Grain gap: a point-in-time aggregate, not rows</td>
+</tr>
+<tr>
+<td>API 3 queue</td>
+<td>Paginated person-grain approval queue with each person's day-lines</td>
+<td>Approval Queue view render; status or group change; page change; after a write</td>
+<td>Page of people, unbounded total</td>
+<td>R</td>
+<td><code>LIVE</code></td>
+<td>Grain gap: per-entity detail rows keyed by employee. Cardinality gap: the row set is bounded only by headcount, so it paginates</td>
+</tr>
+<tr>
+<td>API 4 calendar</td>
+<td>Month day-map: per-date status priority, people count, bounded markers, overflow, plus the department option list</td>
+<td>Leave Calendar view render; month navigation; department change</td>
+<td>At most 31 day objects</td>
+<td>R</td>
+<td><code>LIVE</code></td>
+<td>Grain gap: a per-date aggregate, not per-person rows. Trigger gap: fires only in the Leave Calendar. Conditional weight: a heavy scan reduced to a light response the queue never needs</td>
+</tr>
+<tr>
+<td>API 5 day detail</td>
+<td>Every person out on one date, with department, pay group, hours and status</td>
+<td>Click on a populated day cell or a marker</td>
+<td>Page of people out on one date, unbounded total</td>
+<td>R</td>
+<td><code>LIVE</code></td>
+<td>Trigger gap: fires on a click that may never happen. Cardinality gap: a company-wide closure day is unbounded, so it paginates</td>
+</tr>
+<tr>
+<td>API 6 person context</td>
+<td>One employee's year totals by leave type, plus the paginated same-dates coverage-overlap list</td>
+<td>Click the Info control on a person row</td>
+<td>4 total rows plus a page of overlaps</td>
+<td>R</td>
+<td><code>LIVE</code></td>
+<td>Trigger gap: fires only when a supervisor asks. Conditional weight: two aggregations nobody needs to render the queue</td>
+</tr>
+<tr>
+<td>API 7 approval write</td>
+<td>Approve or unapprove one day-line</td>
+<td>Approve or Undo on a single day-line</td>
+<td>1 row</td>
+<td>W</td>
+<td>none, <code>LIVE</code> read-back</td>
+<td>Read vs write: a mutation is never a variant of a read</td>
+</tr>
+</tbody>
+</table>
+<p>Three pairings were tested against the counter-pressures and closed:</p>
+<ul>
+<li><strong>API 4 and API 5 stay separate.</strong> Returning every day's full row list so a grid can render three markers per date is exactly the payload API 4 exists to avoid, and the click may never happen.</li>
+<li><strong>API 2 and API 3 stay separate.</strong> The compact tier renders no rows at all, and API 3 paginates, so its window-level aggregates would have to be computed over the full filtered set regardless. Keeping them apart means the compact tier never touches the row query.</li>
+<li><strong>API 6's two halves are one call.</strong> The totals block and the overlap list always fire together, both are required to render the popover, and the totals block is four rows. Splitting them would buy nothing and cost a round trip.</li>
+</ul>
+<hr />
+<h2>Call sequence</h2>
+<table>
+<thead>
+<tr>
+<th>Interaction</th>
+<th>Calls fired</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Initial widget load, compact tier</td>
+<td>API 1, API 2</td>
+<td>API 2 establishes <code>asOf</code>. API 1 is served from cache after the first session request</td>
+</tr>
+<tr>
+<td>Initial widget load, queue view</td>
+<td>API 1, API 2, API 3</td>
+<td>API 2 first, then API 3 with API 2's <code>asOf</code>, so the header counts and the rows cannot straddle a write</td>
+</tr>
+<tr>
+<td>Initial widget load, calendar view</td>
+<td>API 1, API 2, API 4</td>
+<td>API 4 takes API 2's <code>asOf</code>, so the outstanding boundary is identical in both</td>
+</tr>
+<tr>
+<td>Change filter <em>Status</em></td>
+<td>API 3</td>
+<td>Same <code>asOf</code>. Rows change; the header, group and person counts do not</td>
+</tr>
+<tr>
+<td>Change filter <em>Group by</em></td>
+<td>API 3</td>
+<td>Same <code>asOf</code>. Group membership, group counts and the whole sort order change, so the page is re-fetched from page 1</td>
+</tr>
+<tr>
+<td>Change filter <em>Department</em> (calendar)</td>
+<td>API 4</td>
+<td>Same <code>asOf</code>. Any open day-detail popover is discarded, so API 5 is not re-fired</td>
+</tr>
+<tr>
+<td>Month navigation (previous / next)</td>
+<td>API 4</td>
+<td>Same <code>asOf</code>. The selected department is kept and re-sent</td>
+</tr>
+<tr>
+<td>Switch view</td>
+<td>API 3 or API 4</td>
+<td>The other view's last response is discarded. API 2 is not re-fetched, so <code>asOf</code> is stable across the switch</td>
+</tr>
+<tr>
+<td>Open drill: person expander</td>
+<td>none</td>
+<td>The person's <code>dayLines[]</code> are already in the API 3 row</td>
+</tr>
+<tr>
+<td>Open drill: day cell or marker</td>
+<td>API 5</td>
+<td>Carries the calendar's current <code>department</code> and the shared <code>asOf</code></td>
+</tr>
+<tr>
+<td>Open drill: person Info control</td>
+<td>API 6</td>
+<td>Carries the shared <code>asOf</code> and the working year</td>
+</tr>
+<tr>
+<td>Page the queue</td>
+<td>API 3</td>
+<td>Same <code>asOf</code>, <code>page</code> incremented. Aggregates are identical across pages</td>
+</tr>
+<tr>
+<td>Page the day detail or the overlap list</td>
+<td>API 5 or API 6</td>
+<td>Same <code>asOf</code></td>
+</tr>
+<tr>
+<td>Submit action: Approve or Undo</td>
+<td>API 7, then API 3</td>
+<td>API 7 returns the updated entry and a recomputed <code>summary</code>, so the compact figures update without calling API 2. API 3 is re-fetched so the badges and any status filter re-settle. A new <code>asOf</code> is adopted from the write response</td>
+</tr>
+<tr>
+<td>Refresh</td>
+<td>API 2, then API 3 or API 4</td>
+<td>A fresh <code>asOf</code> is taken from API 2 and passed to whichever view is active</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Shared snapshot anchor.</strong> <code>asOf</code> is minted by API 2 (or by API 7's response after a write) and passed to API 3, API 4, API 5, API 6 and API 7. All six echo it. It fixes two things that would otherwise drift: the window defaults, and the date the outstanding boundary is measured against. Without it the compact figures and the queue can disagree across a midnight boundary or across another approver's write.</p>
+<hr />
+<h2>Filter architecture</h2>
+<p><strong>Verdict: every filter executes SERVER-side except the person expander.</strong> The queue paginates, and the hard rule that follows from that is absolute: sort, filter, search and aggregation over a paginated set are all server-side.</p>
+<table>
+<thead>
+<tr>
+<th>Filter</th>
+<th>Option source</th>
+<th>Cardinality</th>
+<th>Execution</th>
+<th>Aggregate effect</th>
+<th>Cascade</th>
+<th>"All" wire form</th>
+<th>Round trips</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>View toggle</td>
+<td><code>STATIC</code> enum: <code>queue</code>, <code>calendar</code></td>
+<td>2</td>
+<td><code>SERVER</code> (selects the endpoint: API 3 or API 4)</td>
+<td>No. Neither view's aggregates are derived from the other</td>
+<td>None</td>
+<td>Not applicable, exactly one value is always active</td>
+<td>1</td>
+</tr>
+<tr>
+<td>Status</td>
+<td><code>STATIC</code> enum: <code>all</code>, <code>pending</code>, <code>approved</code></td>
+<td>3</td>
+<td><code>SERVER</code> param <code>status</code> on API 3</td>
+<td><strong>No.</strong> <code>pendingTotalCount</code>, <code>scheduledDayCount</code>, <code>groups[].groupPendingCount</code> and <code>people[].pendingCount</code> are all computed over the full window ignoring <code>status</code>; only <code>people[]</code> membership and <code>dayLines[]</code> change</td>
+<td>None</td>
+<td>Explicit sentinel <code>status=all</code>. Omission cannot mean All, because the server default is <code>pending</code></td>
+<td>1 (API 3)</td>
+</tr>
+<tr>
+<td>Group by</td>
+<td><code>STATIC</code> enum: <code>department</code>, <code>payGroup</code></td>
+<td>2</td>
+<td><code>SERVER</code> param <code>groupBy</code> on API 3</td>
+<td><strong>Yes.</strong> Changes which groups exist, each group's pending count and the whole sort order</td>
+<td>None</td>
+<td>Not applicable, exactly one dimension is always active</td>
+<td>1 (API 3), reset to <code>page=1</code></td>
+</tr>
+<tr>
+<td>Department (Leave Calendar)</td>
+<td><code>DERIVED</code> from API 4's own <code>departments[]</code>, itself derived from distinct <code>HomeDepartment</code> across the window</td>
+<td>5 in the build fixture; ceiling <code>[TO CONFIRM - project owner]</code></td>
+<td><code>SERVER</code> param <code>department</code> on API 4 and API 5</td>
+<td><strong>Yes.</strong> Changes <code>peopleOut</code>, <code>departmentsOut</code>, <code>dayLineCount</code>, every <code>days[].dayStatus</code>, <code>days[].markers[]</code> and <code>days[].overflowCount</code></td>
+<td>The option <em>list</em> spans the window and does not move with the month; each option's <em>count</em> is scoped to the displayed month, so the list ships with the month data rather than from a lookup endpoint</td>
+<td>Omit the param. <code>department</code> echoes back <code>null</code></td>
+<td>1 (API 4); any open popover is dropped so API 5 does not re-fire</td>
+</tr>
+<tr>
+<td>Month (Leave Calendar navigation)</td>
+<td><code>DERIVED</code> from the anchor, then stepped</td>
+<td>Unbounded in principle, one step at a time</td>
+<td><code>SERVER</code> params <code>year</code> and <code>month</code> on API 4</td>
+<td><strong>Yes.</strong> Every figure in the response is month-scoped</td>
+<td>Feeds the Department option counts</td>
+<td>Not applicable, exactly one month is always displayed</td>
+<td>1 (API 4)</td>
+</tr>
+<tr>
+<td>Person expander</td>
+<td><code>DERIVED</code> from the row already held</td>
+<td>At most one day-line per calendar day in the window: 31 at a month window, 366 at a year window</td>
+<td><code>CLIENT</code> view over an existing response</td>
+<td>No</td>
+<td>None</td>
+<td>Not applicable</td>
+<td>0</td>
+</tr>
+<tr>
+<td>Page size at the compact tier</td>
+<td><code>STATIC</code>: <code>6</code></td>
+<td>1</td>
+<td><code>SERVER</code> param <code>pageSize</code> on API 3</td>
+<td>No. <code>totalCount</code> spans the full filtered set, which is what the remaining-people note is computed from</td>
+<td>None</td>
+<td>Not applicable</td>
+<td>1 (API 3)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>The one CLIENT verdict, justified against all three of Framework 1's conditions.</strong> The person expander qualifies because (1) the full set is already present, since API 3 returns every day-line for each person on the page, (2) the set is provably bounded by definition and not by fixture size, at one day-line per calendar day in the requested window, and (3) expanding or collapsing changes no server-computed aggregate, since <code>pendingCount</code> and <code>dayLineCount</code> are already whole-person figures. The person's initials on a calendar marker are the same case: a pure string derivation from <code>employeeName</code>.</p>
+<p><strong>Why the Department filter is not client-side.</strong> API 4 returns per-date aggregates and a bounded marker list, not the underlying rows, so the client cannot re-derive a filtered day-map from what it holds. Condition 1 fails outright and condition 3 fails as well.</p>
+<p><strong>Why the option list is unaffected by its own filter.</strong> <code>departments[]</code> and <code>unfilteredPeopleOut</code> are computed <strong>ignoring</strong> the <code>department</code> param, and the option list itself is computed over the window rather than the displayed month. Selecting one department must never collapse the option list to that one department, which is what would happen if the option list were derived from the filtered result. This is the same defect as filtering rows client-side while the server's total spans everything, and it is closed here by construction.</p>
+<p><strong>Combination semantics.</strong> AND, and narrowing, across every filter that can co-occur. The filters partition by view rather than combining across it: <code>status</code> and <code>groupBy</code> are API 3 only, <code>department</code>, <code>year</code> and <code>month</code> are API 4 and API 5 only.</p>
+<p><strong>Conflict rule.</strong> Params that can contradict resolve as follows, never as undefined behaviour.</p>
+<ul>
+<li><code>status</code> or <code>groupBy</code> sent to API 4 or API 5, or <code>department</code> sent to API 3: <strong>rejected</strong>, <code>400 unknown-parameter</code>. The filters are view-scoped by design and silently ignoring one would leave the caller believing a filter applied.</li>
+<li><code>department</code> naming a value that is not in the company's department set: <strong>rejected</strong>, <code>400 unknown-department</code>. A valid department with no rows in the requested month is a different case and returns a well-formed empty response.</li>
+<li><code>groupBy=payGroup</code> for an employee with no <code>PREmployeeCompensationDetail</code> row: the employee is grouped under a single reserved <code>Unassigned</code> group and <code>payGroup</code> returns <code>null</code>. A blank pay group is never treated as a wildcard, so it neither matches every group nor disappears.</li>
+<li>Employees with a null <code>HomeDepartmentID</code>: grouped under <code>Unassigned</code> when <code>groupBy=department</code>, included when no <code>department</code> filter is set, and excluded when a specific <code>department</code> is requested. A blank is not a wildcard here either.</li>
+<li><code>from</code> later than <code>to</code>, or <code>month</code> outside 1 to 12: <strong>rejected</strong>, <code>400 invalid-window</code>.</li>
+<li><code>sortBy</code> outside the whitelist: <strong>rejected</strong>, <code>400 unknown-sort</code>, rather than falling back to the default, so a client bug is visible.</li>
+</ul>
+<p><strong>Empty-result semantics.</strong> Any filter combination that matches nothing returns <code>200</code> with a well-formed zero response, never an error: <code>people[]</code> and <code>groups[]</code> empty with <code>totalCount</code> <code>0</code> and the window aggregates still correct for the window (API 3); <code>days[]</code> empty with <code>departments[]</code> and <code>unfilteredPeopleOut</code> still populated so the client can tell a filtered miss from an empty month (API 4); <code>people[]</code> empty with <code>peopleOut</code> <code>0</code> (API 5); <code>overlaps[]</code> empty with <code>leaveTypeTotals[]</code> still returned (API 6).</p>
+<p><strong>Cascade invalidation.</strong> The Department selection survives month navigation. If the selected department has no rows in the newly displayed month, the value is <strong>kept, not cleared</strong>, and the response is the filtered-empty case: <code>days[]</code> empty, <code>department</code> echoed, <code>unfilteredPeopleOut</code> greater than zero. Clearing it silently would move the user's filter without their asking.</p>
+<p><strong>Lookup endpoints.</strong> The only <code>LOOKUP</code> option source in this contract is API 1, which supplies the pay-group labels for the Group by dimension and the leave-type labels used for display. It appears in the API inventory. The Department option list is <code>DERIVED</code> and ships inside API 4, so it needs no lookup endpoint. The existing <code>GET .../filters</code> year list is not consumed by any control in this design.</p>
+<p><strong>Leave type is not a filter.</strong> It is a display dimension and an aggregation key only. There is no leave-type param on any endpoint.</p>
+<hr />
+<h2>Volume and performance</h2>
+<p><strong>Verdict: three datasets must paginate, one must aggregate server-side, three are bounded.</strong> The build fixture holds 27 day-lines for 7 people across 5 departments in one month, entirely in the browser, which is why its grouping, its person cap and all of its counts are instant. That is a property of the fixture and is used below only as a typical-case figure. <strong>It is never a basis for a ceiling.</strong> No source in this project states an employee count, a day-lines-per-employee figure or a departments-per-company figure, so every worst-realistic cell below is either bounded by definition or <code>[TO CONFIRM]</code> against a named owner.</p>
+<table>
+<thead>
+<tr>
+<th>Dataset</th>
+<th>Typical rows</th>
+<th>Worst realistic rows (basis)</th>
+<th>Row width</th>
+<th>Payload at worst</th>
+<th>Verdict</th>
+<th>Server cost model</th>
+<th>Cache posture</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>API 1 labels</td>
+<td>4 leave types, 6 pay groups</td>
+<td>4 leave types, 6 pay groups. Bounded by definition: <code>PRCompany</code> has a fixed set of leave-type name fields, and <code>PayGroup</code> is a fixed 6-slot model, <code>0</code> plus <code>1</code> to <code>5</code> [DOC - Step 1 research]</td>
+<td>3 fields, roughly 60 bytes</td>
+<td>under 1 KB</td>
+<td><code>BOUNDED</code></td>
+<td>Single row read of <code>PRCompany</code>, no multiplier</td>
+<td><code>TTL</code> 1 hour. Staleness is at most one hour on a label rename, which the <code>asOf</code> field does not need to reflect</td>
+</tr>
+<tr>
+<td>API 2 summary</td>
+<td>1 object over 27 day-lines</td>
+<td>1 object. The response shape is bounded by definition; the scan behind it is day-lines in window</td>
+<td>11 fields, roughly 250 bytes</td>
+<td>under 1 KB</td>
+<td><code>MUST AGGREGATE SERVER-SIDE</code></td>
+<td>Single indexed scan of <code>PR_EmployeeOffSchedule</code> on <code>CompanyID</code> and <code>OffDate</code>, joined to the authorised-department set. Multiplier: day-lines in window. No per-row subquery</td>
+<td><code>LIVE</code> per request. A TTL would show a stale pending figure immediately after an approval, which is the one moment the figure is looked at</td>
+</tr>
+<tr>
+<td>API 3 queue people page</td>
+<td>7 people, 27 day-lines [BUILD fixture, typical only]</td>
+<td><code>[TO CONFIRM - project owner]</code>. Structurally: employees in the caller's authorised departments, times day-lines per employee in the window. Day-lines per person are bounded by definition at one per calendar day in the window, 31 at a month window and 366 at a year window</td>
+<td>Person: 8 fields. Day-line: 8 fields, roughly 190 bytes</td>
+<td><code>pageSize</code> 25 times 31 day-lines equals at most 775 day-line objects, roughly 150 KB, at the default page and a month window</td>
+<td><code>MUST PAGINATE</code></td>
+<td>One indexed page query, plus a join to <code>PREmployeeCompensationDetail</code> when <code>groupBy=payGroup</code>, plus three aggregate passes over the full filtered set for the window, group and person counts. Multiplier: 4 passes over day-lines in window, not one pass per row</td>
+<td><code>LIVE</code> per request</td>
+</tr>
+<tr>
+<td>API 4 month day-map</td>
+<td>21 populated dates over 27 day-lines [BUILD fixture, typical only]</td>
+<td>At most 31 day objects, bounded by definition by the length of a month. The scan behind it is employees times day-lines in month, <code>[TO CONFIRM - project owner]</code></td>
+<td>Day: 5 fields plus up to <code>markerLimit</code> markers of 5 fields each</td>
+<td>31 dates times 3 markers equals at most 93 marker objects plus 31 day objects, roughly 25 KB</td>
+<td><code>MUST AGGREGATE SERVER-SIDE</code>, and the response is then <code>BOUNDED</code> at 31 day objects</td>
+<td>One indexed scan of the month, grouped by <code>OffDate</code> for the status priority and the distinct-people count, with the marker list truncated in the query. Multiplier: 31 dates times <code>markerLimit</code>, computed and stated per request rather than left open. The department option list is a second grouping over the same scan, not a second query</td>
+<td><code>LIVE</code> per request</td>
+</tr>
+<tr>
+<td>API 4 department option list</td>
+<td>5 options [BUILD fixture, typical only]</td>
+<td><code>[TO CONFIRM - project owner]</code>. Bounded by the company's department count, which no source states</td>
+<td>2 fields, roughly 45 bytes</td>
+<td>under 5 KB</td>
+<td><code>BOUNDED</code></td>
+<td>Group-by over the window scan for the option list, and over the month scan for each count. No extra query and no multiplier</td>
+<td><code>LIVE</code>, shipped with the month it describes</td>
+</tr>
+<tr>
+<td>API 5 single-day people page</td>
+<td>2 to 3 people [BUILD fixture: 2 on the mixed-status date, 3 on the busiest date, typical only]</td>
+<td><code>[TO CONFIRM - project owner]</code>. Structurally unbounded in employees: an organisation-wide closure date puts the whole authorised headcount on one date</td>
+<td>11 fields, roughly 280 bytes</td>
+<td><code>pageSize</code> 50 times 280 bytes, roughly 14 KB per page</td>
+<td><code>MUST PAGINATE</code></td>
+<td>One indexed equality scan on <code>OffDate</code>, joined to compensation detail for the pay group. Multiplier: people out on one date</td>
+<td><code>LIVE</code> per request</td>
+</tr>
+<tr>
+<td>API 6 year totals by leave type</td>
+<td>4 rows</td>
+<td>4 rows. Bounded by definition by the fixed <code>PRCompany</code> leave-type slots</td>
+<td>2 fields, roughly 40 bytes</td>
+<td>under 1 KB</td>
+<td><code>BOUNDED</code></td>
+<td>One grouped scan of the employee's year. Multiplier: that employee's day-lines in the year, at most 366</td>
+<td><code>LIVE</code> per request</td>
+</tr>
+<tr>
+<td>API 6 coverage overlap list</td>
+<td>3 overlapping entries [BUILD fixture, typical only]</td>
+<td><code>[TO CONFIRM - project owner]</code>. Structurally the subject's day-lines times people out on each of those dates: at most 366 dates times the authorised headcount</td>
+<td>8 fields, roughly 220 bytes</td>
+<td><code>pageSize</code> 25 times 220 bytes, roughly 6 KB per page</td>
+<td><code>MUST PAGINATE</code></td>
+<td>A semi-join of the subject's <code>OffDate</code> set against every other employee's day-lines in the same year. Multiplier: subject day-lines times overlapping employees per date. This is the heaviest query in the contract, which is why it fires only on an explicit request</td>
+<td><code>LIVE</code> per request</td>
+</tr>
+<tr>
+<td>API 7 approval write</td>
+<td>1 row updated</td>
+<td>1 row updated. Bounded by definition: one day-line per call, there is no batch form</td>
+<td>Entry: 8 fields. Recomputed summary: 5 fields</td>
+<td>under 2 KB</td>
+<td><code>BOUNDED</code></td>
+<td>One primary-key update, then one aggregate pass over the window to recompute the summary. Multiplier: day-lines in window, once</td>
+<td>none. The read-back is <code>LIVE</code> and carries a fresh <code>asOf</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>The entities-times-points product, stated per request.</strong> This widget has no time series, but two of its responses are a product rather than a list, and both are written down rather than left as an open performance question:</p>
+<ul>
+<li>API 4: at most <strong>31 dates times <code>markerLimit</code></strong> markers, so 93 marker objects at the default <code>markerLimit</code> of 3. Pagination does not and cannot reduce this, because a month grid is a fixed shape and each date's <code>dayStatus</code>, <code>peopleOut</code> and <code>overflowCount</code> are aggregates spanning every row on that date, including the rows the marker list truncates away.</li>
+<li>API 6: <strong>subject day-lines times overlapping employees per date</strong>, at most 366 times the authorised headcount before paging. Paging the <code>overlaps[]</code> array reduces the payload but not the scan, and <code>totalCount</code> still spans the full set.</li>
+</ul>
+<h3>Pagination contract</h3>
+<p>Three arrays paginate: <code>people[]</code> in API 3, <code>people[]</code> in API 5, and <code>overlaps[]</code> in API 6. <code>days[]</code>, <code>departments[]</code>, <code>groups[]</code>, <code>leaveTypes[]</code>, <code>payGroups[]</code> and <code>leaveTypeTotals[]</code> do not, because each is bounded by definition.</p>
+<ul>
+<li><strong>Params.</strong> <code>page</code>, 1-based, default <code>1</code>. <code>pageSize</code>, defaults <code>25</code> (API 3), <code>50</code> (API 5) and <code>25</code> (API 6), <strong>maximum <code>200</code></strong> on all three. An unbounded <code>pageSize</code> re-creates the problem pagination solves and is rejected with <code>400 invalid-page-size</code>.</li>
+<li><strong>What paginates.</strong> API 3 pages at <strong>person</strong> grain, never at day-line grain. A person is returned whole or not at all, so a page never shows three of somebody's five days with no sign the other two exist. Each person on the page carries all of their day-lines in the window, which is bounded by definition.</li>
+<li><strong>What does not paginate.</strong> <code>pendingTotalCount</code>, <code>scheduledDayCount</code> and <code>totalCount</code> (API 3), every <code>groups[].groupPendingCount</code>, every <code>people[].pendingCount</code>, <code>peopleOut</code>, <code>departmentsOut</code>, <code>dayLineCount</code>, <code>unfilteredPeopleOut</code> and every <code>departments[].peopleOut</code> (API 4), <code>peopleOut</code> (API 5), <code>totalDays</code> and every <code>leaveTypeTotals[].days</code> (API 6). <strong>All of these compute over the full filtered set, never over the current page.</strong> Changing page changes no count, no badge and no compact-tier figure. A group that spans two pages shows the same <code>groupPendingCount</code> on both, because that count is a full-set aggregate rather than a page sum.</li>
+<li><strong>Sort params.</strong> <code>sortBy</code> and <code>sortDir</code> on all three paginated reads, each with a whitelist. API 3: <code>default</code>, <code>department</code>, <code>payGroup</code>, <code>employeeName</code>, <code>pendingCount</code>. API 5: <code>employeeName</code>. API 6: <code>employeeName</code>, <code>offDate</code>. <code>sortDir</code> is <code>asc</code> or <code>desc</code>, default <code>asc</code>.</li>
+<li><strong>Sort is deliberately fixed in the shipped design.</strong> No sort control is exposed on any of the three reads, so the default value is what ships: <code>default</code> on API 3 means the documented queue order, group dimension alphabetical, then employee name alphabetical, then <code>OffDate</code> chronological. The params exist so the order is explicit in the contract and so a later control needs no new endpoint. What the user loses by having no control is the ability to bring the largest pending backlog to the top; that is a deliberate trade for a predictable order in an approval workflow.</li>
+<li><strong>Deterministic total order.</strong> Every sort ends in a unique tiebreaker so paging cannot duplicate or skip rows. API 3: group key, then <code>employeeName</code>, then <code>employeeId</code>; within a person, <code>offDate</code> then <code>offScheduleId</code>. API 5: <code>employeeName</code> then <code>employeeId</code> then <code>offScheduleId</code>. API 6: <code>employeeName</code> then <code>offDate</code> then <code>offScheduleId</code>. <code>days[].markers[]</code> is truncated rather than paged, so it too is ordered by <code>employeeName</code> then <code>employeeId</code>, which makes the truncation and therefore <code>overflowCount</code> reproducible.</li>
+<li><strong><code>totalCount</code></strong> is returned alongside every page, counting people in the full filtered set, so the client can render a pager and the remaining-people note without a second call.</li>
+<li><strong>Past the last page.</strong> <code>200</code> with an empty array, the correct <code>totalCount</code> and every aggregate unchanged. Never a <code>404</code> and never an error: a page beyond the end is a legitimate request, not a fault.</li>
+</ul>
+<hr />
+<h2>Where computation lives</h2>
+<p><strong>Verdict: the server computes every count, every status classification and the entire sort order. The client derives initials, picks between two badge labels and lays out the calendar frame.</strong></p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Server or client</th>
+<th>Basis</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Compact-tier Pending figure</td>
+<td><code>SERVER</code></td>
+<td><code>count(ApprovedDate IS NULL AND OffDate &gt;= date(asOf))</code> over the window</td>
+<td>Spans the whole authorised set, which the client never holds</td>
+</tr>
+<tr>
+<td>Compact-tier Outstanding figure</td>
+<td><code>SERVER</code></td>
+<td><code>count(ApprovedDate IS NULL AND OffDate &lt; date(asOf))</code> over the window</td>
+<td>Same span, and the boundary depends on the shared anchor rather than the browser clock</td>
+</tr>
+<tr>
+<td>Queue header pending count</td>
+<td><code>SERVER</code></td>
+<td><code>count(ApprovedDate IS NULL)</code> over the full window, ignoring <code>status</code></td>
+<td>Spans rows the status filter removes and pages the client does not hold</td>
+</tr>
+<tr>
+<td>Queue header scheduled-days count</td>
+<td><code>SERVER</code></td>
+<td><code>count(*)</code> over the full window, ignoring <code>status</code></td>
+<td>Same. The approved figure is deliberately not returned, because nothing renders it</td>
+</tr>
+<tr>
+<td>Group pending count</td>
+<td><code>SERVER</code></td>
+<td><code>count(ApprovedDate IS NULL)</code> per group over the full window</td>
+<td>A group can span pages; a page sum would show a different number on each</td>
+</tr>
+<tr>
+<td>Group badge wording, count or all-approved</td>
+<td><code>CLIENT</code></td>
+<td><code>groupPendingCount &gt; 0</code></td>
+<td>Pure branch on a value already in the response</td>
+</tr>
+<tr>
+<td>Person pending count</td>
+<td><code>SERVER</code></td>
+<td><code>count(ApprovedDate IS NULL)</code> per employee over the full window</td>
+<td>Independent of the status filter and of which day-lines are expanded</td>
+</tr>
+<tr>
+<td>Person badge wording, count or all-resolved</td>
+<td><code>CLIENT</code></td>
+<td><code>pendingCount &gt; 0</code></td>
+<td>Pure branch on a value already in the response</td>
+</tr>
+<tr>
+<td>Day-line approval status</td>
+<td><code>SERVER</code></td>
+<td><code>ApprovedDate IS NULL</code> to <code>Pending</code>, else <code>Approved</code></td>
+<td>The classification is the stored fact, returned as a word so no consumer re-implements it</td>
+</tr>
+<tr>
+<td>Day-line outstanding flag</td>
+<td><code>SERVER</code></td>
+<td><code>ApprovedDate IS NULL AND OffDate &lt; date(asOf)</code></td>
+<td>Depends on the shared anchor. The client's clock is not the anchor, and two clients must not disagree about which day-lines are past due</td>
+</tr>
+<tr>
+<td>Day cell status priority</td>
+<td><code>SERVER</code></td>
+<td>any outstanding, else any pending, else all approved</td>
+<td>Spans every row on that date, including the rows the marker list truncates and never transmits</td>
+</tr>
+<tr>
+<td>Marker status per person-date</td>
+<td><code>SERVER</code></td>
+<td>that row's own classification</td>
+<td>Each marker carries its own state, so a mixed date is legible</td>
+</tr>
+<tr>
+<td>Marker overflow count</td>
+<td><code>SERVER</code></td>
+<td><code>peopleOut - count(markers returned)</code></td>
+<td>Counts rows the response deliberately omits</td>
+</tr>
+<tr>
+<td>Marker initials</td>
+<td><code>CLIENT</code></td>
+<td>first and last initial of <code>employeeName</code>, falling back to the first two letters of a single-word name</td>
+<td>Pure string derivation over a value already present</td>
+</tr>
+<tr>
+<td>Calendar summary people and department counts</td>
+<td><code>SERVER</code></td>
+<td>distinct employees and distinct departments over the filtered month</td>
+<td>Distinct counts over rows the client does not hold</td>
+</tr>
+<tr>
+<td>Department option counts</td>
+<td><code>SERVER</code></td>
+<td>distinct employees per department over the <strong>unfiltered</strong> displayed month, against an option list drawn from the whole window</td>
+<td>Must not move when the filter is applied, and an option must not vanish in a month where nobody in it is out</td>
+</tr>
+<tr>
+<td>Info year totals by leave type</td>
+<td><code>SERVER</code></td>
+<td>count of day-lines per leave type for the employee across the year</td>
+<td>Spans the whole year, well outside any window the client holds</td>
+</tr>
+<tr>
+<td>Info year total days</td>
+<td><code>SERVER</code></td>
+<td>count of the employee's day-lines across the year</td>
+<td>Returned rather than summed client-side, because a hidden leave-type slot can hold days that no listed row would account for</td>
+</tr>
+<tr>
+<td>Coverage overlap rows and count</td>
+<td><code>SERVER</code></td>
+<td>semi-join of the subject's <code>OffDate</code> set against other employees' day-lines</td>
+<td>An aggregation over the whole authorised set</td>
+</tr>
+<tr>
+<td>Sort order, all three paginated reads</td>
+<td><code>SERVER</code></td>
+<td>the whitelisted <code>sortBy</code> and <code>sortDir</code>, ending in a unique tiebreaker</td>
+<td>Mandatory: a paginated set sorted client-side sorts only the visible page</td>
+</tr>
+<tr>
+<td>Remaining-people note at the compact tier</td>
+<td><code>CLIENT</code></td>
+<td><code>totalCount - (page * pageSize)</code></td>
+<td>Pure arithmetic over two values already in the response</td>
+</tr>
+<tr>
+<td>Weekday header row, adjacent-month cells, today marker</td>
+<td><code>CLIENT</code></td>
+<td>calendar arithmetic over <code>year</code>, <code>month</code> and <code>asOf</code></td>
+<td>Pure date arithmetic, no data involved</td>
+</tr>
+<tr>
+<td>Queue column header row and the calendar legend key</td>
+<td><code>CLIENT</code></td>
+<td>fixed labels</td>
+<td>Constants, not data</td>
+</tr>
+<tr>
+<td>Status visual treatment, tags and badges</td>
+<td><code>CLIENT</code></td>
+<td>the returned <code>approvalStatus</code> and <code>isOutstanding</code> words</td>
+<td>Presentation over a server classification. The classification is data, the treatment is not</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Division by zero.</strong> This contract computes no percentage and no ratio. The only ratio-shaped thing on screen is the header line pairing <code>pendingTotalCount</code> with <code>scheduledDayCount</code>, which the client renders as two integers and never divides. Should a rate ever be added, the rule is fixed now: the server computes it, and returns <code>null</code> rather than <code>0</code> when the denominator is zero, so a genuine zero and an undefined value are never confused.</p>
+<p><strong>Deltas.</strong> There is no delta, trend or period comparison on screen, so nothing is returned for the client to subtract. Should one be added it comes back pre-signed.</p>
+<p><strong>Presentation thresholds.</strong> There are none. The three states are a server classification derived from stored data and the shared anchor, not a banding of a continuous value against a threshold, so there is no unapproved threshold hiding as a default.</p>
+<hr />
+<h2>API 1: labels</h2>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/payroll-scheduled-time-off/labels
+</code></pre>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>(none)</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>The response is company configuration only, so the context header is the whole input</td>
+</tr>
+</tbody>
+</table>
+<p>Context header: <code>X-Company-ID</code>, required on this and every other call in this contract.</p>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/payroll-scheduled-time-off/labels
+GET /api/dashboard/payroll-scheduled-time-off/labels    (identical for every caller in the company; the response is cacheable for one hour)
+</code></pre>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>asOf</code></td>
+<td>string (date-time)</td>
+<td>DERIVED server clock at request time [TO CONFIRM - time zone basis, project owner]</td>
+<td>When the configuration was read</td>
+</tr>
+<tr>
+<td><code>leaveTypes</code></td>
+<td>array</td>
+<td>DERIVED [DOC - Step 1 research]</td>
+<td>The four configured leave-type slots, in fixed order</td>
+</tr>
+<tr>
+<td><code>leaveTypes[].code</code></td>
+<td>string</td>
+<td>STORED <code>PR_EmployeeOffSchedule</code> leave-type slot [DOC - Step 1 research]</td>
+<td>Stable slot key: <code>Vacation</code>, <code>Sick</code>, <code>Personal</code>, <code>Misc</code>. Never renamed</td>
+</tr>
+<tr>
+<td><code>leaveTypes[].label</code></td>
+<td>string</td>
+<td>NEW from <code>PRCompany</code> custom name fields, for example <code>VacationLongName</code> [DOC - Step 1 research]</td>
+<td>The organisation's own wording. Not implemented today, so static labels are returned instead</td>
+</tr>
+<tr>
+<td><code>leaveTypes[].hidden</code></td>
+<td>boolean</td>
+<td>NEW from <code>PRCompany</code> [DOC - Step 1 research]</td>
+<td>True when the organisation does not use the slot. A hidden slot is still returned so a consumer can tell "unused" from "absent"</td>
+</tr>
+<tr>
+<td><code>payGroups</code></td>
+<td>array</td>
+<td>DERIVED [DOC - Step 1 research]</td>
+<td>The fixed six-slot pay-group model</td>
+</tr>
+<tr>
+<td><code>payGroups[].code</code></td>
+<td>integer</td>
+<td>STORED <code>PREmployeeCompensationDetail.PayGroup</code> [DOC - Step 1 research]</td>
+<td><code>0</code> is Normal Payroll, <code>1</code> to <code>5</code> are A to E</td>
+</tr>
+<tr>
+<td><code>payGroups[].label</code></td>
+<td>string</td>
+<td>STORED <code>PRCompany.PayGroupName</code> [DOC - Step 1 research]</td>
+<td>The organisation's own name for the slot</td>
+</tr>
+</tbody>
+</table>
+<h3>Example response</h3>
+<pre><code>{
+  &quot;asOf&quot;: &quot;2026-08-07T09:15:00Z&quot;,
+  &quot;leaveTypes&quot;: [
+    {&quot;code&quot;: &quot;Vacation&quot;, &quot;label&quot;: &quot;Vacation&quot;, &quot;hidden&quot;: false},
+    {&quot;code&quot;: &quot;Sick&quot;, &quot;label&quot;: &quot;Sick Leave&quot;, &quot;hidden&quot;: false},
+    {&quot;code&quot;: &quot;Personal&quot;, &quot;label&quot;: &quot;Personal&quot;, &quot;hidden&quot;: false},
+    {&quot;code&quot;: &quot;Misc&quot;, &quot;label&quot;: &quot;Other&quot;, &quot;hidden&quot;: false}
+  ],
+  &quot;payGroups&quot;: [
+    {&quot;code&quot;: 0, &quot;label&quot;: &quot;Normal Payroll&quot;},
+    {&quot;code&quot;: 1, &quot;label&quot;: &quot;Weekly Staff&quot;},
+    {&quot;code&quot;: 2, &quot;label&quot;: &quot;Monthly Clergy&quot;},
+    {&quot;code&quot;: 3, &quot;label&quot;: &quot;Seasonal&quot;},
+    {&quot;code&quot;: 4, &quot;label&quot;: &quot;Pay Group D&quot;},
+    {&quot;code&quot;: 5, &quot;label&quot;: &quot;Pay Group E&quot;}
+  ]
+}
+</code></pre>
+<p>Reconciliation: the slot counts are fixed by the data model, 4 leave-type slots and 6 pay-group slots, so 4 + 6 = 10 label rows in total and no figure here needs to agree with another API.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty (no rows match)</td>
+<td>Not reachable. The slots are fixed, so an unconfigured organisation returns every slot with <code>label</code> falling back to the slot key and <code>hidden</code> true</td>
+</tr>
+<tr>
+<td>Partial (data exists for only part of the requested span)</td>
+<td>Not applicable, there is no span. A <code>PRCompany</code> row missing a single name field returns that slot with the code as its label</td>
+</tr>
+<tr>
+<td>Not-yet-existing entity (predates the requested window)</td>
+<td>Not applicable, there is no window</td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td><code>403</code> with no body. A caller without the Payroll read right gets nothing, including no label list</td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td><code>503</code>. The client falls back to the slot keys as labels and renders the rest of the widget, because a label outage must not blank an approval queue</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>API 2: summary</h2>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/payroll-scheduled-time-off/summary
+</code></pre>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>asOf</code></td>
+<td>string (date-time)</td>
+<td>No</td>
+<td>Any ISO 8601 instant not in the future</td>
+<td>Server clock at request time</td>
+<td>The snapshot anchor. Also the date the outstanding boundary is measured against. Minted here and passed to every other read</td>
+</tr>
+<tr>
+<td><code>from</code></td>
+<td>string (date)</td>
+<td>No</td>
+<td>ISO 8601 date</td>
+<td>First day of the month containing <code>asOf</code></td>
+<td>Inclusive start of the counting window. The default is <code>[TO CONFIRM - project owner]</code>: the build counts the working month, the legacy control counted the calendar year</td>
+</tr>
+<tr>
+<td><code>to</code></td>
+<td>string (date)</td>
+<td>No</td>
+<td>ISO 8601 date, on or after <code>from</code></td>
+<td>Last day of the month containing <code>asOf</code></td>
+<td>Inclusive end of the counting window</td>
+</tr>
+</tbody>
+</table>
+<p>Context header: <code>X-Company-ID</code>.</p>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/payroll-scheduled-time-off/summary
+GET /api/dashboard/payroll-scheduled-time-off/summary?asOf=2026-08-07T09%3A15%3A00Z&amp;from=2026-08-01&amp;to=2026-08-31
+</code></pre>
+<p>The <code>asOf</code> value is URL-encoded because an ISO instant contains colons.</p>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>asOf</code></td>
+<td>string (date-time)</td>
+<td>DERIVED echo of the param, or the server clock [TO CONFIRM - time zone basis, project owner]</td>
+<td>The anchor every other call must be given</td>
+</tr>
+<tr>
+<td><code>windowFrom</code></td>
+<td>string (date)</td>
+<td>DERIVED echo [TO CONFIRM - default window, project owner]</td>
+<td>Inclusive start of the counted window</td>
+</tr>
+<tr>
+<td><code>windowTo</code></td>
+<td>string (date)</td>
+<td>DERIVED echo [TO CONFIRM - default window, project owner]</td>
+<td>Inclusive end of the counted window</td>
+</tr>
+<tr>
+<td><code>pendingUpcomingCount</code></td>
+<td>integer</td>
+<td>DERIVED <code>count(ApprovedDate IS NULL AND OffDate &gt;= date(asOf))</code> [BUILD]</td>
+<td>The figure shown under the Pending label. <strong>Excludes</strong> outstanding day-lines</td>
+</tr>
+<tr>
+<td><code>pendingOutstandingCount</code></td>
+<td>integer</td>
+<td>DERIVED <code>count(ApprovedDate IS NULL AND OffDate &lt; date(asOf))</code> [BUILD]</td>
+<td>The figure shown under the Outstanding label. Past due and still pending</td>
+</tr>
+<tr>
+<td><code>pendingTotalCount</code></td>
+<td>integer</td>
+<td>DERIVED <code>pendingUpcomingCount + pendingOutstandingCount</code> [BUILD]</td>
+<td>Every pending day-line. This, not <code>pendingUpcomingCount</code>, is what the queue header shows</td>
+</tr>
+<tr>
+<td><code>scheduledDayCount</code></td>
+<td>integer</td>
+<td>DERIVED <code>count(*)</code> [BUILD]</td>
+<td>Every day-line in the window, pending and approved. The approved figure is not returned, because nothing on screen renders it; it is <code>scheduledDayCount - pendingTotalCount</code></td>
+</tr>
+<tr>
+<td><code>authorisedDepartmentCount</code></td>
+<td>integer</td>
+<td>NEW from <code>PREmployeeTimeOffApprovals.HomeDepartmentIDs</code> [DOC - Step 1 research]</td>
+<td>How many departments the caller may approve for. <code>0</code> means the caller has the module right but no approval authority</td>
+</tr>
+<tr>
+<td><code>partial</code></td>
+<td>boolean</td>
+<td>NEW [TO CONFIRM - presentation, project owner]</td>
+<td>True when some rows could not be fully resolved</td>
+</tr>
+<tr>
+<td><code>partialReason</code></td>
+<td>string or null</td>
+<td>NEW [TO CONFIRM - presentation, project owner]</td>
+<td>Machine-readable cause when <code>partial</code> is true, otherwise <code>null</code></td>
+</tr>
+</tbody>
+</table>
+<h3>Example response</h3>
+<pre><code>{
+  &quot;asOf&quot;: &quot;2026-08-07T09:15:00Z&quot;,
+  &quot;windowFrom&quot;: &quot;2026-08-01&quot;,
+  &quot;windowTo&quot;: &quot;2026-08-31&quot;,
+  &quot;pendingUpcomingCount&quot;: 18,
+  &quot;pendingOutstandingCount&quot;: 2,
+  &quot;pendingTotalCount&quot;: 20,
+  &quot;scheduledDayCount&quot;: 27,
+  &quot;authorisedDepartmentCount&quot;: 5,
+  &quot;partial&quot;: false,
+  &quot;partialReason&quot;: null
+}
+</code></pre>
+<p>Reconciliation: the two compact-tier figures partition the pending set with no double count, 18 + 2 = 20, which is <code>pendingTotalCount</code> and is the same number API 3 returns as its header count; and the 20 pending day-lines plus the 7 approved ones account for every day-line in the window, 20 + 7 = 27, which is <code>scheduledDayCount</code> and is the same number API 3 returns beside its header count. The 7 is not a returned field; it is <code>scheduledDayCount - pendingTotalCount</code>.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty (no rows match)</td>
+<td><code>200</code> with every count <code>0</code> and <code>authorisedDepartmentCount</code> greater than <code>0</code>. The compact tier renders two zeros, which is a real answer rather than an error</td>
+</tr>
+<tr>
+<td>Partial (data exists for only part of the requested span)</td>
+<td><code>200</code> with <code>partial</code> true and <code>partialReason</code> naming the cause. Counts cover what resolved, and the client must show the figures as incomplete rather than authoritative</td>
+</tr>
+<tr>
+<td>Not-yet-existing entity (predates the requested window)</td>
+<td><code>200</code> with every count <code>0</code>. An organisation with no time-off history is the empty case, not a fault</td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td><code>403</code> with no body when the caller lacks the Payroll read right. A caller with the read right but no approval authority gets <code>200</code> with <code>authorisedDepartmentCount</code> <code>0</code> and every count <code>0</code>, so the client can distinguish the two</td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td><code>503</code>. The client shows the error state and does not substitute zeros, because a zero pending count and an unreachable service look identical on screen and mean opposite things</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>API 3: approval queue</h2>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/payroll-scheduled-time-off/queue
+</code></pre>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>asOf</code></td>
+<td>string (date-time)</td>
+<td>No</td>
+<td>Any ISO 8601 instant not in the future</td>
+<td>Server clock at request time</td>
+<td>The shared anchor, taken from API 2 so the header counts and the rows cannot straddle a write</td>
+</tr>
+<tr>
+<td><code>from</code></td>
+<td>string (date)</td>
+<td>No</td>
+<td>ISO 8601 date</td>
+<td>First day of the month containing <code>asOf</code></td>
+<td>Inclusive start of the window. Default is <code>[TO CONFIRM - project owner]</code></td>
+</tr>
+<tr>
+<td><code>to</code></td>
+<td>string (date)</td>
+<td>No</td>
+<td>ISO 8601 date, on or after <code>from</code></td>
+<td>Last day of the month containing <code>asOf</code></td>
+<td>Inclusive end of the window</td>
+</tr>
+<tr>
+<td><code>status</code></td>
+<td>string</td>
+<td>No</td>
+<td><code>all</code>, <code>pending</code>, <code>approved</code></td>
+<td><code>pending</code></td>
+<td>Which day-lines appear as rows. Sent as the explicit sentinel <code>all</code>, never by omission</td>
+</tr>
+<tr>
+<td><code>groupBy</code></td>
+<td>string</td>
+<td>No</td>
+<td><code>department</code>, <code>payGroup</code></td>
+<td><code>department</code></td>
+<td>The subheading dimension. Also determines group membership, group counts and the sort order</td>
+</tr>
+<tr>
+<td><code>page</code></td>
+<td>integer</td>
+<td>No</td>
+<td>1 or greater</td>
+<td><code>1</code></td>
+<td>1-based page of <strong>people</strong></td>
+</tr>
+<tr>
+<td><code>pageSize</code></td>
+<td>integer</td>
+<td>No</td>
+<td>1 to 200</td>
+<td><code>25</code></td>
+<td>People per page. The compact tier requests <code>6</code></td>
+</tr>
+<tr>
+<td><code>sortBy</code></td>
+<td>string</td>
+<td>No</td>
+<td><code>default</code>, <code>department</code>, <code>payGroup</code>, <code>employeeName</code>, <code>pendingCount</code></td>
+<td><code>default</code></td>
+<td><code>default</code> is the documented order: group dimension alphabetical, then employee name alphabetical, then date chronological</td>
+</tr>
+<tr>
+<td><code>sortDir</code></td>
+<td>string</td>
+<td>No</td>
+<td><code>asc</code>, <code>desc</code></td>
+<td><code>asc</code></td>
+<td>Direction for the leading sort key. The tiebreakers stay ascending so the total order is stable</td>
+</tr>
+</tbody>
+</table>
+<p>Context header: <code>X-Company-ID</code>.</p>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/payroll-scheduled-time-off/queue?asOf=2026-08-07T09%3A15%3A00Z
+GET /api/dashboard/payroll-scheduled-time-off/queue?asOf=2026-08-07T09%3A15%3A00Z&amp;from=2026-08-01&amp;to=2026-08-31&amp;status=pending&amp;groupBy=department&amp;page=1&amp;pageSize=2
+</code></pre>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>asOf</code></td>
+<td>string (date-time)</td>
+<td>DERIVED echo [TO CONFIRM - time zone basis, project owner]</td>
+<td>The shared anchor this page was built against</td>
+</tr>
+<tr>
+<td><code>windowFrom</code></td>
+<td>string (date)</td>
+<td>DERIVED echo [TO CONFIRM - default window, project owner]</td>
+<td>Inclusive start of the window</td>
+</tr>
+<tr>
+<td><code>windowTo</code></td>
+<td>string (date)</td>
+<td>DERIVED echo [TO CONFIRM - default window, project owner]</td>
+<td>Inclusive end of the window</td>
+</tr>
+<tr>
+<td><code>status</code></td>
+<td>string</td>
+<td>DERIVED echo [DOC - Step 1 research]</td>
+<td>The applied status filter</td>
+</tr>
+<tr>
+<td><code>groupBy</code></td>
+<td>string</td>
+<td>DERIVED echo [BUILD]</td>
+<td>The applied grouping dimension</td>
+</tr>
+<tr>
+<td><code>sortBy</code></td>
+<td>string</td>
+<td>DERIVED echo [DOC - Step 4 design]</td>
+<td>The applied sort key</td>
+</tr>
+<tr>
+<td><code>sortDir</code></td>
+<td>string</td>
+<td>DERIVED echo [DOC - Step 4 design]</td>
+<td>The applied direction</td>
+</tr>
+<tr>
+<td><code>page</code></td>
+<td>integer</td>
+<td>DERIVED echo [BUILD]</td>
+<td>1-based page of people</td>
+</tr>
+<tr>
+<td><code>pageSize</code></td>
+<td>integer</td>
+<td>DERIVED echo [BUILD]</td>
+<td>People per page</td>
+</tr>
+<tr>
+<td><code>totalCount</code></td>
+<td>integer</td>
+<td>DERIVED count of <strong>people</strong> in the full filtered set [BUILD]</td>
+<td>Drives the remaining-people note. Never a page count</td>
+</tr>
+<tr>
+<td><code>pendingTotalCount</code></td>
+<td>integer</td>
+<td>DERIVED <code>count(ApprovedDate IS NULL)</code> over the full window, <strong>ignoring <code>status</code></strong> [BUILD]</td>
+<td>The header pending figure. Matches API 2's <code>pendingTotalCount</code> for the same window and anchor</td>
+</tr>
+<tr>
+<td><code>scheduledDayCount</code></td>
+<td>integer</td>
+<td>DERIVED <code>count(*)</code> over the full window, <strong>ignoring <code>status</code></strong> [BUILD]</td>
+<td>The header total. Matches API 2's <code>scheduledDayCount</code></td>
+</tr>
+<tr>
+<td><code>partial</code></td>
+<td>boolean</td>
+<td>NEW [TO CONFIRM - presentation, project owner]</td>
+<td>True when some rows could not be fully resolved</td>
+</tr>
+<tr>
+<td><code>partialReason</code></td>
+<td>string or null</td>
+<td>NEW [TO CONFIRM - presentation, project owner]</td>
+<td>Cause when <code>partial</code> is true</td>
+</tr>
+<tr>
+<td><code>groups</code></td>
+<td>array</td>
+<td>DERIVED [BUILD]</td>
+<td>Every group in the full filtered set, in display order. Not paged, so a group spanning two pages shows the same badge on both</td>
+</tr>
+<tr>
+<td><code>groups[].groupKey</code></td>
+<td>string</td>
+<td>DERIVED stable key for the group value [BUILD]</td>
+<td>Joins a person row to its subheading</td>
+</tr>
+<tr>
+<td><code>groups[].groupLabel</code></td>
+<td>string</td>
+<td>STORED HomeDepartment, or STORED <code>PRCompany.PayGroupName</code> [DOC - Step 1 research]</td>
+<td>The subheading text</td>
+</tr>
+<tr>
+<td><code>groups[].groupPendingCount</code></td>
+<td>integer</td>
+<td>DERIVED <code>count(ApprovedDate IS NULL)</code> per group over the full window, ignoring <code>status</code> [BUILD]</td>
+<td>The group badge. A full-set aggregate, never a page sum</td>
+</tr>
+<tr>
+<td><code>people</code></td>
+<td>array</td>
+<td>DERIVED [BUILD]</td>
+<td>This page of people, in the total order below</td>
+</tr>
+<tr>
+<td><code>people[].employeeId</code></td>
+<td>string</td>
+<td>UNVERIFIED (backend team) employee identifier [TO CONFIRM]</td>
+<td>Also the final sort tiebreaker</td>
+</tr>
+<tr>
+<td><code>people[].employeeName</code></td>
+<td>string</td>
+<td>UNVERIFIED (backend team) employee display name [TO CONFIRM]</td>
+<td>The person row label. Whether this is given-name-first or surname-first follows the existing display-name convention, which no source states</td>
+</tr>
+<tr>
+<td><code>people[].department</code></td>
+<td>string or null</td>
+<td>STORED HomeDepartment [DOC - Step 1 research]</td>
+<td>Null for an employee with no <code>HomeDepartmentID</code>, who groups under <code>Unassigned</code></td>
+</tr>
+<tr>
+<td><code>people[].payGroup</code></td>
+<td>string or null</td>
+<td>UNVERIFIED (backend team) join through <code>PREmployeeCompensationDetail.PayGroup</code>, labelled from <code>PRCompany.PayGroupName</code> [TO CONFIRM]</td>
+<td>Null when the employee has no compensation-detail row. An indirect join, not a confirmed direct field</td>
+</tr>
+<tr>
+<td><code>people[].groupKey</code></td>
+<td>string</td>
+<td>DERIVED [BUILD]</td>
+<td>Which <code>groups[]</code> entry this person sits under</td>
+</tr>
+<tr>
+<td><code>people[].pendingCount</code></td>
+<td>integer</td>
+<td>DERIVED <code>count(ApprovedDate IS NULL)</code> for this employee over the full window, ignoring <code>status</code> [BUILD]</td>
+<td>The person badge</td>
+</tr>
+<tr>
+<td><code>people[].dayLineCount</code></td>
+<td>integer</td>
+<td>DERIVED <code>count(*)</code> for this employee over the full window, ignoring <code>status</code> [BUILD]</td>
+<td>Lets the client show an all-resolved chip without inspecting the array</td>
+</tr>
+<tr>
+<td><code>people[].canApprove</code></td>
+<td>boolean</td>
+<td>NEW from <code>PREmployeeTimeOffApprovals</code> [DOC - Step 1 research]</td>
+<td>Whether the caller may approve this employee's day-lines. The write re-checks server-side and never trusts this flag</td>
+</tr>
+<tr>
+<td><code>people[].dayLines</code></td>
+<td>array</td>
+<td>DERIVED [BUILD]</td>
+<td>Every day-line for this person in the window that the status filter admits. Bounded by definition at one per calendar day</td>
+</tr>
+<tr>
+<td><code>people[].dayLines[].offScheduleId</code></td>
+<td>string</td>
+<td>STORED <code>PR_EmployeeOffSchedule</code> primary key [DOC - Step 1 research]</td>
+<td>The write target and the innermost sort tiebreaker</td>
+</tr>
+<tr>
+<td><code>people[].dayLines[].offDate</code></td>
+<td>string (date)</td>
+<td>STORED <code>PR_EmployeeOffSchedule.OffDate</code> [DOC - Step 1 research]</td>
+<td>The single calendar day this line covers</td>
+</tr>
+<tr>
+<td><code>people[].dayLines[].leaveType</code></td>
+<td>string</td>
+<td>STORED <code>PR_EmployeeOffSchedule</code> leave-type slot [DOC - Step 1 research]</td>
+<td>Slot key, resolved to a label through API 1</td>
+</tr>
+<tr>
+<td><code>people[].dayLines[].hours</code></td>
+<td>number</td>
+<td>STORED <code>PR_EmployeeOffSchedule</code> hours by leave type [DOC - Step 1 research]</td>
+<td>Hours for this day. Stored per row, never a request total divided across a span</td>
+</tr>
+<tr>
+<td><code>people[].dayLines[].approvalStatus</code></td>
+<td>string</td>
+<td>DERIVED <code>Pending</code> when <code>ApprovedDate IS NULL</code>, else <code>Approved</code> [DOC - Step 1 research]</td>
+<td>Two values only. There is no rejected state</td>
+</tr>
+<tr>
+<td><code>people[].dayLines[].isOutstanding</code></td>
+<td>boolean</td>
+<td>DERIVED <code>ApprovedDate IS NULL AND OffDate &lt; date(asOf)</code> [BUILD]</td>
+<td>Past due and still pending. Derived against the shared anchor, not the client clock</td>
+</tr>
+<tr>
+<td><code>people[].dayLines[].approvedBy</code></td>
+<td>string or null</td>
+<td>UNVERIFIED (backend team) approver identity [TO CONFIRM]</td>
+<td>The name in the audit stamp. No source names the column that holds it</td>
+</tr>
+<tr>
+<td><code>people[].dayLines[].approvedDate</code></td>
+<td>string (date) or null</td>
+<td>STORED <code>PR_EmployeeOffSchedule.ApprovedDate</code> [DOC - Step 1 research]</td>
+<td>Null exactly when the line is pending</td>
+</tr>
+</tbody>
+</table>
+<h3>Example response</h3>
+<pre><code>{
+  &quot;asOf&quot;: &quot;2026-08-07T09:15:00Z&quot;,
+  &quot;windowFrom&quot;: &quot;2026-08-01&quot;,
+  &quot;windowTo&quot;: &quot;2026-08-31&quot;,
+  &quot;status&quot;: &quot;pending&quot;,
+  &quot;groupBy&quot;: &quot;department&quot;,
+  &quot;sortBy&quot;: &quot;default&quot;,
+  &quot;sortDir&quot;: &quot;asc&quot;,
+  &quot;page&quot;: 1,
+  &quot;pageSize&quot;: 2,
+  &quot;totalCount&quot;: 6,
+  &quot;pendingTotalCount&quot;: 20,
+  &quot;scheduledDayCount&quot;: 27,
+  &quot;partial&quot;: false,
+  &quot;partialReason&quot;: null,
+  &quot;groups&quot;: [
+    {&quot;groupKey&quot;: &quot;dept-104&quot;, &quot;groupLabel&quot;: &quot;Facilities&quot;, &quot;groupPendingCount&quot;: 8},
+    {&quot;groupKey&quot;: &quot;dept-101&quot;, &quot;groupLabel&quot;: &quot;Finance&quot;, &quot;groupPendingCount&quot;: 3},
+    {&quot;groupKey&quot;: &quot;dept-106&quot;, &quot;groupLabel&quot;: &quot;IT&quot;, &quot;groupPendingCount&quot;: 1},
+    {&quot;groupKey&quot;: &quot;dept-109&quot;, &quot;groupLabel&quot;: &quot;Ministry&quot;, &quot;groupPendingCount&quot;: 8}
+  ],
+  &quot;people&quot;: [
+    {
+      &quot;employeeId&quot;: &quot;e-3311&quot;,
+      &quot;employeeName&quot;: &quot;Kofi Mensah&quot;,
+      &quot;department&quot;: &quot;Facilities&quot;,
+      &quot;payGroup&quot;: &quot;Seasonal&quot;,
+      &quot;groupKey&quot;: &quot;dept-104&quot;,
+      &quot;pendingCount&quot;: 4,
+      &quot;dayLineCount&quot;: 4,
+      &quot;canApprove&quot;: true,
+      &quot;dayLines&quot;: [
+        {&quot;offScheduleId&quot;: &quot;os-88401&quot;, &quot;offDate&quot;: &quot;2026-08-04&quot;, &quot;leaveType&quot;: &quot;Sick&quot;, &quot;hours&quot;: 8, &quot;approvalStatus&quot;: &quot;Pending&quot;, &quot;isOutstanding&quot;: true, &quot;approvedBy&quot;: null, &quot;approvedDate&quot;: null},
+        {&quot;offScheduleId&quot;: &quot;os-88431&quot;, &quot;offDate&quot;: &quot;2026-08-26&quot;, &quot;leaveType&quot;: &quot;Vacation&quot;, &quot;hours&quot;: 8, &quot;approvalStatus&quot;: &quot;Pending&quot;, &quot;isOutstanding&quot;: false, &quot;approvedBy&quot;: null, &quot;approvedDate&quot;: null},
+        {&quot;offScheduleId&quot;: &quot;os-88432&quot;, &quot;offDate&quot;: &quot;2026-08-27&quot;, &quot;leaveType&quot;: &quot;Vacation&quot;, &quot;hours&quot;: 8, &quot;approvalStatus&quot;: &quot;Pending&quot;, &quot;isOutstanding&quot;: false, &quot;approvedBy&quot;: null, &quot;approvedDate&quot;: null},
+        {&quot;offScheduleId&quot;: &quot;os-88433&quot;, &quot;offDate&quot;: &quot;2026-08-28&quot;, &quot;leaveType&quot;: &quot;Vacation&quot;, &quot;hours&quot;: 8, &quot;approvalStatus&quot;: &quot;Pending&quot;, &quot;isOutstanding&quot;: false, &quot;approvedBy&quot;: null, &quot;approvedDate&quot;: null}
+      ]
+    },
+    {
+      &quot;employeeId&quot;: &quot;e-2044&quot;,
+      &quot;employeeName&quot;: &quot;Marcus Bell&quot;,
+      &quot;department&quot;: &quot;Facilities&quot;,
+      &quot;payGroup&quot;: &quot;Weekly Staff&quot;,
+      &quot;groupKey&quot;: &quot;dept-104&quot;,
+      &quot;pendingCount&quot;: 4,
+      &quot;dayLineCount&quot;: 4,
+      &quot;canApprove&quot;: true,
+      &quot;dayLines&quot;: [
+        {&quot;offScheduleId&quot;: &quot;os-88112&quot;, &quot;offDate&quot;: &quot;2026-08-07&quot;, &quot;leaveType&quot;: &quot;Personal&quot;, &quot;hours&quot;: 8, &quot;approvalStatus&quot;: &quot;Pending&quot;, &quot;isOutstanding&quot;: false, &quot;approvedBy&quot;: null, &quot;approvedDate&quot;: null},
+        {&quot;offScheduleId&quot;: &quot;os-88121&quot;, &quot;offDate&quot;: &quot;2026-08-24&quot;, &quot;leaveType&quot;: &quot;Vacation&quot;, &quot;hours&quot;: 8, &quot;approvalStatus&quot;: &quot;Pending&quot;, &quot;isOutstanding&quot;: false, &quot;approvedBy&quot;: null, &quot;approvedDate&quot;: null},
+        {&quot;offScheduleId&quot;: &quot;os-88122&quot;, &quot;offDate&quot;: &quot;2026-08-25&quot;, &quot;leaveType&quot;: &quot;Vacation&quot;, &quot;hours&quot;: 8, &quot;approvalStatus&quot;: &quot;Pending&quot;, &quot;isOutstanding&quot;: false, &quot;approvedBy&quot;: null, &quot;approvedDate&quot;: null},
+        {&quot;offScheduleId&quot;: &quot;os-88131&quot;, &quot;offDate&quot;: &quot;2026-08-29&quot;, &quot;leaveType&quot;: &quot;Personal&quot;, &quot;hours&quot;: 8, &quot;approvalStatus&quot;: &quot;Pending&quot;, &quot;isOutstanding&quot;: false, &quot;approvedBy&quot;: null, &quot;approvedDate&quot;: null}
+      ]
+    }
+  ]
+}
+</code></pre>
+<p>Reconciliation of the page against its group: the two people shown carry four pending day-lines each, 4 + 4 = 8, which is the Facilities <code>groupPendingCount</code>. Three more figures must cross-foot with it:</p>
+<ul>
+<li>That badge would read 8 on any page Facilities appeared on, because it is a full-set aggregate rather than a page sum.</li>
+<li>The four group badges account for every pending day-line in the window, 8 + 3 + 1 + 8 = 20, which is <code>pendingTotalCount</code> and matches API 2's <code>pendingTotalCount</code> for the same window and anchor.</li>
+<li>The 20 pending day-lines plus the 7 approved ones account for every day-line, 20 + 7 = 27, which is <code>scheduledDayCount</code> and matches API 2's <code>scheduledDayCount</code>.</li>
+<li>Kofi Mensah's four day-lines carry eight hours each, 8 + 8 + 8 + 8 = 32 hours, and one of them is outstanding because 4 August precedes the anchor date while 7 August, Marcus Bell's first line, does not.</li>
+</ul>
+<p>At <code>pageSize</code> 2 there are three pages of people. <code>totalCount</code> 6, <code>pendingTotalCount</code> 20 and <code>scheduledDayCount</code> 27 are identical on all three pages.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty (no rows match)</td>
+<td><code>200</code> with <code>people</code> and <code>groups</code> both empty arrays, <code>totalCount</code> <code>0</code>, and <code>pendingTotalCount</code> and <code>scheduledDayCount</code> still correct for the window. A status filter that admits nothing is this case, and it is not an error</td>
+</tr>
+<tr>
+<td>Partial (data exists for only part of the requested span)</td>
+<td><code>200</code> with <code>partial</code> true and <code>partialReason</code> set. The most likely cause is <code>pay-group-join-incomplete</code>: rows resolved but <code>payGroup</code> is null for some people because they have no compensation-detail row. Under <code>groupBy=payGroup</code> those people appear in an <code>Unassigned</code> group rather than being dropped</td>
+</tr>
+<tr>
+<td>Not-yet-existing entity (predates the requested window)</td>
+<td>An employee with no day-lines in the window does not appear at all, in any <code>status</code> mode, and is not returned as an empty person row</td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td><code>403</code> with no body without the Payroll read right. With the read right but no approval authority, <code>200</code> with empty <code>people</code> and <code>groups</code>; the client reads <code>authorisedDepartmentCount</code> <code>0</code> from API 2 to tell that apart from a genuinely clear queue</td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td><code>503</code>. The client shows the error state for the queue body and leaves the compact figures alone if API 2 already succeeded</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>API 4: leave calendar month</h2>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/payroll-scheduled-time-off/calendar
+</code></pre>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>asOf</code></td>
+<td>string (date-time)</td>
+<td>No</td>
+<td>Any ISO 8601 instant not in the future</td>
+<td>Server clock at request time</td>
+<td>The shared anchor. Fixes the outstanding boundary so the day-map and the compact figures agree</td>
+</tr>
+<tr>
+<td><code>year</code></td>
+<td>integer</td>
+<td>No</td>
+<td>1900 to 2200</td>
+<td>Year of <code>asOf</code></td>
+<td>Displayed month's year</td>
+</tr>
+<tr>
+<td><code>month</code></td>
+<td>integer</td>
+<td>No</td>
+<td>1 to 12</td>
+<td>Month of <code>asOf</code></td>
+<td>Displayed month, 1-based</td>
+</tr>
+<tr>
+<td><code>department</code></td>
+<td>string</td>
+<td>No</td>
+<td>Any department present in the company</td>
+<td>omitted, meaning all departments</td>
+<td>Scopes the whole response except the option list. Omission is the wire form of All</td>
+</tr>
+<tr>
+<td><code>markerLimit</code></td>
+<td>integer</td>
+<td>No</td>
+<td>1 to 10</td>
+<td><code>3</code></td>
+<td>How many markers the caller renders per date. Anything beyond it is counted, not sent</td>
+</tr>
+</tbody>
+</table>
+<p>Context header: <code>X-Company-ID</code>.</p>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/payroll-scheduled-time-off/calendar?asOf=2026-08-07T09%3A15%3A00Z&amp;year=2026&amp;month=8
+GET /api/dashboard/payroll-scheduled-time-off/calendar?asOf=2026-08-07T09%3A15%3A00Z&amp;year=2026&amp;month=8&amp;department=Ministry&amp;markerLimit=3
+</code></pre>
+<p>A department containing a space or an ampersand is URL-encoded.</p>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>asOf</code></td>
+<td>string (date-time)</td>
+<td>DERIVED echo [TO CONFIRM - time zone basis, project owner]</td>
+<td>The shared anchor</td>
+</tr>
+<tr>
+<td><code>year</code></td>
+<td>integer</td>
+<td>DERIVED echo [BUILD]</td>
+<td>Displayed year</td>
+</tr>
+<tr>
+<td><code>month</code></td>
+<td>integer</td>
+<td>DERIVED echo [BUILD]</td>
+<td>Displayed month, 1-based</td>
+</tr>
+<tr>
+<td><code>department</code></td>
+<td>string or null</td>
+<td>DERIVED echo, <code>null</code> when all departments [BUILD]</td>
+<td>The applied filter, so the client can render the filtered-empty state correctly</td>
+</tr>
+<tr>
+<td><code>peopleOut</code></td>
+<td>integer</td>
+<td>DERIVED distinct employees over the <strong>filtered</strong> month [BUILD]</td>
+<td>The summary line's people figure</td>
+</tr>
+<tr>
+<td><code>departmentsOut</code></td>
+<td>integer</td>
+<td>DERIVED distinct departments over the <strong>filtered</strong> month [BUILD]</td>
+<td>The summary line's department figure</td>
+</tr>
+<tr>
+<td><code>dayLineCount</code></td>
+<td>integer</td>
+<td>DERIVED <code>count(*)</code> over the filtered month [BUILD]</td>
+<td>Every day-line the month contains under the filter</td>
+</tr>
+<tr>
+<td><code>unfilteredPeopleOut</code></td>
+<td>integer</td>
+<td>DERIVED distinct employees over the displayed month <strong>ignoring <code>department</code></strong> [BUILD]</td>
+<td>The count on the All option, and what tells a filtered miss from an empty month</td>
+</tr>
+<tr>
+<td><code>partial</code></td>
+<td>boolean</td>
+<td>NEW [TO CONFIRM - presentation, project owner]</td>
+<td>True when some rows could not be fully resolved</td>
+</tr>
+<tr>
+<td><code>partialReason</code></td>
+<td>string or null</td>
+<td>NEW [TO CONFIRM - presentation, project owner]</td>
+<td>Cause when <code>partial</code> is true</td>
+</tr>
+<tr>
+<td><code>departments</code></td>
+<td>array</td>
+<td>DERIVED distinct HomeDepartment across the whole window, alphabetical, <strong>ignoring <code>department</code></strong> [BUILD]</td>
+<td>The filter's own option list. Spans the window rather than the displayed month, so an option does not vanish when its people are not out this month, and it never narrows when the filter is applied</td>
+</tr>
+<tr>
+<td><code>departments[].department</code></td>
+<td>string</td>
+<td>STORED HomeDepartment [DOC - Step 1 research]</td>
+<td>Option value and label</td>
+</tr>
+<tr>
+<td><code>departments[].peopleOut</code></td>
+<td>integer</td>
+<td>DERIVED distinct employees in that department over the unfiltered <strong>displayed month</strong> [BUILD]</td>
+<td>People, not day-lines, so the reader can see where to look before committing to a filter. Can legitimately be <code>0</code> for a department that has time off elsewhere in the window but none this month</td>
+</tr>
+<tr>
+<td><code>days</code></td>
+<td>array</td>
+<td>DERIVED [BUILD]</td>
+<td>Only dates that have at least one day-line, ascending. Dates with none are absent, and the client renders them neutral</td>
+</tr>
+<tr>
+<td><code>days[].date</code></td>
+<td>string (date)</td>
+<td>STORED <code>PR_EmployeeOffSchedule.OffDate</code> [DOC - Step 1 research]</td>
+<td>The calendar date</td>
+</tr>
+<tr>
+<td><code>days[].dayStatus</code></td>
+<td>string</td>
+<td>DERIVED priority: <code>outstanding</code> if any, else <code>pending</code> if any, else <code>approved</code> [BUILD]</td>
+<td>The date's overall state, spanning every row on it including the truncated ones</td>
+</tr>
+<tr>
+<td><code>days[].peopleOut</code></td>
+<td>integer</td>
+<td>DERIVED distinct employees on that date under the filter [BUILD]</td>
+<td>The full figure, not the number of markers returned</td>
+</tr>
+<tr>
+<td><code>days[].overflowCount</code></td>
+<td>integer</td>
+<td>DERIVED <code>peopleOut - count(markers returned)</code> [BUILD]</td>
+<td>Drives the overflow chip. Zero when every person fits</td>
+</tr>
+<tr>
+<td><code>days[].markers</code></td>
+<td>array</td>
+<td>DERIVED, truncated to <code>markerLimit</code>, ordered by <code>employeeName</code> then <code>employeeId</code> so the truncation is reproducible [BUILD]</td>
+<td>One entry per person out, up to the limit</td>
+</tr>
+<tr>
+<td><code>days[].markers[].employeeId</code></td>
+<td>string</td>
+<td>UNVERIFIED (backend team) employee identifier [TO CONFIRM]</td>
+<td>Marker identity and truncation tiebreaker</td>
+</tr>
+<tr>
+<td><code>days[].markers[].employeeName</code></td>
+<td>string</td>
+<td>UNVERIFIED (backend team) employee display name [TO CONFIRM]</td>
+<td>The client derives the initials from this</td>
+</tr>
+<tr>
+<td><code>days[].markers[].department</code></td>
+<td>string or null</td>
+<td>STORED HomeDepartment [DOC - Step 1 research]</td>
+<td>The marker's group label. The calendar's grouping dimension is fixed to department</td>
+</tr>
+<tr>
+<td><code>days[].markers[].approvalStatus</code></td>
+<td>string</td>
+<td>DERIVED <code>Pending</code> when <code>ApprovedDate IS NULL</code>, else <code>Approved</code> [DOC - Step 1 research]</td>
+<td>Each marker carries its own state, so a mixed date stays legible under one date-level state</td>
+</tr>
+<tr>
+<td><code>days[].markers[].isOutstanding</code></td>
+<td>boolean</td>
+<td>DERIVED <code>ApprovedDate IS NULL AND OffDate &lt; date(asOf)</code> [BUILD]</td>
+<td>Past due and still pending, for this person on this date</td>
+</tr>
+</tbody>
+</table>
+<h3>Example response</h3>
+<pre><code>{
+  &quot;asOf&quot;: &quot;2026-08-07T09:15:00Z&quot;,
+  &quot;year&quot;: 2026,
+  &quot;month&quot;: 8,
+  &quot;department&quot;: &quot;Ministry&quot;,
+  &quot;peopleOut&quot;: 2,
+  &quot;departmentsOut&quot;: 1,
+  &quot;dayLineCount&quot;: 9,
+  &quot;unfilteredPeopleOut&quot;: 7,
+  &quot;partial&quot;: false,
+  &quot;partialReason&quot;: null,
+  &quot;departments&quot;: [
+    {&quot;department&quot;: &quot;Admin&quot;, &quot;peopleOut&quot;: 1},
+    {&quot;department&quot;: &quot;Facilities&quot;, &quot;peopleOut&quot;: 2},
+    {&quot;department&quot;: &quot;Finance&quot;, &quot;peopleOut&quot;: 1},
+    {&quot;department&quot;: &quot;IT&quot;, &quot;peopleOut&quot;: 1},
+    {&quot;department&quot;: &quot;Ministry&quot;, &quot;peopleOut&quot;: 2}
+  ],
+  &quot;days&quot;: [
+    {&quot;date&quot;: &quot;2026-08-01&quot;, &quot;dayStatus&quot;: &quot;outstanding&quot;, &quot;peopleOut&quot;: 1, &quot;overflowCount&quot;: 0,
+     &quot;markers&quot;: [{&quot;employeeId&quot;: &quot;e-5120&quot;, &quot;employeeName&quot;: &quot;Grace Lin&quot;, &quot;department&quot;: &quot;Ministry&quot;, &quot;approvalStatus&quot;: &quot;Pending&quot;, &quot;isOutstanding&quot;: true}]},
+    {&quot;date&quot;: &quot;2026-08-06&quot;, &quot;dayStatus&quot;: &quot;approved&quot;, &quot;peopleOut&quot;: 1, &quot;overflowCount&quot;: 0,
+     &quot;markers&quot;: [{&quot;employeeId&quot;: &quot;e-5077&quot;, &quot;employeeName&quot;: &quot;Thomas Ade&quot;, &quot;department&quot;: &quot;Ministry&quot;, &quot;approvalStatus&quot;: &quot;Approved&quot;, &quot;isOutstanding&quot;: false}]},
+    {&quot;date&quot;: &quot;2026-08-11&quot;, &quot;dayStatus&quot;: &quot;pending&quot;, &quot;peopleOut&quot;: 1, &quot;overflowCount&quot;: 0,
+     &quot;markers&quot;: [{&quot;employeeId&quot;: &quot;e-5120&quot;, &quot;employeeName&quot;: &quot;Grace Lin&quot;, &quot;department&quot;: &quot;Ministry&quot;, &quot;approvalStatus&quot;: &quot;Pending&quot;, &quot;isOutstanding&quot;: false}]},
+    {&quot;date&quot;: &quot;2026-08-13&quot;, &quot;dayStatus&quot;: &quot;pending&quot;, &quot;peopleOut&quot;: 1, &quot;overflowCount&quot;: 0,
+     &quot;markers&quot;: [{&quot;employeeId&quot;: &quot;e-5120&quot;, &quot;employeeName&quot;: &quot;Grace Lin&quot;, &quot;department&quot;: &quot;Ministry&quot;, &quot;approvalStatus&quot;: &quot;Pending&quot;, &quot;isOutstanding&quot;: false}]},
+    {&quot;date&quot;: &quot;2026-08-14&quot;, &quot;dayStatus&quot;: &quot;pending&quot;, &quot;peopleOut&quot;: 1, &quot;overflowCount&quot;: 0,
+     &quot;markers&quot;: [{&quot;employeeId&quot;: &quot;e-5120&quot;, &quot;employeeName&quot;: &quot;Grace Lin&quot;, &quot;department&quot;: &quot;Ministry&quot;, &quot;approvalStatus&quot;: &quot;Pending&quot;, &quot;isOutstanding&quot;: false}]},
+    {&quot;date&quot;: &quot;2026-08-18&quot;, &quot;dayStatus&quot;: &quot;pending&quot;, &quot;peopleOut&quot;: 1, &quot;overflowCount&quot;: 0,
+     &quot;markers&quot;: [{&quot;employeeId&quot;: &quot;e-5077&quot;, &quot;employeeName&quot;: &quot;Thomas Ade&quot;, &quot;department&quot;: &quot;Ministry&quot;, &quot;approvalStatus&quot;: &quot;Pending&quot;, &quot;isOutstanding&quot;: false}]},
+    {&quot;date&quot;: &quot;2026-08-19&quot;, &quot;dayStatus&quot;: &quot;pending&quot;, &quot;peopleOut&quot;: 1, &quot;overflowCount&quot;: 0,
+     &quot;markers&quot;: [{&quot;employeeId&quot;: &quot;e-5077&quot;, &quot;employeeName&quot;: &quot;Thomas Ade&quot;, &quot;department&quot;: &quot;Ministry&quot;, &quot;approvalStatus&quot;: &quot;Pending&quot;, &quot;isOutstanding&quot;: false}]},
+    {&quot;date&quot;: &quot;2026-08-20&quot;, &quot;dayStatus&quot;: &quot;pending&quot;, &quot;peopleOut&quot;: 1, &quot;overflowCount&quot;: 0,
+     &quot;markers&quot;: [{&quot;employeeId&quot;: &quot;e-5077&quot;, &quot;employeeName&quot;: &quot;Thomas Ade&quot;, &quot;department&quot;: &quot;Ministry&quot;, &quot;approvalStatus&quot;: &quot;Pending&quot;, &quot;isOutstanding&quot;: false}]},
+    {&quot;date&quot;: &quot;2026-08-21&quot;, &quot;dayStatus&quot;: &quot;pending&quot;, &quot;peopleOut&quot;: 1, &quot;overflowCount&quot;: 0,
+     &quot;markers&quot;: [{&quot;employeeId&quot;: &quot;e-5077&quot;, &quot;employeeName&quot;: &quot;Thomas Ade&quot;, &quot;department&quot;: &quot;Ministry&quot;, &quot;approvalStatus&quot;: &quot;Pending&quot;, &quot;isOutstanding&quot;: false}]}
+  ]
+}
+</code></pre>
+<p>Reconciliation of the filtered month: the nine dated objects carry one person each and split between the two Ministry employees, Grace Lin with four and Thomas Ade with five, 4 + 5 = 9, which is <code>dayLineCount</code>.</p>
+<p>Reconciliation of the option list: a person belongs to exactly one department, so the option counts partition the displayed month's distinct people, 1 + 2 + 1 + 1 + 2 = 7, which is <code>unfilteredPeopleOut</code>. Every one of the window's five departments has somebody out this month, so no option carries a zero here. The filtered <code>peopleOut</code> of 2 equals the Ministry option's own count, which is what makes the option list usable as a preview.</p>
+<p>A busy date from the unfiltered call for the same month, at <code>markerLimit</code> 2, shows the truncation and the overflow chip:</p>
+<pre><code>{
+  &quot;date&quot;: &quot;2026-08-13&quot;,
+  &quot;dayStatus&quot;: &quot;pending&quot;,
+  &quot;peopleOut&quot;: 3,
+  &quot;overflowCount&quot;: 1,
+  &quot;markers&quot;: [
+    {&quot;employeeId&quot;: &quot;e-1180&quot;, &quot;employeeName&quot;: &quot;Dana Whitfield&quot;, &quot;department&quot;: &quot;Finance&quot;, &quot;approvalStatus&quot;: &quot;Pending&quot;, &quot;isOutstanding&quot;: false},
+    {&quot;employeeId&quot;: &quot;e-5120&quot;, &quot;employeeName&quot;: &quot;Grace Lin&quot;, &quot;department&quot;: &quot;Ministry&quot;, &quot;approvalStatus&quot;: &quot;Pending&quot;, &quot;isOutstanding&quot;: false}
+  ]
+}
+</code></pre>
+<p>Reconciliation of the truncated date: markers returned plus the overflow count account for everyone out, 2 + 1 = 3, which is <code>peopleOut</code>. The third person, Elena Sokolova of IT, is counted but not sent, and <code>dayStatus</code> already spans her row.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty (no rows match)</td>
+<td><code>200</code> with <code>days</code> empty. Two distinguishable cases: <code>department</code> <code>null</code> and <code>unfilteredPeopleOut</code> <code>0</code> is an empty month; <code>department</code> set and <code>unfilteredPeopleOut</code> greater than <code>0</code> is a filtered miss, and the client says so and points back to All. A filter matching nothing is not the same as an empty month</td>
+</tr>
+<tr>
+<td>Partial (data exists for only part of the requested span)</td>
+<td><code>200</code> with <code>partial</code> true and <code>partialReason</code> set. A month is either scanned or it is not, so the realistic cause is <code>department-resolution-incomplete</code>: day-lines whose employee has no <code>HomeDepartmentID</code> are counted in <code>peopleOut</code> and <code>dayLineCount</code> but carry <code>department</code> <code>null</code> on their marker and appear under no option</td>
+</tr>
+<tr>
+<td>Not-yet-existing entity (predates the requested window)</td>
+<td>A month before the organisation's first time-off record returns <code>days</code> empty, with <code>departments</code> still listing the window's departments at a count of <code>0</code> each. Navigation still works; it is not a boundary error</td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td><code>403</code> with no body without the Payroll read right. With the read right and no approval authority, <code>200</code> with everything empty and <code>unfilteredPeopleOut</code> <code>0</code></td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td><code>503</code>. The client shows the error state in place of the grid and keeps the month navigation usable so a retry does not lose the user's position</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>API 5: calendar day detail</h2>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/payroll-scheduled-time-off/calendar/days/{date}
+</code></pre>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>date</code></td>
+<td>string (date), path</td>
+<td>Yes</td>
+<td>ISO 8601 date</td>
+<td>none</td>
+<td>The date clicked. Path segment, not a query param</td>
+</tr>
+<tr>
+<td><code>asOf</code></td>
+<td>string (date-time)</td>
+<td>No</td>
+<td>Any ISO 8601 instant not in the future</td>
+<td>Server clock at request time</td>
+<td>The shared anchor, so the popover's states match the grid it opened from</td>
+</tr>
+<tr>
+<td><code>department</code></td>
+<td>string</td>
+<td>No</td>
+<td>Any department present in the company</td>
+<td>omitted, meaning all departments</td>
+<td>Must carry the calendar's current filter. Clicking a date while filtered must not list the whole organisation</td>
+</tr>
+<tr>
+<td><code>page</code></td>
+<td>integer</td>
+<td>No</td>
+<td>1 or greater</td>
+<td><code>1</code></td>
+<td>1-based page of people out on the date</td>
+</tr>
+<tr>
+<td><code>pageSize</code></td>
+<td>integer</td>
+<td>No</td>
+<td>1 to 200</td>
+<td><code>50</code></td>
+<td>People per page</td>
+</tr>
+<tr>
+<td><code>sortBy</code></td>
+<td>string</td>
+<td>No</td>
+<td><code>employeeName</code></td>
+<td><code>employeeName</code></td>
+<td>Single-value whitelist. The order is fixed by design</td>
+</tr>
+<tr>
+<td><code>sortDir</code></td>
+<td>string</td>
+<td>No</td>
+<td><code>asc</code>, <code>desc</code></td>
+<td><code>asc</code></td>
+<td>Direction for the leading key</td>
+</tr>
+</tbody>
+</table>
+<p>Context header: <code>X-Company-ID</code>.</p>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/payroll-scheduled-time-off/calendar/days/2026-08-04?asOf=2026-08-07T09%3A15%3A00Z
+GET /api/dashboard/payroll-scheduled-time-off/calendar/days/2026-08-04?asOf=2026-08-07T09%3A15%3A00Z&amp;department=Facilities&amp;page=1&amp;pageSize=50
+</code></pre>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>asOf</code></td>
+<td>string (date-time)</td>
+<td>DERIVED echo [TO CONFIRM - time zone basis, project owner]</td>
+<td>The shared anchor</td>
+</tr>
+<tr>
+<td><code>date</code></td>
+<td>string (date)</td>
+<td>DERIVED echo [BUILD]</td>
+<td>The date the popover describes</td>
+</tr>
+<tr>
+<td><code>department</code></td>
+<td>string or null</td>
+<td>DERIVED echo, <code>null</code> when unfiltered [BUILD]</td>
+<td>The applied filter, inherited from the calendar</td>
+</tr>
+<tr>
+<td><code>peopleOut</code></td>
+<td>integer</td>
+<td>DERIVED distinct employees on the date under the filter, over the <strong>full</strong> set [BUILD]</td>
+<td>The popover's footer count. Never a page count</td>
+</tr>
+<tr>
+<td><code>page</code></td>
+<td>integer</td>
+<td>DERIVED echo [BUILD]</td>
+<td>1-based page</td>
+</tr>
+<tr>
+<td><code>pageSize</code></td>
+<td>integer</td>
+<td>DERIVED echo [BUILD]</td>
+<td>People per page</td>
+</tr>
+<tr>
+<td><code>totalCount</code></td>
+<td>integer</td>
+<td>DERIVED count of rows in the full filtered set [BUILD]</td>
+<td>Equals <code>peopleOut</code>, because one employee has at most one day-line per date</td>
+</tr>
+<tr>
+<td><code>sortBy</code></td>
+<td>string</td>
+<td>DERIVED echo [BUILD]</td>
+<td>The applied sort key</td>
+</tr>
+<tr>
+<td><code>sortDir</code></td>
+<td>string</td>
+<td>DERIVED echo [BUILD]</td>
+<td>The applied direction</td>
+</tr>
+<tr>
+<td><code>partial</code></td>
+<td>boolean</td>
+<td>NEW [TO CONFIRM - presentation, project owner]</td>
+<td>True when some rows could not be fully resolved</td>
+</tr>
+<tr>
+<td><code>partialReason</code></td>
+<td>string or null</td>
+<td>NEW [TO CONFIRM - presentation, project owner]</td>
+<td>Cause when <code>partial</code> is true</td>
+</tr>
+<tr>
+<td><code>people</code></td>
+<td>array</td>
+<td>DERIVED [BUILD]</td>
+<td>This page of people out on the date</td>
+</tr>
+<tr>
+<td><code>people[].offScheduleId</code></td>
+<td>string</td>
+<td>STORED <code>PR_EmployeeOffSchedule</code> primary key [DOC - Step 1 research]</td>
+<td>Row identity and final sort tiebreaker</td>
+</tr>
+<tr>
+<td><code>people[].employeeId</code></td>
+<td>string</td>
+<td>UNVERIFIED (backend team) employee identifier [TO CONFIRM]</td>
+<td>Sort tiebreaker, and how a marker click pre-focuses a row</td>
+</tr>
+<tr>
+<td><code>people[].employeeName</code></td>
+<td>string</td>
+<td>UNVERIFIED (backend team) employee display name [TO CONFIRM]</td>
+<td>The row label</td>
+</tr>
+<tr>
+<td><code>people[].department</code></td>
+<td>string or null</td>
+<td>STORED HomeDepartment [DOC - Step 1 research]</td>
+<td>Shown alongside the pay group, because the popover names both</td>
+</tr>
+<tr>
+<td><code>people[].payGroup</code></td>
+<td>string or null</td>
+<td>UNVERIFIED (backend team) join through <code>PREmployeeCompensationDetail.PayGroup</code> [TO CONFIRM]</td>
+<td>Null when the employee has no compensation-detail row</td>
+</tr>
+<tr>
+<td><code>people[].leaveType</code></td>
+<td>string</td>
+<td>STORED <code>PR_EmployeeOffSchedule</code> leave-type slot [DOC - Step 1 research]</td>
+<td>Slot key, resolved to a label through API 1</td>
+</tr>
+<tr>
+<td><code>people[].hours</code></td>
+<td>number</td>
+<td>STORED <code>PR_EmployeeOffSchedule</code> hours by leave type [DOC - Step 1 research]</td>
+<td>Hours for this date</td>
+</tr>
+<tr>
+<td><code>people[].approvalStatus</code></td>
+<td>string</td>
+<td>DERIVED <code>Pending</code> when <code>ApprovedDate IS NULL</code>, else <code>Approved</code> [DOC - Step 1 research]</td>
+<td>Two values only</td>
+</tr>
+<tr>
+<td><code>people[].isOutstanding</code></td>
+<td>boolean</td>
+<td>DERIVED <code>ApprovedDate IS NULL AND OffDate &lt; date(asOf)</code> [BUILD]</td>
+<td>Past due and still pending</td>
+</tr>
+<tr>
+<td><code>people[].approvedBy</code></td>
+<td>string or null</td>
+<td>UNVERIFIED (backend team) approver identity [TO CONFIRM]</td>
+<td>The name in the audit stamp</td>
+</tr>
+<tr>
+<td><code>people[].approvedDate</code></td>
+<td>string (date) or null</td>
+<td>STORED <code>PR_EmployeeOffSchedule.ApprovedDate</code> [DOC - Step 1 research]</td>
+<td>Null exactly when pending</td>
+</tr>
+</tbody>
+</table>
+<h3>Example response</h3>
+<pre><code>{
+  &quot;asOf&quot;: &quot;2026-08-07T09:15:00Z&quot;,
+  &quot;date&quot;: &quot;2026-08-04&quot;,
+  &quot;department&quot;: null,
+  &quot;peopleOut&quot;: 2,
+  &quot;page&quot;: 1,
+  &quot;pageSize&quot;: 50,
+  &quot;totalCount&quot;: 2,
+  &quot;sortBy&quot;: &quot;employeeName&quot;,
+  &quot;sortDir&quot;: &quot;asc&quot;,
+  &quot;partial&quot;: false,
+  &quot;partialReason&quot;: null,
+  &quot;people&quot;: [
+    {&quot;offScheduleId&quot;: &quot;os-88510&quot;, &quot;employeeId&quot;: &quot;e-4402&quot;, &quot;employeeName&quot;: &quot;Elena Sokolova&quot;, &quot;department&quot;: &quot;IT&quot;, &quot;payGroup&quot;: &quot;Seasonal&quot;, &quot;leaveType&quot;: &quot;Sick&quot;, &quot;hours&quot;: 8, &quot;approvalStatus&quot;: &quot;Approved&quot;, &quot;isOutstanding&quot;: false, &quot;approvedBy&quot;: &quot;M. Reyes&quot;, &quot;approvedDate&quot;: &quot;2026-08-01&quot;},
+    {&quot;offScheduleId&quot;: &quot;os-88401&quot;, &quot;employeeId&quot;: &quot;e-3311&quot;, &quot;employeeName&quot;: &quot;Kofi Mensah&quot;, &quot;department&quot;: &quot;Facilities&quot;, &quot;payGroup&quot;: &quot;Seasonal&quot;, &quot;leaveType&quot;: &quot;Sick&quot;, &quot;hours&quot;: 8, &quot;approvalStatus&quot;: &quot;Pending&quot;, &quot;isOutstanding&quot;: true, &quot;approvedBy&quot;: null, &quot;approvedDate&quot;: null}
+  ]
+}
+</code></pre>
+<p>Reconciliation: one approved row plus one pending row accounts for everyone out on the date, 1 + 1 = 2, which is both <code>peopleOut</code> and <code>totalCount</code>; the hours on the date total 8 + 8 = 16. This is the mixed-state case, so API 4 returns <code>dayStatus</code> <code>outstanding</code> for 4 August by priority while the two rows here keep their own separate states.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty (no rows match)</td>
+<td><code>200</code> with <code>people</code> empty, <code>peopleOut</code> <code>0</code> and <code>totalCount</code> <code>0</code>. Reachable when the department filter excludes everyone on the date, or when a write cleared the date between the grid render and the click. The client closes the popover rather than showing an empty card</td>
+</tr>
+<tr>
+<td>Partial (data exists for only part of the requested span)</td>
+<td><code>200</code> with <code>partial</code> true and <code>partialReason</code> <code>pay-group-join-incomplete</code>. The row is still returned with <code>payGroup</code> <code>null</code>, because the popover's purpose is who is out, and a missing pay group must not hide a person</td>
+</tr>
+<tr>
+<td>Not-yet-existing entity (predates the requested window)</td>
+<td>A date with no records is the empty case above. A date outside the anchor's plausible range is still answered, not rejected</td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td><code>403</code> with no body without the Payroll read right. With the read right and no approval authority, <code>200</code> with <code>people</code> empty</td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td><code>503</code>. The popover shows the error state and stays dismissible, so a failed drill never traps the user in a dialog</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>API 6: person context</h2>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/payroll-scheduled-time-off/employees/{employeeId}/context
+</code></pre>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>employeeId</code></td>
+<td>string, path</td>
+<td>Yes</td>
+<td>An employee in the caller's authorised departments</td>
+<td>none</td>
+<td>The subject of the popover</td>
+</tr>
+<tr>
+<td><code>asOf</code></td>
+<td>string (date-time)</td>
+<td>No</td>
+<td>Any ISO 8601 instant not in the future</td>
+<td>Server clock at request time</td>
+<td>The shared anchor, so the overlap rows' states match the queue behind the popover</td>
+</tr>
+<tr>
+<td><code>year</code></td>
+<td>integer</td>
+<td>No</td>
+<td>1900 to 2200</td>
+<td>Year of <code>asOf</code></td>
+<td>The year both aggregations cover</td>
+</tr>
+<tr>
+<td><code>page</code></td>
+<td>integer</td>
+<td>No</td>
+<td>1 or greater</td>
+<td><code>1</code></td>
+<td>1-based page of overlap rows</td>
+</tr>
+<tr>
+<td><code>pageSize</code></td>
+<td>integer</td>
+<td>No</td>
+<td>1 to 200</td>
+<td><code>25</code></td>
+<td>Overlap rows per page</td>
+</tr>
+<tr>
+<td><code>sortBy</code></td>
+<td>string</td>
+<td>No</td>
+<td><code>employeeName</code>, <code>offDate</code></td>
+<td><code>employeeName</code></td>
+<td>Leading key for the overlap list</td>
+</tr>
+<tr>
+<td><code>sortDir</code></td>
+<td>string</td>
+<td>No</td>
+<td><code>asc</code>, <code>desc</code></td>
+<td><code>asc</code></td>
+<td>Direction for the leading key</td>
+</tr>
+</tbody>
+</table>
+<p>Context header: <code>X-Company-ID</code>.</p>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/payroll-scheduled-time-off/employees/e-5120/context?asOf=2026-08-07T09%3A15%3A00Z
+GET /api/dashboard/payroll-scheduled-time-off/employees/e-5120/context?asOf=2026-08-07T09%3A15%3A00Z&amp;year=2026&amp;page=1&amp;pageSize=25&amp;sortBy=employeeName&amp;sortDir=asc
+</code></pre>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>asOf</code></td>
+<td>string (date-time)</td>
+<td>DERIVED echo [TO CONFIRM - time zone basis, project owner]</td>
+<td>The shared anchor</td>
+</tr>
+<tr>
+<td><code>year</code></td>
+<td>integer</td>
+<td>DERIVED echo [BUILD]</td>
+<td>The year both aggregations cover</td>
+</tr>
+<tr>
+<td><code>employeeId</code></td>
+<td>string</td>
+<td>UNVERIFIED (backend team) employee identifier [TO CONFIRM]</td>
+<td>The subject</td>
+</tr>
+<tr>
+<td><code>employeeName</code></td>
+<td>string</td>
+<td>UNVERIFIED (backend team) employee display name [TO CONFIRM]</td>
+<td>Popover header</td>
+</tr>
+<tr>
+<td><code>department</code></td>
+<td>string or null</td>
+<td>STORED HomeDepartment [DOC - Step 1 research]</td>
+<td>The subject's own department, shown in the header</td>
+</tr>
+<tr>
+<td><code>payGroup</code></td>
+<td>string or null</td>
+<td>UNVERIFIED (backend team) join through <code>PREmployeeCompensationDetail.PayGroup</code> [TO CONFIRM]</td>
+<td>The subject's own pay group, shown in the header</td>
+</tr>
+<tr>
+<td><code>totalDays</code></td>
+<td>integer</td>
+<td>NEW aggregation: count of the subject's day-lines across the year [TO CONFIRM - backend team]</td>
+<td>The header total. Returned rather than summed client-side, because a hidden leave-type slot can hold days no listed row accounts for</td>
+</tr>
+<tr>
+<td><code>leaveTypeTotals</code></td>
+<td>array</td>
+<td>NEW aggregation over <code>PR_EmployeeOffSchedule</code> [TO CONFIRM - backend team]</td>
+<td>Every configured slot, in fixed order, including slots with zero days</td>
+</tr>
+<tr>
+<td><code>leaveTypeTotals[].leaveType</code></td>
+<td>string</td>
+<td>STORED <code>PR_EmployeeOffSchedule</code> leave-type slot [DOC - Step 1 research]</td>
+<td>Slot key, resolved to a label through API 1</td>
+</tr>
+<tr>
+<td><code>leaveTypeTotals[].days</code></td>
+<td>integer</td>
+<td>NEW aggregation: count of the subject's day-lines in that slot across the year [TO CONFIRM - backend team]</td>
+<td>Day counts, not hours. The counting unit is a design choice rather than a documented legacy formula</td>
+</tr>
+<tr>
+<td><code>page</code></td>
+<td>integer</td>
+<td>DERIVED echo [BUILD]</td>
+<td>1-based page of overlaps</td>
+</tr>
+<tr>
+<td><code>pageSize</code></td>
+<td>integer</td>
+<td>DERIVED echo [BUILD]</td>
+<td>Overlap rows per page</td>
+</tr>
+<tr>
+<td><code>totalCount</code></td>
+<td>integer</td>
+<td>NEW: count of overlapping rows in the <strong>full</strong> set [TO CONFIRM - backend team]</td>
+<td>Spans every page. Zero drives the no-one-overlaps state</td>
+</tr>
+<tr>
+<td><code>sortBy</code></td>
+<td>string</td>
+<td>DERIVED echo [BUILD]</td>
+<td>The applied sort key</td>
+</tr>
+<tr>
+<td><code>sortDir</code></td>
+<td>string</td>
+<td>DERIVED echo [BUILD]</td>
+<td>The applied direction</td>
+</tr>
+<tr>
+<td><code>partial</code></td>
+<td>boolean</td>
+<td>NEW [TO CONFIRM - presentation, project owner]</td>
+<td>True when some rows could not be fully resolved</td>
+</tr>
+<tr>
+<td><code>partialReason</code></td>
+<td>string or null</td>
+<td>NEW [TO CONFIRM - presentation, project owner]</td>
+<td>Cause when <code>partial</code> is true</td>
+</tr>
+<tr>
+<td><code>overlaps</code></td>
+<td>array</td>
+<td>NEW aggregation over <code>PR_EmployeeOffSchedule</code> [TO CONFIRM - backend team]</td>
+<td>Every other employee's day-line falling on any date the subject is off, one row per overlapping day-line</td>
+</tr>
+<tr>
+<td><code>overlaps[].offScheduleId</code></td>
+<td>string</td>
+<td>STORED <code>PR_EmployeeOffSchedule</code> primary key [DOC - Step 1 research]</td>
+<td>Row identity and final sort tiebreaker</td>
+</tr>
+<tr>
+<td><code>overlaps[].employeeId</code></td>
+<td>string</td>
+<td>UNVERIFIED (backend team) employee identifier [TO CONFIRM]</td>
+<td>The overlapping employee</td>
+</tr>
+<tr>
+<td><code>overlaps[].employeeName</code></td>
+<td>string</td>
+<td>UNVERIFIED (backend team) employee display name [TO CONFIRM]</td>
+<td>Row label and leading sort key</td>
+</tr>
+<tr>
+<td><code>overlaps[].department</code></td>
+<td>string or null</td>
+<td>STORED HomeDepartment [DOC - Step 1 research]</td>
+<td>Shown with the pay group, because coverage is judged against both</td>
+</tr>
+<tr>
+<td><code>overlaps[].payGroup</code></td>
+<td>string or null</td>
+<td>UNVERIFIED (backend team) join through <code>PREmployeeCompensationDetail.PayGroup</code> [TO CONFIRM]</td>
+<td>Null when the employee has no compensation-detail row</td>
+</tr>
+<tr>
+<td><code>overlaps[].offDate</code></td>
+<td>string (date)</td>
+<td>STORED <code>PR_EmployeeOffSchedule.OffDate</code> [DOC - Step 1 research]</td>
+<td>The overlapping date, which is by definition one of the subject's own dates</td>
+</tr>
+<tr>
+<td><code>overlaps[].leaveType</code></td>
+<td>string</td>
+<td>STORED <code>PR_EmployeeOffSchedule</code> leave-type slot [DOC - Step 1 research]</td>
+<td>Slot key, resolved to a label through API 1</td>
+</tr>
+<tr>
+<td><code>overlaps[].approvalStatus</code></td>
+<td>string</td>
+<td>DERIVED <code>Pending</code> when <code>ApprovedDate IS NULL</code>, else <code>Approved</code> [DOC - Step 1 research]</td>
+<td>Status-agnostic list, so a supervisor sees the whole coverage picture rather than the approved half of it</td>
+</tr>
+</tbody>
+</table>
+<h3>Example response</h3>
+<pre><code>{
+  &quot;asOf&quot;: &quot;2026-08-07T09:15:00Z&quot;,
+  &quot;year&quot;: 2026,
+  &quot;employeeId&quot;: &quot;e-5120&quot;,
+  &quot;employeeName&quot;: &quot;Grace Lin&quot;,
+  &quot;department&quot;: &quot;Ministry&quot;,
+  &quot;payGroup&quot;: &quot;Monthly Clergy&quot;,
+  &quot;totalDays&quot;: 7,
+  &quot;leaveTypeTotals&quot;: [
+    {&quot;leaveType&quot;: &quot;Vacation&quot;, &quot;days&quot;: 2},
+    {&quot;leaveType&quot;: &quot;Sick&quot;, &quot;days&quot;: 3},
+    {&quot;leaveType&quot;: &quot;Personal&quot;, &quot;days&quot;: 2},
+    {&quot;leaveType&quot;: &quot;Misc&quot;, &quot;days&quot;: 0}
+  ],
+  &quot;page&quot;: 1,
+  &quot;pageSize&quot;: 25,
+  &quot;totalCount&quot;: 3,
+  &quot;sortBy&quot;: &quot;employeeName&quot;,
+  &quot;sortDir&quot;: &quot;asc&quot;,
+  &quot;partial&quot;: false,
+  &quot;partialReason&quot;: null,
+  &quot;overlaps&quot;: [
+    {&quot;offScheduleId&quot;: &quot;os-88201&quot;, &quot;employeeId&quot;: &quot;e-1180&quot;, &quot;employeeName&quot;: &quot;Dana Whitfield&quot;, &quot;department&quot;: &quot;Finance&quot;, &quot;payGroup&quot;: &quot;Weekly Staff&quot;, &quot;offDate&quot;: &quot;2026-08-13&quot;, &quot;leaveType&quot;: &quot;Vacation&quot;, &quot;approvalStatus&quot;: &quot;Pending&quot;},
+    {&quot;offScheduleId&quot;: &quot;os-88202&quot;, &quot;employeeId&quot;: &quot;e-1180&quot;, &quot;employeeName&quot;: &quot;Dana Whitfield&quot;, &quot;department&quot;: &quot;Finance&quot;, &quot;payGroup&quot;: &quot;Weekly Staff&quot;, &quot;offDate&quot;: &quot;2026-08-14&quot;, &quot;leaveType&quot;: &quot;Vacation&quot;, &quot;approvalStatus&quot;: &quot;Pending&quot;},
+    {&quot;offScheduleId&quot;: &quot;os-88512&quot;, &quot;employeeId&quot;: &quot;e-4402&quot;, &quot;employeeName&quot;: &quot;Elena Sokolova&quot;, &quot;department&quot;: &quot;IT&quot;, &quot;payGroup&quot;: &quot;Seasonal&quot;, &quot;offDate&quot;: &quot;2026-08-13&quot;, &quot;leaveType&quot;: &quot;Personal&quot;, &quot;approvalStatus&quot;: &quot;Pending&quot;}
+  ]
+}
+</code></pre>
+<p>Reconciliation of the year totals: the four configured slots account for the subject's whole year, 2 + 3 + 2 + 0 = 7, which is <code>totalDays</code>. The zero slot is returned rather than omitted, so the reader can see that no misc leave was taken instead of guessing why a row is missing.</p>
+<p>Reconciliation of the overlap list: the rows group into two overlapping colleagues, Dana Whitfield on two of the subject's dates and Elena Sokolova on one, 2 + 1 = 3, which is <code>totalCount</code>. Every <code>offDate</code> here is one of the subject's own dates, which is what makes the list a coverage answer rather than a general absence list.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty (no rows match)</td>
+<td><code>200</code> with <code>overlaps</code> empty and <code>totalCount</code> <code>0</code>, while <code>leaveTypeTotals</code> is still returned in full. The two halves are independent: a person can have time off and still overlap nobody. The client renders the no-one-overlaps line</td>
+</tr>
+<tr>
+<td>Partial (data exists for only part of the requested span)</td>
+<td><code>200</code> with <code>partial</code> true and <code>partialReason</code> <code>pay-group-join-incomplete</code>. Overlap rows are returned with <code>payGroup</code> <code>null</code> rather than dropped, because an unresolved pay group must not hide a coverage conflict</td>
+</tr>
+<tr>
+<td>Not-yet-existing entity (predates the requested window)</td>
+<td>An employee with no day-lines in the requested year returns <code>totalDays</code> <code>0</code>, every <code>leaveTypeTotals[].days</code> <code>0</code>, and <code>overlaps</code> empty. Not an error: a person with no time off is a legitimate answer</td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td><code>403</code> with no body without the Payroll read right. <code>403</code> also when the subject is outside the caller's authorised departments, because the popover would otherwise leak an employee the caller may not see</td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td><code>503</code>. The popover shows the error state and stays dismissible. The queue behind it is untouched, because the aggregations are not needed to render it</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>API 7: approval write</h2>
+<h3>Endpoint</h3>
+<pre><code>PUT /api/dashboard/payroll-scheduled-time-off/entries/{offScheduleId}/approval
+</code></pre>
+<p>A <code>PUT</code> of a desired state, not a <code>POST</code> of an event, so the call is idempotent by construction: sending the same intent twice leaves the same state and the same <code>ApprovedDate</code>.</p>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>offScheduleId</code></td>
+<td>string, path</td>
+<td>Yes</td>
+<td>A <code>PR_EmployeeOffSchedule</code> primary key in the caller's authorised departments</td>
+<td>none</td>
+<td>The single day-line being approved or returned to pending</td>
+</tr>
+<tr>
+<td><code>approved</code></td>
+<td>boolean, body</td>
+<td>Yes</td>
+<td><code>true</code>, <code>false</code></td>
+<td>none</td>
+<td>The desired state. <code>true</code> sets <code>ApprovedDate</code>, <code>false</code> clears it</td>
+</tr>
+<tr>
+<td><code>asOf</code></td>
+<td>string (date-time), body</td>
+<td>Yes</td>
+<td>The anchor the client last read this entry under</td>
+<td>none</td>
+<td>The stale-anchor guard. Required, so a blind overwrite is not expressible</td>
+</tr>
+<tr>
+<td><code>from</code></td>
+<td>string (date), query</td>
+<td>No</td>
+<td>ISO 8601 date</td>
+<td>First day of the month containing the server clock</td>
+<td>Inclusive start of the window the returned summary is recomputed over</td>
+</tr>
+<tr>
+<td><code>to</code></td>
+<td>string (date), query</td>
+<td>No</td>
+<td>ISO 8601 date, on or after <code>from</code></td>
+<td>Last day of the month containing the server clock</td>
+<td>Inclusive end of that window</td>
+</tr>
+</tbody>
+</table>
+<p>Context header: <code>X-Company-ID</code>.</p>
+<h3>Example requests</h3>
+<pre><code>PUT /api/dashboard/payroll-scheduled-time-off/entries/os-88401/approval
+{&quot;approved&quot;: true, &quot;asOf&quot;: &quot;2026-08-07T09:15:00Z&quot;}
+
+PUT /api/dashboard/payroll-scheduled-time-off/entries/os-88401/approval?from=2026-08-01&amp;to=2026-08-31
+{&quot;approved&quot;: false, &quot;asOf&quot;: &quot;2026-08-07T09:16:12Z&quot;}
+</code></pre>
+<p>The second request is the Undo: it clears <code>ApprovedDate</code> and returns the day-line to pending.</p>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>asOf</code></td>
+<td>string (date-time)</td>
+<td>DERIVED server clock after the update [TO CONFIRM - time zone basis, project owner]</td>
+<td>A fresh anchor the client adopts for its follow-up reads</td>
+</tr>
+<tr>
+<td><code>windowFrom</code></td>
+<td>string (date)</td>
+<td>DERIVED echo [TO CONFIRM - default window, project owner]</td>
+<td>Inclusive start of the recomputed summary window</td>
+</tr>
+<tr>
+<td><code>windowTo</code></td>
+<td>string (date)</td>
+<td>DERIVED echo [TO CONFIRM - default window, project owner]</td>
+<td>Inclusive end of that window</td>
+</tr>
+<tr>
+<td><code>offScheduleId</code></td>
+<td>string</td>
+<td>STORED <code>PR_EmployeeOffSchedule</code> primary key [DOC - Step 1 research]</td>
+<td>The row that was written</td>
+</tr>
+<tr>
+<td><code>employeeId</code></td>
+<td>string</td>
+<td>UNVERIFIED (backend team) employee identifier [TO CONFIRM]</td>
+<td>Lets the client locate the row it just changed</td>
+</tr>
+<tr>
+<td><code>offDate</code></td>
+<td>string (date)</td>
+<td>STORED <code>PR_EmployeeOffSchedule.OffDate</code> [DOC - Step 1 research]</td>
+<td>The day-line's date</td>
+</tr>
+<tr>
+<td><code>approvalStatus</code></td>
+<td>string</td>
+<td>DERIVED <code>Pending</code> when <code>ApprovedDate IS NULL</code>, else <code>Approved</code> [DOC - Step 1 research]</td>
+<td>The state after the write</td>
+</tr>
+<tr>
+<td><code>isOutstanding</code></td>
+<td>boolean</td>
+<td>DERIVED <code>ApprovedDate IS NULL AND OffDate &lt; date(asOf)</code> [BUILD]</td>
+<td>Approving a past-due line clears this. Undoing one can set it again</td>
+</tr>
+<tr>
+<td><code>approvedBy</code></td>
+<td>string or null</td>
+<td>UNVERIFIED (backend team) approver identity [TO CONFIRM]</td>
+<td>The caller after an approve, <code>null</code> after an undo</td>
+</tr>
+<tr>
+<td><code>approvedDate</code></td>
+<td>string (date) or null</td>
+<td>STORED <code>PR_EmployeeOffSchedule.ApprovedDate</code> [DOC - Step 1 research]</td>
+<td>Set on approve, cleared on undo</td>
+</tr>
+<tr>
+<td><code>summary</code></td>
+<td>object</td>
+<td>DERIVED [BUILD]</td>
+<td>The same four counts API 2 returns, recomputed over the window after the write, so the compact figures update without a second call</td>
+</tr>
+<tr>
+<td><code>summary.pendingUpcomingCount</code></td>
+<td>integer</td>
+<td>DERIVED <code>count(ApprovedDate IS NULL AND OffDate &gt;= date(asOf))</code> [BUILD]</td>
+<td>The Pending figure after the write</td>
+</tr>
+<tr>
+<td><code>summary.pendingOutstandingCount</code></td>
+<td>integer</td>
+<td>DERIVED <code>count(ApprovedDate IS NULL AND OffDate &lt; date(asOf))</code> [BUILD]</td>
+<td>The Outstanding figure after the write</td>
+</tr>
+<tr>
+<td><code>summary.pendingTotalCount</code></td>
+<td>integer</td>
+<td>DERIVED sum of the two above [BUILD]</td>
+<td>Every pending day-line after the write</td>
+</tr>
+<tr>
+<td><code>summary.scheduledDayCount</code></td>
+<td>integer</td>
+<td>DERIVED <code>count(*)</code> [BUILD]</td>
+<td>Unchanged by a write, since approving creates and removes no day-line</td>
+</tr>
+</tbody>
+</table>
+<h3>Example response</h3>
+<p>Approving the outstanding 4 August day-line from API 3's example:</p>
+<pre><code>{
+  &quot;asOf&quot;: &quot;2026-08-07T09:16:12Z&quot;,
+  &quot;windowFrom&quot;: &quot;2026-08-01&quot;,
+  &quot;windowTo&quot;: &quot;2026-08-31&quot;,
+  &quot;offScheduleId&quot;: &quot;os-88401&quot;,
+  &quot;employeeId&quot;: &quot;e-3311&quot;,
+  &quot;offDate&quot;: &quot;2026-08-04&quot;,
+  &quot;approvalStatus&quot;: &quot;Approved&quot;,
+  &quot;isOutstanding&quot;: false,
+  &quot;approvedBy&quot;: &quot;M. Reyes&quot;,
+  &quot;approvedDate&quot;: &quot;2026-08-07&quot;,
+  &quot;summary&quot;: {
+    &quot;pendingUpcomingCount&quot;: 18,
+    &quot;pendingOutstandingCount&quot;: 1,
+    &quot;pendingTotalCount&quot;: 19,
+    &quot;scheduledDayCount&quot;: 27
+  }
+}
+</code></pre>
+<p>Reconciliation against the pre-write figures: the approved line was outstanding, so Outstanding drops by one while Pending is untouched, and the partition still holds, 18 + 1 = 19, which is <code>summary.pendingTotalCount</code>. One day-line moved from pending to approved, so the 19 remaining pending plus the 8 now approved still account for everything, 19 + 8 = 27, which is <code>summary.scheduledDayCount</code> and is the same 27 API 2 and API 3 return. The day-line count itself does not move, because a write changes a status and never a row count.</p>
+<h3>Idempotency, conflict and authority</h3>
+<ul>
+<li><strong>Idempotency.</strong> A repeated <code>PUT</code> with the same <code>approved</code> value returns <code>200</code> and does <strong>not</strong> touch <code>ApprovedDate</code>. The stamp records when the entry was first approved, not when it was last confirmed, so a double click cannot silently rewrite an audit date. No idempotency key is needed: the desired-state form supplies it.</li>
+<li><strong>Stale anchor with a divergent intent.</strong> If the entry was written by another user after the caller's <code>asOf</code>, and the requested state differs from the current state, the server returns <code>409</code> with the entry's current state in the body, including <code>approvedBy</code> and <code>approvedDate</code>, so the client can say who got there first rather than reporting a generic failure.</li>
+<li><strong>Stale anchor with a matching intent.</strong> If the entry was written by another user after <code>asOf</code> but the requested state equals the current state, the server returns <code>200</code>. Two approvers reaching the same conclusion is not a conflict.</li>
+<li><strong>Authority.</strong> The caller's <code>PREmployeeTimeOffApprovals.HomeDepartmentIDs</code> is re-checked on every write against the entry's employee's <code>HomeDepartmentID</code>. <code>403</code> when it does not match. The <code>canApprove</code> flag on the read is a hint for suppressing an affordance and is never trusted as authorisation.</li>
+<li><strong>No bulk form.</strong> One day-line per call. There is no batch body, no person-level endpoint and no transactional group, so a supervisor clearing four days issues four calls, each independently reversible.</li>
+</ul>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty (no rows match)</td>
+<td>Not applicable. A write names exactly one row, and a missing row is the unknown-id case below rather than an empty result</td>
+</tr>
+<tr>
+<td>Partial (data exists for only part of the requested span)</td>
+<td><code>200</code> with the entry written and <code>summary</code> computed over whatever the window resolved. A partial summary never blocks the write, because the approval is the point and the counts are secondary</td>
+</tr>
+<tr>
+<td>Not-yet-existing entity (predates the requested window)</td>
+<td><code>404 unknown-entry</code> when <code>offScheduleId</code> does not exist or has been deleted. The client refreshes the queue rather than retrying, because the row it drew is gone</td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td><code>403</code> with no body without the Payroll write right, and <code>403 not-authorised-department</code> when the entry's employee is outside the caller's authorised departments. The two are distinguishable so the client can tell a rights problem from a scoping one</td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td><code>503</code>, and the client must treat the outcome as <strong>unknown</strong>, re-read with API 3 and re-render before offering the action again. It must not assume the write failed, because a <code>503</code> after a committed update would otherwise show a stale pending state</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>Auth and scoping</h2>
+<ul>
+<li><strong>Company scoping.</strong> <code>X-Company-ID</code> is required on all seven calls. Every query is filtered by it: <code>PR_EmployeeOffSchedule WHERE CompanyID = &lt;X-Company-ID&gt;</code>. There is no cross-company rollup in this contract.</li>
+<li><strong>Read right.</strong> The Payroll module read right, matching the Modern API's Payroll module field. Without it, every endpoint returns <code>403</code> with no body.</li>
+<li><strong>Approval authority is a second, narrower scope, and it applies to reads as well as the write.</strong> Every read is restricted to employees whose <code>HomeDepartmentID</code> appears in the caller's <code>PREmployeeTimeOffApprovals.HomeDepartmentIDs</code>. This is the single most important gap in the current Modern API: today it returns all company schedules, so every supervisor sees every employee's time off. It is a security and correctness defect, not a convenience feature, and it is <code>NEW</code> backend work.</li>
+<li><strong>Write right.</strong> The same approval authority, re-checked per entry at write time. A caller may hold the Payroll read right through a wider oversight role and still be unable to approve, which is why <code>people[].canApprove</code> exists on the read.</li>
+<li><strong>What a user with read but not write sees.</strong> The full queue and calendar for whatever they may read, with <code>canApprove</code> <code>false</code> on every person, so the Approve and Undo affordances are absent rather than present and failing.</li>
+<li><strong>What a user with the read right but no approval authority at all sees.</strong> <code>200</code> from every read, with <code>authorisedDepartmentCount</code> <code>0</code> and every row list empty. Whether the widget then hides itself or shows an explicit no-access message is a product decision that is not yet made, and it is listed in <em>Still needs sign-off</em>.</li>
+</ul>
+<hr />
+<h2>Edge cases</h2>
+<ol>
+<li><strong>Empty results.</strong> Any read matching nothing returns <code>200</code> with well-formed zeros and empty arrays, never an error.</li>
+<li><strong>No comparison baseline.</strong> There is none to miss: this widget shows no delta, no prior period and no target, so there is no baseline case to handle.</li>
+<li><strong>A request spanning a month boundary.</strong> A request from 30 July to 2 August is four day-lines. The queue window admits whichever of them fall inside it, and the calendar shows each in its own month, so the same request legitimately appears in two months with no row duplicated.</li>
+<li><strong>Division by zero.</strong> No percentage or ratio is computed anywhere in this contract, so the case cannot arise. The rule for any future rate is stated in <em>Where computation lives</em>: <code>null</code>, not <code>0</code>.</li>
+<li><strong>Pagination past the end.</strong> <code>200</code>, empty array, correct <code>totalCount</code>, every aggregate unchanged.</li>
+<li><strong>Contradicting params.</strong> <code>status</code> or <code>groupBy</code> sent to a calendar endpoint, or <code>department</code> sent to the queue, is <code>400 unknown-parameter</code> rather than silently ignored.</li>
+<li><strong>Employee hired mid-window.</strong> Only their day-lines inside the window appear. They are absent from the queue entirely rather than shown as an empty person row.</li>
+<li><strong>Employee terminated mid-window.</strong> Their existing day-lines stay in the window and stay approvable, because a terminated employee's approved time off is still a payroll fact. Whether a terminated employee should still appear in a supervisor's queue is not stated in any source.</li>
+<li><strong>Stale snapshot on write.</strong> <code>409</code> with the current entry when another user changed it after the caller's <code>asOf</code> and the intent differs; <code>200</code> when the intent matches.</li>
+<li><strong>Unknown <code>offScheduleId</code>.</strong> <code>404 unknown-entry</code>. The client refreshes rather than retries.</li>
+<li><strong>Unknown department value.</strong> <code>400 unknown-department</code>. A valid department with no rows this month is the empty case instead.</li>
+<li><strong>Blank <code>HomeDepartmentID</code>.</strong> The employee groups under <code>Unassigned</code>, is included when no department filter is set, and is excluded when a specific department is requested. A blank is never a wildcard.</li>
+<li><strong>Missing <code>PREmployeeCompensationDetail</code> row.</strong> <code>payGroup</code> returns <code>null</code>, the person still appears, and under <code>groupBy=payGroup</code> they land in <code>Unassigned</code>. The row is never dropped for want of a pay group.</li>
+<li><strong>Approving an already-approved day-line.</strong> <code>200</code>, no change to <code>ApprovedDate</code>.</li>
+<li><strong>Undoing an already-pending day-line.</strong> <code>200</code>, no change. Both directions are idempotent.</li>
+<li><strong>The outstanding boundary at a date change.</strong> Outstanding is measured against <code>date(asOf)</code>, so a session held open across midnight keeps its original classification until the next read. The time zone the date is taken in is not stated in any source and is listed in <em>Still needs sign-off</em>.</li>
+<li><strong>Outstanding day-lines dated before the requested window.</strong> They are outside the window and therefore invisible in both the queue and the counts, so a past-due line from an earlier month cannot be found or cleared. This follows from the window default and is listed in <em>Still needs sign-off</em>.</li>
+<li><strong>A leave-type slot with no configured label.</strong> <code>leaveTypes[].label</code> falls back to the slot key and <code>hidden</code> is true. Day-lines in a hidden slot are still returned and still counted in <code>totalDays</code>.</li>
+<li><strong>More people out on a date than <code>markerLimit</code>.</strong> The markers are truncated by a deterministic order and <code>overflowCount</code> carries the remainder. <code>dayStatus</code> and <code>peopleOut</code> still span every row on the date, including the truncated ones.</li>
+<li><strong>A department with rows this month and none next month.</strong> The option survives month navigation with a count of <code>0</code>, the selection is kept, and the response is the filtered-empty case. The user's filter is never silently moved and the option never disappears from under them.</li>
+<li><strong>Adjacent-month cells in the grid.</strong> <code>days[]</code> contains only dates inside the requested month. Leading and trailing cells are calendar arithmetic the client performs, and they are never populated from a neighbouring month's data.</li>
+<li><strong>Two day-lines for the same employee on the same date.</strong> Each is its own row with its own <code>offScheduleId</code> and is approved independently. <code>peopleOut</code> counts distinct employees, so it does not double count, which is why <code>totalCount</code> and <code>peopleOut</code> can differ on API 5.</li>
+<li><strong>A day-line with zero or null hours.</strong> Returned as stored. The hours are display data and never a divisor, so a zero is rendered as a zero rather than suppressed.</li>
+<li><strong>A multi-day request whose hours do not divide evenly across its days.</strong> The case does not arise: <code>PR_EmployeeOffSchedule</code> stores hours per <code>OffDate</code>, so per-day hours are read, never computed by dividing a request total across a span.</li>
+</ol>
+<hr />
+<h2>Not in scope</h2>
+<ul>
+<li><strong>Bulk approve, at person, group or queue level.</strong> There is no batch endpoint and no person-level write. Approval is one day-line per call. Jo's dossier asks for bulk approve to be added, which cuts against the project's design; both positions are recorded in <em>Still needs sign-off</em> and neither is specced.</li>
+<li><strong>Reject or deny.</strong> There is no rejected state and no reject endpoint. Undo clears <code>ApprovedDate</code> and returns the day-line to pending, which is the only reversal.</li>
+<li><strong>The Calendar Year control and the existing year list.</strong> No control selects a year, so <code>GET .../filters</code> and its <code>Years</code> array are not consumed by this contract. The window is set by <code>from</code> and <code>to</code> instead.</li>
+<li><strong>A leave-type filter.</strong> Leave type is a display dimension and an aggregation key. No endpoint takes it as a param.</li>
+<li><strong>Employee leave balances, accruals and blackout dates.</strong> The dossier raises all three as questions. None is in this contract and none has a named source table.</li>
+<li><strong>An approval audit history.</strong> Only the current <code>approvedBy</code> and <code>approvedDate</code> are returned. There is no endpoint listing prior approvals, undos or who changed what when.</li>
+<li><strong>Persisting the Status, Group by and Department selections.</strong> <code>SSUserTenantPreference</code> holds a year and a view selection today; whether these three controls persist is undecided and no read or write of that key is specced here.</li>
+<li><strong>Export.</strong> No export endpoint, in any format.</li>
+<li><strong>Drill-through to another page.</strong> The queue and the popovers are the whole drill. Nothing navigates away from the dashboard.</li>
+<li><strong>Cross-company rollup.</strong> Every query is scoped to one <code>X-Company-ID</code>.</li>
+<li><strong>Presentation of the freshness anchor.</strong> <code>asOf</code> is returned on every call. Whether a data-as-of line is shown, and where, is not specified.</li>
+</ul>
+<hr />
+<h2>Still needs sign-off</h2>
+<ol>
+<li><strong>Queue ordering is documented but not implemented.</strong> The contract's ordering requirement is the documented rule: group dimension alphabetical, then employee name alphabetical, then date chronological. The build sorts the group level alphabetically only under the department dimension, never sorts people, and never sorts day-lines chronologically. <strong>Decides:</strong> project owner, either implement the documented sort or restate the rule. <strong>Blocked until then:</strong> API 3's <code>default</code> sort value has a documented definition the build does not yet match, so a developer implementing this contract will produce a different order from the mock.</li>
+<li><strong>Bulk approve: unreviewed conflict, no side taken.</strong> Jo's dossier asks for bulk approve to be <strong>added</strong>, in its target composition ("Add bulk approve (absent today)"), in decision 11.1, and in its states table ("Bulk approve should confirm"). The project's design <strong>removed</strong> person-level bulk approve by owner direction, on the reasoning that with day-lines collapsed behind an expander a bulk control would let an approver clear a whole month without seeing the days. No file assigning statuses to her flags exists for this widget, so this is <strong>Unreviewed</strong>. This contract specs the project's design, per-day approval only. <strong>Decides:</strong> project owner, by assigning the dossier a status. <strong>Blocked until then:</strong> whether a bulk write endpoint exists at all.</li>
+<li><strong>Explicit reject state: unreviewed conflict, no side taken.</strong> The dossier asks for approve, reject and pending as distinct recorded states with an audit trail (section 9, decision 11.4, and its gaps table at Med/High impact). The project's design has two stored statuses and no rejected state, so it needs no new status field and no reject endpoint. <strong>Unreviewed</strong>, same reason as above. This contract specs two statuses. <strong>Decides:</strong> project owner. <strong>Blocked until then:</strong> whether a status column and a reject endpoint are needed.</li>
+<li><strong>The counting window.</strong> The default <code>from</code> and <code>to</code> are the month containing the anchor, following the build. The legacy control counted a calendar year. No source states which the compact figures should use. <strong>Decides:</strong> project owner. <strong>Blocked until then:</strong> the default value of <code>from</code> and <code>to</code> on API 2, API 3 and API 7, and therefore what the compact figures mean.</li>
+<li><strong>The current-date reference behind the outstanding split.</strong> Outstanding is measured against <code>date(asOf)</code>. Which time zone that date is taken in, the company's or the caller's, is not stated in any source, and it decides the classification of every day-line on the boundary date. <strong>Decides:</strong> project owner. <strong>Blocked until then:</strong> a reproducible outstanding count.</li>
+<li><strong>Outstanding day-lines outside the window are unreachable.</strong> Because the window defaults to one month, a pending day-line from an earlier month is neither counted nor listed, so it cannot be cleared from this widget. This follows directly from items 4 and 5 and is stated separately because it is the practical consequence. <strong>Decides:</strong> project owner. <strong>Blocked until then:</strong> whether the queue needs a separate all-outstanding read.</li>
+<li><strong>The queue's treatment of outstanding day-lines.</strong> The queue's pending filter and its header, group and person counts all <strong>include</strong> outstanding day-lines, and there is no separate outstanding filter. The compact tier splits them. So "pending" means two different populations in two places, which is why <code>pendingTotalCount</code> and <code>pendingUpcomingCount</code> are named separately in this contract rather than both being called pending. <strong>Decides:</strong> project owner, either align the queue with the compact split or add a dedicated outstanding filter. <strong>Blocked until then:</strong> whether API 3 needs a fourth <code>status</code> value.</li>
+<li><strong>What a user with no approval authority sees.</strong> The response shape is specced: <code>200</code>, <code>authorisedDepartmentCount</code> <code>0</code>, empty rows. Whether the widget hides itself or shows an explicit no-access message is undecided, and the dossier's states table raises the same question. <strong>Decides:</strong> project owner. <strong>Blocked until then:</strong> nothing in the contract; the presentation only.</li>
+<li><strong>Confirmation, success feedback and failure presentation for approve and undo.</strong> The write's error, conflict and idempotency semantics are specced above. Whether an approval is confirmed before it fires, what the client shows on success, and how a <code>409</code> or a <code>503</code> is surfaced are product decisions with no source. <strong>Decides:</strong> project owner. <strong>Blocked until then:</strong> nothing in the contract; the client behaviour only.</li>
+<li><strong>Loading, error and partial presentation.</strong> Response shapes are specced per API. How each is rendered is unspecified in every source. <strong>Decides:</strong> design. <strong>Blocked until then:</strong> nothing in the contract.</li>
+<li><strong>The pay-group join.</strong> Reaching a pay group from a day-line goes through <code>PREmployeeCompensationDetail.PayGroup</code>, an indirect join rather than a confirmed direct field, with precedent in <code>PRTimeCardRepository</code>. Every <code>payGroup</code> field in this contract is <code>UNVERIFIED</code>. <strong>Decides:</strong> backend team. <strong>Blocked until then:</strong> <code>groupBy=payGroup</code> on API 3, and the pay-group line in three popovers.</li>
+<li><strong>The employee master, the display name and the approver identity.</strong> No source names the table holding employees, the column holding the display name, or the column behind the "Approved by" stamp. All three are <code>UNVERIFIED</code> in every schema above. If no approver column exists, adding one is the contract's only schema change. <strong>Decides:</strong> backend team. <strong>Blocked until then:</strong> <code>employeeName</code>, <code>employeeId</code> and <code>approvedBy</code> everywhere.</li>
+<li><strong>Whether the display name sorts on the given name or the surname.</strong> It sets the queue's person order and the calendar's marker truncation, and therefore which people appear on page 1 and which markers are shown before the overflow chip. No source states the convention. <strong>Decides:</strong> project owner. <strong>Blocked until then:</strong> a reproducible order for API 3 and API 4.</li>
+<li><strong>Whether a hidden leave-type slot still counts toward the year total.</strong> This contract counts it, so <code>totalDays</code> can exceed the sum of the labelled rows when an organisation hides a slot that holds days. <strong>Decides:</strong> project owner. <strong>Blocked until then:</strong> whether <code>totalDays</code> and <code>leaveTypeTotals</code> are guaranteed to cross-foot.</li>
+<li><strong>Worst-realistic row counts.</strong> Four datasets have no documented basis for a ceiling: the queue's people and day-lines, the department option list, a single date's people, and the coverage overlap list. The build fixture is a typical-case figure and is not a basis. <strong>Decides:</strong> project owner, to supply a headcount and a day-lines-per-employee figure, or to commission a live query. <strong>Blocked until then:</strong> the <code>pageSize</code> maxima are set defensively at 200 rather than to a measured ceiling.</li>
+<li><strong>The rest of Jo's dossier is unreviewed but not in conflict.</strong> Its pending-count figure, its pending-first default and its coverage calendar all match what this contract funds, and its accessibility asks are design-side. Two further divergences are worth a status: the dossier's compact-tier figure is a request count plus the number of employees affected, whereas this contract returns two day-line counts and no employee figure; and the dossier asks for a data-as-of timestamp, which <code>asOf</code> supplies but which nothing displays. <strong>Decides:</strong> project owner. <strong>Blocked until then:</strong> nothing; recorded so a dossier reader is not left guessing.</li>
+</ol>
+<p>This list is not empty, and items 1, 2, 3, 4, 5 and 11 each change what a developer builds.</p>
+
+</body>
+</html>

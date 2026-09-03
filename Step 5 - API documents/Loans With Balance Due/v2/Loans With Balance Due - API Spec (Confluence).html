@@ -1,0 +1,1867 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Loans With Balance Due - API Spec</title>
+<style>
+body { font-family: -apple-system, Helvetica, Arial, sans-serif; max-width: 900px; margin: 30px auto; line-height: 1.5; color: #172B4D; }
+h1 { font-size: 24px; }
+h2 { font-size: 19px; border-bottom: 1px solid #DFE1E6; padding-bottom: 6px; margin-top: 32px; }
+h3 { font-size: 16px; margin-top: 20px; }
+table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+th, td { border: 1px solid #DFE1E6; padding: 6px 10px; text-align: left; vertical-align: top; }
+th { background: #F4F5F7; }
+code { background: #F4F5F7; padding: 1px 5px; border-radius: 3px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 90%; }
+pre { background: #F4F5F7; padding: 12px; border-radius: 4px; overflow-x: auto; }
+pre code { background: none; padding: 0; }
+.status { background: #FFF0B3; display: inline-block; padding: 3px 10px; border-radius: 3px; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<h1>Loans With Balance Due - API Spec</h1>
+<p><span class="status">Status: DRAFT - not final</span></p>
+<hr />
+<h2>Overview</h2>
+<p>This widget answers one question for a lending organisation: which loans still owe money, how much in total, and how far behind each one is. A loan administrator reads the total, sees how much of it is past due, picks a time range to work, and opens a loan to check its payment history before chasing the borrower.</p>
+<p>This contract defines <strong>four APIs</strong>: a bounded portfolio summary fired on render, a paginated loan list fired alongside it at the two larger tiers, a rarely-changing loan-type lookup, and a per-loan detail read fired only when the user opens a loan. The justification for each split is in the API Inventory below.</p>
+<p>Two things a developer must read before building anything aging-derived. First, the summary's time ranges depend on a server-side oldest-first payment allocation that does not exist today: the existing chart read buckets invoices by raw age with no payment subtraction, and it returns different numbers. Second, the loan type filter narrows <strong>every</strong> figure in the widget, not just the loan list, so the summary read takes the type param too.</p>
+<hr />
+<h2>Design → API coverage</h2>
+<p>Every element the widget renders, mapped to what feeds it.</p>
+<table>
+<thead>
+<tr>
+<th>Design element</th>
+<th>Type</th>
+<th>API</th>
+<th>Field(s)</th>
+<th>Provenance</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Total Balance Due headline, Glance tier</td>
+<td>KPI</td>
+<td>API 1</td>
+<td><code>totalAmountDue</code></td>
+<td>DERIVED sum of per-loan amountDue over the filtered set [CODE - legacy AmountDue&gt;0 grid]</td>
+</tr>
+<tr>
+<td>"owed across N loans with a balance" caption</td>
+<td>KPI sub-line</td>
+<td>API 1</td>
+<td><code>loanCount</code></td>
+<td>DERIVED count over the filtered set [BUILD]</td>
+</tr>
+<tr>
+<td>Past due pill: amount, loan count, percent</td>
+<td>KPI state</td>
+<td>API 1</td>
+<td><code>pastDueAmount</code>, <code>pastDueCount</code>, <code>pastDuePct</code></td>
+<td>NEW, depends on the allocation [DOC - Step 1 research]</td>
+</tr>
+<tr>
+<td>"All current" pill, non-default state</td>
+<td>KPI state</td>
+<td>API 1</td>
+<td><code>pastDueAmount</code> = 0 selects it, client-side</td>
+<td>NEW [BUILD]</td>
+</tr>
+<tr>
+<td>Stacked severity bar, one segment per range holding a balance</td>
+<td>chart series</td>
+<td>API 1</td>
+<td><code>ranges[].amountDue</code>, <code>ranges[].sharePct</code>, <code>ranges[].severity</code></td>
+<td>NEW [BUILD]</td>
+</tr>
+<tr>
+<td>Most-overdue call: the most severe range that holds a balance</td>
+<td>KPI read</td>
+<td>API 1</td>
+<td><code>worstRangeKey</code></td>
+<td>NEW [BUILD]</td>
+</tr>
+<tr>
+<td>Screen-reader ladder text, all five ranges with amounts</td>
+<td>accessibility text</td>
+<td>API 1</td>
+<td><code>ranges[].label</code>, <code>ranges[].amountDue</code></td>
+<td>NEW [BUILD]</td>
+</tr>
+<tr>
+<td>"All settled" state at Glance</td>
+<td>state</td>
+<td>API 1</td>
+<td><code>loanCount</code> = 0 selects it, client-side</td>
+<td>DERIVED [BUILD]</td>
+</tr>
+<tr>
+<td>"Nothing outstanding" state at Explore and Detail</td>
+<td>state</td>
+<td>API 1</td>
+<td><code>loanCount</code> = 0 selects it, client-side</td>
+<td>DERIVED [BUILD]</td>
+</tr>
+<tr>
+<td>Loan type filter control</td>
+<td>filter</td>
+<td>API 3</td>
+<td><code>loanTypes[].loanTypeId</code>, <code>loanTypes[].name</code></td>
+<td>STORED LNType.Name [CODE - LNTypeRepository.GetAll().OrderBy(Name)]</td>
+</tr>
+<tr>
+<td>Selected loan type echoed back for the chart-empty line</td>
+<td>filter echo</td>
+<td>API 1</td>
+<td><code>loanTypeId</code>, <code>loanTypeName</code></td>
+<td>STORED LNType.Name [CODE]</td>
+</tr>
+<tr>
+<td>Total Balance Due figure in the header</td>
+<td>KPI</td>
+<td>API 1</td>
+<td><code>totalAmountDue</code></td>
+<td>DERIVED [CODE]</td>
+</tr>
+<tr>
+<td>Context line: past due amount and percent, of which 90+</td>
+<td>KPI read</td>
+<td>API 1</td>
+<td><code>pastDueAmount</code>, <code>pastDuePct</code>, <code>ninetyPlusAmount</code></td>
+<td>NEW [BUILD]</td>
+</tr>
+<tr>
+<td>"Nothing past due" alternative context line</td>
+<td>state</td>
+<td>API 1</td>
+<td><code>pastDueAmount</code> = 0 selects it, client-side</td>
+<td>NEW [BUILD]</td>
+</tr>
+<tr>
+<td>Table / Pie segment</td>
+<td>view toggle</td>
+<td>none, client-side only</td>
+<td>both views read responses the client already holds</td>
+<td>[BUILD]</td>
+</tr>
+<tr>
+<td>Loading state while a loan-type change resolves</td>
+<td>state</td>
+<td>API 1 + API 2</td>
+<td>in-flight, no field</td>
+<td>[BUILD]</td>
+</tr>
+<tr>
+<td>Refresh control</td>
+<td>action</td>
+<td>API 1 + API 2</td>
+<td>re-fires both with a fresh <code>asOf</code></td>
+<td>[BUILD]</td>
+</tr>
+<tr>
+<td>Account column</td>
+<td>table column</td>
+<td>API 2</td>
+<td><code>rows[].accountNumber</code></td>
+<td>STORED LNLoan.AccountNumber [CODE]</td>
+</tr>
+<tr>
+<td>Borrower column</td>
+<td>table column</td>
+<td>API 2</td>
+<td><code>rows[].borrowerName</code></td>
+<td>STORED LNLoan.Name [CODE - legacy grid Borrower Name column]</td>
+</tr>
+<tr>
+<td>Loan type sub-line under the borrower</td>
+<td>table column</td>
+<td>API 2</td>
+<td><code>rows[].loanTypeName</code></td>
+<td>STORED LNType.Name [CODE]</td>
+</tr>
+<tr>
+<td>Last payment column</td>
+<td>table column</td>
+<td>API 2</td>
+<td><code>rows[].lastPaymentDate</code></td>
+<td>DERIVED MAX(LNPayment.PaymentDate) WHERE Posted AND VoidJournalID IS NULL [CODE - LNPayment]</td>
+</tr>
+<tr>
+<td>Dormancy flag on the Last payment cell</td>
+<td>table indicator</td>
+<td>API 2</td>
+<td><code>asOf</code> minus <code>rows[].lastPaymentDate</code>, client-side band</td>
+<td>DERIVED, threshold unapproved [BUILD]</td>
+</tr>
+<tr>
+<td>Amount due column</td>
+<td>table column</td>
+<td>API 2</td>
+<td><code>rows[].amountDue</code></td>
+<td>DERIVED SUM(Principal + Interest) minus posted payments [CODE]</td>
+</tr>
+<tr>
+<td>Sort controls on Account, Borrower, Last payment, Amount due</td>
+<td>table control</td>
+<td>API 2</td>
+<td><code>sortBy</code>, <code>sortDir</code></td>
+<td>STORED, server-ordered [BUILD]</td>
+</tr>
+<tr>
+<td>Table footer label, "All loans (N)" or "<range> (N loans)"</td>
+<td>table total</td>
+<td>API 2</td>
+<td><code>totalCount</code>, <code>rangeKey</code></td>
+<td>DERIVED over the full filtered set [BUILD]</td>
+</tr>
+<tr>
+<td>Table footer amount</td>
+<td>table total</td>
+<td>API 2</td>
+<td><code>filteredTotal</code></td>
+<td>DERIVED over the full filtered set [BUILD]</td>
+</tr>
+<tr>
+<td>"No loans match this selection" zero line</td>
+<td>state</td>
+<td>API 2</td>
+<td><code>totalCount</code> = 0 selects it, client-side</td>
+<td>DERIVED [BUILD]</td>
+</tr>
+<tr>
+<td>Row click opens the loan</td>
+<td>drill</td>
+<td>API 4</td>
+<td><code>rows[].loanId</code></td>
+<td>STORED LNLoan.LoanID [CODE]</td>
+</tr>
+<tr>
+<td>Time range chip row, full ladder in severity order</td>
+<td>filter</td>
+<td>API 1</td>
+<td><code>ranges[].key</code>, <code>ranges[].label</code>, <code>ranges[].loanCount</code></td>
+<td>NEW [BUILD]</td>
+</tr>
+<tr>
+<td>Zero-balance range chip rendered inert</td>
+<td>non-default state</td>
+<td>API 1</td>
+<td><code>ranges[].loanCount</code> = 0 makes it inert, client-side</td>
+<td>NEW [BUILD]</td>
+</tr>
+<tr>
+<td>Donut arcs, one per range holding a balance</td>
+<td>chart series</td>
+<td>API 1</td>
+<td><code>ranges[].amountDue</code>, <code>ranges[].sharePct</code></td>
+<td>NEW [BUILD]</td>
+</tr>
+<tr>
+<td>Donut centre figure</td>
+<td>chart label</td>
+<td>API 1</td>
+<td><code>totalAmountDue</code></td>
+<td>DERIVED [BUILD]</td>
+</tr>
+<tr>
+<td>Donut legend rows: label, amount, share</td>
+<td>chart legend</td>
+<td>API 1</td>
+<td><code>ranges[].label</code>, <code>ranges[].amountDue</code>, <code>ranges[].sharePct</code>, <code>ranges[].loanCount</code></td>
+<td>NEW [BUILD]</td>
+</tr>
+<tr>
+<td>Zero-balance legend row reading $0, inert</td>
+<td>non-default state</td>
+<td>API 1</td>
+<td><code>ranges[].amountDue</code> = 0 and <code>ranges[].loanCount</code> = 0</td>
+<td>NEW [BUILD]</td>
+</tr>
+<tr>
+<td>Selected-range note above the table</td>
+<td>state</td>
+<td>API 2</td>
+<td><code>rangeKey</code> echo</td>
+<td>NEW [BUILD]</td>
+</tr>
+<tr>
+<td>Chart empty state, "nothing outstanding to chart for <type>"</td>
+<td>state</td>
+<td>API 1</td>
+<td><code>totalAmountDue</code> = 0 plus <code>loanTypeName</code></td>
+<td>NEW [BUILD]</td>
+</tr>
+<tr>
+<td>Drill: Account</td>
+<td>drill field</td>
+<td>API 4</td>
+<td><code>accountNumber</code></td>
+<td>STORED LNLoan.AccountNumber [CODE]</td>
+</tr>
+<tr>
+<td>Drill: Loan type</td>
+<td>drill field</td>
+<td>API 4</td>
+<td><code>loanTypeName</code></td>
+<td>STORED LNType.Name [CODE]</td>
+</tr>
+<tr>
+<td>Drill: Original amount</td>
+<td>drill field</td>
+<td>API 4</td>
+<td><code>originalAmount</code></td>
+<td>STORED LNLoan.TotalAmount [CODE - LNLoan]</td>
+</tr>
+<tr>
+<td>Drill: Amount due</td>
+<td>drill field</td>
+<td>API 4</td>
+<td><code>amountDue</code></td>
+<td>DERIVED [CODE]</td>
+</tr>
+<tr>
+<td>Drill: Aging range</td>
+<td>drill field</td>
+<td>API 4</td>
+<td><code>rangeKey</code>, <code>rangeLabel</code></td>
+<td>NEW [BUILD]</td>
+</tr>
+<tr>
+<td>Drill: Days past due</td>
+<td>drill field</td>
+<td>API 4</td>
+<td><code>daysPastDue</code></td>
+<td>NEW [BUILD]</td>
+</tr>
+<tr>
+<td>Drill: Next payment due</td>
+<td>drill field</td>
+<td>API 4</td>
+<td><code>nextPaymentDueDate</code></td>
+<td>UNVERIFIED (Feargal Phelan) [TO CONFIRM]</td>
+</tr>
+<tr>
+<td>Drill: Last payment plus days since</td>
+<td>drill field</td>
+<td>API 4</td>
+<td><code>lastPaymentDate</code>, days-since computed client-side from <code>asOf</code></td>
+<td>DERIVED [CODE - LNPayment]</td>
+</tr>
+<tr>
+<td>Drill: dormancy note</td>
+<td>drill state</td>
+<td>API 4</td>
+<td><code>asOf</code> minus <code>lastPaymentDate</code>, client-side band</td>
+<td>DERIVED, threshold unapproved [BUILD]</td>
+</tr>
+<tr>
+<td>Drill: payment history rows, date and reference and amount</td>
+<td>drill table</td>
+<td>API 4</td>
+<td><code>payments[].paymentDate</code>, <code>payments[].reference</code>, <code>payments[].amount</code></td>
+<td>STORED LNPayment plus DERIVED composed amount [CODE - LNPayment]</td>
+</tr>
+<tr>
+<td>Drill: "no payments recorded yet" state</td>
+<td>drill state</td>
+<td>API 4</td>
+<td><code>payments</code> empty selects it, client-side</td>
+<td>DERIVED [BUILD]</td>
+</tr>
+<tr>
+<td>Drill: "Open loan" action</td>
+<td>action</td>
+<td>none, no confirmed destination, see Not in scope</td>
+<td>UNVERIFIED (owner not yet named) [TO CONFIRM]</td>
+<td></td>
+</tr>
+<tr>
+<td>Drill: "Record a contact" action</td>
+<td>action</td>
+<td>none, no write endpoint in this contract, see Not in scope</td>
+<td>NEW, not built [BUILD]</td>
+<td></td>
+</tr>
+<tr>
+<td>Drill: "Export to Excel" action</td>
+<td>action</td>
+<td>none, no export endpoint exists, see Not in scope</td>
+<td>NEW, not built [CODE - no modern export endpoint found]</td>
+<td></td>
+</tr>
+<tr>
+<td>Drill: Close</td>
+<td>action</td>
+<td>none, client-side only</td>
+<td>[BUILD]</td>
+<td></td>
+</tr>
+<tr>
+<td>Currency of every amount on screen</td>
+<td>formatting</td>
+<td>API 1, 2, 4</td>
+<td><code>currency</code></td>
+<td>UNVERIFIED (Feargal Phelan) [DOC - Step 6 dossier, section 10]</td>
+</tr>
+<tr>
+<td>Snapshot stamp shared by the header and the table</td>
+<td>consistency</td>
+<td>API 1, 2, 3, 4</td>
+<td><code>asOf</code></td>
+<td>DERIVED request anchor [BUILD]</td>
+</tr>
+</tbody>
+</table>
+<p>No design element is unfunded. Three actions are deliberately unfunded and each is listed in Not in scope with what happens instead.</p>
+<hr />
+<h2>Tables</h2>
+<table>
+<thead>
+<tr>
+<th>Table / repository</th>
+<th>Fields and members used</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>LNLoan</code></td>
+<td><code>LoanID</code>, <code>AccountNumber</code>, <code>Name</code>, <code>TypeID</code>, <code>PersonID</code>, <code>TotalAmount</code>, <code>NumberPayments</code>, <code>PaymentsPerYear</code></td>
+</tr>
+<tr>
+<td><code>LNType</code> (<code>LNTypeRepository</code>)</td>
+<td><code>TypeID</code>, <code>Name</code></td>
+</tr>
+<tr>
+<td><code>LNInvoice</code>, <code>LNInvoicePost</code></td>
+<td>scheduled principal and interest per invoice, invoice date, invoice due date</td>
+</tr>
+<tr>
+<td><code>LNPayment</code></td>
+<td><code>LoanID</code>, <code>PaymentDate</code>, <code>CheckNumber</code>, <code>Principal</code>, <code>Interest</code>, <code>LateFee</code>, <code>AdditionalPrincipal</code>, <code>AdditionalDraw</code>, <code>Adjustment</code>, <code>Posted</code>, <code>VoidJournalID</code></td>
+</tr>
+<tr>
+<td><code>CorePerson</code></td>
+<td>reachable from <code>LNLoan.PersonID</code>, not read by this contract, see Not in scope</td>
+</tr>
+</tbody>
+</table>
+<p><strong>No new tables and no schema changes.</strong> Every read is a new query over existing tables, plus one new server-side calculation (the oldest-first payment allocation). The Step 1 research names these tables in their underscored forms, <code>LN_Loan</code> / <code>LN_InvoicePost</code> / <code>LN_Type</code>; they are the same tables as the entity-class names used above.</p>
+<p>Core formulas, each quotable on its own:</p>
+<ul>
+<li><strong>Inclusion.</strong> A loan appears only if it has at least one invoice and a remaining balance: <code>amountDue &gt; 0</code>. [CODE - legacy grid applies <code>AmountDue &gt; 0</code>]</li>
+<li><strong>Amount due, per loan.</strong> <code>amountDue = SUM(LNInvoice.Principal + LNInvoice.Interest) across the loan's invoices, minus all posted payments</code>. [DOC - Step 1 research; CODE - legacy grid]</li>
+<li><strong>Payment consistency filter, applied to every payment read.</strong> <code>LNPayment.Posted = true AND LNPayment.VoidJournalID IS NULL</code>. A voided payment must not move an amount due, a last-payment date, or a range assignment. [CODE - LNPayment]</li>
+<li><strong>Payment amount, per payment.</strong> <code>Principal + Interest + LateFee + AdditionalPrincipal + AdditionalDraw - Adjustment</code>. There is no single amount column on <code>LNPayment</code>; this is a composed figure and it can be negative when an adjustment exceeds the rest. [CODE - LNPayment]</li>
+<li><strong>Last payment date, per loan.</strong> <code>MAX(LNPayment.PaymentDate)</code> under the consistency filter, <code>null</code> when the loan has no qualifying payment. [CODE - LNPayment]</li>
+<li><strong>Oldest-first payment allocation.</strong> Each loan's invoices are bucketed by age, then each posted payment is subtracted starting from the oldest bucket and working toward the newest, overflow carrying into the next newer bucket. This is why a range total is not "the sum of unpaid invoices in that age range". [DOC - Step 1 research, quoting the legacy calculation] Not implemented on the modern side: <code>NEW</code>.</li>
+<li><strong>Range assignment, per loan.</strong> A loan sits in exactly one range: the most severe range that still holds any of its remaining balance after the allocation, and its whole <code>amountDue</code> counts toward that range. <code>daysPastDue</code> is the signed day count against the due date of the oldest invoice still holding balance, negative when nothing is yet due. <code>NEW</code> [BUILD]</li>
+<li><strong>Range boundaries.</strong> <code>daysPastDue &lt;= 0</code> is Current, <code>1</code> to <code>30</code> is 1-30 days, <code>31</code> to <code>60</code> is 31-60 days, <code>61</code> to <code>90</code> is 61-90 days, <code>91</code> and above is 90+ days. The ladder is exhaustive and non-overlapping, so range amounts sum exactly to the total and range loan counts sum exactly to the loan count. <code>NEW</code> [BUILD]</li>
+<li><strong>Scoping.</strong> Every read is scoped by the <code>X-BankAccountID</code> context header. The loan-type lookup is additionally scoped <code>WHERE TenantID = ctx</code>. [CODE - legacy scopes loans by Bank Account; the lookup is tenant-scoped]</li>
+</ul>
+<hr />
+<h2>Old vs. new</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Old (live today)</th>
+<th>New (needed)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Chart scope</td>
+<td>The By Age chart ignores the loan-type filter. An interaction test held the chart fingerprint fixed while the loan-type filter emptied the table. [LIVE - beta1, 23 Jul 2026]</td>
+<td>The summary read takes <code>loanTypeId</code>, so the ranges, the total, the past-due read and the Glance bar all narrow with the table. <code>NEW</code></td>
+</tr>
+<tr>
+<td>Aging ladder</td>
+<td>Four buckets labelled Current / 30 / 60 / Over 60, where "Current" is under 30 days and "Over 60" actually means 90 or more. [LIVE - beta1, 23 Jul 2026]</td>
+<td>Five ranges returned by the server in severity order with explicit boundaries: Current (nothing yet due), 1-30, 31-60, 61-90, 90+. All five are always returned, including at zero. <code>NEW</code></td>
+</tr>
+<tr>
+<td>Aging arithmetic</td>
+<td>Legacy applies the oldest-first allocation per bucket. The modern chart read buckets invoices by raw age with no payment subtraction, so its totals differ from legacy. [DOC - Step 1 research, comparison extract]</td>
+<td>The allocation is replicated server-side, and each loan is assigned one range. <code>NEW</code></td>
+</tr>
+<tr>
+<td>Aging grain</td>
+<td>Legacy splits one loan's balance across several buckets.</td>
+<td>One range per loan, whole balance counted there, so the ranges partition the loans and the loan counts are well defined. <code>NEW</code>, and a genuine departure from legacy arithmetic, see Still needs sign-off</td>
+</tr>
+<tr>
+<td>Row set</td>
+<td>Whole grid returned, fixed <code>ORDER BY Name, AccountNumber</code>. [CODE]</td>
+<td>Paginated with <code>page</code> and <code>pageSize</code>, <code>sortBy</code> and <code>sortDir</code> from a whitelist, default amount due descending, <code>loanId</code> as the unique tiebreaker. <code>NEW</code></td>
+</tr>
+<tr>
+<td>Row fields</td>
+<td><code>{LoanId, AccountNumber, Name, TypeId, LastPayment, AmountDue}</code>. [CODE - modern grid read]</td>
+<td>Adds <code>loanTypeName</code>, <code>daysPastDue</code> and <code>rangeKey</code>. Partly <code>NEW</code></td>
+</tr>
+<tr>
+<td>Summary figures</td>
+<td>None. The panel has no KPI. [LIVE - beta1, 23 Jul 2026]</td>
+<td><code>totalAmountDue</code>, <code>loanCount</code>, <code>pastDueAmount</code>, <code>pastDueCount</code>, <code>pastDuePct</code>, <code>ninetyPlusAmount</code>, <code>ninetyPlusPct</code>, <code>worstRangeKey</code>. <code>NEW</code></td>
+</tr>
+<tr>
+<td>Per-loan drill</td>
+<td>None. Account names are links with no confirmed destination. [DOC - Step 1 research, open question]</td>
+<td>A loan detail read with payment history, over existing tables. <code>NEW</code></td>
+</tr>
+<tr>
+<td>Currency</td>
+<td>Renders as a pound sign regardless of the organisation, a localisation defect. [LIVE - beta1, 23 Jul 2026]</td>
+<td>An ISO currency code in every response, formatting done client-side. <code>UNVERIFIED (Feargal Phelan)</code></td>
+</tr>
+<tr>
+<td>Snapshot consistency</td>
+<td>None.</td>
+<td>A shared <code>asOf</code> anchor echoed by every read, so the header total and the table footer cannot straddle a write. <code>NEW</code></td>
+</tr>
+<tr>
+<td>Cache posture</td>
+<td>File-backed loan records; refresh deletes the cached records. [CODE - legacy caching]</td>
+<td>Both data reads are live per request and anchored on <code>asOf</code>. The loan-type lookup is TTL cached. <code>NEW</code></td>
+</tr>
+<tr>
+<td>Status, Active or In Arrears</td>
+<td>Not present.</td>
+<td>Still not present. No backing field is confirmed, so no field and no filter are specced. See Still needs sign-off</td>
+</tr>
+<tr>
+<td>Excel export</td>
+<td>Legacy panels export in-page. No modern export endpoint exists. [CODE - no <code>[ApiController]</code> export endpoint found]</td>
+<td>Not in this contract.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>API inventory</h2>
+<table>
+<thead>
+<tr>
+<th>API</th>
+<th>Purpose</th>
+<th>Trigger (when it fires)</th>
+<th>Cardinality</th>
+<th>R/W</th>
+<th>Cache posture</th>
+<th>Split trigger</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>API 1</strong> portfolio summary</td>
+<td>Total, loan count, past-due read, 90+ read, the five-range ladder, the most severe range holding a balance</td>
+<td>Widget render at every tier, and on a loan-type change</td>
+<td>Bounded: one object plus exactly five range entries</td>
+<td>R</td>
+<td>LIVE per request, anchored on <code>asOf</code></td>
+<td>Cardinality gap: a bounded aggregate must not pay for an unbounded row list. Trigger gap: the Glance tier fires this and nothing else</td>
+</tr>
+<tr>
+<td><strong>API 2</strong> loan list</td>
+<td>One page of loans with a balance, plus the full-filtered-set total and count behind the footer</td>
+<td>Render at Explore and Detail, on a loan-type change, on a range selection, on a sort change, on a page change</td>
+<td>Unbounded, paginated</td>
+<td>R</td>
+<td>LIVE per request, anchored on <code>asOf</code></td>
+<td>Cardinality gap and conditional weight: the row set has no cited ceiling, and the Glance tier never needs a single row</td>
+</tr>
+<tr>
+<td><strong>API 3</strong> loan-type lookup</td>
+<td>The loan-type option list, "Show All" prepended</td>
+<td>Once per widget mount, or from a shared cache</td>
+<td>Bounded, organisation-defined, 4 entries live</td>
+<td>R</td>
+<td>TTL, 15 minutes</td>
+<td>Lifetime gap: an organisation's loan types change on a scale of months while the balances change continuously, and the list is shared with any other loan surface</td>
+</tr>
+<tr>
+<td><strong>API 4</strong> loan detail</td>
+<td>One loan's summary, aging read and payment history</td>
+<td>Only when the user opens a loan</td>
+<td>Bounded per loan</td>
+<td>R</td>
+<td>LIVE per request, anchored on <code>asOf</code></td>
+<td>Trigger gap, grain gap and conditional weight: per-entity detail keyed by id, fetched on an interaction that has not happened at render</td>
+</tr>
+</tbody>
+</table>
+<p>Pairs considered and closed:</p>
+<ul>
+<li><strong>API 1 and API 2 kept separate.</strong> They always fire together at Explore and Detail, which is the usual reason to combine, but they fail the other two conditions of that counter-pressure: at the Glance tier only API 1 fires, and API 2 paginates while API 1 must span the entire filtered set. Merging them would ship the whole aggregate with every page and ship rows to a tier that renders none. The consistency risk that merging would have solved is closed instead by the shared <code>asOf</code> anchor.</li>
+<li><strong>API 4 kept separate from API 2, and never called per row.</strong> A per-entity read keyed by <code>loanId</code> is legitimate for a drill the user opens. It is not how the table is populated; calling it per row would be an N+1.</li>
+<li><strong>Payment history kept inside API 4 rather than split out.</strong> Both halves always fire together when the modal opens, both are cheap, and the history is bounded per loan by the stored schedule length. A fifth endpoint would add a round trip and buy nothing.</li>
+</ul>
+<hr />
+<h2>Call sequence</h2>
+<table>
+<thead>
+<tr>
+<th>Interaction</th>
+<th>Calls fired</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Initial widget load, Glance tier</td>
+<td>API 3, API 1</td>
+<td>API 3 may be served from cache. API 1 returns <code>asOf</code>; nothing else is needed at this tier</td>
+</tr>
+<tr>
+<td>Initial widget load, Explore or Detail tier</td>
+<td>API 3, API 1, API 2</td>
+<td>API 1 first, so its <code>asOf</code> can be passed to API 2. Both then describe the same snapshot, which is what keeps the header total and the table footer in agreement</td>
+</tr>
+<tr>
+<td>Change filter <em>Loan type</em></td>
+<td>API 1, then API 2</td>
+<td>The range selection resets to all ranges, so <code>rangeKey</code> is dropped. Page resets to 1. A fresh <code>asOf</code> is taken from API 1 and passed to API 2</td>
+</tr>
+<tr>
+<td>Change filter <em>Time range</em> (chip row or donut legend)</td>
+<td>API 2 only</td>
+<td>The range selection narrows the loan list. It deliberately does not re-fire API 1: the donut is the control being selected from, so it must keep showing every range or there is nothing to return to</td>
+</tr>
+<tr>
+<td>Switch view, Table or Pie</td>
+<td>none</td>
+<td>Both views read the API 1 and API 2 responses the client already holds</td>
+</tr>
+<tr>
+<td>Change sort</td>
+<td>API 2 only</td>
+<td><code>sortBy</code> and <code>sortDir</code> change, page resets to 1, <code>asOf</code> is unchanged</td>
+</tr>
+<tr>
+<td>Change page</td>
+<td>API 2 only</td>
+<td><code>asOf</code> is unchanged, so paging cannot shift the population under the user</td>
+</tr>
+<tr>
+<td>Open drill (row click)</td>
+<td>API 4</td>
+<td>Called with the row's <code>loanId</code> and the same <code>asOf</code></td>
+</tr>
+<tr>
+<td>Submit action</td>
+<td>none</td>
+<td>This contract is read-only. "Record a contact", "Open loan" and "Export to Excel" have no endpoint, see Not in scope</td>
+</tr>
+<tr>
+<td>Refresh</td>
+<td>API 1, then API 2</td>
+<td>A new <code>asOf</code> is taken from API 1. API 3 is not re-fetched unless its TTL has expired</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Shared snapshot anchor.</strong> API 1's <code>asOf</code> is the anchor for the whole widget. The client sends it to API 2 and API 4 and every response echoes it. Without it the header total and the table footer can straddle a write and disagree on screen.</p>
+<hr />
+<h2>Filter architecture</h2>
+<table>
+<thead>
+<tr>
+<th>Filter</th>
+<th>Option source</th>
+<th>Cardinality</th>
+<th>Execution</th>
+<th>Aggregate effect</th>
+<th>Cascade</th>
+<th>"All" wire form</th>
+<th>Round trips</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Loan type</td>
+<td><code>LOOKUP</code> API 3, backed by <code>LNType</code> via <code>LNTypeRepository.GetAll().OrderBy(Name)</code></td>
+<td>Organisation-defined. 4 entries live including "Show All" [LIVE - beta1, 23 Jul 2026]. Expected well under 20, so a plain list; if any organisation exceeds roughly 200 this becomes a searchable server-side lookup</td>
+<td><code>SERVER</code>, param <code>loanTypeId</code> on API 1 and API 2</td>
+<td>Yes. It changes <code>totalAmountDue</code>, <code>loanCount</code>, every past-due and 90+ figure, <code>worstRangeKey</code>, every <code>ranges[]</code> entry and API 2's <code>filteredTotal</code></td>
+<td>No. Its option list depends on nothing else</td>
+<td>Omit the param. No sentinel guid, because an omitted param and an explicit "all" guid produce different cache keys for the same query</td>
+<td>2: API 1 then API 2</td>
+</tr>
+<tr>
+<td>Time range</td>
+<td><code>DERIVED</code> from API 1's <code>ranges[]</code>, which the server always returns as exactly five entries in severity order</td>
+<td>5, fixed by the ladder the server owns</td>
+<td><code>SERVER</code>, param <code>rangeKey</code> on API 2</td>
+<td>Yes for API 2's <code>filteredTotal</code> and <code>totalCount</code>, which is why it cannot be a client-side view over a page. No for anything on API 1, deliberately</td>
+<td>Yes. The valid <code>rangeKey</code> values are whatever API 1 returned for the current loan type</td>
+<td>Omit the param, which means every range</td>
+<td>1: API 2</td>
+</tr>
+<tr>
+<td>Table or Pie view</td>
+<td>Client state only, not a data filter</td>
+<td>2</td>
+<td><code>CLIENT</code>. All three of Framework 1's conditions hold: both views read responses the client already holds, the set is bounded by definition at two views, and no server-computed aggregate changes</td>
+<td>No</td>
+<td>No</td>
+<td>Not applicable, no param</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Combination semantics.</strong> AND, and narrowing. <code>loanTypeId</code> and <code>rangeKey</code> intersect. There is no OR pair and no mutually exclusive pair.</p>
+<p><strong>Conflict rule.</strong> The two data params cannot contradict each other, because a range is not owned by a type, but three cases need a stated resolution:</p>
+<ul>
+<li>An unknown <code>loanTypeId</code>, one not in the current tenant's <code>LNType</code> set, is a client error and returns <code>400 unknown_loan_type</code>. It is a lookup value, so an unknown one means the client is out of step with API 3, not that the data is empty.</li>
+<li>An unknown <code>rangeKey</code>, one outside the five the server owns, returns <code>400 unknown_range</code>.</li>
+<li>A <code>sortBy</code> outside the whitelist returns <code>400 unknown_sort_field</code>. It is never silently ignored, because silently falling back to the default sort makes a paginated list skip and duplicate rows without telling anyone.</li>
+</ul>
+<p><strong>Overlapping value spaces.</strong> A valid pair can legitimately match nothing: a loan type all of whose loans are current, combined with the 90+ range, matches no rows. That is a well-formed zero response, never an error. See the state contracts under API 2.</p>
+<p><strong>Blank filter values.</strong> A loan whose <code>LNLoan.TypeID</code> is null is included when <code>loanTypeId</code> is omitted and excluded by any specified <code>loanTypeId</code>. A blank never behaves as a wildcard.</p>
+<p><strong>Cascade invalidation.</strong> A <code>rangeKey</code> that was valid before a loan-type change stays a valid key, but the range may now hold nothing. The client clears the range selection to "every range" whenever the loan type changes, so the user is never left looking at an empty table they cannot explain. The server accepts the stale key regardless and returns an empty page.</p>
+<hr />
+<h2>Volume and performance</h2>
+<table>
+<thead>
+<tr>
+<th>Dataset</th>
+<th>Typical rows</th>
+<th>Worst realistic rows (basis)</th>
+<th>Row width</th>
+<th>Payload at worst</th>
+<th>Verdict</th>
+<th>Server cost model</th>
+<th>Cache posture</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>API 1 portfolio summary</td>
+<td>1 object plus 5 range entries</td>
+<td>5 range entries, fixed by the ladder the server owns [BUILD]</td>
+<td>12 summary fields, 6 fields per range entry</td>
+<td>Under 2 KB</td>
+<td><code>BOUNDED</code></td>
+<td>Single indexed scan of loans in scope, then one allocation pass per loan over that loan's invoices and posted payments. Multiplier: loans in scope × (invoices + payments) per loan</td>
+<td>LIVE per request, <code>asOf</code> is request time</td>
+</tr>
+<tr>
+<td>API 2 loan list</td>
+<td>3 loans, 54,897.96 total [LIVE - beta1, 23 Jul 2026]. Build fixture holds 9 loans [BUILD]</td>
+<td>No cited ceiling exists for how many loans a lending organisation carries. <code>[TO CONFIRM - Feargal Phelan]</code></td>
+<td>9 fields, roughly 220 bytes per row</td>
+<td>Not computable until the ceiling is confirmed, which is itself the reason this paginates</td>
+<td><code>MUST PAGINATE</code></td>
+<td>Single indexed scan filtered by bank account and type, plus the same per-loan allocation pass to resolve <code>daysPastDue</code> and <code>rangeKey</code>. Multiplier: page size × (invoices + payments) per loan for the page, plus a full-set pass for <code>filteredTotal</code> and <code>totalCount</code></td>
+<td>LIVE per request, anchored on the <code>asOf</code> the client passes</td>
+</tr>
+<tr>
+<td>API 3 loan-type lookup</td>
+<td>4 entries including "Show All" [LIVE - beta1, 23 Jul 2026]</td>
+<td>Organisation-defined and unbounded in principle, expected under 20 given the live count <code>[TO CONFIRM - Feargal Phelan]</code></td>
+<td>2 fields, roughly 60 bytes per row</td>
+<td>Under 2 KB</td>
+<td><code>BOUNDED</code></td>
+<td>Single indexed scan of <code>LNType</code> filtered by tenant</td>
+<td>TTL, 15 minutes</td>
+</tr>
+<tr>
+<td>API 4 loan detail</td>
+<td>1 loan plus 2 payments [BUILD]</td>
+<td>1 loan plus roughly 400 payment rows, bounded by the stored schedule length <code>LNLoan.NumberPayments</code> plus unscheduled payments [CODE - LNLoan.NumberPayments, PaymentsPerYear]</td>
+<td>14 loan fields, 3 fields per payment</td>
+<td>Under 40 KB</td>
+<td><code>BOUNDED</code></td>
+<td>Single indexed scan of <code>LNPayment</code> and <code>LNInvoice</code> by <code>LoanID</code>, plus one allocation pass for that loan. No multiplier over other loans</td>
+<td>LIVE per request, anchored on <code>asOf</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Why API 2 paginates rather than staying bounded.</strong> The build sorts, ranks, filters and totals the whole loan list in the browser instantly, and that is a property of a nine-row fixture, not evidence about the contract. The row set is "every loan with a remaining balance in one bank account", which is bounded only by how much an organisation has lent. The live figure of 3 loans measures a Tier C, low-adoption widget, not a ceiling: it says few organisations use the panel, not that the ones that do have few loans. With no cited ceiling, the set is not provably bounded, so it paginates and every operation over it moves to the server.</p>
+<p><strong>No time series.</strong> This widget renders no series over periods, so there is no entities × points product to compute. Every figure is an as-of-today snapshot.</p>
+<h3>Pagination contract</h3>
+<ul>
+<li><strong>Params.</strong> <code>page</code>, 1-based, default <code>1</code>. <code>pageSize</code>, default <code>50</code>, maximum <code>200</code>. A <code>pageSize</code> above the maximum is clamped to the maximum and echoed back, not rejected.</li>
+<li><strong>What paginates.</strong> <code>rows[]</code> on API 2, and nothing else.</li>
+<li><strong>What does not.</strong> <code>totalCount</code> and <code>filteredTotal</code> on API 2 compute over the <strong>full filtered set</strong>, never the page. Every figure on API 1, including <code>totalAmountDue</code>, <code>loanCount</code>, the past-due and 90+ reads, <code>worstRangeKey</code> and all five <code>ranges[]</code> entries, computes over the full filtered set and is unaffected by paging entirely. Switching pages changes no total, no chart, no chip count and no KPI.</li>
+<li><strong>Sort params.</strong> <code>sortBy</code> whitelisted to <code>accountNumber</code>, <code>borrowerName</code>, <code>lastPaymentDate</code>, <code>amountDue</code>. <code>sortDir</code> is <code>asc</code> or <code>desc</code>. Default <code>sortBy=amountDue</code>, <code>sortDir=desc</code>. The client's initial direction when a user first selects a column is ascending for <code>borrowerName</code> and <code>lastPaymentDate</code> and descending for <code>accountNumber</code> and <code>amountDue</code>; the server honours whatever it is sent.</li>
+<li><strong>Deterministic total order.</strong> Every sort ends in <code>loanId</code> ascending as the unique tiebreaker. Without it, paging over a non-unique key such as <code>lastPaymentDate</code> duplicates and skips rows across pages.</li>
+<li><strong>Null ordering.</strong> <code>lastPaymentDate</code> is null on a loan with no qualifying payment. Nulls sort last in both directions, so a loan that has never paid does not masquerade as the most recent payer.</li>
+<li><strong><code>totalCount</code></strong> is returned alongside every page, so the client renders a pager without a second call.</li>
+<li><strong>Past the last page.</strong> <code>rows</code> is an empty array, <code>totalCount</code> and <code>filteredTotal</code> are still correct, <code>page</code> echoes what was asked. It is not an error.</li>
+</ul>
+<hr />
+<h2>Where computation lives</h2>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Server or client</th>
+<th>Basis</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>totalAmountDue</code></td>
+<td>SERVER</td>
+<td>Full filtered set of loans</td>
+<td>Spans rows the client does not hold once the list paginates</td>
+</tr>
+<tr>
+<td><code>loanCount</code></td>
+<td>SERVER</td>
+<td>Full filtered set</td>
+<td>Same reason</td>
+</tr>
+<tr>
+<td><code>pastDueAmount</code>, <code>pastDueCount</code></td>
+<td>SERVER</td>
+<td>Post-allocation range assignment across the full filtered set</td>
+<td>Needs the allocation and the whole set</td>
+</tr>
+<tr>
+<td><code>pastDuePct</code></td>
+<td>SERVER</td>
+<td><code>pastDueAmount / totalAmountDue</code>, rounded to a whole percent</td>
+<td>Denominator spans the full set. <strong>Division by zero: returns <code>0</code>, never null and never omitted</strong></td>
+</tr>
+<tr>
+<td><code>ninetyPlusAmount</code></td>
+<td>SERVER</td>
+<td>The 90+ range total over the full filtered set</td>
+<td>Needs the allocation</td>
+</tr>
+<tr>
+<td>Share of the balance in the 90+ range</td>
+<td>CLIENT if ever needed</td>
+<td><code>ninetyPlusAmount / totalAmountDue</code></td>
+<td>Not returned. Nothing on screen renders a 90+ percentage: the context line pairs the 90+ <strong>amount</strong> with the overall past-due percentage. A field no element consumes is not in the contract</td>
+</tr>
+<tr>
+<td><code>ranges[].amountDue</code>, <code>ranges[].loanCount</code></td>
+<td>SERVER</td>
+<td>Allocation then range assignment over the full filtered set</td>
+<td>Cannot be derived from a page</td>
+</tr>
+<tr>
+<td><code>ranges[].sharePct</code></td>
+<td>SERVER</td>
+<td><code>ranges[].amountDue / totalAmountDue</code>, whole percent. <strong>Division by zero returns <code>0</code></strong></td>
+<td>One rule, stated once, rather than each consumer improvising. Rounding means the five shares need not sum to exactly 100, so the client must never re-derive the total from the shares</td>
+</tr>
+<tr>
+<td><code>ranges[].severity</code></td>
+<td>SERVER</td>
+<td>The ladder's own rank, 0 for Current through 4 for 90+</td>
+<td>The server owns the ladder, so the client never hardcodes its order or membership</td>
+</tr>
+<tr>
+<td><code>worstRangeKey</code></td>
+<td>SERVER</td>
+<td>The highest <code>severity</code> whose <code>amountDue</code> is above zero, null when nothing is outstanding</td>
+<td>Needs the full set</td>
+</tr>
+<tr>
+<td><code>filteredTotal</code>, <code>totalCount</code> (API 2)</td>
+<td>SERVER</td>
+<td>Full filtered set, never the page</td>
+<td>The table footer is an aggregate. Summing the visible rows would be wrong the moment there is a second page</td>
+</tr>
+<tr>
+<td>Row order</td>
+<td>SERVER</td>
+<td><code>sortBy</code>, <code>sortDir</code>, <code>loanId</code> tiebreaker</td>
+<td>A paginated set can only be ordered server-side</td>
+</tr>
+<tr>
+<td><code>daysPastDue</code>, <code>rangeKey</code> per loan</td>
+<td>SERVER</td>
+<td>Allocation against invoice due dates</td>
+<td>Needs invoice and payment data the client never receives</td>
+</tr>
+<tr>
+<td><code>payments[].amount</code></td>
+<td>SERVER</td>
+<td><code>Principal + Interest + LateFee + AdditionalPrincipal + AdditionalDraw - Adjustment</code>, returned pre-signed</td>
+<td>The client formats and never composes or sign-checks. There is no single amount column to return instead</td>
+</tr>
+<tr>
+<td>Glance stacked bar segment proportions</td>
+<td>CLIENT</td>
+<td><code>ranges[].sharePct</code> already in the response</td>
+<td>Pure arithmetic over values present</td>
+</tr>
+<tr>
+<td>Donut arc lengths and legend shares</td>
+<td>CLIENT</td>
+<td><code>ranges[].sharePct</code> already in the response</td>
+<td>Same</td>
+</tr>
+<tr>
+<td>Past-due pill versus "All current" pill</td>
+<td>CLIENT</td>
+<td><code>pastDueAmount &gt; 0</code></td>
+<td>A branch over a value present, not a computation</td>
+</tr>
+<tr>
+<td>"All settled" and "Nothing outstanding" states</td>
+<td>CLIENT</td>
+<td><code>loanCount == 0</code></td>
+<td>Same</td>
+</tr>
+<tr>
+<td>"No loans match this selection" line</td>
+<td>CLIENT</td>
+<td><code>totalCount == 0</code></td>
+<td>Same</td>
+</tr>
+<tr>
+<td>Days since last payment, drill modal</td>
+<td>CLIENT</td>
+<td><code>asOf</code> minus <code>lastPaymentDate</code></td>
+<td>Pure date arithmetic over two values present</td>
+</tr>
+<tr>
+<td>Dormancy flag, table cell and drill note</td>
+<td>CLIENT</td>
+<td><code>asOf</code> minus <code>lastPaymentDate</code> exceeds 90 days</td>
+<td>A presentation band. <strong>The 90-day threshold is not an approved business rule</strong>; it is what the build uses and it is an open item, not a silent default. See Still needs sign-off</td>
+</tr>
+<tr>
+<td>Severity ordering to colour ramp, and the red or amber treatment of the most severe ranges</td>
+<td>CLIENT</td>
+<td><code>ranges[].severity</code></td>
+<td>Presentation banding. The API returns ranks and raw numbers; it returns no colours and no risk labels</td>
+</tr>
+<tr>
+<td>"Not yet due" versus "N days past due" wording</td>
+<td>CLIENT</td>
+<td>Sign of <code>daysPastDue</code></td>
+<td>A label over a pre-signed value</td>
+</tr>
+<tr>
+<td>Currency and number formatting</td>
+<td>CLIENT</td>
+<td><code>currency</code> code plus the user's locale</td>
+<td>The server returns decimal amounts and an ISO code, never a formatted string. This is what fixes the localisation defect in the live panel</td>
+</tr>
+</tbody>
+</table>
+<p>No delta or comparison figure exists in this widget, so there is no signed-delta field to return. Where one is added later it comes back pre-signed.</p>
+<hr />
+<h2>API 1: portfolio summary</h2>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/loans-with-balance-due/summary
+</code></pre>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>loanTypeId</code></td>
+<td>guid</td>
+<td>No</td>
+<td>Any <code>LNType.TypeID</code> in the tenant's set</td>
+<td>Omitted, meaning every loan type</td>
+<td>Narrows every figure in the response to one loan type</td>
+</tr>
+<tr>
+<td><code>asOf</code></td>
+<td>ISO 8601 datetime</td>
+<td>No</td>
+<td>Any instant not in the future</td>
+<td>Omitted, meaning request time</td>
+<td>The snapshot anchor. Omitted on the first call of a render or a refresh, so the server sets it and the client reuses it for the other reads</td>
+</tr>
+</tbody>
+</table>
+<p>Context header: <code>X-BankAccountID</code>, required on every request. See Auth and scoping.</p>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/loans-with-balance-due/summary
+GET /api/dashboard/loans-with-balance-due/summary?loanTypeId=6b1f0c92-4d3a-4a17-9f21-3c8de5a10b44&amp;asOf=2026-07-24T00%3A00%3A00Z
+</code></pre>
+<p>The second call is the "Church - Special" loan type with an explicit anchor. The colon characters in the <code>asOf</code> value are percent-encoded.</p>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>asOf</code></td>
+<td>ISO 8601 datetime</td>
+<td>DERIVED request anchor [BUILD]</td>
+<td>The snapshot this response describes. Echoed by every other read</td>
+</tr>
+<tr>
+<td><code>currency</code></td>
+<td>string, ISO 4217</td>
+<td>UNVERIFIED (Feargal Phelan) [DOC - Step 6 dossier, section 10]</td>
+<td>The organisation's currency code. The backing organisation setting is not confirmed in code</td>
+</tr>
+<tr>
+<td><code>loanTypeId</code></td>
+<td>guid or null</td>
+<td>STORED LNType.TypeID [CODE]</td>
+<td>The applied filter, null when every type is included</td>
+</tr>
+<tr>
+<td><code>loanTypeName</code></td>
+<td>string</td>
+<td>STORED LNType.Name [CODE]</td>
+<td>Display name of the applied filter, or the "every loan type" label. Consumed by the chart-empty line</td>
+</tr>
+<tr>
+<td><code>totalAmountDue</code></td>
+<td>decimal(2)</td>
+<td>DERIVED SUM(per-loan amountDue) over the filtered set [CODE]</td>
+<td>The headline. Also the donut's centre figure</td>
+</tr>
+<tr>
+<td><code>loanCount</code></td>
+<td>int</td>
+<td>DERIVED COUNT over the filtered set [CODE]</td>
+<td>Loans with a remaining balance</td>
+</tr>
+<tr>
+<td><code>pastDueAmount</code></td>
+<td>decimal(2)</td>
+<td>NEW, requires the allocation [DOC - Step 1 research]</td>
+<td>Balance on loans whose <code>daysPastDue</code> is above zero</td>
+</tr>
+<tr>
+<td><code>pastDueCount</code></td>
+<td>int</td>
+<td>NEW, requires the allocation [DOC - Step 1 research]</td>
+<td>Count of those loans</td>
+</tr>
+<tr>
+<td><code>pastDuePct</code></td>
+<td>int</td>
+<td>DERIVED pastDueAmount / totalAmountDue, whole percent, 0 when the denominator is 0 [BUILD]</td>
+<td>Share of the balance that is past due</td>
+</tr>
+<tr>
+<td><code>ninetyPlusAmount</code></td>
+<td>decimal(2)</td>
+<td>NEW, requires the allocation [DOC - Step 1 research]</td>
+<td>Balance in the 90+ range</td>
+</tr>
+<tr>
+<td><code>worstRangeKey</code></td>
+<td>string or null</td>
+<td>DERIVED highest severity with amountDue above zero [BUILD]</td>
+<td>Drives the Glance most-overdue call. Null when nothing is outstanding</td>
+</tr>
+<tr>
+<td><code>ranges[]</code></td>
+<td>array</td>
+<td>NEW [BUILD]</td>
+<td>Exactly five entries, always, in severity order, including entries at zero</td>
+</tr>
+<tr>
+<td><code>ranges[].key</code></td>
+<td>string</td>
+<td>NEW [BUILD]</td>
+<td>Stable identifier: <code>current</code>, <code>d1to30</code>, <code>d31to60</code>, <code>d61to90</code>, <code>over90</code>. This is the value the client sends as <code>rangeKey</code></td>
+</tr>
+<tr>
+<td><code>ranges[].label</code></td>
+<td>string</td>
+<td>NEW [BUILD]</td>
+<td>Display label: Current, 1-30 days, 31-60 days, 61-90 days, 90+ days</td>
+</tr>
+<tr>
+<td><code>ranges[].severity</code></td>
+<td>int</td>
+<td>NEW [BUILD]</td>
+<td>0 through 4, ascending with severity. The client renders in this order and never hardcodes the ladder</td>
+</tr>
+<tr>
+<td><code>ranges[].amountDue</code></td>
+<td>decimal(2)</td>
+<td>NEW, requires the allocation [DOC - Step 1 research]</td>
+<td>Balance assigned to this range, 0.00 when the range holds nothing</td>
+</tr>
+<tr>
+<td><code>ranges[].loanCount</code></td>
+<td>int</td>
+<td>NEW, requires the allocation [DOC - Step 1 research]</td>
+<td>Loans assigned to this range. 0 makes the chip and legend row inert client-side</td>
+</tr>
+<tr>
+<td><code>ranges[].sharePct</code></td>
+<td>int</td>
+<td>DERIVED amountDue / totalAmountDue, whole percent, 0 when the denominator is 0 [BUILD]</td>
+<td>Share of the balance in this range</td>
+</tr>
+</tbody>
+</table>
+<h3>Example response</h3>
+<pre><code>{
+  &quot;asOf&quot;: &quot;2026-07-24T00:00:00Z&quot;,
+  &quot;currency&quot;: &quot;USD&quot;,
+  &quot;loanTypeId&quot;: null,
+  &quot;loanTypeName&quot;: &quot;All loan types&quot;,
+  &quot;totalAmountDue&quot;: 112037.96,
+  &quot;loanCount&quot;: 9,
+  &quot;pastDueAmount&quot;: 58147.96,
+  &quot;pastDueCount&quot;: 6,
+  &quot;pastDuePct&quot;: 52,
+  &quot;ninetyPlusAmount&quot;: 38940.13,
+  &quot;worstRangeKey&quot;: &quot;over90&quot;,
+  &quot;ranges&quot;: [
+    { &quot;key&quot;: &quot;current&quot;, &quot;label&quot;: &quot;Current&quot;,    &quot;severity&quot;: 0, &quot;amountDue&quot;: 53890.00, &quot;loanCount&quot;: 3, &quot;sharePct&quot;: 48 },
+    { &quot;key&quot;: &quot;d1to30&quot;,  &quot;label&quot;: &quot;1-30 days&quot;,  &quot;severity&quot;: 1, &quot;amountDue&quot;: 8386.86,  &quot;loanCount&quot;: 2, &quot;sharePct&quot;: 7 },
+    { &quot;key&quot;: &quot;d31to60&quot;, &quot;label&quot;: &quot;31-60 days&quot;, &quot;severity&quot;: 2, &quot;amountDue&quot;: 10820.97, &quot;loanCount&quot;: 2, &quot;sharePct&quot;: 10 },
+    { &quot;key&quot;: &quot;d61to90&quot;, &quot;label&quot;: &quot;61-90 days&quot;, &quot;severity&quot;: 3, &quot;amountDue&quot;: 0.00,     &quot;loanCount&quot;: 0, &quot;sharePct&quot;: 0 },
+    { &quot;key&quot;: &quot;over90&quot;,  &quot;label&quot;: &quot;90+ days&quot;,   &quot;severity&quot;: 4, &quot;amountDue&quot;: 38940.13, &quot;loanCount&quot;: 2, &quot;sharePct&quot;: 35 }
+  ]
+}
+</code></pre>
+<p>Reconciliation, ranges to total: 53,890.00 + 8,386.86 + 10,820.97 + 0.00 + 38,940.13 = 112,037.96, which is <code>totalAmountDue</code>.</p>
+<p>Reconciliation, range loan counts to total: 3 + 2 + 2 + 0 + 2 = 9, which is <code>loanCount</code>.</p>
+<p>Reconciliation, past due is every range above Current: 8,386.86 + 10,820.97 + 0.00 + 38,940.13 = 58,147.96, which is <code>pastDueAmount</code>; and 2 + 2 + 0 + 2 = 6, which is <code>pastDueCount</code>.</p>
+<p>Reconciliation, shares: 48 + 7 + 10 + 0 + 35 = 100. Whole-percent rounding means this will not always land on exactly 100, so the client renders shares and never re-derives the total from them.</p>
+<p><code>ninetyPlusAmount</code> of 38,940.13 is the <code>over90</code> entry's <code>amountDue</code>, and <code>totalAmountDue</code> of 112,037.96 must equal API 2's <code>filteredTotal</code> when API 2 is called with the same <code>loanTypeId</code>, no <code>rangeKey</code> and the same <code>asOf</code>.</p>
+<p>The same call filtered to the "Church - Special" loan type returns <code>totalAmountDue</code> 32,436.86 across 4 loans, with ranges 0.00 + 8,386.86 + 9,800.00 + 0.00 + 14,250.00 = 32,436.86 and counts 0 + 2 + 1 + 0 + 1 = 4. This is the reconciliation that proves the loan type narrows the ranges and not only the table.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty (no loans have a balance)</td>
+<td><code>200</code>. <code>totalAmountDue</code> 0.00, <code>loanCount</code> 0, every past-due and 90+ figure 0, <code>worstRangeKey</code> null, and all five <code>ranges[]</code> entries present with <code>amountDue</code> 0.00 and <code>loanCount</code> 0. Never an empty <code>ranges</code> array, because the client renders the ladder from this field</td>
+</tr>
+<tr>
+<td>Empty for the selected type only</td>
+<td>Identical shape, with <code>loanTypeId</code> and <code>loanTypeName</code> echoing the applied filter so the client can say which type has nothing outstanding</td>
+</tr>
+<tr>
+<td>Partial (some loans have invoices whose allocation cannot be resolved)</td>
+<td><code>200</code>. The resolvable loans are included. Any loan whose aging cannot be resolved is counted in <code>totalAmountDue</code> and <code>loanCount</code> but assigned to no range, and the response carries <code>ranges[]</code> sums below <code>totalAmountDue</code>. This is the one case where the range sums do not cross-foot to the total, and the client must not infer the total from the ranges</td>
+</tr>
+<tr>
+<td>Not-yet-existing entity (a loan opened after <code>asOf</code>)</td>
+<td>Excluded. The read is anchored, so a loan that did not exist at <code>asOf</code> contributes nothing</td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td><code>403</code> with <code>{"error":"forbidden"}</code>. No partial payload</td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td><code>503</code> with <code>{"error":"upstream_unavailable"}</code> and a <code>Retry-After</code> header. Never a zero-valued payload, because zero outstanding and "we could not ask" must not look the same on screen</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>API 2: loan list</h2>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/loans-with-balance-due/loans
+</code></pre>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>loanTypeId</code></td>
+<td>guid</td>
+<td>No</td>
+<td>Any <code>LNType.TypeID</code> in the tenant's set</td>
+<td>Omitted, meaning every loan type</td>
+<td>Narrows the rows, <code>totalCount</code> and <code>filteredTotal</code></td>
+</tr>
+<tr>
+<td><code>rangeKey</code></td>
+<td>string</td>
+<td>No</td>
+<td><code>current</code>, <code>d1to30</code>, <code>d31to60</code>, <code>d61to90</code>, <code>over90</code></td>
+<td>Omitted, meaning every range</td>
+<td>Narrows the rows to loans assigned to one range</td>
+</tr>
+<tr>
+<td><code>sortBy</code></td>
+<td>string</td>
+<td>No</td>
+<td><code>accountNumber</code>, <code>borrowerName</code>, <code>lastPaymentDate</code>, <code>amountDue</code></td>
+<td><code>amountDue</code></td>
+<td>Sort column. Anything outside the whitelist is rejected</td>
+</tr>
+<tr>
+<td><code>sortDir</code></td>
+<td>string</td>
+<td>No</td>
+<td><code>asc</code>, <code>desc</code></td>
+<td><code>desc</code></td>
+<td>Sort direction</td>
+</tr>
+<tr>
+<td><code>page</code></td>
+<td>int</td>
+<td>No</td>
+<td>1 and above</td>
+<td><code>1</code></td>
+<td>1-based page number</td>
+</tr>
+<tr>
+<td><code>pageSize</code></td>
+<td>int</td>
+<td>No</td>
+<td>1 to 200</td>
+<td><code>50</code></td>
+<td>Rows per page. Above 200 is clamped to 200 and echoed</td>
+</tr>
+<tr>
+<td><code>asOf</code></td>
+<td>ISO 8601 datetime</td>
+<td>No</td>
+<td>Any instant not in the future</td>
+<td>Omitted, meaning request time</td>
+<td>The anchor taken from API 1, so the footer and the header describe one snapshot</td>
+</tr>
+</tbody>
+</table>
+<p>Context header: <code>X-BankAccountID</code>, required on every request.</p>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/loans-with-balance-due/loans?asOf=2026-07-24T00%3A00%3A00Z
+GET /api/dashboard/loans-with-balance-due/loans?loanTypeId=6b1f0c92-4d3a-4a17-9f21-3c8de5a10b44&amp;rangeKey=over90&amp;sortBy=lastPaymentDate&amp;sortDir=asc&amp;page=1&amp;pageSize=50&amp;asOf=2026-07-24T00%3A00%3A00Z
+</code></pre>
+<p>The first is the default call: every type, every range, amount due descending. The second is the "Church - Special" type narrowed to the 90+ range and sorted by oldest payment first. Colons in <code>asOf</code> are percent-encoded.</p>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>asOf</code></td>
+<td>ISO 8601 datetime</td>
+<td>DERIVED request anchor [BUILD]</td>
+<td>Echo of the anchor this page was read at</td>
+</tr>
+<tr>
+<td><code>currency</code></td>
+<td>string, ISO 4217</td>
+<td>UNVERIFIED (Feargal Phelan) [DOC - Step 6 dossier, section 10]</td>
+<td>The organisation's currency code</td>
+</tr>
+<tr>
+<td><code>loanTypeId</code></td>
+<td>guid or null</td>
+<td>STORED LNType.TypeID [CODE]</td>
+<td>Echo of the applied type filter</td>
+</tr>
+<tr>
+<td><code>rangeKey</code></td>
+<td>string or null</td>
+<td>NEW [BUILD]</td>
+<td>Echo of the applied range filter. Drives the footer label and the selected-range note</td>
+</tr>
+<tr>
+<td><code>page</code></td>
+<td>int</td>
+<td>DERIVED request echo [BUILD]</td>
+<td>1-based page number returned</td>
+</tr>
+<tr>
+<td><code>pageSize</code></td>
+<td>int</td>
+<td>DERIVED request echo [BUILD]</td>
+<td>Rows per page actually applied, after clamping</td>
+</tr>
+<tr>
+<td><code>totalCount</code></td>
+<td>int</td>
+<td>DERIVED COUNT over the full filtered set [BUILD]</td>
+<td>Loans matching the filters, not the page. Drives both the pager and the footer's loan count</td>
+</tr>
+<tr>
+<td><code>filteredTotal</code></td>
+<td>decimal(2)</td>
+<td>DERIVED SUM over the full filtered set [BUILD]</td>
+<td>The footer amount. Computed over every matching loan, never over the page</td>
+</tr>
+<tr>
+<td><code>sortBy</code></td>
+<td>string</td>
+<td>DERIVED request echo [BUILD]</td>
+<td>Sort column applied</td>
+</tr>
+<tr>
+<td><code>sortDir</code></td>
+<td>string</td>
+<td>DERIVED request echo [BUILD]</td>
+<td>Sort direction applied</td>
+</tr>
+<tr>
+<td><code>rows[]</code></td>
+<td>array</td>
+<td>STORED, see per-field rows [CODE]</td>
+<td>One page of loans</td>
+</tr>
+<tr>
+<td><code>rows[].loanId</code></td>
+<td>guid</td>
+<td>STORED LNLoan.LoanID [CODE]</td>
+<td>The drill key, and the unique sort tiebreaker</td>
+</tr>
+<tr>
+<td><code>rows[].accountNumber</code></td>
+<td>string</td>
+<td>STORED LNLoan.AccountNumber [CODE]</td>
+<td>Account column</td>
+</tr>
+<tr>
+<td><code>rows[].borrowerName</code></td>
+<td>string</td>
+<td>STORED LNLoan.Name [CODE - legacy grid Borrower Name column]</td>
+<td>Borrower column</td>
+</tr>
+<tr>
+<td><code>rows[].loanTypeId</code></td>
+<td>guid or null</td>
+<td>STORED LNLoan.TypeID [CODE]</td>
+<td>Null on a loan with no type assigned</td>
+</tr>
+<tr>
+<td><code>rows[].loanTypeName</code></td>
+<td>string or null</td>
+<td>STORED LNType.Name via LNLoan.TypeID [CODE]</td>
+<td>The sub-line under the borrower. Null when the loan has no type</td>
+</tr>
+<tr>
+<td><code>rows[].lastPaymentDate</code></td>
+<td>date or null</td>
+<td>DERIVED MAX(LNPayment.PaymentDate) WHERE Posted AND VoidJournalID IS NULL [CODE - LNPayment]</td>
+<td>Last payment column. Null when the loan has never had a qualifying payment</td>
+</tr>
+<tr>
+<td><code>rows[].amountDue</code></td>
+<td>decimal(2)</td>
+<td>DERIVED SUM(Principal + Interest) minus posted payments [CODE]</td>
+<td>Amount due column</td>
+</tr>
+<tr>
+<td><code>rows[].daysPastDue</code></td>
+<td>int</td>
+<td>NEW, requires the allocation [DOC - Step 1 research]</td>
+<td>Signed. Negative or zero means nothing is yet due</td>
+</tr>
+<tr>
+<td><code>rows[].rangeKey</code></td>
+<td>string</td>
+<td>NEW, requires the allocation [DOC - Step 1 research]</td>
+<td>The one range this loan is assigned to</td>
+</tr>
+</tbody>
+</table>
+<h3>Example response</h3>
+<pre><code>{
+  &quot;asOf&quot;: &quot;2026-07-24T00:00:00Z&quot;,
+  &quot;currency&quot;: &quot;USD&quot;,
+  &quot;loanTypeId&quot;: null,
+  &quot;rangeKey&quot;: null,
+  &quot;page&quot;: 1,
+  &quot;pageSize&quot;: 50,
+  &quot;totalCount&quot;: 9,
+  &quot;filteredTotal&quot;: 112037.96,
+  &quot;sortBy&quot;: &quot;amountDue&quot;,
+  &quot;sortDir&quot;: &quot;desc&quot;,
+  &quot;rows&quot;: [
+    { &quot;loanId&quot;: &quot;1a4c7e10-0b21-4d55-8f3e-90ab11c20001&quot;, &quot;accountNumber&quot;: &quot;LN-1042&quot;, &quot;borrowerName&quot;: &quot;Grace Fellowship&quot;,          &quot;loanTypeId&quot;: &quot;2c7d5f31-9a04-4b18-8e62-11de44a90002&quot;, &quot;loanTypeName&quot;: &quot;Church Expansion&quot;, &quot;lastPaymentDate&quot;: &quot;2026-07-08&quot;, &quot;amountDue&quot;: 28450.00, &quot;daysPastDue&quot;: -8,  &quot;rangeKey&quot;: &quot;current&quot; },
+    { &quot;loanId&quot;: &quot;1a4c7e10-0b21-4d55-8f3e-90ab11c20002&quot;, &quot;accountNumber&quot;: &quot;LN-1017&quot;, &quot;borrowerName&quot;: &quot;New Life Center&quot;,           &quot;loanTypeId&quot;: &quot;2c7d5f31-9a04-4b18-8e62-11de44a90002&quot;, &quot;loanTypeName&quot;: &quot;Church Expansion&quot;, &quot;lastPaymentDate&quot;: &quot;2026-07-10&quot;, &quot;amountDue&quot;: 24800.00, &quot;daysPastDue&quot;: -12, &quot;rangeKey&quot;: &quot;current&quot; },
+    { &quot;loanId&quot;: &quot;1a4c7e10-0b21-4d55-8f3e-90ab11c20003&quot;, &quot;accountNumber&quot;: &quot;LN-1301&quot;, &quot;borrowerName&quot;: &quot;Third Presbyterian Church&quot;, &quot;loanTypeId&quot;: &quot;2c7d5f31-9a04-4b18-8e62-11de44a90002&quot;, &quot;loanTypeName&quot;: &quot;Church Expansion&quot;, &quot;lastPaymentDate&quot;: &quot;2026-03-18&quot;, &quot;amountDue&quot;: 24690.13, &quot;daysPastDue&quot;: 95,  &quot;rangeKey&quot;: &quot;over90&quot; },
+    { &quot;loanId&quot;: &quot;1a4c7e10-0b21-4d55-8f3e-90ab11c20004&quot;, &quot;accountNumber&quot;: &quot;LN-1099&quot;, &quot;borrowerName&quot;: &quot;Cornerstone Academy&quot;,       &quot;loanTypeId&quot;: &quot;6b1f0c92-4d3a-4a17-9f21-3c8de5a10b44&quot;, &quot;loanTypeName&quot;: &quot;Church - Special&quot;, &quot;lastPaymentDate&quot;: &quot;2026-01-30&quot;, &quot;amountDue&quot;: 14250.00, &quot;daysPastDue&quot;: 145, &quot;rangeKey&quot;: &quot;over90&quot; },
+    { &quot;loanId&quot;: &quot;1a4c7e10-0b21-4d55-8f3e-90ab11c20005&quot;, &quot;accountNumber&quot;: &quot;LN-1150&quot;, &quot;borrowerName&quot;: &quot;St. Mark Parish&quot;,           &quot;loanTypeId&quot;: &quot;6b1f0c92-4d3a-4a17-9f21-3c8de5a10b44&quot;, &quot;loanTypeName&quot;: &quot;Church - Special&quot;, &quot;lastPaymentDate&quot;: &quot;2026-04-15&quot;, &quot;amountDue&quot;: 9800.00,  &quot;daysPastDue&quot;: 58,  &quot;rangeKey&quot;: &quot;d31to60&quot; },
+    { &quot;loanId&quot;: &quot;1a4c7e10-0b21-4d55-8f3e-90ab11c20006&quot;, &quot;accountNumber&quot;: &quot;LN-1205&quot;, &quot;borrowerName&quot;: &quot;Trinity Chapel&quot;,            &quot;loanTypeId&quot;: &quot;6b1f0c92-4d3a-4a17-9f21-3c8de5a10b44&quot;, &quot;loanTypeName&quot;: &quot;Church - Special&quot;, &quot;lastPaymentDate&quot;: &quot;2026-05-28&quot;, &quot;amountDue&quot;: 8200.00,  &quot;daysPastDue&quot;: 22,  &quot;rangeKey&quot;: &quot;d1to30&quot; },
+    { &quot;loanId&quot;: &quot;1a4c7e10-0b21-4d55-8f3e-90ab11c20007&quot;, &quot;accountNumber&quot;: &quot;LN-2044&quot;, &quot;borrowerName&quot;: &quot;Stephen Ho&quot;,                &quot;loanTypeId&quot;: &quot;9e30a8b7-51cc-4f79-b0a4-77fe22b30003&quot;, &quot;loanTypeName&quot;: &quot;Individual&quot;,       &quot;lastPaymentDate&quot;: &quot;2026-05-02&quot;, &quot;amountDue&quot;: 1020.97,  &quot;daysPastDue&quot;: 44,  &quot;rangeKey&quot;: &quot;d31to60&quot; },
+    { &quot;loanId&quot;: &quot;1a4c7e10-0b21-4d55-8f3e-90ab11c20008&quot;, &quot;accountNumber&quot;: &quot;LN-2231&quot;, &quot;borrowerName&quot;: &quot;Maria Alvarez&quot;,             &quot;loanTypeId&quot;: &quot;9e30a8b7-51cc-4f79-b0a4-77fe22b30003&quot;, &quot;loanTypeName&quot;: &quot;Individual&quot;,       &quot;lastPaymentDate&quot;: &quot;2026-07-02&quot;, &quot;amountDue&quot;: 640.00,   &quot;daysPastDue&quot;: -6,  &quot;rangeKey&quot;: &quot;current&quot; },
+    { &quot;loanId&quot;: &quot;1a4c7e10-0b21-4d55-8f3e-90ab11c20009&quot;, &quot;accountNumber&quot;: &quot;LN-1188&quot;, &quot;borrowerName&quot;: &quot;First Baptist Church&quot;,      &quot;loanTypeId&quot;: &quot;6b1f0c92-4d3a-4a17-9f21-3c8de5a10b44&quot;, &quot;loanTypeName&quot;: &quot;Church - Special&quot;, &quot;lastPaymentDate&quot;: &quot;2026-06-30&quot;, &quot;amountDue&quot;: 186.86,   &quot;daysPastDue&quot;: 6,   &quot;rangeKey&quot;: &quot;d1to30&quot; }
+  ]
+}
+</code></pre>
+<p>Reconciliation, rows to <code>filteredTotal</code>: 28,450.00 + 24,800.00 + 24,690.13 + 14,250.00 + 9,800.00 + 8,200.00 + 1,020.97 + 640.00 + 186.86 = 112,037.96, which is <code>filteredTotal</code> and matches API 1's <code>totalAmountDue</code> at the same <code>asOf</code>. The rows happen to sum to the footer here only because all nine fit on one page; the footer figure comes from the full filtered set and the client must never sum the page to produce it.</p>
+<p>Reconciliation, the same call with <code>loanTypeId</code> set to Church - Special and <code>rangeKey</code> set to <code>over90</code> returns one row: <code>totalCount</code> 1 and <code>filteredTotal</code> 14,250.00, which must equal API 1's <code>ranges[]</code> entry for <code>over90</code> under that same loan type, where 14,250.00 + 0.00 = 14,250.00.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty (no loans match the filters)</td>
+<td><code>200</code>. <code>rows</code> empty, <code>totalCount</code> 0, <code>filteredTotal</code> 0.00, filters echoed. A type and range pair matching nothing is this state, not an error</td>
+</tr>
+<tr>
+<td>Partial (a loan's aging cannot be resolved)</td>
+<td><code>200</code>. The loan is returned with <code>amountDue</code> populated and <code>daysPastDue</code> and <code>rangeKey</code> null. It is counted in <code>totalCount</code> and <code>filteredTotal</code>. A null <code>rangeKey</code> row is excluded by any specified <code>rangeKey</code>, and included when the param is omitted</td>
+</tr>
+<tr>
+<td>Not-yet-existing entity (a loan opened after <code>asOf</code>)</td>
+<td>Excluded, because the read is anchored</td>
+</tr>
+<tr>
+<td>Page past the last page</td>
+<td><code>200</code>. <code>rows</code> empty, <code>totalCount</code> and <code>filteredTotal</code> still correct, <code>page</code> echoing what was asked. Not an error</td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td><code>403</code> with <code>{"error":"forbidden"}</code></td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td><code>503</code> with <code>{"error":"upstream_unavailable"}</code> and a <code>Retry-After</code> header. Never an empty <code>rows</code> array with a zero total, which would read as "nothing outstanding"</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>API 3: loan-type lookup</h2>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/loans-with-balance-due/filters
+</code></pre>
+<p>This is the endpoint that exists today. The contract below is what it must return; the only change from the live behaviour is the explicit null identifier on the "Show All" entry and the <code>asOf</code> stamp.</p>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>(none)</td>
+<td>n/a</td>
+<td>n/a</td>
+<td>n/a</td>
+<td>n/a</td>
+<td>The list is fully determined by the tenant and bank-account context. No filter cascades into it</td>
+</tr>
+</tbody>
+</table>
+<p>Context header: <code>X-BankAccountID</code>, required. The list itself is filtered <code>WHERE TenantID = ctx</code>, which is a different scoping key from the loan reads. See Auth and scoping.</p>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/loans-with-balance-due/filters
+GET /api/dashboard/loans-with-balance-due/filters        (identical; the response is TTL-cached for 15 minutes and may be shared with any other loan surface)
+</code></pre>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>asOf</code></td>
+<td>ISO 8601 datetime</td>
+<td>DERIVED request anchor [BUILD]</td>
+<td>When the list was read. Not the anchor for the data reads</td>
+</tr>
+<tr>
+<td><code>loanTypes[]</code></td>
+<td>array</td>
+<td>STORED LNType [CODE - LNTypeRepository.GetAll().OrderBy(Name)]</td>
+<td>Ordered by name, with the "Show All" entry prepended</td>
+</tr>
+<tr>
+<td><code>loanTypes[].loanTypeId</code></td>
+<td>guid or null</td>
+<td>STORED LNType.TypeID [CODE]</td>
+<td>Null on the "Show All" entry. Selecting that entry means the client omits <code>loanTypeId</code> on the data reads</td>
+</tr>
+<tr>
+<td><code>loanTypes[].name</code></td>
+<td>string</td>
+<td>STORED LNType.Name [CODE]</td>
+<td>Display name</td>
+</tr>
+</tbody>
+</table>
+<h3>Example response</h3>
+<pre><code>{
+  &quot;asOf&quot;: &quot;2026-07-24T00:00:00Z&quot;,
+  &quot;loanTypes&quot;: [
+    { &quot;loanTypeId&quot;: null,                                   &quot;name&quot;: &quot;Show All&quot; },
+    { &quot;loanTypeId&quot;: &quot;6b1f0c92-4d3a-4a17-9f21-3c8de5a10b44&quot;, &quot;name&quot;: &quot;Church - Special&quot; },
+    { &quot;loanTypeId&quot;: &quot;2c7d5f31-9a04-4b18-8e62-11de44a90002&quot;, &quot;name&quot;: &quot;Church Expansion&quot; },
+    { &quot;loanTypeId&quot;: &quot;9e30a8b7-51cc-4f79-b0a4-77fe22b30003&quot;, &quot;name&quot;: &quot;Individual&quot; }
+  ]
+}
+</code></pre>
+<p>Reconciliation: 1 + 3 = 4 entries, being the prepended "Show All" plus the three loan types the live environment carries, and every non-null identifier here is a valid <code>loanTypeId</code> on API 1 and API 2.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty (the organisation has defined no loan types)</td>
+<td><code>200</code> with <code>loanTypes</code> holding the single "Show All" entry. The filter control renders and is inert, rather than vanishing</td>
+</tr>
+<tr>
+<td>Partial</td>
+<td>Not applicable. The list is either read in full or the read fails</td>
+</tr>
+<tr>
+<td>Not-yet-existing entity (a type created after the cached read)</td>
+<td>Absent until the TTL expires. A <code>loanTypeId</code> the client has not seen is never invented, and an unknown one sent to a data read returns <code>400 unknown_loan_type</code></td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td><code>403</code> with <code>{"error":"forbidden"}</code></td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td><code>503</code> with <code>{"error":"upstream_unavailable"}</code>. The widget renders with the filter control disabled and still fires API 1 unfiltered, because the summary does not depend on this list</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>API 4: loan detail</h2>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/loans-with-balance-due/loans/{loanId}
+</code></pre>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>loanId</code></td>
+<td>guid, path segment</td>
+<td>Yes</td>
+<td>An <code>LNLoan.LoanID</code> in scope for the context bank account</td>
+<td>None</td>
+<td>The loan to read</td>
+</tr>
+<tr>
+<td><code>asOf</code></td>
+<td>ISO 8601 datetime</td>
+<td>No</td>
+<td>Any instant not in the future</td>
+<td>Omitted, meaning request time</td>
+<td>The same anchor the table page was read at, so the modal's amount due matches the row the user clicked</td>
+</tr>
+</tbody>
+</table>
+<p>Context header: <code>X-BankAccountID</code>, required.</p>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/loans-with-balance-due/loans/1a4c7e10-0b21-4d55-8f3e-90ab11c20001?asOf=2026-07-24T00%3A00%3A00Z
+GET /api/dashboard/loans-with-balance-due/loans/1a4c7e10-0b21-4d55-8f3e-90ab11c20004
+</code></pre>
+<p>The first is the anchored call the widget makes on a row click. The second omits the anchor and reads at request time, which is what a deep link into the modal does.</p>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>asOf</code></td>
+<td>ISO 8601 datetime</td>
+<td>DERIVED request anchor [BUILD]</td>
+<td>The snapshot this loan is described at</td>
+</tr>
+<tr>
+<td><code>currency</code></td>
+<td>string, ISO 4217</td>
+<td>UNVERIFIED (Feargal Phelan) [DOC - Step 6 dossier, section 10]</td>
+<td>The organisation's currency code</td>
+</tr>
+<tr>
+<td><code>loanId</code></td>
+<td>guid</td>
+<td>STORED LNLoan.LoanID [CODE]</td>
+<td>Echo of the requested loan</td>
+</tr>
+<tr>
+<td><code>accountNumber</code></td>
+<td>string</td>
+<td>STORED LNLoan.AccountNumber [CODE]</td>
+<td>Account row in the modal</td>
+</tr>
+<tr>
+<td><code>borrowerName</code></td>
+<td>string</td>
+<td>STORED LNLoan.Name [CODE - legacy grid Borrower Name column]</td>
+<td>Shown beside the modal title</td>
+</tr>
+<tr>
+<td><code>loanTypeId</code></td>
+<td>guid or null</td>
+<td>STORED LNLoan.TypeID [CODE]</td>
+<td>Null when the loan has no type assigned</td>
+</tr>
+<tr>
+<td><code>loanTypeName</code></td>
+<td>string or null</td>
+<td>STORED LNType.Name via LNLoan.TypeID [CODE]</td>
+<td>Loan type row</td>
+</tr>
+<tr>
+<td><code>originalAmount</code></td>
+<td>decimal(2)</td>
+<td>STORED LNLoan.TotalAmount [CODE - LNLoan]</td>
+<td>Original amount row</td>
+</tr>
+<tr>
+<td><code>amountDue</code></td>
+<td>decimal(2)</td>
+<td>DERIVED SUM(Principal + Interest) minus posted payments [CODE]</td>
+<td>Amount due row. Must equal the clicked row's <code>amountDue</code> at the same <code>asOf</code></td>
+</tr>
+<tr>
+<td><code>rangeKey</code></td>
+<td>string or null</td>
+<td>NEW, requires the allocation [DOC - Step 1 research]</td>
+<td>The loan's assigned range, null when the aging cannot be resolved</td>
+</tr>
+<tr>
+<td><code>rangeLabel</code></td>
+<td>string or null</td>
+<td>NEW [BUILD]</td>
+<td>Display label for that range, so the modal does not re-derive it from the ladder</td>
+</tr>
+<tr>
+<td><code>daysPastDue</code></td>
+<td>int or null</td>
+<td>NEW, requires the allocation [DOC - Step 1 research]</td>
+<td>Signed. Negative or zero means nothing is yet due</td>
+</tr>
+<tr>
+<td><code>nextPaymentDueDate</code></td>
+<td>date or null</td>
+<td>UNVERIFIED (Feargal Phelan) [TO CONFIRM]</td>
+<td>Due date of the loan's earliest unpaid invoice. No confirmed due-date column has been traced on <code>LNInvoice</code>, so this field is not on the same footing as the stored fields beside it</td>
+</tr>
+<tr>
+<td><code>lastPaymentDate</code></td>
+<td>date or null</td>
+<td>DERIVED MAX(LNPayment.PaymentDate) WHERE Posted AND VoidJournalID IS NULL [CODE - LNPayment]</td>
+<td>Last payment row. The client derives "days ago" and the dormancy note from this and <code>asOf</code></td>
+</tr>
+<tr>
+<td><code>payments[]</code></td>
+<td>array</td>
+<td>STORED LNPayment [CODE]</td>
+<td>Qualifying payments, most recent first</td>
+</tr>
+<tr>
+<td><code>payments[].paymentDate</code></td>
+<td>date</td>
+<td>STORED LNPayment.PaymentDate [CODE]</td>
+<td>Date column in the payment history</td>
+</tr>
+<tr>
+<td><code>payments[].reference</code></td>
+<td>string or null</td>
+<td>STORED LNPayment.CheckNumber [CODE]</td>
+<td>Cheque number or reference string. This is a reference, not a payment-method enum; no method enum is confirmed in the data</td>
+</tr>
+<tr>
+<td><code>payments[].amount</code></td>
+<td>decimal(2)</td>
+<td>DERIVED Principal + Interest + LateFee + AdditionalPrincipal + AdditionalDraw - Adjustment, returned pre-signed [CODE - LNPayment]</td>
+<td>Amount column. Can be negative when an adjustment exceeds the rest</td>
+</tr>
+</tbody>
+</table>
+<h3>Example response</h3>
+<pre><code>{
+  &quot;asOf&quot;: &quot;2026-07-24T00:00:00Z&quot;,
+  &quot;currency&quot;: &quot;USD&quot;,
+  &quot;loanId&quot;: &quot;1a4c7e10-0b21-4d55-8f3e-90ab11c20001&quot;,
+  &quot;accountNumber&quot;: &quot;LN-1042&quot;,
+  &quot;borrowerName&quot;: &quot;Grace Fellowship&quot;,
+  &quot;loanTypeId&quot;: &quot;2c7d5f31-9a04-4b18-8e62-11de44a90002&quot;,
+  &quot;loanTypeName&quot;: &quot;Church Expansion&quot;,
+  &quot;originalAmount&quot;: 150000.00,
+  &quot;amountDue&quot;: 28450.00,
+  &quot;rangeKey&quot;: &quot;current&quot;,
+  &quot;rangeLabel&quot;: &quot;Current&quot;,
+  &quot;daysPastDue&quot;: -8,
+  &quot;nextPaymentDueDate&quot;: &quot;2026-08-01&quot;,
+  &quot;lastPaymentDate&quot;: &quot;2026-07-08&quot;,
+  &quot;payments&quot;: [
+    { &quot;paymentDate&quot;: &quot;2026-07-08&quot;, &quot;reference&quot;: &quot;ACH&quot;,         &quot;amount&quot;: 2100.00 },
+    { &quot;paymentDate&quot;: &quot;2026-06-08&quot;, &quot;reference&quot;: &quot;Check #2093&quot;, &quot;amount&quot;: 2100.00 }
+  ]
+}
+</code></pre>
+<p>Reconciliation, payment history: 2,100.00 + 2,100.00 = 4,200.00 of qualifying payments shown, and <code>lastPaymentDate</code> of 2026-07-08 is the maximum <code>paymentDate</code> in the array. <code>amountDue</code> of 28,450.00 is not derivable from this array: it is invoiced principal and interest minus <strong>all</strong> posted payments including any that predate the returned history, so a developer must not try to cross-foot the two.</p>
+<p><code>amountDue</code> of 28,450.00 must equal the <code>rows[].amountDue</code> for the same <code>loanId</code> on API 2 at the same <code>asOf</code>, and <code>rangeKey</code> must equal that row's <code>rangeKey</code>.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty (the loan has no qualifying payments)</td>
+<td><code>200</code> with <code>payments</code> as an empty array and <code>lastPaymentDate</code> null. The modal renders its own "no payments recorded yet" state</td>
+</tr>
+<tr>
+<td>Partial (the loan's aging cannot be resolved)</td>
+<td><code>200</code> with <code>rangeKey</code>, <code>rangeLabel</code> and <code>daysPastDue</code> all null. The modal omits the aging and days rows rather than showing a zero</td>
+</tr>
+<tr>
+<td>Not-yet-existing entity (the loan was opened after <code>asOf</code>)</td>
+<td><code>404</code> with <code>{"error":"not_found"}</code>. An anchored read must not describe a loan that did not exist at the anchor</td>
+</tr>
+<tr>
+<td>Unknown or out-of-scope <code>loanId</code></td>
+<td><code>404</code> with <code>{"error":"not_found"}</code>. Out of scope for the context bank account is indistinguishable from not existing, deliberately, so the response does not leak the existence of another account's loan</td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td><code>403</code> with <code>{"error":"forbidden"}</code></td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td><code>503</code> with <code>{"error":"upstream_unavailable"}</code> and a <code>Retry-After</code> header</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>Auth and scoping</h2>
+<ul>
+<li><strong>Company and tenant scoping.</strong> Every request carries the <code>X-BankAccountID</code> context header, and every query is scoped by it. The legacy panel scopes loans by bank account, so this is the same population, not a widened one. The loan-type lookup is scoped <code>WHERE TenantID = ctx</code> instead, which is a <strong>different key</strong>: a bank-account context and a tenant context are not the same scope, and the mismatch is recorded in Still needs sign-off rather than resolved here.</li>
+<li><strong>Permission right required to read.</strong> <code>/LoanProcessing</code> at Inquiry level. This is the panel's declared access route, and the legacy gate enforces exactly this pattern: the widget is only offered in the picker when the user is allowed, and if it is already placed its body renders hidden. [CODE - AccessUri <code>/LoanProcessing</code>; gate confirmed in <code>DataPanelControl.cs</code>] The modern registration labels the module "Loans" while the legacy access route is <code>/LoanProcessing</code>; the <strong>access route is what gates</strong>, not the module label.</li>
+<li><strong>Write right.</strong> None. This contract defines no write. "Record a contact" would need one and has no endpoint here.</li>
+<li><strong>What a user without the right sees.</strong> <code>403</code> from all four endpoints, and the widget is not offered in the picker at all, matching the legacy gate. Whether an already-placed widget disappears silently or shows an explicit no-access message is a product decision and is in Still needs sign-off with a named owner.</li>
+<li><strong>What a user with read but not write sees.</strong> The full widget. Every read here is available to an Inquiry-level user and nothing on screen depends on a write right.</li>
+</ul>
+<hr />
+<h2>Edge cases</h2>
+<ol>
+<li><strong>No loans with a balance anywhere.</strong> API 1 returns zeroes with all five ranges present; API 2 returns an empty page with <code>filteredTotal</code> 0.00. The widget shows its settled state rather than an empty chart.</li>
+<li><strong>A loan type with no outstanding loans.</strong> Same zero shape, with the type echoed so the client can name it.</li>
+<li><strong>A range holding nothing is selected anyway.</strong> The client makes zero-count ranges inert, so this should not arise, but a directly constructed request returns an empty page with the correct <code>totalCount</code> of 0, not an error.</li>
+<li><strong>A loan at exactly 90 days past due</strong> is assigned to <code>d61to90</code>, not <code>over90</code>. The <code>over90</code> range starts at 91. The label reads "90+ days"; the boundary is the number, not the label.</li>
+<li><strong>A loan at exactly 0 days</strong> is Current. Due today is not yet past due.</li>
+<li><strong>A loan invoiced far in advance,</strong> with a large negative <code>daysPastDue</code>, is still Current. There is no "future" range.</li>
+<li><strong>A loan that has never had a payment.</strong> <code>lastPaymentDate</code> null, <code>payments</code> empty. No dormancy flag is shown, because dormancy measures elapsed time since a payment and there is no baseline. Nulls sort last on <code>lastPaymentDate</code> in both directions.</li>
+<li><strong>A loan whose only payments are voided.</strong> The consistency filter drops them, so it behaves exactly as case 7. A voided payment must never set a last-payment date.</li>
+<li><strong>A loan with no type assigned.</strong> Included when <code>loanTypeId</code> is omitted, excluded by any specified value, <code>loanTypeName</code> null. A blank type is never a wildcard.</li>
+<li><strong>Division by zero.</strong> Every server-computed percentage returns <code>0</code> when <code>totalAmountDue</code> is zero. This applies to <code>pastDuePct</code> and every <code>ranges[].sharePct</code>.</li>
+<li><strong>Whole-percent rounding.</strong> The five <code>sharePct</code> values need not sum to exactly 100. The client renders them and never reconstitutes the total from them.</li>
+<li><strong>Pagination past the end.</strong> Empty <code>rows</code>, correct <code>totalCount</code> and <code>filteredTotal</code>, <code>page</code> echoed. Not an error.</li>
+<li><strong><code>pageSize</code> above the maximum.</strong> Clamped to 200 and echoed in the response, so the pager stays correct. Not an error.</li>
+<li><strong>Contradicting params.</strong> An unknown <code>loanTypeId</code>, an unknown <code>rangeKey</code> or a <code>sortBy</code> outside the whitelist each return a <code>400</code> with the named error. Silent fallback is never used, because a silently substituted sort makes a paginated list skip and duplicate rows.</li>
+<li><strong>A valid pair matching nothing.</strong> A loan type whose loans are all current, combined with <code>rangeKey=over90</code>, is a legitimate empty result.</li>
+<li><strong>A loan opened mid-snapshot.</strong> A loan created after <code>asOf</code> is absent from both reads and returns <code>404</code> from the drill, so the header, the table and the modal cannot disagree about whether it exists.</li>
+<li><strong>A loan paid off mid-session.</strong> The shared <code>asOf</code> keeps it visible in the table and readable in the drill for the life of the snapshot. It disappears on the next refresh, which is when both reads re-anchor together.</li>
+<li><strong>A stale snapshot when the user drills.</strong> The modal is read at the table's <code>asOf</code>, so its amount due matches the row that was clicked even if a payment posted in between. A refresh is the only thing that moves the anchor.</li>
+<li><strong>A negative composed payment amount,</strong> where <code>Adjustment</code> exceeds principal plus interest plus fees, is returned signed and rendered as a negative. It is not clamped to zero and it is not dropped.</li>
+<li><strong>A loan whose balance survives allocation across several invoice ages.</strong> It is assigned one range, the most severe holding balance, and its whole <code>amountDue</code> counts there. This is a departure from the legacy per-bucket split and it is in Still needs sign-off.</li>
+<li><strong>A very long payment history.</strong> Bounded by the stored schedule length, so the array is returned whole. If a loan is ever found to exceed a few hundred qualifying payments, the array gains a cap and a count field; that is not needed at the confirmed bound.</li>
+<li><strong>The organisation currency cannot be resolved.</strong> <code>currency</code> is never null. The tenant default is returned and the unresolved organisation setting is an open item, not a null on the wire.</li>
+</ol>
+<hr />
+<h2>Not in scope</h2>
+<ul>
+<li><strong>A Status filter, and any Active or In Arrears field.</strong> No backing field is confirmed in the source data, so nothing is specced. Overdue-ness is available only through the range ladder. Blocking, see Still needs sign-off.</li>
+<li><strong>A Fiscal Year filter.</strong> Balance due is an as-of-today snapshot with no fiscal-year dimension. A fiscal-year-scoped filter on loan origination date is a future ask, not part of this contract.</li>
+<li><strong>A Portfolio at Risk metric.</strong> The contract returns the past-due and 90+ reads the widget renders. PAR is a further metric with its own definition and is not returned.</li>
+<li><strong>A portfolio-risk block or a most-overdue borrower list as separate reads.</strong> Nothing on screen consumes them, so no endpoint funds them. The figures they would need are already in API 1.</li>
+<li><strong>Days past due as a table column.</strong> The field is on the row, because the range filter and the drill need it, but no table column consumes it. It is not removed from the row, because the drill and the range assignment both read it.</li>
+<li><strong>Per-range subtotals inside the table.</strong> The table is one flat list; the range breakdown is stated once, by API 1's <code>ranges[]</code>.</li>
+<li><strong>A borrower person record.</strong> <code>LNLoan.PersonID</code> reaches <code>CorePerson</code>, so a person name is available, but nothing on screen consumes one separately from <code>LNLoan.Name</code>, so no person field is returned.</li>
+<li><strong>A payment-method enum.</strong> <code>payments[].reference</code> carries the cheque number or reference string. No method enum is confirmed in the data, so none is invented.</li>
+<li><strong>An Excel export endpoint.</strong> No modern export endpoint exists. The export control in the drill has no backing call and does nothing until one is built.</li>
+<li><strong>A "Record a contact" write.</strong> This contract is read-only. The control has no endpoint and no destination.</li>
+<li><strong>An "Open loan" navigation target.</strong> The destination is unconfirmed, so there is nothing to call and nothing to link to.</li>
+<li><strong>Trimmed top-3 and top-5 loan lists.</strong> The two larger tiers render the paginated list and the smallest renders no rows at all, so no ranked-subset read is needed.</li>
+<li><strong>A user preference store for the selected loan type, range or sort.</strong> Selections live for the session only. The legacy per-user preference store is not read or written by this contract.</li>
+</ul>
+<hr />
+<h2>Still needs sign-off</h2>
+<ol>
+<li><strong>The oldest-first payment allocation does not exist server-side. BLOCKING.</strong> Every aging-derived figure in this contract depends on it: <code>ranges[]</code> in full, <code>pastDueAmount</code>, <code>pastDueCount</code>, <code>pastDuePct</code>, <code>ninetyPlusAmount</code>, <code>worstRangeKey</code>, per-loan <code>daysPastDue</code> and <code>rangeKey</code>, and the <code>rangeKey</code> filter itself. The existing chart read buckets invoices by raw invoice age with no payment subtraction, and <strong>a raw-age implementation returns different numbers from the legacy panel</strong>, which is the whole point of the widget. Decided by: backend team, owner not yet named. Blocked until then: the range ladder, the donut, the chip row, the past-due pill, the 90+ read, the range filter and the drill's aging rows. The total balance due, the loan count and the loan list are <strong>not</strong> blocked; they rest on the confirmed amount-due formula.</li>
+<li><strong>One range per loan versus the legacy per-bucket split. BLOCKING anything aging-derived.</strong> This contract assigns each loan exactly one range and counts its whole balance there, because the widget filters loans by range, counts loans per range and shows one aging value per loan in the drill. Legacy distributes a single loan's balance across several buckets, so <strong>even once the allocation is replicated, the donut will not equal the legacy pie</strong>. Decided by: Oisin Curran with the backend team. Blocked until then: whether <code>ranges[].amountDue</code> is a loan-level or an invoice-level figure, which changes the cross-footing rule between API 1 and API 2.</li>
+<li><strong>The Status field, Active or In Arrears, has no confirmed backing field. BLOCKING.</strong> No explicit status field has been found in the source data. Nothing is built and nothing is specced. Decided by: backend team, owner not yet named. Blocked until then: any status filter, any status field on a row, and any status badge.</li>
+<li><strong>Whether loan start and end dates exist at all.</strong> The loan-entry process may not capture them, in which case date-based and past-due calculation would come out entirely and these loans would be treated as balances rather than schedules. [SME - Feargal Phelan, 25 Aug 2026] The design this contract describes is confirmed and is specced as it stands. Decided by: Feargal Phelan. If it resolves against the dates, the whole range ladder drops, taking <code>ranges[]</code>, the <code>rangeKey</code> param, <code>daysPastDue</code>, <code>worstRangeKey</code>, the past-due and 90+ reads and API 4's aging rows with it.</li>
+<li><strong>Every sign-off dossier flag is unreviewed.</strong> The widget has no <code>Reconciliation - Loans With Balance Due.md</code>, so no flag carries an Accepted, Rejected or Disputed status. The flags that touch a data shape, each needing a status before the part it touches is built:</li>
+<li><strong>Ladder shape.</strong> The dossier asks for four accurately labelled buckets, Current / 1-30 / 31-60 / 90+, rendered as an ordered bar. The server in this contract owns a five-range ladder that adds 61-90 and treats Current as "nothing yet due" rather than "under 30 days". The two do not agree on the ladder, and the ladder is a response shape.</li>
+<li><strong>Portfolio at Risk.</strong> The dossier asks for a PAR metric alongside past due and 90+. This contract returns no PAR field and no PAR definition.</li>
+<li><strong>Organisation currency.</strong> The dossier records the live panel rendering a pound sign regardless of the organisation. <code>currency</code> closes it on the wire, but which organisation setting holds the code is not traced in code.</li>
+<li><strong>A "data as of" stamp.</strong> The dossier asks for one beside the refresh control. <code>asOf</code> exists on the wire; whether it is shown to the user is undecided.
+   Decided by: Oisin Curran, to assign a status to each.</li>
+<li><strong>The dormancy threshold of 90 days is not an approved business rule.</strong> It is a client-side presentation band over <code>lastPaymentDate</code> and <code>asOf</code>, and it drives an indicator on the table and a note in the drill. Decided by: Oisin Curran with Feargal Phelan. Blocked until then: nothing on the wire, but the threshold must not be treated as settled.</li>
+<li><strong>The worst-realistic loan volume has no cited basis.</strong> The live environment shows 3 loans and the dossier records low adoption, neither of which is a ceiling. Decided by: Feargal Phelan. Blocked until then: the <code>pageSize</code> maximum of 200 and the cost model's multiplier are provisional, and the pagination verdict stands precisely because the ceiling is unknown.</li>
+<li><strong>The scoping key mismatch.</strong> The loan reads are scoped by <code>X-BankAccountID</code> and the loan-type lookup by <code>TenantID</code>. If an organisation has several bank accounts running loans, the lookup can offer a type that has no loans in the current bank account. Decided by: backend team, owner not yet named. Blocked until then: whether the lookup should take the bank-account context too.</li>
+<li><strong>Entitlement behaviour for an already-placed widget.</strong> A user without <code>/LoanProcessing</code> Inquiry gets <code>403</code> from every endpoint and the widget is not offered in the picker. Whether an already-placed instance disappears or shows an explicit no-access message is undecided. Decided by: Oisin Curran.</li>
+<li><strong>The "Open loan" destination.</strong> The account name is already a link in the live panel and its destination has never been confirmed. Decided by: owner not yet named. Blocked until then: the control stays inert.</li>
+<li><strong>Whether "Record a contact" becomes a real write.</strong> It needs a contact-log destination and a write endpoint, neither of which exists. Decided by: owner not yet named.</li>
+<li><strong>Whether an export endpoint gets built.</strong> No modern export endpoint exists anywhere in the codebase; legacy panels export in-page. Decided by: product, owner not yet named. Blocked until then: the drill's export control does nothing.</li>
+<li><strong>The nextPaymentDueDate source.</strong> No due-date column has been traced on <code>LNInvoice</code>, so the field is <code>UNVERIFIED</code> and must not be built against an assumed column. Decided by: Feargal Phelan.</li>
+</ol>
+<p>This list is deliberately long. Items 1, 2 and 3 are the ones that stop work: everything the widget says about aging rests on backend work that does not exist yet.</p>
+
+</body>
+</html>

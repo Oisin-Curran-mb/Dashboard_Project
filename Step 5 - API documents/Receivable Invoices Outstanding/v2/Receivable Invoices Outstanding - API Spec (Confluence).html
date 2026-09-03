@@ -1,0 +1,2107 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Receivable Invoices Outstanding — API Spec</title>
+<style>
+body { font-family: -apple-system, Helvetica, Arial, sans-serif; max-width: 900px; margin: 30px auto; line-height: 1.5; color: #172B4D; }
+h1 { font-size: 24px; }
+h2 { font-size: 19px; border-bottom: 1px solid #DFE1E6; padding-bottom: 6px; margin-top: 32px; }
+h3 { font-size: 16px; margin-top: 20px; }
+table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+th, td { border: 1px solid #DFE1E6; padding: 6px 10px; text-align: left; vertical-align: top; }
+th { background: #F4F5F7; }
+code { background: #F4F5F7; padding: 1px 5px; border-radius: 3px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 90%; }
+pre { background: #F4F5F7; padding: 12px; border-radius: 4px; overflow-x: auto; }
+pre code { background: none; padding: 0; }
+.status { background: #FFF0B3; display: inline-block; padding: 3px 10px; border-radius: 3px; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<h1>Receivable Invoices Outstanding — API Spec</h1>
+<p><span class="status">Status: DRAFT — not final</span></p>
+<h2>Overview</h2>
+<p>The widget answers one question: how much money is owed to the organisation in posted-but-unpaid invoices, and how badly overdue it is. The user reads the aging shape, switches to a customer ranking to find who is responsible for it, drills into a band or a customer to see the invoices, expands an invoice for its detail, and can select invoices and move them toward payment.</p>
+<p>This contract defines <strong>six APIs</strong>. Two are bounded summary reads that serve the widget face; two are paginated list reads behind the drill; one is a per-invoice detail read; one is the single write. A sixth serves the two filter lists. The justification for each split is in the API inventory — the count is derived from the split triggers, not chosen.</p>
+<p>The load-bearing conclusion of this spec: <strong>the customer ranking and the invoice lists cannot be assembled in the browser at real volume.</strong> The built Final groups by customer as an instant client-side re-render over a 23-invoice demo dataset. At an organisation with thousands of outstanding invoices the client never holds the rows, so the ranking, its sort and its pagination all move server-side. That is API 2's reason to exist.</p>
+<h2>Design → API coverage</h2>
+<table>
+<thead>
+<tr>
+<th>Design element</th>
+<th>Type</th>
+<th>API</th>
+<th>Field(s)</th>
+<th>Provenance</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Total owed headline</td>
+<td>KPI</td>
+<td>API 1</td>
+<td><code>total.outstanding</code></td>
+<td>DERIVED sum of outstanding over the filtered set <code>[BUILD]</code></td>
+</tr>
+<tr>
+<td>Invoice count beside the headline</td>
+<td>KPI</td>
+<td>API 1</td>
+<td><code>total.invoiceCount</code></td>
+<td>DERIVED count over the filtered set <code>[BUILD]</code></td>
+</tr>
+<tr>
+<td>Overdue / "All current" pill</td>
+<td>KPI</td>
+<td>API 1</td>
+<td><code>overdue.outstanding</code>, <code>overdue.invoiceCount</code></td>
+<td>DERIVED sum and count where <code>daysPastDue &gt; 0</code> <code>[BUILD]</code></td>
+</tr>
+<tr>
+<td>Aging bar, one bar per band</td>
+<td>chart series</td>
+<td>API 1</td>
+<td><code>buckets[].outstanding</code>, <code>buckets[].invoiceCount</code></td>
+<td>DERIVED per-band sum and count <code>[BUILD]</code></td>
+</tr>
+<tr>
+<td>Band label and its sub-caption</td>
+<td>chart series</td>
+<td>API 1</td>
+<td><code>buckets[].label</code>, <code>buckets[].daysFrom</code>, <code>buckets[].daysTo</code></td>
+<td>DERIVED from the band definition <code>[BUILD]</code></td>
+</tr>
+<tr>
+<td>Band ordering and severity ramp</td>
+<td>chart series</td>
+<td>API 1</td>
+<td><code>buckets[].bucket</code></td>
+<td>STORED band key, fixed order <code>[BUILD]</code></td>
+</tr>
+<tr>
+<td>Percent-of-total per band</td>
+<td>chart series</td>
+<td>—</td>
+<td>client-side division of <code>buckets[].outstanding</code> by <code>total.outstanding</code></td>
+<td>DERIVED client-side <code>[BUILD]</code></td>
+</tr>
+<tr>
+<td>"No balance in <em>band</em>" collapse of empty bands</td>
+<td>state</td>
+<td>API 1</td>
+<td><code>buckets[].outstanding</code> = 0</td>
+<td>DERIVED client-side test <code>[BUILD]</code></td>
+</tr>
+<tr>
+<td>Pie view of the same bands</td>
+<td>chart series</td>
+<td>API 1</td>
+<td><code>buckets[]</code></td>
+<td>same response, client re-render <code>[BUILD]</code></td>
+</tr>
+<tr>
+<td>Customers view, one row per customer</td>
+<td>table column</td>
+<td>API 2</td>
+<td><code>customers[].customer</code>, <code>customers[].outstanding</code>, <code>customers[].invoiceCount</code></td>
+<td>DERIVED rollup over the filtered set <code>[BUILD]</code></td>
+</tr>
+<tr>
+<td>Customer worst-severity marker</td>
+<td>table column</td>
+<td>API 2</td>
+<td><code>customers[].worstBucket</code></td>
+<td>DERIVED highest band among the customer's invoices <code>[BUILD]</code></td>
+</tr>
+<tr>
+<td>Customer age sort key</td>
+<td>table column</td>
+<td>API 2</td>
+<td><code>customers[].oldestDaysPastDue</code></td>
+<td>DERIVED max <code>daysPastDue</code> for the customer <code>[BUILD]</code></td>
+</tr>
+<tr>
+<td>Customers list sort control (customer / total / oldest)</td>
+<td>filter</td>
+<td>API 2</td>
+<td><code>sortBy</code>, <code>sortDir</code> params</td>
+<td>NEW server-side sort <code>[BUILD]</code></td>
+</tr>
+<tr>
+<td>Customers list pager</td>
+<td>filter</td>
+<td>API 2</td>
+<td><code>pagination.page</code>, <code>pagination.pageSize</code>, <code>pagination.totalCount</code></td>
+<td>NEW server-side pagination <code>[BUILD]</code></td>
+</tr>
+<tr>
+<td>Revenue Center filter chip</td>
+<td>filter</td>
+<td>API 6 → API 1/2/3</td>
+<td><code>revenueCenters[]</code>; <code>revenueCenterId</code> param</td>
+<td>STORED <code>ARRevenueCenterRepository</code> <code>[CODE]</code></td>
+</tr>
+<tr>
+<td>Source filter chip</td>
+<td>filter</td>
+<td>API 6 → API 1/2/3</td>
+<td><code>sources[]</code>; <code>sourceId</code> param</td>
+<td>STORED <code>ARSourceRepository</code> <code>[CODE]</code></td>
+</tr>
+<tr>
+<td>Aging / Customers group toggle</td>
+<td>view toggle</td>
+<td>API 1 / API 2</td>
+<td>selects which summary API is called</td>
+<td><code>[BUILD]</code></td>
+</tr>
+<tr>
+<td>Glance / Explore / Detail tiers</td>
+<td>view toggle</td>
+<td>—</td>
+<td>no API effect; the same responses render at every tier</td>
+<td><code>[BUILD]</code></td>
+</tr>
+<tr>
+<td>Drill modal heading and band/customer sub-pill</td>
+<td>drill</td>
+<td>API 3</td>
+<td><code>scope.label</code>, <code>scope.mode</code>, <code>scope.key</code></td>
+<td>DERIVED echo of the drill scope <code>[BUILD]</code></td>
+</tr>
+<tr>
+<td>Drill modal invoice list (band or customer)</td>
+<td>drill</td>
+<td>API 3</td>
+<td><code>invoices[]</code></td>
+<td>STORED <code>ARInvoice</code> <code>[CODE]</code></td>
+</tr>
+<tr>
+<td>Modal columns Customer / Bill To / Due Date / Invoice # / Days Past Due / Outstanding</td>
+<td>table column</td>
+<td>API 3</td>
+<td><code>invoices[].customer</code>, <code>.billTo</code>, <code>.dueDate</code>, <code>.invoiceNumber</code>, <code>.daysPastDue</code>, <code>.outstanding</code></td>
+<td>STORED <code>ARInvoice</code> <code>[CODE]</code></td>
+</tr>
+<tr>
+<td>Modal footer "N invoices / total"</td>
+<td>KPI</td>
+<td>API 3</td>
+<td><code>totals.invoiceCount</code>, <code>totals.outstanding</code></td>
+<td>DERIVED over the whole scoped set, not the page <code>[BUILD]</code></td>
+</tr>
+<tr>
+<td>Row expand: Details tab line items</td>
+<td>drill</td>
+<td>API 4</td>
+<td><code>lineItems[]</code></td>
+<td>STORED <code>ARInvoiceDetail</code> <code>[CODE]</code></td>
+</tr>
+<tr>
+<td>Row expand: Attachments tab</td>
+<td>drill</td>
+<td>API 4</td>
+<td><code>attachments[]</code></td>
+<td>UNVERIFIED (owner to confirm source) <code>[TO CONFIRM]</code></td>
+</tr>
+<tr>
+<td>Row expand: Note tab</td>
+<td>drill</td>
+<td>API 4</td>
+<td><code>note</code></td>
+<td>UNVERIFIED (owner to confirm source) <code>[TO CONFIRM]</code></td>
+</tr>
+<tr>
+<td>Row expand: Payments tab</td>
+<td>drill</td>
+<td>API 4</td>
+<td><code>payments[]</code></td>
+<td>UNVERIFIED (owner to confirm source) <code>[TO CONFIRM]</code></td>
+</tr>
+<tr>
+<td>"Open invoice" action in the row drawer</td>
+<td>drill</td>
+<td>—</td>
+<td>deep link built client-side from <code>invoiceId</code>; no endpoint</td>
+<td><code>[BUILD]</code></td>
+</tr>
+<tr>
+<td>"Record a follow-up" action in the row drawer</td>
+<td>action</td>
+<td>—</td>
+<td>out of contract, see Not in scope</td>
+<td><code>[BUILD]</code></td>
+</tr>
+<tr>
+<td>Row select checkboxes</td>
+<td>action</td>
+<td>API 5</td>
+<td><code>invoiceIds[]</code> request field</td>
+<td><code>[BUILD]</code></td>
+</tr>
+<tr>
+<td>Confirm → move to unposted transactions</td>
+<td>action</td>
+<td>API 5</td>
+<td><code>applied[]</code>, <code>rejected[]</code>, <code>batchId</code></td>
+<td>NEW mutation over existing <code>ARPayment</code> machinery <code>[CODE]</code></td>
+</tr>
+<tr>
+<td>Export to Excel</td>
+<td>action</td>
+<td>—</td>
+<td>client-side generation from the response already held</td>
+<td><code>[BUILD]</code></td>
+</tr>
+<tr>
+<td>"Nothing outstanding" empty state</td>
+<td>state</td>
+<td>API 1</td>
+<td>all <code>buckets[].outstanding</code> = 0 and <code>total.outstanding</code> = 0</td>
+<td>DERIVED <code>[BUILD]</code></td>
+</tr>
+<tr>
+<td>Filter-change skeleton</td>
+<td>state</td>
+<td>API 1/2</td>
+<td>no field; a request is in flight</td>
+<td><code>[BUILD]</code></td>
+</tr>
+</tbody>
+</table>
+<h2>Tables</h2>
+<table>
+<thead>
+<tr>
+<th>Table / repository</th>
+<th>Fields and members used</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ARInvoice</code></td>
+<td><code>Posted</code>, <code>UndoJournalID</code>, <code>TotalAmount</code>, <code>SalesTax</code>, <code>Payments</code>, <code>Discounts</code>, <code>WriteOffs</code> (the Outstanding formula), <code>DueDate</code> (banding), customer name, <code>BillToDisplay</code>, invoice number</td>
+</tr>
+<tr>
+<td><code>ARInvoiceDetail</code></td>
+<td>Invoice line items: item name, quantity, unit amount</td>
+</tr>
+<tr>
+<td><code>ARRevenueCenterRepository</code></td>
+<td>The Revenue Center list, populated from the data rather than a fixed enum</td>
+</tr>
+<tr>
+<td><code>ARSourceRepository</code></td>
+<td>The Source list, populated from the data rather than a fixed enum</td>
+</tr>
+<tr>
+<td><code>ARPayment</code> / <code>ARPaymentDetail</code></td>
+<td>The write target: a payment carrying a <code>Posted</code> flag, whose detail rows each apply to one <code>ARInvoice</code></td>
+</tr>
+<tr>
+<td><code>ARPaymentRepository</code></td>
+<td><code>GetAllCurrentContextByFilters(posted:false, ...)</code>, selection by <code>SelectedIDs</code>, <code>ProcessPayments(blobID, postingDate)</code>, <code>CheckTransactionsAgainstCurrentYear</code>, unapplied-cash handling</td>
+</tr>
+<tr>
+<td><code>ARCompany</code></td>
+<td><code>InterfaceGL</code> — gates whether posting the payment writes GL journal detail</td>
+</tr>
+</tbody>
+</table>
+<p>No new tables and no schema change. Everything below is new queries against these tables, plus reuse of the existing AR payment path for the one write.</p>
+<p><strong>Invoice eligibility filter, applied to every read:</strong> <code>Posted = true AND UndoJournalID IS NULL AND Outstanding &lt;&gt; 0</code>. Voided invoices are excluded and every invoice the widget shows is already posted. <code>[CODE]</code></p>
+<p><strong>Outstanding:</strong> <code>Outstanding = TotalAmount + SalesTax - Payments - Discounts - WriteOffs</code>. <code>[CODE]</code></p>
+<p><strong>Days past due:</strong> <code>daysPastDue = asOf - DueDate</code> in whole days. Negative for an invoice not yet due; the response clamps it to a floor of 0 and the client renders "Not due". <code>[BUILD]</code></p>
+<p><strong>Aging bands, six of them:</strong> assigned by <code>daysPastDue</code> — Current (<code>&lt;= 0</code>, not yet due), 1-30, 31-60, 61-90, 91-120, 121+ (unbounded). Always returned in this order. <code>[BUILD]</code></p>
+<p><strong>Overdue:</strong> <code>SUM(Outstanding) WHERE daysPastDue &gt; 0</code>, i.e. every band except Current. <code>[BUILD]</code></p>
+<p><strong>Bill To is conditionally blank by design:</strong> <code>BillToDisplay</code> is empty when the bill-to party equals the customer and populated only when they differ. The API replicates that conditional; a blank is not a defect to fix. <code>[CODE]</code></p>
+<h2>Old vs. new</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Old (live today)</th>
+<th>New (needed)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Aging bands</td>
+<td>Five: Current (<code>&lt; 31</code>), 31-60, 61-90, 91-120, 121+</td>
+<td><strong>Six</strong>: Current (not yet due), 1-30, 31-60, 61-90, 91-120, 121+. <code>NEW</code> band boundaries; the 1-30 band separates "not yet due" from "recently late", which the old Current band conflated</td>
+</tr>
+<tr>
+<td>Invoice count per band</td>
+<td>Not returned</td>
+<td><code>buckets[].invoiceCount</code>. <code>NEW</code></td>
+</tr>
+<tr>
+<td>Overdue figure</td>
+<td>Not returned</td>
+<td><code>overdue.outstanding</code> / <code>overdue.invoiceCount</code> over <code>daysPastDue &gt; 0</code>. <code>NEW</code></td>
+</tr>
+<tr>
+<td>Customer ranking</td>
+<td>Does not exist in any form</td>
+<td>API 2: per-customer rollup with worst band and oldest age, server-sorted and paginated. <code>NEW</code></td>
+</tr>
+<tr>
+<td>Invoice list behind a band</td>
+<td>Legacy detail panel, unpaginated</td>
+<td>API 3: paginated, server-sorted, and reachable by customer as well as by band. <code>NEW</code> (pagination and the customer scope)</td>
+</tr>
+<tr>
+<td>Line item detail</td>
+<td>Item name and amount</td>
+<td>Adds quantity and unit amount. <code>NEW</code></td>
+</tr>
+<tr>
+<td>Move invoices toward payment</td>
+<td>Manual, in Payment Processing</td>
+<td>API 5 stages an unposted payment from the widget. <code>NEW</code> mutation over existing machinery</td>
+</tr>
+<tr>
+<td>Filter lists</td>
+<td>Two separate reads</td>
+<td>API 6 returns both in one call. <code>NEW</code> shape, existing data</td>
+</tr>
+</tbody>
+</table>
+<h2>API inventory</h2>
+<table>
+<thead>
+<tr>
+<th>API</th>
+<th>Purpose</th>
+<th>Trigger (when it fires)</th>
+<th>Cardinality</th>
+<th>R/W</th>
+<th>Cache posture</th>
+<th>Split trigger</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>API 1 aging summary</td>
+<td>Six bands plus total and overdue</td>
+<td>Widget render; any filter change</td>
+<td>6 rows, fixed</td>
+<td>R</td>
+<td>LIVE</td>
+<td>cardinality gap — a fixed 6-row summary must never pay for the invoice rows behind it</td>
+</tr>
+<tr>
+<td>API 2 customer summary</td>
+<td>Per-customer rollup, sorted and paged</td>
+<td>Customers view selected; its sort or page changes; any filter change while it is active</td>
+<td>unbounded, paginated</td>
+<td>R</td>
+<td>LIVE</td>
+<td>conditional weight — only needed while the Customers view is open, and it aggregates over the full filtered set</td>
+</tr>
+<tr>
+<td>API 3 invoice list</td>
+<td>Invoices for one band or one customer</td>
+<td>Drill modal opens; its sort or page changes</td>
+<td>unbounded, paginated</td>
+<td>R</td>
+<td>LIVE</td>
+<td>trigger gap — fired on user action, never on render</td>
+</tr>
+<tr>
+<td>API 4 invoice detail</td>
+<td>Line items, attachments, note, payments for one invoice</td>
+<td>A modal row is expanded</td>
+<td>1 invoice</td>
+<td>R</td>
+<td>LIVE</td>
+<td>grain gap — keyed by a single id, and three of its four sections are unverified sources that must not block the list read</td>
+</tr>
+<tr>
+<td>API 5 confirm</td>
+<td>Stage an unposted payment against selected invoices</td>
+<td>Confirm pressed in the modal</td>
+<td>1..N ids</td>
+<td><strong>W</strong></td>
+<td>none</td>
+<td>read vs write</td>
+</tr>
+<tr>
+<td>API 6 filter lists</td>
+<td>Revenue Center and Source option lists</td>
+<td>Widget first mount</td>
+<td>5 and 3 rows</td>
+<td>R</td>
+<td>TTL 1 hour</td>
+<td>lifetime gap — these change on a different timescale from the data and are shared across widgets</td>
+</tr>
+</tbody>
+</table>
+<p>Two decisions worth recording as conclusions:</p>
+<ul>
+<li><strong>API 1 and API 2 stay separate</strong> even though both are driven by the same filter state, because the Customers view is one of three views and its payload is unbounded. Combining them would make every widget render pay for a customer ranking most renders never show.</li>
+<li><strong>API 6 returns both lists in one call</strong> rather than one endpoint per list. They are fetched at the same moment, both tiny, and neither is useful without the other, so the always-together counter-pressure outweighs a split.</li>
+</ul>
+<h2>Call sequence</h2>
+<table>
+<thead>
+<tr>
+<th>Interaction</th>
+<th>Calls fired</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Initial widget load</td>
+<td>API 6, then API 1</td>
+<td>API 6 populates the chips, API 1 fills the face. Both take the same <code>asOf</code></td>
+</tr>
+<tr>
+<td>Change Revenue Center chip</td>
+<td>API 1, plus API 2 if the Customers view is active</td>
+<td>The only filter that triggers a fetch, alongside Source</td>
+</tr>
+<tr>
+<td>Change Source chip</td>
+<td>API 1, plus API 2 if the Customers view is active</td>
+<td>Same as above</td>
+</tr>
+<tr>
+<td>Switch view: Aging → Pie</td>
+<td>none</td>
+<td>Pure client re-render over the 6 bands already held</td>
+</tr>
+<tr>
+<td>Switch view: Aging → Customers</td>
+<td>API 2</td>
+<td>The build re-renders this client-side over a 23-row demo set; at real volume it is a fetch</td>
+</tr>
+<tr>
+<td>Change Customers sort</td>
+<td>API 2</td>
+<td>Server-side sort; the client cannot reorder a page it only partly holds</td>
+</tr>
+<tr>
+<td>Change Customers page</td>
+<td>API 2</td>
+<td></td>
+</tr>
+<tr>
+<td>Open drill (band or customer)</td>
+<td>API 3</td>
+<td><code>scope.mode</code> is <code>bucket</code> or <code>customer</code></td>
+</tr>
+<tr>
+<td>Change drill sort or page</td>
+<td>API 3</td>
+<td></td>
+</tr>
+<tr>
+<td>Expand a modal row</td>
+<td>API 4</td>
+<td>One call per expanded invoice, on demand</td>
+</tr>
+<tr>
+<td>Press Confirm</td>
+<td>API 5, then API 1 and API 3</td>
+<td>Re-read after the write so the face and the open modal reflect the new outstanding</td>
+</tr>
+<tr>
+<td>Refresh</td>
+<td>API 1, plus API 2 if active</td>
+<td>API 6 is served from cache</td>
+</tr>
+</tbody>
+</table>
+<p>All reads accept and echo a shared <code>asOf</code>. The client sends the value API 1 returned to every subsequent read in the same interaction, so the modal's footer total cannot disagree with the band it was opened from.</p>
+<h2>Filter architecture</h2>
+<table>
+<thead>
+<tr>
+<th>Filter</th>
+<th>Option source</th>
+<th>Cardinality</th>
+<th>Execution</th>
+<th>Aggregate effect</th>
+<th>Cascade</th>
+<th>"All" wire form</th>
+<th>Round trips</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Revenue Center</td>
+<td><code>LOOKUP</code> API 6, from <code>ARRevenueCenterRepository</code></td>
+<td>4 real values in the build (Church, Insurance Billing, Pension Billing, School) plus All; org-defined, so treat as tens</td>
+<td><code>SERVER</code> <code>revenueCenterId</code></td>
+<td>Yes — changes every total, band and rollup</td>
+<td>No</td>
+<td>Param omitted</td>
+<td>1, or 2 while Customers is active</td>
+</tr>
+<tr>
+<td>Source</td>
+<td><code>LOOKUP</code> API 6, from <code>ARSourceRepository</code></td>
+<td>2 real values in the build plus All; org-defined, so treat as tens</td>
+<td><code>SERVER</code> <code>sourceId</code></td>
+<td>Yes — same as above</td>
+<td>No</td>
+<td>Param omitted</td>
+<td>1, or 2 while Customers is active</td>
+</tr>
+<tr>
+<td>Aging / Customers group toggle</td>
+<td><code>STATIC</code></td>
+<td>2</td>
+<td><code>SERVER</code> — selects which summary API is called</td>
+<td>No, each API totals its own scope</td>
+<td>No</td>
+<td>n/a</td>
+<td>1 when switching to Customers, 0 returning to Aging if the response is still held</td>
+</tr>
+<tr>
+<td>Bar / Pie view</td>
+<td><code>STATIC</code></td>
+<td>2</td>
+<td><code>CLIENT</code> — all three Framework 1 conditions hold: the full band set is already in the API 1 response, it is <strong>bounded</strong> at exactly 6 rows by definition, and re-rendering it changes no server-computed aggregate</td>
+<td>No</td>
+<td>No</td>
+<td>n/a</td>
+<td>0</td>
+</tr>
+<tr>
+<td>Customers sort</td>
+<td><code>STATIC</code> customer, total, oldest × asc, desc</td>
+<td>6</td>
+<td><code>SERVER</code> <code>sortBy</code> / <code>sortDir</code></td>
+<td>No</td>
+<td>No</td>
+<td>n/a</td>
+<td>1</td>
+</tr>
+<tr>
+<td>Drill list sort</td>
+<td><code>STATIC</code> daysPastDue, outstanding, dueDate, customer × asc, desc</td>
+<td>8</td>
+<td><code>SERVER</code> <code>sortBy</code> / <code>sortDir</code></td>
+<td>No</td>
+<td>No</td>
+<td>n/a</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Combination semantics.</strong> Revenue Center and Source combine with AND and both narrow. There is no OR anywhere in the filter set.</p>
+<p><strong>Conflict rule.</strong> The two filters overlap in their value space — "Insurance Billing" is both a revenue center and a source — so a combination such as Revenue Center = Church with Source = Insurance Billing legitimately matches nothing. That is an empty result, <strong>not</strong> an error: every band returns with zeroes and <code>total.outstanding</code> is 0. No param takes precedence over the other, and no combination is rejected.</p>
+<p><strong>Blank source values.</strong> Invoices carry an empty source in the build wherever no source applies. <code>sourceId</code> omitted (All) includes those invoices; <code>sourceId</code> set to any value excludes them. The API must not treat a blank source as a wildcard match.</p>
+<p><strong>No cascade.</strong> Neither list depends on the other's current value, so neither list is re-fetched when the other filter changes, and no filter value is ever invalidated by a change to the other. If cascading lists are wanted later, that is a change to API 6, not to the reads.</p>
+<h2>Volume and performance</h2>
+<table>
+<thead>
+<tr>
+<th>Dataset</th>
+<th>Typical rows</th>
+<th>Worst realistic rows (basis)</th>
+<th>Row width</th>
+<th>Payload at worst</th>
+<th>Verdict</th>
+<th>Server cost model</th>
+<th>Cache posture</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Aging bands (API 1)</td>
+<td>6</td>
+<td>6 — fixed by the band definition, not by data</td>
+<td>6 fields</td>
+<td>under 1 KB</td>
+<td>BOUNDED</td>
+<td>one indexed scan of eligible invoices with a CASE band assignment; single pass</td>
+<td>LIVE</td>
+</tr>
+<tr>
+<td>Customer rollup (API 2)</td>
+<td>23 in the built Final's dataset</td>
+<td><code>[TO CONFIRM]</code> — owner/SME to give a real ceiling for customers with outstanding invoices at a large org; the build's 23 is a demo figure and is not a basis for a ceiling</td>
+<td>6 fields</td>
+<td>depends on the ceiling above</td>
+<td>MUST PAGINATE</td>
+<td>GROUP BY customer over eligible invoices, with MAX(daysPastDue) and MAX(band) per group; one pass plus a sort</td>
+<td>LIVE</td>
+</tr>
+<tr>
+<td>Invoice list per scope (API 3)</td>
+<td>4 in the largest band of the built Final's dataset (121+, 4 invoices, $27,730)</td>
+<td><code>[TO CONFIRM]</code> — unbounded in principle; the 121+ band at a large org is the realistic worst case and needs an owner figure</td>
+<td>7 fields</td>
+<td>depends on the ceiling above</td>
+<td>MUST PAGINATE</td>
+<td>indexed scan filtered to one band or one customer, plus a sort</td>
+<td>LIVE</td>
+</tr>
+<tr>
+<td>Invoice detail (API 4)</td>
+<td>1 invoice, 1-4 line items</td>
+<td>1 invoice; line items <code>[TO CONFIRM]</code> for a ceiling</td>
+<td>nested</td>
+<td>small</td>
+<td>BOUNDED</td>
+<td>keyed read on <code>ARInvoice</code> plus a join to <code>ARInvoiceDetail</code></td>
+<td>LIVE</td>
+</tr>
+<tr>
+<td>Filter lists (API 6)</td>
+<td>5 and 3</td>
+<td>tens — org-defined revenue centers and sources</td>
+<td>2 fields</td>
+<td>under 1 KB</td>
+<td>BOUNDED</td>
+<td>two small repository reads</td>
+<td>TTL 1 hour</td>
+</tr>
+</tbody>
+</table>
+<p><strong>The conclusion the build's behaviour hides.</strong> In the built Final, switching to Customers, sorting it, and paging it are all instant client-side operations, because the whole 23-invoice dataset is in the browser. That is a property of a 23-row demo, not of the design. Once the eligible invoice set is unbounded, the client holds at most one page and can therefore neither rank customers, nor sort that ranking, nor total it. All three move to the server, which is why API 2 exists and why API 2 and API 3 both carry sort and pagination params.</p>
+<h3>Pagination contract</h3>
+<p>Applies to API 2 (customers) and API 3 (invoices). API 1, API 4 and API 6 are bounded and take no page params.</p>
+<ul>
+<li><strong>Params:</strong> <code>page</code>, 1-based, default 1. <code>pageSize</code>, default 25, <strong>maximum 200</strong>. The widget requests 7 for the Customers view to match its card height; the server honours whatever is asked within the maximum rather than assuming a UI tier.</li>
+<li><strong>What paginates:</strong> <code>customers[]</code> in API 2, <code>invoices[]</code> in API 3. Nothing else.</li>
+<li><strong>What does not paginate:</strong> <code>total.outstanding</code> and <code>total.invoiceCount</code> in API 2, and <code>totals.outstanding</code> and <code>totals.invoiceCount</code> in API 3, always compute over the <strong>entire filtered set</strong> for the current scope, never over the current page. So paging the customer list never changes the total owed, and paging the drill list never changes the modal's "N invoices / total" footer.</li>
+<li><strong>Sort params:</strong> <code>sortBy</code> and <code>sortDir</code>. API 2 whitelist: <code>customer</code>, <code>total</code>, <code>oldest</code>. API 3 whitelist: <code>daysPastDue</code>, <code>outstanding</code>, <code>dueDate</code>, <code>customer</code>. A value outside the whitelist is rejected rather than silently ignored, so a typo cannot quietly reorder a page.</li>
+<li><strong>Deterministic total order.</strong> Every sort ends in a unique tiebreaker so pages cannot duplicate or skip rows: API 2 sorts by the requested key, then by the reciprocal key (total ties break on oldest, oldest ties break on total, matching the built Final), then by <code>customerId</code>. API 3 sorts by the requested key, then by <code>invoiceId</code>.</li>
+<li><strong><code>pagination.totalCount</code></strong> is returned with every page, so the client renders its pager without a second call.</li>
+<li><strong>Past the last page:</strong> an empty <code>customers[]</code> or <code>invoices[]</code>, with <code>pagination.totalCount</code> and every aggregate still correct. Not an error.</li>
+</ul>
+<h2>Where computation lives</h2>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Server or client</th>
+<th>Basis</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Band assignment for an invoice</td>
+<td>server</td>
+<td><code>daysPastDue</code> vs the band boundaries</td>
+<td>the client never sees every invoice</td>
+</tr>
+<tr>
+<td>Band outstanding and invoice count</td>
+<td>server</td>
+<td>full filtered set</td>
+<td>spans rows the client does not hold</td>
+</tr>
+<tr>
+<td>Total owed and total invoice count</td>
+<td>server</td>
+<td>full filtered set</td>
+<td>same</td>
+</tr>
+<tr>
+<td>Overdue outstanding and count</td>
+<td>server</td>
+<td>full filtered set where <code>daysPastDue &gt; 0</code></td>
+<td>same</td>
+</tr>
+<tr>
+<td>Percent of total per band</td>
+<td>client</td>
+<td><code>buckets[].outstanding</code> ÷ <code>total.outstanding</code></td>
+<td>pure arithmetic on values already in the response. When <code>total.outstanding</code> is 0 the client renders every band at 0% and does not divide</td>
+</tr>
+<tr>
+<td>Worst non-empty band</td>
+<td>client</td>
+<td>last <code>buckets[]</code> entry with <code>outstanding &gt; 0</code></td>
+<td>the bands are ordered and bounded at 6</td>
+</tr>
+<tr>
+<td>Severity colour ramp and band captions</td>
+<td>client</td>
+<td><code>buckets[].bucket</code> order</td>
+<td>presentation over a returned key</td>
+</tr>
+<tr>
+<td>Empty-band "No balance in <em>band</em>" collapse</td>
+<td>client</td>
+<td><code>buckets[].outstanding = 0</code></td>
+<td>a test on a returned value</td>
+</tr>
+<tr>
+<td>Customer outstanding and invoice count</td>
+<td>server</td>
+<td>rollup over full filtered set</td>
+<td>the client cannot group rows it does not hold</td>
+</tr>
+<tr>
+<td>Customer worst band</td>
+<td>server</td>
+<td>MAX band across the customer's invoices</td>
+<td>same</td>
+</tr>
+<tr>
+<td>Customer oldest days past due</td>
+<td>server</td>
+<td>MAX <code>daysPastDue</code> across the customer's invoices</td>
+<td>same</td>
+</tr>
+<tr>
+<td>Customer ranking order</td>
+<td>server</td>
+<td><code>sortBy</code> / <code>sortDir</code></td>
+<td>a paginated list cannot be ordered client-side</td>
+</tr>
+<tr>
+<td>Drill list order</td>
+<td>server</td>
+<td><code>sortBy</code> / <code>sortDir</code></td>
+<td>same</td>
+</tr>
+<tr>
+<td>Modal footer "N invoices / total"</td>
+<td>server</td>
+<td>full scoped set</td>
+<td>must span the whole band or customer, not the page</td>
+</tr>
+<tr>
+<td>Line item extended amount</td>
+<td>server</td>
+<td><code>quantity × unitAmount</code>, returned as <code>amount</code></td>
+<td>returned pre-computed so the client never re-derives money</td>
+</tr>
+<tr>
+<td>Export to Excel contents</td>
+<td>client</td>
+<td>the response already held</td>
+<td>no server work; see Not in scope</td>
+</tr>
+</tbody>
+</table>
+<p><strong>No percentages are returned by any endpoint</strong>, so there is no server-side division and no server division-by-zero case. The one division in the widget is the client's percent-of-total, whose zero rule is stated in the table above. Money is returned as a plain number in the org's currency with no formatting.</p>
+<h2>API 1: aging summary</h2>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/receivable-invoices/aging
+</code></pre>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>revenueCenterId</code></td>
+<td>guid</td>
+<td>no</td>
+<td>any <code>id</code> from API 6's <code>revenueCenters[]</code></td>
+<td>omitted, meaning All</td>
+<td>Narrows to one revenue center</td>
+</tr>
+<tr>
+<td><code>sourceId</code></td>
+<td>guid</td>
+<td>no</td>
+<td>any <code>id</code> from API 6's <code>sources[]</code></td>
+<td>omitted, meaning All</td>
+<td>Narrows to one source. Excludes invoices with no source</td>
+</tr>
+<tr>
+<td><code>asOf</code></td>
+<td>date</td>
+<td>no</td>
+<td>any date not in the future</td>
+<td>server date</td>
+<td>The date <code>daysPastDue</code> is measured against. Echoed back for the client to pass to every other read</td>
+</tr>
+</tbody>
+</table>
+<p>Company context is carried in the <code>X-Company-ID</code> header on every call in this contract.</p>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/receivable-invoices/aging
+GET /api/dashboard/receivable-invoices/aging?revenueCenterId=2f8b1c94-3d5e-4a7f-9b0c-1d2e3f4a5b6c&amp;sourceId=7a3c9e15-4b6d-4f8a-9c1e-2d5b8f0a3e74&amp;asOf=2026-07-23
+</code></pre>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>asOf</code></td>
+<td>date</td>
+<td>DERIVED echo of the request</td>
+<td>The date banding was measured against</td>
+</tr>
+<tr>
+<td><code>generatedAt</code></td>
+<td>datetime UTC</td>
+<td>DERIVED server clock</td>
+<td>Generation stamp</td>
+</tr>
+<tr>
+<td><code>revenueCenterId</code></td>
+<td>guid or null</td>
+<td>DERIVED echo</td>
+<td><code>null</code> when All</td>
+</tr>
+<tr>
+<td><code>sourceId</code></td>
+<td>guid or null</td>
+<td>DERIVED echo</td>
+<td><code>null</code> when All</td>
+</tr>
+<tr>
+<td><code>buckets</code></td>
+<td>array</td>
+<td>DERIVED</td>
+<td>Always the six bands, in order, including empty ones</td>
+</tr>
+<tr>
+<td><code>buckets[].bucket</code></td>
+<td>string</td>
+<td>DERIVED band key</td>
+<td><code>current</code>, <code>1-30</code>, <code>31-60</code>, <code>61-90</code>, <code>91-120</code>, <code>121+</code></td>
+</tr>
+<tr>
+<td><code>buckets[].label</code></td>
+<td>string</td>
+<td>DERIVED band definition</td>
+<td>Display label for the band</td>
+</tr>
+<tr>
+<td><code>buckets[].daysFrom</code></td>
+<td>int</td>
+<td>DERIVED band definition</td>
+<td>Lower bound of the band in days past due; <code>0</code> for Current</td>
+</tr>
+<tr>
+<td><code>buckets[].daysTo</code></td>
+<td>int or null</td>
+<td>DERIVED band definition</td>
+<td>Upper bound; <code>null</code> for the unbounded 121+ band</td>
+</tr>
+<tr>
+<td><code>buckets[].outstanding</code></td>
+<td>number</td>
+<td>DERIVED sum of <code>ARInvoice</code> Outstanding in the band</td>
+<td>Band total</td>
+</tr>
+<tr>
+<td><code>buckets[].invoiceCount</code></td>
+<td>int</td>
+<td>DERIVED count in the band</td>
+<td>Band count</td>
+</tr>
+<tr>
+<td><code>total</code></td>
+<td>object</td>
+<td>DERIVED</td>
+<td>Across all six bands, over the full filtered set</td>
+</tr>
+<tr>
+<td><code>total.outstanding</code></td>
+<td>number</td>
+<td>DERIVED sum</td>
+<td>Total owed</td>
+</tr>
+<tr>
+<td><code>total.invoiceCount</code></td>
+<td>int</td>
+<td>DERIVED count</td>
+<td>Total invoices</td>
+</tr>
+<tr>
+<td><code>overdue</code></td>
+<td>object</td>
+<td>DERIVED</td>
+<td>Every band except Current</td>
+</tr>
+<tr>
+<td><code>overdue.outstanding</code></td>
+<td>number</td>
+<td>DERIVED sum where <code>daysPastDue &gt; 0</code></td>
+<td>Overdue portion of the total</td>
+</tr>
+<tr>
+<td><code>overdue.invoiceCount</code></td>
+<td>int</td>
+<td>DERIVED count where <code>daysPastDue &gt; 0</code></td>
+<td>Overdue invoice count</td>
+</tr>
+</tbody>
+</table>
+<h3>Example response</h3>
+<p>Figures below are the built Final's full dataset with no filters applied.</p>
+<pre><code>{
+  &quot;asOf&quot;: &quot;2026-07-23&quot;,
+  &quot;generatedAt&quot;: &quot;2026-07-23T09:14:00Z&quot;,
+  &quot;revenueCenterId&quot;: null,
+  &quot;sourceId&quot;: null,
+  &quot;buckets&quot;: [
+    { &quot;bucket&quot;: &quot;current&quot;, &quot;label&quot;: &quot;Current&quot;,     &quot;daysFrom&quot;: 0,   &quot;daysTo&quot;: 0,    &quot;outstanding&quot;: 6180,  &quot;invoiceCount&quot;: 3 },
+    { &quot;bucket&quot;: &quot;1-30&quot;,    &quot;label&quot;: &quot;1-30 days&quot;,   &quot;daysFrom&quot;: 1,   &quot;daysTo&quot;: 30,   &quot;outstanding&quot;: 10410, &quot;invoiceCount&quot;: 5 },
+    { &quot;bucket&quot;: &quot;31-60&quot;,   &quot;label&quot;: &quot;31-60 days&quot;,  &quot;daysFrom&quot;: 31,  &quot;daysTo&quot;: 60,   &quot;outstanding&quot;: 15070, &quot;invoiceCount&quot;: 4 },
+    { &quot;bucket&quot;: &quot;61-90&quot;,   &quot;label&quot;: &quot;61-90 days&quot;,  &quot;daysFrom&quot;: 61,  &quot;daysTo&quot;: 90,   &quot;outstanding&quot;: 14020, &quot;invoiceCount&quot;: 4 },
+    { &quot;bucket&quot;: &quot;91-120&quot;,  &quot;label&quot;: &quot;91-120 days&quot;, &quot;daysFrom&quot;: 91,  &quot;daysTo&quot;: 120,  &quot;outstanding&quot;: 11160, &quot;invoiceCount&quot;: 3 },
+    { &quot;bucket&quot;: &quot;121+&quot;,    &quot;label&quot;: &quot;121+ days&quot;,   &quot;daysFrom&quot;: 121, &quot;daysTo&quot;: null, &quot;outstanding&quot;: 27730, &quot;invoiceCount&quot;: 4 }
+  ],
+  &quot;total&quot;:   { &quot;outstanding&quot;: 84570, &quot;invoiceCount&quot;: 23 },
+  &quot;overdue&quot;: { &quot;outstanding&quot;: 78390, &quot;invoiceCount&quot;: 20 }
+}
+</code></pre>
+<p>Reconciliation: 6180 + 10410 + 15070 + 14020 + 11160 + 27730 = 84570 outstanding, and 3 + 5 + 4 + 4 + 3 + 4 = 23 invoices, both matching <code>total</code>. Overdue is the same sums excluding Current: 10410 + 15070 + 14020 + 11160 + 27730 = 78390 and 5 + 4 + 4 + 3 + 4 = 20, matching <code>overdue</code>.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty, no invoice matches the filters</td>
+<td>All six bands present with <code>outstanding</code> 0 and <code>invoiceCount</code> 0; <code>total</code> and <code>overdue</code> both zeroed. HTTP 200</td>
+</tr>
+<tr>
+<td>Nothing outstanding at all</td>
+<td>Identical to the above. The client renders "Nothing outstanding" from it; it is not an error</td>
+</tr>
+<tr>
+<td>Nothing overdue but a balance exists</td>
+<td><code>overdue</code> zeroed, <code>total</code> non-zero. Drives the "All current" pill</td>
+</tr>
+<tr>
+<td>Partial, <code>asOf</code> earlier than the oldest invoice</td>
+<td>Bands computed against that <code>asOf</code>; invoices not yet issued are absent, not zero-padded</td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td>HTTP 403 with no body. The client hides the widget rather than rendering an empty one</td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td>HTTP 503. The client keeps the last successful response visible and marks it stale</td>
+</tr>
+</tbody>
+</table>
+<h2>API 2: customer summary</h2>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/receivable-invoices/customers
+</code></pre>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>revenueCenterId</code></td>
+<td>guid</td>
+<td>no</td>
+<td>any <code>id</code> from API 6's <code>revenueCenters[]</code></td>
+<td>omitted, meaning All</td>
+<td>Same filter as API 1</td>
+</tr>
+<tr>
+<td><code>sourceId</code></td>
+<td>guid</td>
+<td>no</td>
+<td>any <code>id</code> from API 6's <code>sources[]</code></td>
+<td>omitted, meaning All</td>
+<td>Same filter as API 1</td>
+</tr>
+<tr>
+<td><code>asOf</code></td>
+<td>date</td>
+<td>no</td>
+<td>any date not in the future</td>
+<td>server date</td>
+<td>Pass the value API 1 returned</td>
+</tr>
+<tr>
+<td><code>sortBy</code></td>
+<td>enum</td>
+<td>no</td>
+<td><code>customer</code>, <code>total</code>, <code>oldest</code></td>
+<td><code>total</code></td>
+<td>Sort key. A value outside the list is rejected</td>
+</tr>
+<tr>
+<td><code>sortDir</code></td>
+<td>enum</td>
+<td>no</td>
+<td><code>asc</code>, <code>desc</code></td>
+<td><code>desc</code></td>
+<td>Sort direction</td>
+</tr>
+<tr>
+<td><code>page</code></td>
+<td>int</td>
+<td>no</td>
+<td>1 or greater</td>
+<td><code>1</code></td>
+<td>1-based page number</td>
+</tr>
+<tr>
+<td><code>pageSize</code></td>
+<td>int</td>
+<td>no</td>
+<td>1 to 200</td>
+<td><code>25</code></td>
+<td>Rows per page. The widget requests 7</td>
+</tr>
+</tbody>
+</table>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/receivable-invoices/customers?asOf=2026-07-23&amp;pageSize=7
+GET /api/dashboard/receivable-invoices/customers?asOf=2026-07-23&amp;sortBy=oldest&amp;sortDir=desc&amp;page=2&amp;pageSize=7&amp;revenueCenterId=2f8b1c94-3d5e-4a7f-9b0c-1d2e3f4a5b6c
+</code></pre>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>asOf</code></td>
+<td>date</td>
+<td>DERIVED echo</td>
+<td>Date banding and ages were measured against</td>
+</tr>
+<tr>
+<td><code>revenueCenterId</code></td>
+<td>guid or null</td>
+<td>DERIVED echo</td>
+<td><code>null</code> when All</td>
+</tr>
+<tr>
+<td><code>sourceId</code></td>
+<td>guid or null</td>
+<td>DERIVED echo</td>
+<td><code>null</code> when All</td>
+</tr>
+<tr>
+<td><code>sortBy</code></td>
+<td>string</td>
+<td>DERIVED echo</td>
+<td>Applied sort key</td>
+</tr>
+<tr>
+<td><code>sortDir</code></td>
+<td>string</td>
+<td>DERIVED echo</td>
+<td>Applied direction</td>
+</tr>
+<tr>
+<td><code>pagination</code></td>
+<td>object</td>
+<td>DERIVED</td>
+<td>Pager state for <code>customers[]</code> only</td>
+</tr>
+<tr>
+<td><code>pagination.page</code></td>
+<td>int</td>
+<td>DERIVED echo</td>
+<td>Current page</td>
+</tr>
+<tr>
+<td><code>pagination.pageSize</code></td>
+<td>int</td>
+<td>DERIVED echo</td>
+<td>Applied page size</td>
+</tr>
+<tr>
+<td><code>pagination.totalCount</code></td>
+<td>int</td>
+<td>DERIVED count of customers in the full filtered set</td>
+<td>Drives the pager without a second call</td>
+</tr>
+<tr>
+<td><code>customers</code></td>
+<td>array</td>
+<td>DERIVED rollup</td>
+<td>One row per customer with an eligible invoice, this page only</td>
+</tr>
+<tr>
+<td><code>customers[].customerId</code></td>
+<td>guid</td>
+<td>STORED <code>ARInvoice</code> customer key</td>
+<td>Stable id, and the final sort tiebreaker</td>
+</tr>
+<tr>
+<td><code>customers[].customer</code></td>
+<td>string</td>
+<td>STORED customer name</td>
+<td>Display name</td>
+</tr>
+<tr>
+<td><code>customers[].outstanding</code></td>
+<td>number</td>
+<td>DERIVED sum of the customer's Outstanding</td>
+<td>Owed by this customer</td>
+</tr>
+<tr>
+<td><code>customers[].invoiceCount</code></td>
+<td>int</td>
+<td>DERIVED count</td>
+<td>Their eligible invoices</td>
+</tr>
+<tr>
+<td><code>customers[].worstBucket</code></td>
+<td>string</td>
+<td>DERIVED MAX band across their invoices</td>
+<td>Band key, same vocabulary as API 1</td>
+</tr>
+<tr>
+<td><code>customers[].oldestDaysPastDue</code></td>
+<td>int</td>
+<td>DERIVED MAX <code>daysPastDue</code> across their invoices</td>
+<td>0 when none are past due</td>
+</tr>
+<tr>
+<td><code>total</code></td>
+<td>object</td>
+<td>DERIVED over the full filtered set</td>
+<td>Never the page</td>
+</tr>
+<tr>
+<td><code>total.outstanding</code></td>
+<td>number</td>
+<td>DERIVED sum</td>
+<td>Matches API 1's <code>total.outstanding</code> under the same filters and <code>asOf</code></td>
+</tr>
+<tr>
+<td><code>total.invoiceCount</code></td>
+<td>int</td>
+<td>DERIVED count</td>
+<td>Matches API 1's <code>total.invoiceCount</code> under the same filters and <code>asOf</code></td>
+</tr>
+</tbody>
+</table>
+<h3>Example response</h3>
+<p>First page of 7, sorted by amount owed, no filters. The built Final's dataset has one invoice per customer, so every <code>invoiceCount</code> here is 1; that is a property of the demo data, not of the contract.</p>
+<pre><code>{
+  &quot;asOf&quot;: &quot;2026-07-23&quot;,
+  &quot;revenueCenterId&quot;: null,
+  &quot;sourceId&quot;: null,
+  &quot;sortBy&quot;: &quot;total&quot;,
+  &quot;sortDir&quot;: &quot;desc&quot;,
+  &quot;pagination&quot;: { &quot;page&quot;: 1, &quot;pageSize&quot;: 7, &quot;totalCount&quot;: 23 },
+  &quot;customers&quot;: [
+    { &quot;customerId&quot;: &quot;a1c4e7b2-1111-4aaa-9111-0d1e2f3a4b51&quot;, &quot;customer&quot;: &quot;Cornerstone Academy&quot;,       &quot;outstanding&quot;: 9650, &quot;invoiceCount&quot;: 1, &quot;worstBucket&quot;: &quot;121+&quot;,   &quot;oldestDaysPastDue&quot;: 145 },
+    { &quot;customerId&quot;: &quot;a1c4e7b2-2222-4aaa-9222-0d1e2f3a4b52&quot;, &quot;customer&quot;: &quot;Fairhaven School&quot;,          &quot;outstanding&quot;: 7250, &quot;invoiceCount&quot;: 1, &quot;worstBucket&quot;: &quot;121+&quot;,   &quot;oldestDaysPastDue&quot;: 130 },
+    { &quot;customerId&quot;: &quot;a1c4e7b2-3333-4aaa-9333-0d1e2f3a4b53&quot;, &quot;customer&quot;: &quot;Brightwater Academy&quot;,       &quot;outstanding&quot;: 6420, &quot;invoiceCount&quot;: 1, &quot;worstBucket&quot;: &quot;91-120&quot;, &quot;oldestDaysPastDue&quot;: 108 },
+    { &quot;customerId&quot;: &quot;a1c4e7b2-4444-4aaa-9444-0d1e2f3a4b54&quot;, &quot;customer&quot;: &quot;Legacy Insurance Group&quot;,    &quot;outstanding&quot;: 6300, &quot;invoiceCount&quot;: 1, &quot;worstBucket&quot;: &quot;121+&quot;,   &quot;oldestDaysPastDue&quot;: 144 },
+    { &quot;customerId&quot;: &quot;a1c4e7b2-5555-4aaa-9555-0d1e2f3a4b55&quot;, &quot;customer&quot;: &quot;Silverbrook School&quot;,        &quot;outstanding&quot;: 5880, &quot;invoiceCount&quot;: 1, &quot;worstBucket&quot;: &quot;61-90&quot;,  &quot;oldestDaysPastDue&quot;: 74 },
+    { &quot;customerId&quot;: &quot;a1c4e7b2-6666-4aaa-9666-0d1e2f3a4b56&quot;, &quot;customer&quot;: &quot;Whitestone Pension Office&quot;, &quot;outstanding&quot;: 4530, &quot;invoiceCount&quot;: 1, &quot;worstBucket&quot;: &quot;121+&quot;,   &quot;oldestDaysPastDue&quot;: 152 },
+    { &quot;customerId&quot;: &quot;a1c4e7b2-7777-4aaa-9777-0d1e2f3a4b57&quot;, &quot;customer&quot;: &quot;Grace Fellowship&quot;,          &quot;outstanding&quot;: 4180, &quot;invoiceCount&quot;: 1, &quot;worstBucket&quot;: &quot;31-60&quot;,  &quot;oldestDaysPastDue&quot;: 52 }
+  ],
+  &quot;total&quot;: { &quot;outstanding&quot;: 84570, &quot;invoiceCount&quot;: 23 }
+}
+</code></pre>
+<p>Reconciliation: <code>pagination.totalCount</code> is 23 customers while <code>customers[]</code> holds 7, and <code>total.outstanding</code> is 84570 — the full-set figure identical to API 1's, not the page's sum of 9650 + 7250 + 6420 + 6300 + 5880 + 4530 + 4180 = 44210. That difference is the contract working as specified: paging must not move the total.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty, no invoice matches the filters</td>
+<td><code>customers[]</code> empty, <code>pagination.totalCount</code> 0, <code>total</code> zeroed. HTTP 200</td>
+</tr>
+<tr>
+<td>Page past the end</td>
+<td><code>customers[]</code> empty, <code>pagination.totalCount</code> and <code>total</code> still correct. HTTP 200, not an error</td>
+</tr>
+<tr>
+<td><code>sortBy</code> outside the whitelist</td>
+<td>HTTP 400 naming the offending param and the allowed values</td>
+</tr>
+<tr>
+<td><code>pageSize</code> above the maximum</td>
+<td>HTTP 400 naming the maximum. Not silently clamped, so a client bug surfaces</td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td>HTTP 403 with no body</td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td>HTTP 503</td>
+</tr>
+</tbody>
+</table>
+<h2>API 3: invoice list for a band or a customer</h2>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/receivable-invoices/invoices
+</code></pre>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>scopeMode</code></td>
+<td>enum</td>
+<td>yes</td>
+<td><code>bucket</code>, <code>customer</code></td>
+<td>none</td>
+<td>Which kind of drill this is</td>
+</tr>
+<tr>
+<td><code>scopeKey</code></td>
+<td>string</td>
+<td>yes</td>
+<td>a band key when <code>scopeMode=bucket</code>; a <code>customerId</code> when <code>scopeMode=customer</code></td>
+<td>none</td>
+<td>URL-encode the <code>121+</code> band key as <code>121%2B</code></td>
+</tr>
+<tr>
+<td><code>revenueCenterId</code></td>
+<td>guid</td>
+<td>no</td>
+<td>any <code>id</code> from API 6's <code>revenueCenters[]</code></td>
+<td>omitted, meaning All</td>
+<td>The filter active on the widget behind the modal</td>
+</tr>
+<tr>
+<td><code>sourceId</code></td>
+<td>guid</td>
+<td>no</td>
+<td>any <code>id</code> from API 6's <code>sources[]</code></td>
+<td>omitted, meaning All</td>
+<td>Same</td>
+</tr>
+<tr>
+<td><code>asOf</code></td>
+<td>date</td>
+<td>no</td>
+<td>any date not in the future</td>
+<td>server date</td>
+<td>Pass the value API 1 returned</td>
+</tr>
+<tr>
+<td><code>sortBy</code></td>
+<td>enum</td>
+<td>no</td>
+<td><code>daysPastDue</code>, <code>outstanding</code>, <code>dueDate</code>, <code>customer</code></td>
+<td><code>daysPastDue</code></td>
+<td>Sort key</td>
+</tr>
+<tr>
+<td><code>sortDir</code></td>
+<td>enum</td>
+<td>no</td>
+<td><code>asc</code>, <code>desc</code></td>
+<td><code>desc</code></td>
+<td>Direction. The built Final opens oldest-first</td>
+</tr>
+<tr>
+<td><code>page</code></td>
+<td>int</td>
+<td>no</td>
+<td>1 or greater</td>
+<td><code>1</code></td>
+<td>1-based page number</td>
+</tr>
+<tr>
+<td><code>pageSize</code></td>
+<td>int</td>
+<td>no</td>
+<td>1 to 200</td>
+<td><code>50</code></td>
+<td>Rows per page</td>
+</tr>
+</tbody>
+</table>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/receivable-invoices/invoices?scopeMode=bucket&amp;scopeKey=121%2B&amp;asOf=2026-07-23
+GET /api/dashboard/receivable-invoices/invoices?scopeMode=customer&amp;scopeKey=a1c4e7b2-1111-4aaa-9111-0d1e2f3a4b51&amp;asOf=2026-07-23&amp;sortBy=dueDate&amp;sortDir=asc
+</code></pre>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>asOf</code></td>
+<td>date</td>
+<td>DERIVED echo</td>
+<td>Date ages were measured against</td>
+</tr>
+<tr>
+<td><code>scope</code></td>
+<td>object</td>
+<td>DERIVED echo</td>
+<td>What this list is scoped to</td>
+</tr>
+<tr>
+<td><code>scope.mode</code></td>
+<td>string</td>
+<td>DERIVED echo</td>
+<td><code>bucket</code> or <code>customer</code></td>
+</tr>
+<tr>
+<td><code>scope.key</code></td>
+<td>string</td>
+<td>DERIVED echo</td>
+<td>The band key or customer id</td>
+</tr>
+<tr>
+<td><code>scope.label</code></td>
+<td>string</td>
+<td>DERIVED</td>
+<td>Band label, or the customer's name. The modal heading</td>
+</tr>
+<tr>
+<td><code>revenueCenterId</code></td>
+<td>guid or null</td>
+<td>DERIVED echo</td>
+<td><code>null</code> when All</td>
+</tr>
+<tr>
+<td><code>sourceId</code></td>
+<td>guid or null</td>
+<td>DERIVED echo</td>
+<td><code>null</code> when All</td>
+</tr>
+<tr>
+<td><code>sortBy</code></td>
+<td>string</td>
+<td>DERIVED echo</td>
+<td>Applied sort key</td>
+</tr>
+<tr>
+<td><code>sortDir</code></td>
+<td>string</td>
+<td>DERIVED echo</td>
+<td>Applied direction</td>
+</tr>
+<tr>
+<td><code>pagination</code></td>
+<td>object</td>
+<td>DERIVED</td>
+<td>Pager state for <code>invoices[]</code> only</td>
+</tr>
+<tr>
+<td><code>pagination.page</code></td>
+<td>int</td>
+<td>DERIVED echo</td>
+<td>Current page</td>
+</tr>
+<tr>
+<td><code>pagination.pageSize</code></td>
+<td>int</td>
+<td>DERIVED echo</td>
+<td>Applied page size</td>
+</tr>
+<tr>
+<td><code>pagination.totalCount</code></td>
+<td>int</td>
+<td>DERIVED count over the whole scoped set</td>
+<td>Drives the pager</td>
+</tr>
+<tr>
+<td><code>invoices</code></td>
+<td>array</td>
+<td>STORED <code>ARInvoice</code></td>
+<td>This page of invoice rows</td>
+</tr>
+<tr>
+<td><code>invoices[].invoiceId</code></td>
+<td>guid</td>
+<td>STORED <code>ARInvoice</code> key</td>
+<td>Key for API 4 and API 5, and the final sort tiebreaker</td>
+</tr>
+<tr>
+<td><code>invoices[].invoiceNumber</code></td>
+<td>string</td>
+<td>STORED <code>ARInvoice</code> invoice number</td>
+<td>Display number</td>
+</tr>
+<tr>
+<td><code>invoices[].customer</code></td>
+<td>string</td>
+<td>STORED customer name</td>
+<td>Customer column</td>
+</tr>
+<tr>
+<td><code>invoices[].billTo</code></td>
+<td>string</td>
+<td>STORED <code>ARInvoice.BillToDisplay</code></td>
+<td>Blank by design when the bill-to party equals the customer <code>[CODE]</code></td>
+</tr>
+<tr>
+<td><code>invoices[].dueDate</code></td>
+<td>date</td>
+<td>STORED <code>ARInvoice.DueDate</code></td>
+<td>Due Date column</td>
+</tr>
+<tr>
+<td><code>invoices[].daysPastDue</code></td>
+<td>int</td>
+<td>DERIVED <code>asOf - DueDate</code>, floored at 0</td>
+<td>0 renders as "Not due"</td>
+</tr>
+<tr>
+<td><code>invoices[].outstanding</code></td>
+<td>number</td>
+<td>DERIVED the Outstanding formula</td>
+<td>Outstanding column</td>
+</tr>
+<tr>
+<td><code>totals</code></td>
+<td>object</td>
+<td>DERIVED over the whole scoped set</td>
+<td>The modal footer. Never the page</td>
+</tr>
+<tr>
+<td><code>totals.invoiceCount</code></td>
+<td>int</td>
+<td>DERIVED count</td>
+<td>"N invoices"</td>
+</tr>
+<tr>
+<td><code>totals.outstanding</code></td>
+<td>number</td>
+<td>DERIVED sum</td>
+<td>Footer amount</td>
+</tr>
+</tbody>
+</table>
+<h3>Example response</h3>
+<p>The 121+ band, oldest first, no filters.</p>
+<pre><code>{
+  &quot;asOf&quot;: &quot;2026-07-23&quot;,
+  &quot;scope&quot;: { &quot;mode&quot;: &quot;bucket&quot;, &quot;key&quot;: &quot;121+&quot;, &quot;label&quot;: &quot;121+ days&quot; },
+  &quot;revenueCenterId&quot;: null,
+  &quot;sourceId&quot;: null,
+  &quot;sortBy&quot;: &quot;daysPastDue&quot;,
+  &quot;sortDir&quot;: &quot;desc&quot;,
+  &quot;pagination&quot;: { &quot;page&quot;: 1, &quot;pageSize&quot;: 50, &quot;totalCount&quot;: 4 },
+  &quot;invoices&quot;: [
+    { &quot;invoiceId&quot;: &quot;7c2e9a41-0001-4f8a-9c1e-2d6b8f0a3e75&quot;, &quot;invoiceNumber&quot;: &quot;INV-2874&quot;, &quot;customer&quot;: &quot;Whitestone Pension Office&quot;, &quot;billTo&quot;: &quot;&quot;,                          &quot;dueDate&quot;: &quot;2026-02-22&quot;, &quot;daysPastDue&quot;: 152, &quot;outstanding&quot;: 4530 },
+    { &quot;invoiceId&quot;: &quot;7c2e9a41-0002-4f8a-9c1e-2d6b8f0a3e76&quot;, &quot;invoiceNumber&quot;: &quot;INV-2903&quot;, &quot;customer&quot;: &quot;Cornerstone Academy&quot;,       &quot;billTo&quot;: &quot;&quot;,                          &quot;dueDate&quot;: &quot;2026-02-28&quot;, &quot;daysPastDue&quot;: 145, &quot;outstanding&quot;: 9650 },
+    { &quot;invoiceId&quot;: &quot;7c2e9a41-0003-4f8a-9c1e-2d6b8f0a3e77&quot;, &quot;invoiceNumber&quot;: &quot;INV-2890&quot;, &quot;customer&quot;: &quot;Legacy Insurance Group&quot;,    &quot;billTo&quot;: &quot;Legacy HR Dept&quot;,            &quot;dueDate&quot;: &quot;2026-03-01&quot;, &quot;daysPastDue&quot;: 144, &quot;outstanding&quot;: 6300 },
+    { &quot;invoiceId&quot;: &quot;7c2e9a41-0004-4f8a-9c1e-2d6b8f0a3e78&quot;, &quot;invoiceNumber&quot;: &quot;INV-2932&quot;, &quot;customer&quot;: &quot;Fairhaven School&quot;,          &quot;billTo&quot;: &quot;Fairhaven Business Office&quot;, &quot;dueDate&quot;: &quot;2026-03-16&quot;, &quot;daysPastDue&quot;: 130, &quot;outstanding&quot;: 7250 }
+  ],
+  &quot;totals&quot;: { &quot;invoiceCount&quot;: 4, &quot;outstanding&quot;: 27730 }
+}
+</code></pre>
+<p>Reconciliation: 4530 + 9650 + 6300 + 7250 = 27730, matching <code>totals.outstanding</code> and matching the <code>121+</code> band's <code>outstanding</code> in API 1 under the same filters and <code>asOf</code>. Two rows carry an empty <code>billTo</code> because their bill-to party equals the customer, which is the specified conditional, not missing data.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty band or customer with no eligible invoices</td>
+<td><code>invoices[]</code> empty, <code>pagination.totalCount</code> 0, <code>totals</code> zeroed. HTTP 200</td>
+</tr>
+<tr>
+<td>Page past the end</td>
+<td><code>invoices[]</code> empty, <code>pagination.totalCount</code> and <code>totals</code> still correct</td>
+</tr>
+<tr>
+<td>Unknown <code>scopeKey</code></td>
+<td>HTTP 404 naming the scope, so a stale modal link fails loudly rather than looking empty</td>
+</tr>
+<tr>
+<td><code>scopeMode</code> and <code>scopeKey</code> mismatched, e.g. a band key sent as a customer</td>
+<td>HTTP 400</td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td>HTTP 403 with no body</td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td>HTTP 503</td>
+</tr>
+</tbody>
+</table>
+<h2>API 4: invoice detail</h2>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/receivable-invoices/invoices/{invoiceId}
+</code></pre>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>invoiceId</code></td>
+<td>guid, path</td>
+<td>yes</td>
+<td>an <code>invoiceId</code> from API 3's <code>invoices[]</code></td>
+<td>none</td>
+<td>The invoice to expand</td>
+</tr>
+<tr>
+<td><code>asOf</code></td>
+<td>date</td>
+<td>no</td>
+<td>any date not in the future</td>
+<td>server date</td>
+<td>Only affects <code>daysPastDue</code> in the echo</td>
+</tr>
+</tbody>
+</table>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/receivable-invoices/invoices/7c2e9a41-0002-4f8a-9c1e-2d6b8f0a3e76
+GET /api/dashboard/receivable-invoices/invoices/7c2e9a41-0002-4f8a-9c1e-2d6b8f0a3e76?asOf=2026-07-23
+</code></pre>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>invoiceId</code></td>
+<td>guid</td>
+<td>DERIVED echo</td>
+<td>The requested invoice</td>
+</tr>
+<tr>
+<td><code>invoiceNumber</code></td>
+<td>string</td>
+<td>STORED <code>ARInvoice</code> invoice number</td>
+<td>Modal heading</td>
+</tr>
+<tr>
+<td><code>customer</code></td>
+<td>string</td>
+<td>STORED customer name</td>
+<td>Heading</td>
+</tr>
+<tr>
+<td><code>billTo</code></td>
+<td>string</td>
+<td>STORED <code>ARInvoice.BillToDisplay</code></td>
+<td>Blank by design when it equals the customer</td>
+</tr>
+<tr>
+<td><code>dueDate</code></td>
+<td>date</td>
+<td>STORED <code>ARInvoice.DueDate</code></td>
+<td></td>
+</tr>
+<tr>
+<td><code>daysPastDue</code></td>
+<td>int</td>
+<td>DERIVED <code>asOf - DueDate</code>, floored at 0</td>
+<td></td>
+</tr>
+<tr>
+<td><code>outstanding</code></td>
+<td>number</td>
+<td>DERIVED the Outstanding formula</td>
+<td>Must equal the row's <code>outstanding</code> in API 3 at the same <code>asOf</code></td>
+</tr>
+<tr>
+<td><code>lineItems</code></td>
+<td>array</td>
+<td>STORED <code>ARInvoiceDetail</code></td>
+<td>Details tab</td>
+</tr>
+<tr>
+<td><code>lineItems[].description</code></td>
+<td>string</td>
+<td>STORED item name</td>
+<td></td>
+</tr>
+<tr>
+<td><code>lineItems[].quantity</code></td>
+<td>number</td>
+<td>STORED quantity</td>
+<td></td>
+</tr>
+<tr>
+<td><code>lineItems[].unitAmount</code></td>
+<td>number</td>
+<td>STORED unit amount</td>
+<td></td>
+</tr>
+<tr>
+<td><code>lineItems[].amount</code></td>
+<td>number</td>
+<td>DERIVED <code>quantity × unitAmount</code></td>
+<td>Returned pre-computed so the client never re-derives money</td>
+</tr>
+<tr>
+<td><code>attachments</code></td>
+<td>array</td>
+<td>UNVERIFIED — source not confirmed in code (owner to confirm)</td>
+<td>Attachments tab. Empty array when the source is unwired</td>
+</tr>
+<tr>
+<td><code>attachments[].attachmentId</code></td>
+<td>guid</td>
+<td>UNVERIFIED (owner to confirm)</td>
+<td></td>
+</tr>
+<tr>
+<td><code>attachments[].name</code></td>
+<td>string</td>
+<td>UNVERIFIED (owner to confirm)</td>
+<td>File name</td>
+</tr>
+<tr>
+<td><code>attachments[].sizeBytes</code></td>
+<td>int</td>
+<td>UNVERIFIED (owner to confirm)</td>
+<td>Raw bytes; the client formats</td>
+</tr>
+<tr>
+<td><code>note</code></td>
+<td>string</td>
+<td>UNVERIFIED — source not confirmed in code (owner to confirm)</td>
+<td>Note tab. Empty string when unwired</td>
+</tr>
+<tr>
+<td><code>payments</code></td>
+<td>array</td>
+<td>UNVERIFIED — source not confirmed in code (owner to confirm)</td>
+<td>Payments tab. Empty array when unwired</td>
+</tr>
+<tr>
+<td><code>payments[].paymentDate</code></td>
+<td>date</td>
+<td>UNVERIFIED (owner to confirm)</td>
+<td></td>
+</tr>
+<tr>
+<td><code>payments[].method</code></td>
+<td>string</td>
+<td>UNVERIFIED (owner to confirm)</td>
+<td>Method or reference</td>
+</tr>
+<tr>
+<td><code>payments[].amount</code></td>
+<td>number</td>
+<td>UNVERIFIED (owner to confirm)</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Only <code>lineItems</code> is confirmed.</strong> <code>attachments</code>, <code>note</code> and <code>payments</code> are three separate unverified sources. If any cannot be sourced cleanly, that tab routes to the existing invoice screen via the row drawer's "Open invoice" action rather than the API inventing a field. This is the largest single open item in the contract and it is in the sign-off list.</p>
+<h3>Example response</h3>
+<p>INV-2903, the 121+ row from API 3.</p>
+<pre><code>{
+  &quot;invoiceId&quot;: &quot;7c2e9a41-0002-4f8a-9c1e-2d6b8f0a3e76&quot;,
+  &quot;invoiceNumber&quot;: &quot;INV-2903&quot;,
+  &quot;customer&quot;: &quot;Cornerstone Academy&quot;,
+  &quot;billTo&quot;: &quot;&quot;,
+  &quot;dueDate&quot;: &quot;2026-02-28&quot;,
+  &quot;daysPastDue&quot;: 145,
+  &quot;outstanding&quot;: 9650,
+  &quot;lineItems&quot;: [
+    { &quot;description&quot;: &quot;Annual tuition balance&quot;, &quot;quantity&quot;: 1, &quot;unitAmount&quot;: 8200, &quot;amount&quot;: 8200 },
+    { &quot;description&quot;: &quot;Technology fee&quot;,         &quot;quantity&quot;: 1, &quot;unitAmount&quot;: 900,  &quot;amount&quot;: 900 },
+    { &quot;description&quot;: &quot;Late fee&quot;,               &quot;quantity&quot;: 1, &quot;unitAmount&quot;: 550,  &quot;amount&quot;: 550 }
+  ],
+  &quot;attachments&quot;: [
+    { &quot;attachmentId&quot;: &quot;b3d5f7a9-0001-4c2e-8b6d-1f3a5c7e9b21&quot;, &quot;name&quot;: &quot;tuition-agreement.pdf&quot;, &quot;sizeBytes&quot;: 225280 },
+    { &quot;attachmentId&quot;: &quot;b3d5f7a9-0002-4c2e-8b6d-1f3a5c7e9b22&quot;, &quot;name&quot;: &quot;reminder-3.pdf&quot;,         &quot;sizeBytes&quot;: 41984 }
+  ],
+  &quot;note&quot;: &quot;Escalated to collections review. Payment plan proposed.&quot;,
+  &quot;payments&quot;: [
+    { &quot;paymentDate&quot;: &quot;2026-04-12&quot;, &quot;method&quot;: &quot;Check #4188&quot;, &quot;amount&quot;: 0 }
+  ]
+}
+</code></pre>
+<p>Reconciliation: line items 8200 + 900 + 550 = 9650, matching <code>outstanding</code> and matching INV-2903's row in API 3. The <code>payments</code> entry has a zero amount because nothing has been applied to this invoice — an unapplied record, which is why <code>outstanding</code> still equals the full line-item sum.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Unknown or no-longer-outstanding <code>invoiceId</code></td>
+<td>HTTP 404. Not an empty payload, so a stale modal row fails visibly</td>
+</tr>
+<tr>
+<td>An unverified section is unwired</td>
+<td>That section returns an empty array or empty string; the rest of the payload is unaffected and the call still succeeds</td>
+</tr>
+<tr>
+<td>All three unverified sections unwired</td>
+<td><code>lineItems</code> still returned in full. The client shows only the Details tab and routes the rest to "Open invoice"</td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td>HTTP 403 with no body</td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td>HTTP 503</td>
+</tr>
+</tbody>
+</table>
+<h2>API 5: confirm, move selected invoices to unposted transactions</h2>
+<p>The only write in this contract. It stages an <strong>unposted payment</strong> and commits nothing to the general ledger. The staged payment stays editable and reversible until a person posts it in Payment Processing. The invoices the widget shows are posted invoices awaiting payment, not records from any unposted-invoice queue.</p>
+<p>The machinery already exists and is reused, not built: a payment is an <code>ARPayment</code> carrying a <code>Posted</code> flag, whose <code>ARPaymentDetail</code> rows each apply to one <code>ARInvoice</code>. Unposted payments are listed by <code>ARPaymentRepository.GetAllCurrentContextByFilters(posted:false, ...)</code>, selected by <code>SelectedIDs</code>, and posted by <code>ProcessPayments(blobID, postingDate)</code> with <code>CheckTransactionsAgainstCurrentYear</code> validation and unapplied-cash handling. GL journal detail is written on post only when <code>ARCompany.InterfaceGL</code> is on. Posting reduces Outstanding, and an invoice leaves the widget when Outstanding reaches 0. <code>[CODE]</code></p>
+<p><strong>What is open is not the mechanism but the product nuance:</strong> whether Confirm creates the payment records outright or stages the selected invoices into the payment-entry screen for a person to key, and whether the amount applied is the full Outstanding per invoice or a partial amount. That is in the sign-off list. The request shape below covers the full-amount create case; a partial-amount decision adds a per-invoice amount field and nothing else.</p>
+<h3>Endpoint</h3>
+<pre><code>POST /api/dashboard/receivable-invoices/unposted-payments
+</code></pre>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>invoiceIds</code></td>
+<td>guid array, body</td>
+<td>yes</td>
+<td>1 to 200 ids from API 3's <code>invoices[]</code></td>
+<td>none</td>
+<td>The invoices ticked in the modal. Maps onto the legacy <code>SelectedIDs</code></td>
+</tr>
+<tr>
+<td><code>asOf</code></td>
+<td>date, body</td>
+<td>yes</td>
+<td>the <code>asOf</code> the modal was read at</td>
+<td>none</td>
+<td>Staleness guard. The server rejects any invoice whose Outstanding changed since</td>
+</tr>
+</tbody>
+</table>
+<h3>Example requests</h3>
+<pre><code>POST /api/dashboard/receivable-invoices/unposted-payments
+{ &quot;invoiceIds&quot;: [&quot;7c2e9a41-0002-4f8a-9c1e-2d6b8f0a3e76&quot;], &quot;asOf&quot;: &quot;2026-07-23&quot; }
+
+POST /api/dashboard/receivable-invoices/unposted-payments
+{ &quot;invoiceIds&quot;: [&quot;7c2e9a41-0002-4f8a-9c1e-2d6b8f0a3e76&quot;, &quot;7c2e9a41-0003-4f8a-9c1e-2d6b8f0a3e77&quot;], &quot;asOf&quot;: &quot;2026-07-23&quot; }
+</code></pre>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>batchId</code></td>
+<td>guid</td>
+<td>NEW</td>
+<td>The staged unposted payment batch, for the Payment Processing link</td>
+</tr>
+<tr>
+<td><code>applied</code></td>
+<td>array</td>
+<td>NEW</td>
+<td>The invoices successfully staged</td>
+</tr>
+<tr>
+<td><code>applied[].invoiceId</code></td>
+<td>guid</td>
+<td>DERIVED echo</td>
+<td></td>
+</tr>
+<tr>
+<td><code>applied[].appliedAmount</code></td>
+<td>number</td>
+<td>DERIVED the invoice's Outstanding at commit time</td>
+<td>Full Outstanding, pending the partial-amount decision</td>
+</tr>
+<tr>
+<td><code>rejected</code></td>
+<td>array</td>
+<td>NEW</td>
+<td>Per-invoice failures. Never an all-or-nothing error</td>
+</tr>
+<tr>
+<td><code>rejected[].invoiceId</code></td>
+<td>guid</td>
+<td>DERIVED echo</td>
+<td></td>
+</tr>
+<tr>
+<td><code>rejected[].reason</code></td>
+<td>string</td>
+<td>NEW</td>
+<td><code>already_paid</code>, <code>outstanding_changed</code>, <code>not_found</code>, <code>not_eligible</code></td>
+</tr>
+</tbody>
+</table>
+<p>The response deliberately reports per invoice rather than failing the whole call, because the modal is an <code>asOf</code> snapshot and another user may have paid one of the selected invoices in between.</p>
+<h3>Example response</h3>
+<p>Two invoices submitted, one of which was paid by someone else since the modal was read.</p>
+<pre><code>{
+  &quot;batchId&quot;: &quot;e9f1a3c5-4b6d-4a8e-9c2f-5d7b1e3a9c40&quot;,
+  &quot;applied&quot;: [
+    { &quot;invoiceId&quot;: &quot;7c2e9a41-0002-4f8a-9c1e-2d6b8f0a3e76&quot;, &quot;appliedAmount&quot;: 9650 }
+  ],
+  &quot;rejected&quot;: [
+    { &quot;invoiceId&quot;: &quot;7c2e9a41-0003-4f8a-9c1e-2d6b8f0a3e77&quot;, &quot;reason&quot;: &quot;outstanding_changed&quot; }
+  ]
+}
+</code></pre>
+<p>Reconciliation: 1 applied + 1 rejected = 2 invoices submitted, and <code>appliedAmount</code> 9650 equals INV-2903's <code>outstanding</code> in API 3, since the full Outstanding is applied.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Every invoice staged</td>
+<td><code>applied[]</code> full, <code>rejected[]</code> empty, HTTP 200</td>
+</tr>
+<tr>
+<td>Every invoice rejected</td>
+<td><code>applied[]</code> empty, <code>rejected[]</code> full, HTTP 200. The staleness is data, not a fault, and <code>batchId</code> is null</td>
+</tr>
+<tr>
+<td>Empty <code>invoiceIds</code></td>
+<td>HTTP 400. The button being always enabled is a build decision; the API still refuses an empty write</td>
+</tr>
+<tr>
+<td>More than 200 ids</td>
+<td>HTTP 400 naming the maximum</td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td>HTTP 403. Requires the Payment Processing right, which is a different right from the read</td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td>HTTP 503, nothing staged. The write is atomic per invoice and never half-applies one</td>
+</tr>
+</tbody>
+</table>
+<h2>API 6: filter lists</h2>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/receivable-invoices/filters
+</code></pre>
+<h3>Parameters</h3>
+<p>No parameters beyond the company header. Both lists are company-scoped and neither depends on the other.</p>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/receivable-invoices/filters
+</code></pre>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>revenueCenters</code></td>
+<td>array</td>
+<td>STORED <code>ARRevenueCenterRepository</code></td>
+<td>Options for the Revenue Center chip, excluding the All entry which the client adds</td>
+</tr>
+<tr>
+<td><code>revenueCenters[].id</code></td>
+<td>guid</td>
+<td>STORED</td>
+<td>Value for the <code>revenueCenterId</code> param</td>
+</tr>
+<tr>
+<td><code>revenueCenters[].name</code></td>
+<td>string</td>
+<td>STORED</td>
+<td>Display label</td>
+</tr>
+<tr>
+<td><code>sources</code></td>
+<td>array</td>
+<td>STORED <code>ARSourceRepository</code></td>
+<td>Options for the Source chip, excluding All</td>
+</tr>
+<tr>
+<td><code>sources[].id</code></td>
+<td>guid</td>
+<td>STORED</td>
+<td>Value for the <code>sourceId</code> param</td>
+</tr>
+<tr>
+<td><code>sources[].name</code></td>
+<td>string</td>
+<td>STORED</td>
+<td>Display label</td>
+</tr>
+</tbody>
+</table>
+<h3>Example response</h3>
+<pre><code>{
+  &quot;revenueCenters&quot;: [
+    { &quot;id&quot;: &quot;2f8b1c94-0001-4a7f-9b0c-1d2e3f4a5b61&quot;, &quot;name&quot;: &quot;Church&quot; },
+    { &quot;id&quot;: &quot;2f8b1c94-0002-4a7f-9b0c-1d2e3f4a5b62&quot;, &quot;name&quot;: &quot;Insurance Billing&quot; },
+    { &quot;id&quot;: &quot;2f8b1c94-0003-4a7f-9b0c-1d2e3f4a5b63&quot;, &quot;name&quot;: &quot;Pension Billing&quot; },
+    { &quot;id&quot;: &quot;2f8b1c94-0004-4a7f-9b0c-1d2e3f4a5b64&quot;, &quot;name&quot;: &quot;School&quot; }
+  ],
+  &quot;sources&quot;: [
+    { &quot;id&quot;: &quot;7a3c9e15-0001-4f8a-9c1e-2d5b8f0a3e71&quot;, &quot;name&quot;: &quot;Insurance Billing&quot; },
+    { &quot;id&quot;: &quot;7a3c9e15-0002-4f8a-9c1e-2d5b8f0a3e72&quot;, &quot;name&quot;: &quot;Pension Billing&quot; }
+  ]
+}
+</code></pre>
+<p>Reconciliation: 4 revenue centers + 2 sources = 6 options, matching the built Final's two chip lists once each list's own All entry is excluded.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A list is empty for this company</td>
+<td>That array is empty. The client renders the chip with All only, and does not hide it</td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td>HTTP 403 with no body</td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td>HTTP 503. The client falls back to All on both chips and disables them</td>
+</tr>
+</tbody>
+</table>
+<h2>Auth and scoping</h2>
+<ul>
+<li><strong>Company scoping.</strong> Every call carries <code>X-Company-ID</code>, and every query in this contract is scoped by it. No endpoint returns data across companies, and no client-supplied id overrides the header.</li>
+<li><strong>Read permission right.</strong> The AR receivables read right gates API 1, 2, 3, 4 and 6. Without it every read returns 403 with no body.</li>
+<li><strong>Write permission right.</strong> API 5 additionally requires the Payment Processing right — a separate right from the read. A user can therefore see the widget and its drill while being unable to Confirm.</li>
+<li><strong>What a user without the read right sees.</strong> The widget is hidden rather than rendered empty, so an empty aging chart never gets read as "nothing is owed". This is a product decision and it is the one being specified here.</li>
+<li><strong>What a user with read but not write sees.</strong> The modal renders with the row checkboxes and Confirm suppressed by the client. The API still enforces the right independently and never relies on the client hiding the control.</li>
+</ul>
+<h2>Edge cases</h2>
+<ol>
+<li><strong>Empty band.</strong> A band with no invoices is returned with <code>outstanding</code> 0 and <code>invoiceCount</code> 0, never omitted, so all six bands are always present in order.</li>
+<li><strong>Nothing outstanding at all.</strong> Every band zero, <code>total</code> and <code>overdue</code> zero. The "Nothing outstanding" state is read from this, not from an error.</li>
+<li><strong>Nothing overdue.</strong> <code>overdue</code> zeroed while <code>total</code> is non-zero, driving the "All current" pill.</li>
+<li><strong>Filter combination matching nothing.</strong> Returns a well-formed zero response, since the two filters share a value space and a valid pair can legitimately match no invoice.</li>
+<li><strong>Blank source.</strong> An invoice with no source appears only when <code>sourceId</code> is omitted; a blank is never treated as matching a specified source.</li>
+<li><strong>Invoice not yet due.</strong> <code>daysPastDue</code> is floored at 0 rather than returned negative, and the invoice lands in the Current band.</li>
+<li><strong>Invoice due exactly today.</strong> <code>daysPastDue</code> is 0, so it is Current, not 1-30. The boundary is <code>&gt; 0</code> for overdue.</li>
+<li><strong>Division by zero in percent-of-total.</strong> <code>total.outstanding</code> is 0, so the client renders every band at 0% and performs no division. No endpoint returns a percentage.</li>
+<li><strong><code>asOf</code> before an invoice was issued.</strong> The invoice is absent from that response rather than appearing with a zero balance.</li>
+<li><strong>Pagination past the end.</strong> Empty rows with <code>pagination.totalCount</code> and every aggregate still correct.</li>
+<li><strong>Sort key outside the whitelist.</strong> Rejected with 400 rather than silently defaulted, so a client typo cannot quietly reorder a list.</li>
+<li><strong>Customer with one invoice not yet due.</strong> <code>oldestDaysPastDue</code> is 0 and <code>worstBucket</code> is <code>current</code>; the row still appears, because it has an outstanding balance.</li>
+<li><strong>Invoice paid between the modal read and Confirm.</strong> That id comes back in <code>rejected[]</code> with <code>outstanding_changed</code>; the rest still stage.</li>
+<li><strong>The same invoice submitted twice in one Confirm.</strong> Deduplicated before staging, and reported once.</li>
+<li><strong>Invoice with no line items.</strong> <code>lineItems</code> is an empty array; <code>outstanding</code> is still authoritative and the two are not required to reconcile.</li>
+<li><strong>Modal open while a filter changes behind it.</strong> The modal keeps its own <code>asOf</code> and scope until closed, so its footer never disagrees with its rows mid-interaction.</li>
+</ol>
+<h2>Not in scope</h2>
+<ul>
+<li><strong>Posting the payment.</strong> API 5 stages an unposted payment. The <code>ProcessPayments</code> post step and its reversal live on the Payment Processing page, not in this widget.</li>
+<li><strong>Partial-amount payments</strong>, pending the sign-off decision. The current request shape applies the full Outstanding per invoice.</li>
+<li><strong>Select-all in the modal.</strong> The built Final has row checkboxes only, deliberately, with no header select-all box.</li>
+<li><strong>Export to Excel.</strong> Generated client-side from the response already held. No export endpoint, since the client has the rows and the totals it needs.</li>
+<li><strong>"Record a follow-up".</strong> Present as a button in the row drawer but not wired to anything and not specified here. It needs a product definition before it can have a contract.</li>
+<li><strong>"Open invoice".</strong> A deep link the client builds from <code>invoiceId</code> to the existing invoice screen. No endpoint, and the dashboard does not refresh when the user returns from it.</li>
+<li><strong>Cross-dashboard global filters.</strong> Whether this widget responds to any dashboard-wide filter is unconfirmed and is not part of this contract.</li>
+<li><strong>Server-side percentages, colour bands, or sizing.</strong> All client-side over the returned figures.</li>
+</ul>
+<h2>Still needs sign-off</h2>
+<ul>
+<li><strong>Attachments, Note and Payments sources for API 4.</strong> Three separate unverified sources; only <code>lineItems</code> is confirmed against <code>ARInvoiceDetail</code>. <strong>Decides:</strong> owner with a codebase trace. <strong>Blocked until then:</strong> three of the four modal tabs, which otherwise route to "Open invoice".</li>
+<li><strong>The Confirm nuance: create or stage, full amount or partial.</strong> The mechanism is settled. <strong>Decides:</strong> SME/product. <strong>Blocked until then:</strong> whether API 5's request gains a per-invoice amount field, and whether <code>applied[].appliedAmount</code> is ever less than the invoice's Outstanding.</li>
+<li><strong>Worst-case row ceilings for the customer rollup and the invoice list.</strong> Both are marked <code>[TO CONFIRM]</code> in the volume table; the built Final's 23 invoices are a demo figure and not a basis. <strong>Decides:</strong> owner or SME with a live query. <strong>Blocked until then:</strong> nothing in the contract, but the <code>pageSize</code> maximum of 200 and the LIVE cache posture are provisional and may need a precomputed rollup instead.</li>
+<li><strong>The six-band definition.</strong> The build carries six bands and this contract specifies them, per the owner's ruling. The Step 4 doc still records the band change as held pending confirmation from the 2026-08-25 call, and still describes five bands. <strong>Decides:</strong> Feargal, to close the hold formally. <strong>Blocked until then:</strong> nothing in the contract; the Step 4 doc needs updating to match, and this is flagged so a reader of that doc is not confused by the difference.</li>
+<li><strong>The drill-modal scope question.</strong> The Step 4 doc records that the widget should be a navigation and prioritisation tool that opens the existing invoice screen, rather than reproducing the transaction screen inline. This contract specifies the modal the build actually has, per the owner's ruling. <strong>Decides:</strong> Feargal. <strong>Blocked until then:</strong> nothing, but if it resolves toward navigate-out then <strong>API 4 and API 5 are both dropped</strong> and API 3 becomes a list of deep links. That is the largest single scope risk in this contract and a developer must see it before building either.</li>
+<li><strong>Band-boundary reconciliation with the shared <code>ap-ar-aging</code> surface.</strong> Confirm the six boundaries here match whatever any shared aging endpoint uses, so this widget and that surface cannot disagree at a band edge. <strong>Decides:</strong> backend. <strong>Blocked until then:</strong> nothing, but a mismatch would be a silent reporting discrepancy.</li>
+</ul>
+
+</body>
+</html>

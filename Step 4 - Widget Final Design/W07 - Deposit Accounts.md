@@ -5,7 +5,7 @@
 **Full history / rejected ideas:** [Widget_Specs/W07-Deposit-Accounts.md](../Step%203%20-%20Mock_Work/Widget_Specs/W07-Deposit-Accounts.md)
 **Data source & formulas:** [Step 1 - Dashboard Research/07 - Deposit Accounts.md](../Step 1 - Dashboard Research/07%20-%20Deposit%20Accounts.md)
 **Confluence dossier:** [Step 6 - Sign off document/Deposit On Hand (Deposit Accounts)/Deposits On Hand (Confluence pull 2026-07-27).html](../Step%206%20-%20Sign%20off%20document/Deposit%20On%20Hand%20%28Deposit%20Accounts%29/Deposits%20On%20Hand%20%28Confluence%20pull%202026-07-27%29.html) (management sign-off dossier; 13 Jul 2026 live audit, 14-gap list, top-10 insights, L1/L2/L3 design direction). No reconciliation file exists yet.
-**Last verified against build:** 2026-07-30 via build-final-widget (Final, Jo design: the per-widget Node DOM-shim driver grew 111 -> 119 -> 145 assertions across the four owner changes, 0 failures + final-check-rules.py 0 HIGH + browser-faithful CSS parse, 0 dropped rules). Previous: not yet audited.
+**Last verified against build:** 2026-07-30 via build-final-widget (Final, Jo design: the per-widget Node DOM-shim driver grew 111 -> 119 -> 145 assertions across the four owner changes, 0 failures + final-check-rules.py 0 HIGH + browser-faithful CSS parse, 0 dropped rules). Audited 2026-08-30 against the built Final via widget-final-check-audit (unattended): eight doc-catches-up-to-build corrections applied, listed in that run's questions doc. Previous: not yet audited.
 
 **Evidence key:** `[LIVE]` verified in beta1/test1 on a stated date · `[SME]` interview-sourced (name + date) · `[RESEARCH]` desktop/market research · `[BUILD]` true of the mockup build · `[DOC]` backed by a named written source · `[TO CONFIRM]` assumed, with a named owner to confirm. Conflicting evidence coexists; neither side wins by default.
 
@@ -36,7 +36,7 @@ What the widget consumes. Source tables and formulas come from the Step 1 resear
 | Account-type filter list | `DH_Type` / `DHTypeRepository` | Type list scoped to the bank account, with an all-accounts option | [DOC — Step 1 research] [DOC — Step 6 dossier] |
 | KPI headline (total balance) + delta | Derived | Sum of balances across the full (unpaginated) filtered set; delta computed against the Compare To baseline | [BUILD] |
 | Compare To baseline (per option) | Derived from balances as of a prior point / window | Previous week / month / period / quarter / fiscal year / calendar year (period = fiscal period, per-org fiscal calendar, Time Window Module ordering) | [BUILD] |
-| Trend series | Derived | Balance over time; the mock interpolates points between each period's start/end balance rather than querying that many real points | [BUILD] / [TO CONFIRM — dev] |
+| Trend series | Derived | Balance over time. The mock queries no real historical points: it generates a deterministic seeded walk per account, anchored so the final point equals that account's current balance. Point count and grain follow the selected time scale (week = 8 daily points, month / period / quarter = 9 weekly points, fiscal year = 12 fiscal-period points, calendar year = 12 monthly points) | [BUILD] / [TO CONFIRM — dev] |
 
 - **Structure (three levels):** Group -> Account Type -> Account. Type is the portfolio dimension (interest settings live at type level, and this is what the breakdown groups on); account is the depositor dimension (one depositor's balance) [DOC — Step 6 dossier].
 - **Scope note:** this widget is scoped by Bank Account (`X-BankAccountID`, via the `DH_Type.BankAccountID` chain), not by Company like most other Finance widgets [DOC — Step 1 research].
@@ -49,7 +49,7 @@ What the widget consumes. Source tables and formulas come from the Step 1 resear
 | State | Behaviour |
 |---|---|
 | No module rights / entitlement | *Not yet specified.* Dossier states 1 and 2 (org lacks the module; user has no rights) are marked "to confirm" there: how entitlement is detected and whether widget visibility respects module rights today are open [DOC — Step 6 dossier]. |
-| Empty (org has no deposit accounts) | The Final renders an empty state rather than a broken chart; every total is computed from the account rows, never hardcoded. [BUILD] Dossier state 3 (spec agreed) asks for a purposeful empty state that names the module plus a rights-gated "+ Add Account" action; that fuller spec is not yet in the build. |
+| Empty (org has no deposit accounts) | The Final renders an empty state rather than a broken chart: an inbox icon, "No deposit accounts", a sub-line, and an "Add account" button that opens a modal explaining it would take the user to the New deposit account form in the Deposits module. Every total is computed from the account rows, never hardcoded. [BUILD] Dossier state 3 (spec agreed) asks for that same shape; the build has the action but no rights gating on it, and the empty text does not name the module. |
 | Filter matches none (a scoped type has no accounts) | The Final shows an empty result for that scope. [BUILD] Dossier state 4 (spec agreed) asks for explicit zeros (# Accounts: 0, balance 0.00) with a "Show all" action; parity with that spec is not yet verified. |
 | Loading | The Final ships a loading state. [BUILD] Dossier state 5 (proposed): a skeleton in the final layout, no layout shift, no spinners over stale numbers. |
 | Error / API failure | The Final ships an error state. [BUILD] Dossier state 6 (proposed): clear message plus Retry, never stale figures without a "data as of" stamp (a wrong balance is worse than none for regulated figures). |
@@ -57,10 +57,10 @@ What the widget consumes. Source tables and formulas come from the Step 1 resear
 ## Interaction Spec
 - **Account-scope filter chip:** a single scope control (All Accounts / an account type / an individual account, searchable). It drives every view the same way; there is no per-size or per-view divergence. [BUILD]
 - **Compare To:** selects the baseline the current balance is measured against for the delta, and the overlaid line in Trend. The scale is Previous week / month / period / quarter / fiscal year / calendar year; the **"period" option (fiscal period) sits between month and quarter** and computes a real intermediate delta (owner change 4). [BUILD]
-- **Three views (Switch View):** Table (default), Distribution (donut), Trend (multi-line). [BUILD]
+- **Three views (Switch View):** Table (default), Distribution (donut), Trend (multi-line), offered as a three-option toggle at Explore. At Detail the toggle collapses to two options, Balances / Trend, with the donut rendered beside the table inside Balances. [BUILD]
 - **Scope-dependent breakdown (owner change 2):** at All Accounts the Distribution/Trend breakdown toggle offers only Total / By Account Type (the standalone all-accounts "By Account" option is removed). When the scope is a single account type, the toggle offers Total / By Account, showing that type's own accounts. [BUILD]
 - **Click drills, does not expand (owner change 3):** clicking an account-TYPE series (a donut slice or a trend line) sets the top-left scope filter to that type and switches the breakdown to By Account. Clicking an individual ACCOUNT series is inert. There is no click-to-expand / focus / drill-modal on the charts (that older behaviour is removed). [BUILD]
-- **Table row -> detail modal (preserved):** clicking a table row opens Jo's account/type detail modal. This is a row click, not a chart click, and is unaffected by owner change 3. [BUILD]
+- **Table row -> detail modal (preserved):** clicking the account NAME in a table row opens Jo's account detail modal. The name cell is the link (it underlines on hover); the rest of the row is not clickable. This is a table click, not a chart click, and is unaffected by owner change 3. The type-scoped variant of that modal is no longer reachable, because chart clicks now re-scope instead of opening it. [BUILD]
 - **Table pagination (owner change 1):** 50 accounts per page with a pager; the mock dataset is 125 accounts to demonstrate it. Pagination is display-only: the KPI total and the subtotals compute over the full filtered set. Grand total $106,726,837 across 125 accounts. [BUILD]
 - **Table search/sort:** the table is client-side sortable and has a live search box. [BUILD]
 
@@ -68,15 +68,15 @@ What the widget consumes. Source tables and formulas come from the Step 1 resear
 | Filter | Values |
 |--------|--------|
 | Account scope | All Accounts (default) · account type · individual account (searchable) |
-| Compare To | Previous week · month · period (fiscal period) · quarter · fiscal year · calendar year |
+| Compare To | Previous week · month · period (fiscal period) · quarter (default) · fiscal year · calendar year |
 
 The scope chip narrows every view the same way (Table, Distribution, Trend, and the KPI headline all read from the same filtered account set). Compare To drives every delta shown by the widget (the KPI delta pill and the Trend overlay). The dossier's proposed MVP compare-to set was previous week / month / quarter / fiscal year / calendar year; the Final adds a fiscal-**period** option between month and quarter (owner change 4). [BUILD] [DOC — Step 6 dossier]
 
 ## Data Table Sort
-The Final ships Jo's sortable table with a live search box (client-side, instant, never a fetch). The legacy fixed sort (Name, then Inception Date, not user-changeable) is superseded; see Design History. [BUILD]
+The Final ships Jo's sortable table with a live search box (client-side, instant, never a fetch). Columns are Name (with the masked account number as secondary text underneath), Type (as a badge), Trend (percent change across the selected time scale) and Balance. Inception Date is not a column in the Final. All four columns sort, and the default is Balance descending. The search box filters the rows currently rendered, so it works within the visible page rather than across the whole paginated set. The legacy fixed sort (Name, then Inception Date, not user-changeable) is superseded; see Design History. [BUILD]
 
 ## Drill-Through
-- **In-widget:** clicking a table row opens the account/type detail modal (preserved). Clicking a chart account-TYPE series re-scopes the widget to that type and switches the breakdown to By Account; clicking an individual account series is inert. [BUILD]
+- **In-widget:** clicking the account name in a table row opens the account detail modal (preserved). Clicking a chart account-TYPE series re-scopes the widget to that type and switches the breakdown to By Account; clicking an individual account series is inert, and so is the donut's "Others" bucket. [BUILD]
 - **Out to the module: open item, not decided.** The dossier's live audit found the Deposits On Hand module has no read layer to land on (no View menu, no live activity table, no interest history, no list of closed accounts); a real drill-through would require building that destination (the dossier's L3 inquiry surface), not wiring a link, with an interim option of deep links to Account Information and pre-filtered reports labelled honestly ("Opens in Reports") [DOC — Step 6 dossier]. Tracked in Sign-off Readiness.
 
 ## Refresh
@@ -85,7 +85,7 @@ Standalone icon, present at every size including Glance. What refresh does in th
 ## Views (Switch View) and sizing
 The Final carries Jo's "Deposits on Hand" widget one-to-one: the three views (Table default, Distribution donut, Trend multi-line), the KPI headline (total balance + delta pill + Compare To + a scrubbable sparkline), the account-scope filter chip, the sortable/searchable table, the empty/loading/error states, and her account/type detail modal, plus the four owner changes above. [BUILD]
 
-**Size behaviour:** three sizes only, per General Widget Design Rules Rule 12: **Glance / Explore / Detail**, no Small. Jo's widget uniquely ships FOUR tiers (kpi / wide / large / xwide); mapped to the project's three via the `fc-fmode` mechanism as **Glance = kpi, Explore = wide, Detail = xwide**. Her middle **`large` tier is dropped** (not rendered), an owner decision. Glance is the KPI headline + sparkline; Explore and Detail render the three views and the paginated table. [BUILD]
+**Size behaviour:** three sizes only, per General Widget Design Rules Rule 12: **Glance / Explore / Detail**, no Small. Jo's widget uniquely ships FOUR tiers (kpi / wide / large / xwide); mapped to the project's three via the `fc-fmode` mechanism as **Glance = kpi, Explore = wide, Detail = xwide**. Her middle **`large` tier is dropped** (not rendered), an owner decision. Glance is the KPI headline + sparkline. Explore carries the three-option view toggle (Table / Distribution / Trend) and the paginated table. Detail carries a two-option toggle instead, Balances / Trend, where Balances renders the paginated table beside the Distribution donut in one side-by-side layout, so Distribution is not a separately switchable view at that size. [BUILD]
 
 ## Accessibility
 - **Values exist as text:** the KPI headline, the delta pill, each Distribution/Trend series, and every table cell carry their values as DOM text (never hover-only). This directly answers the dossier's gap #5 (the legacy pie was hover-only and was the only place type totals existed). [BUILD]
