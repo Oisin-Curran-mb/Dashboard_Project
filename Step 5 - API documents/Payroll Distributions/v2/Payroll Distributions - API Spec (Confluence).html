@@ -20,7 +20,7 @@ pre code { background: none; padding: 0; }
 <body>
 
 <h1>Payroll Distributions - API Spec</h1>
-<p><span class="status">Status: DRAFT - not final</span></p>
+<p><span class="status">Status: Done - awaiting sign-off (drafting complete, owner review pending)</span></p>
 <h2>Overview</h2>
 <p>The widget answers one question: where did payroll go for the chosen time span? It shows total cash payroll paid over a selected window, grouped by the org's own compensation-distribution labels, filterable by a single pay type, viewable as a sortable table or a donut chart, with a nested in-widget drill from a distribution to the employees paid in it and from an employee to that person's pay types. Access to the employee level is limited to users with payroll permission; everyone else sees distribution and pay-type totals only.</p>
 <p>This contract defines four APIs: a distribution lookup fired once for the filter chip (API 1), a bounded summary read at distribution-by-pay-type grain fired on render and on every period change (API 2), a paginated, permission-gated employee list fired when a distribution is drilled into (API 3), and a server-side export that streams a file over the full filtered set (API 4). The pay-type filter and every view, sort and rollup of the summary run client-side over API 2's bounded rows; everything touching the employee list runs server-side because that list paginates.</p>

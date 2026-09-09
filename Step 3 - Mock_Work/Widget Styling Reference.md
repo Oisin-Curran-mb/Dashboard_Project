@@ -408,12 +408,34 @@ These need an owner ruling before they can be written as rules. Until then, foll
 
 **One caveat on this data.** The analysis groups a family's base rule together with any override of the same selector inside a media query, so `.sk` shows a majority of `animation:none!important`, which is its `prefers-reduced-motion` override rather than its base rule. Read the base rule from a root directly when that matters.
 
+## 13.1 Every root must declare its own token block
+
+**This is the single highest-value rule in this document.** W11 was restyled six times with correct rules and looked unstyled every time, because `.faf-root` declared **zero** custom properties while every other root declares its own block (insf 38, loanf 38, penf 49, remf 50, bgtf 51, prf 53, depf 55, bankf 57, apf 32, payf 28).
+
+There is no global `:root` token layer in this file. Tokens are declared **per widget root**. A root that omits the block gets nothing by inheritance, so every `var(--stroke-widget)`, `var(--surface-widget)`, `var(--txt-*)`, `var(--wn-*)` and `var(--am-*)` in its stylesheet resolves to nothing.
+
+**An undefined `var()` is valid CSS that silently drops its own declaration.** No error, no warning, no visual clue beyond the thing simply not being styled. `border-bottom:1px solid var(--undefined)` gives no border at all.
+
+Nothing else in the project catches it: `node --check` reads script, `final-check-rules.py` reads prose and JS, `css-scope-matrix.py` compares class *names* rather than property resolution, and `chart-fill-check.js` needs a browser.
+
+So: **declare the block first, before any other rule.** Copy it verbatim from the nearest sibling root, including `font-family` and the base `color`. Then run `css-token-resolve-check.py`, which asserts that for every `var()` a root uses, that root declares it.
+
+## 13.2 The fc-fmode rule set is per widget id
+
+The `fc-fmode` class is applied generically by the shared render (`fsec.classList.toggle('fc-fmode', st.opt==='F')`), but its **rules are scoped per widget id** (`#fc-widget-N.fc-fmode ...`). A widget with an incomplete block gets the class and nothing happens.
+
+W10 carries the complete reference set. The two that cause visible damage if missed:
+
+- `#fc-widget-N .fc-szhd-f{display:none}` with `#fc-widget-N.fc-fmode .fc-szhd-f{display:inline}` and `#fc-widget-N.fc-fmode .fc-szhd-abc{display:none}`. Without these, both the A/B/C and the Final size headings render at once and read as one mashed string.
+- `#fc-widget-N.fc-fmode .opt.sz-l{grid-column:1/-1;height:auto;aspect-ratio:1200/560}`. Without this the Detail card stays inside a single grid column instead of spanning the row, so a wide table overflows sideways. **Diagnose this before reaching for narrower columns**: on W11 it looked like a column-width problem and was actually a card half the width it should have been.
+
 ## 14. Verification
 
 Run these, in this order, after any styling work:
 
 | Gate | Catches | Blind to |
 |---|---|---|
+| **`css-token-resolve-check.py`** | **a root that uses `var()` tokens it does not declare, which silently drops every affected declaration** | **values, and tokens legitimately inherited from an ancestor** |
 | `node --check` on each `<script>` | script syntax | all CSS |
 | brace balance and a JS-in-CSS scan on the block you touched | a generated stylesheet that swallowed script or comment text | semantics |
 | `css-split-selector-check.py` | doubled root prefixes, empty selectors | missing rules |

@@ -192,3 +192,85 @@ This is the part worth reading. **This file declares its design tokens and its c
 ⚠️ **Not machine-verified**: fine visual spacing, and the account-listbox popover position.
 
 **Also noticed, not acted on:** `.purf-root` (W13) has **no token block** and renders alone, unlike `.gpf-root` which survives by rendering inside `remf-root`. That may mean W13 has the same silent token problem. Not touched, since it is outside this build.
+
+
+---
+
+## 2026-09-04: Final rebuilt from the requirements handoff, in Jo's design language
+
+**Why.** The 2026-08-30 Final recorded above was a deliberate verbatim 1-to-1 port of Jo Lopez's bank block. The owner discarded it on 2026-09-03. The instruction for this rebuild was different in kind: "change the design to Jo's, dont copy it but take what is in it and try to copy it for Bank Balances W15." So behaviour comes from `W15 - Bank Balances - BUILD REQUIREMENTS (handoff).md` and nothing else, and Jo's design language is re-implemented against those requirements rather than transplanted. Prefix `bkf` / `BKF_`, CSS root `.bankf-root` (the root name is kept; the JS prefix is deliberately fresh so any surviving residue of the discarded port is obvious). An interrupted earlier attempt at this rebuild had left a partial `.bkf-root` / `bkf` draft in the file that stopped mid-way through the renderers, with no Single Account mode, no Glance, no entry point and no handlers, and with an explicitly non-Jo native-table design; it has been replaced wholesale.
+
+### The composition sheet: every component, and its source
+
+| Component | Source | How it was adapted |
+|---|---|---|
+| Header grid | Jo's `.dep-hd` two-row grid, `display:contents` children, `.dep-hd-toggle`, `.dep-hd-num>*:first-child`, `.bank-hd-left` single-cell toolbar group | Her values; `row-gap` 14 to 10 and padding `14px 16px 16px` to `12px 16px 12px`, because the W11 download row sits directly beneath and her spacing plus that row pushed the table too far down |
+| KPI figure and context line | Jo's `.metric-value`, `.dep-hd-kpigrp`, `.bank-numwrap`, `.bank-ctx` | Verbatim values |
+| Overdrawn treatments | Jo's `.bank-pill.warn` (header) and `.bank-tag-over` (row) | Verbatim values. Both are required by handoff section 12: colour is never the only signal |
+| Account control | Jo's `.filter-chip` plus `.bank-acct-chip`, `.fc-label` | Chip trio restated for our own handler attribute `data-bkf` per Styling Reference 9.1 |
+| Switch View | Jo's `.vtoggle` / `.vt` / `.vt.on` | Verbatim values. Three presentations; All Accounts mode only, per handoff section 4 |
+| Icon buttons | Jo's `.iconbtn` family | Verbatim values. Download and both pager buttons |
+| Balance Table | Jo's `.wt-row` / `.wt-head` / `.lr-main` / `.wt-c2` / `.bank-bal` / `.dep-total` values on a NATIVE `<table>` | See "the native table decision" below |
+| Balance Bar Chart | Jo's `.bank-hb` diverging bar with a zero axis, her grid columns and track | Three changes: the axis is given a declared colour, the negative fill stays on the amethyst ramp, and the rows are not sorted. See below |
+| Account Cards | Composed from Jo's card vocabulary: `.dep-col` frame, `.dep-col-h` label treatment, `.tr-val` display figure | She has no card presentation for bank, so this is assembled from her parts rather than invented |
+| Seven-row breakdown | Jo's statement framing: her `.bank-anchor` muted Beginning Balance and her `.dep-total` closing treatment | Hers puts the ending figure in a `.dep-total` outside the table, which would be an eighth row; here it is row 7 inside the table with the same treatment, so the table has exactly the seven rows handoff section 3 names, and no totals row |
+| Four activity categories | Jo's `.bank-cols` vertical column chart, taken whole: 40px y axis, `.bank-canvas` bottom rule and dashed mid gridline, `.bank-col` hover band, 56%-wide bar capped at 46px, `.bank-xaxrow` label plus value under each column | Money out moves from her `--red-100` to `--am-700`; her per-column hover popover is dropped |
+| Account picker | Jo's `.pop` styling, `.mi` / `.mi-nm` / `.mi-gap` / `.cap` / `.sep` / `.menu-scroll`, and her `.bank-mi-bal` trailing balance | Verbatim values, minus her search input |
+| Empty state | Jo's `.state` / `.state-title` / `.state-sub` and her `[data-kind="empty"]` icon colour | Verbatim values; the copy names the gap rather than inventing a treatment |
+| Negative money glyph | Jo's U+2212 MINUS SIGN, `−$` | Taken as-is |
+| Server paging model, ordering, aggregation | Handoff section 5 | Not from Jo at all; she pages client-side |
+| Table view is the default; download is an icon only in the right-hand corner in its own slim row; filters and chips on one line; no footnote panel, no gap-notes panel, no "SELECTED" text | **Carried over from W11's settled UI decisions (2026-09-03)**, not from W15's own sources | Applied as-is |
+
+### Jo's behaviour deliberately NOT rebuilt (handoff section 11)
+
+Sortable balance columns (contradicts section 7's fixed alphabetical order; sortable columns stay open item 7, an owner decision, and are left unbuilt), "Load more" paging (replaced by a server-paged Previous page / Next page control), the overdrawn filter chip and the overdrawn count on the Glance figure (no source document), the search box over the account table (no source document; it existed in the port only because she renders an input with no handler), the per-account drill overlay (section 1 is view only and Single Account mode already is the drill-in), the per-bar hover card (unspecified, and section 12 is satisfied by the value being text in the DOM), and client-side sort, slice and totals. The driver asserts the absence of every one of these. Where a visual pattern was inseparable from a dropped behaviour, the visual was taken and the behaviour dropped: her diverging bar keeps its shape but not its sort, and her account picker keeps its row design but not its search.
+
+### The native table decision, recorded so nobody "fixes" it
+
+Handoff section 12 requires real table semantics, `th` with `scope`, on both the account table and the seven-row breakdown. Styling Reference 7.1 records that this file styles tables as flex `.wt-row` stacks with ARIA roles, and that native `<table>` is "the fuller fix" that only makes sense if the whole file moves together. The role approach cannot meet this requirement: everything here is set through `innerHTML`, and per the HTML Standard a `th`, `td` or `tr` start tag in the "in body" insertion mode is a parse error and is ignored, so a `<th scope="col">` inside a `<div role="row">` vanishes and only its text survives, taking the cell class with it. So both tables are real tables carrying Jo's class names and her values. The one adaptation: `.wt-row` is a `<tr>` and therefore does not take her `display:flex`, because that would strip the table roles browsers derive from table display; `table-layout:fixed` supplies the column widths her flex-basis values used to, and the padding, borders, sticky positions and backgrounds sit on the cells rather than the row (sticky on a `<tr>` is not honoured in every engine). **Caveat: the parser claim is derived from the specification, not verified in a browser in this session.** A full `<table>` inside a `<div>` is unambiguously valid, which is the direction that matters for this build.
+
+### Two places where this project's convention beat Jo's, and one real defect in hers
+
+1. **`data-tier` chart sizing is mandatory here** (Styling Reference 8.1). Her whole file carries two `data-tier` occurrences, so her charts take whatever flex gives them. Both charts here are tier sized, on the root and on the chart container.
+2. **Styling Reference 8.2 keeps red off bars and arcs**, reserving it for variance text and pills. Her `.bank-hb-fill.neg` and her `.bank-col.out .bank-bar` are `--red-100`. Here both stay on the amethyst ramp (`--am-500` in, `--am-700` out), and the negative signal is carried by position relative to the zero axis, her `.bank-hb-warn` glyph, the word Overdrawn, and a legend that states in words which side means what.
+3. **A real defect in her original.** Her `.bank-hb-zero` reads `var(--wn-500)`, and `--wn-500` is declared nowhere in her file. An undefined `var()` is valid CSS that silently drops its own declaration, so **the zero axis of her diverging balance bar has no background and is invisible in her own build.** This one uses `--wn-750` (`#87827b`, warm-neutral-750, a verified Pathway primitive) and widens it to 1.5px so it reads as an axis rather than a seam. `--wn-500` is not declared here either, deliberately: it is not a value the Styling Reference verifies, so inventing one would have been worse than picking a declared step.
+
+### The Final Check card chrome, which was the defect that forced this rebuild
+
+W15's `fc-widget-15` section had **never been converted to F mode at all**. It carried zero `#fc-widget-15.fc-fmode` rules while every other Final carries 8 or 9, zero two-span `fc-szhd` size headings, and no occurrence of the words Glance, Explore or Detail, so its card kept rendering the four-size A/B/C ladder no matter what the renderer produced, and its visible copy still claimed Single Account mode "isn't built". The card block is rebuilt on W16's structural template: a design-option switch defaulting to Final (v2), the two-span `.fc-szhd-abc` / `.fc-szhd-f` pattern throughout (28 occurrences, matching W10, W11 and W16 exactly), all nine `#fc-widget-15.fc-fmode` rules copied verbatim from W10 including `.opt.sz-l{grid-column:1/-1}`, and rewritten Purpose, Sources and Logic sections. `fcInitState(15,'A')` is back to `'F'` and `WRENDER[15]` dispatches `opt==='F'` to `bkfRender`.
+
+### RULE 11 CAVEAT, which must not reach the screen
+
+**The Modern API cannot serve Single Account mode at all.** Its single-account endpoint returns only a summary balance: there is no seven-row breakdown and no activity-category data anywhere in the backend today. This is open item 3 in the handoff and the widget's largest gap. The owner previously waived it explicitly as Rule 11 forward design, so Single Account mode is built here **as if the data were real**, and this caveat lives in this write-up and in the build report only. It is deliberately not rendered on screen. It stays a named backend ask, and it is the reason the static gate still reports one HIGH (Sign-off Readiness row 3).
+
+### Recorded gaps, and who settles each
+
+| Gap | Rendered as | Who settles it |
+|---|---|---|
+| Negative-balance accounts in the bar chart and the cards (open item 6) | Shown on the correct side of the zero axis, with one muted line naming the gap, appearing only on a page that actually contains one | Design |
+| A zero-account organisation (section 10) | A clean empty state whose sub line says the treatment is unspecified | Design and owner |
+| **The loading treatment (open item 8)** | **Nothing. Not built and not invented.** Paging is now a server round trip so this widget needs one more than most, but no source defines any loading behaviour. Jo's `.bank-skel` shimmer styling was available and was deliberately not borrowed, because borrowing it would have meant inventing the behaviour to hang it on | Design and owner |
+| No module rights, error or API failure, freshness or "data as of" (section 10) | Nothing built | Design and owner |
+| Last Reconciled visibility (open item 1) | Nothing built | Experts and dev |
+| Size behaviour against real volume (open item 2) | Nothing built; the locked size table is followed | Design |
+| Which accounts show when a list is trimmed (open item 4) | Nothing built; no trimming happens, the full set is paged | Design |
+| The Glance aggregate-regardless exception (open item 5) | Built as specified, and named in the card copy as flagged for confirmation | Owner |
+| Sortable columns (open item 7) | Nothing built; the whitelist is enforced so that granting it later is a server parameter | Owner |
+| Cash runway or days of cash (open item 9) | Nothing built | Owner and SME |
+| An unreconciled-item count on the rows (open item 10) | Nothing built | Owner and SME |
+
+### Mock data
+
+About 50 accounts (52) in standalone `BKF_ACCOUNTS` next to `WRENDER[15]`, **not** `MOCK_DATA` entries, so `mock-data.master.js` needs no re-sync; `MOCK_DATA.series[15]` was verified byte-identical before and after, and the master mirror already matches it. The array is deliberately not in name order, so that the ordering assertions cannot pass without the ordering code running. Ending balance is derived (`beg + dep + vd + chk + wdr + eft`) and never stored, so nothing can drift. Checks and Withdrawals are stored negative; the magnitude is taken only at the point of chart display. Four accounts end overdrawn and three have never been reconciled, so both beginning-balance origins and the negative path are genuinely exercised.
+
+### Verification
+
+- `node --check` on both inline `<script>` blocks: pass. CSS brace balance 2860/2860, and a JS-in-CSS scan of the generated stylesheet found nothing.
+- `css-token-resolve-check.py`: `.bankf-root` 25 tokens used, all 25 declared, 42 declared in total. The only FAIL in the file is the pre-existing `.arf-root` missing `--brand-300`, which is not this widget's and was not touched.
+- `css-split-selector-check.py`: clean. `css-scope-matrix.py`: 16 candidates, byte-identical to the pre-edit baseline, none of them `bankf` (that script's root list does not include `bankf`, so it does not check this widget; the driver's own per-root reachability check covers it instead).
+- `final-check-rules.py --widget 15`: 1 HIGH (the waived Sign-off Readiness row 3, above), 3 MED, 1 LOW, F2 pass. The 3 MED are all F7 em-dash hits outside the F build: two are the `.fc-szhd-abc` A/B/C size headings, whose wording every other Final preserves verbatim by the Rule 12 convention, and one is inside the pre-existing option-A branch. W15's 3 MED is the lowest of the built Finals (W10 5, W11 7, W16 9).
+- **DOM-shim driver `w15-bkf-final.driver.js`: 215 assertions, 0 failures.** It extracts the bkF JS block, the `.bankf-root` stylesheet and the `fc-widget-15` markup verbatim from the live file on every run; nothing is inlined, and it takes an optional path argument only so the extraction itself can be proved. **Proved live by mutation testing:** seven deliberate defects were introduced into copies of the build (the totals row reducing over the page it was handed, the unique tiebreaker removed, the zero axis pointed back at the undeclared `--wn-500`, an em dash in a rendered string, the Detail full-width `grid-column:1/-1` rule deleted, the sort whitelist bypassed, and the bar-chart values reduced to hover only) and the driver failed on every one, then passed again on the untouched file.
+- The single-account-organisation rule (section 3) is covered against a one-row subset of the existing mock set, so nothing is invented for it. **A judgement call is recorded there:** section 3 says only that the "All Bank Accounts" *option* does not appear with one account; it does not say which mode the widget is then in. This build stays in All Accounts mode with the chip reading "The only active account", the picker offering no aggregate, and no pager. If the owner wants a single-account organisation to open directly in Single Account mode instead, that is a one-line change to `bkfIsAllMode`.
+- No cross-widget damage: `final-check-rules.py` output is byte-identical before and after for W01, W05, W06, W09, W10, W11, W16 and W17; every `WRENDER[N]` body except 15 is byte-identical; the giant single-line Dashboard-tab markup block is byte-identical by SHA; the region diff against the pre-edit snapshot shows exactly five changed regions, all intended.
+
+⚠️ **Not machine-verified, and not provable here:** fine visual spacing, the account-picker popover position, whether the account-name column avoids the ellipsis at Explore's real 592px, and the parser claim behind the native-table decision. Those need a browser. `chart-fill-check.js` was not run for the same reason.

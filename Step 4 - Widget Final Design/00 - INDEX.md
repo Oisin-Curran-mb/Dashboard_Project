@@ -55,16 +55,16 @@ W05 is the reference example of this refined structure (2026-07-28). W01–W04 w
 | 05 | Receivable Invoices Outstanding | Finance | [W05](W05%20-%20Receivable%20Invoices%20Outstanding.md) | ✅ Done | ✅ Complete |
 | 06 | Insurance Billing Plans | HR | [W06](W06%20-%20Insurance%20Billing%20Plans.md) | ✅ Done | ✅ Complete |
 | 07 | Deposit Accounts | Finance | [W07](W07%20-%20Deposit%20Accounts.md) | ✅ Done | ✅ Complete |
-| 08 | My Status | Other | — (no file yet) | ⚪ Not started — deferred | ⚪ Not started |
-| 09 | Payroll Scheduled Time Off | Payroll | [W09](W09%20-%20Payroll%20Scheduled%20Time%20Off.md) | 🔵 In progress | ⚪ Not started |
-| 10 | Loans With Balance Due | Finance | [W10](W10%20-%20Loans%20With%20Balance%20Due.md) | 🔵 In progress | ⚪ Not started |
-| 11 | Fixed Asset Values | Finance | [W11](W11%20-%20Fixed%20Asset%20Values.md) | 🔵 In progress | ⚪ Not started |
+| 08 | My Status | Other | — (no file yet) | ✅ Completed by Jo (out of scope) | ✅ Complete |
+| 09 | Payroll Scheduled Time Off | Payroll | [W09](W09%20-%20Payroll%20Scheduled%20Time%20Off.md) | ✅ Done | ✅ Complete |
+| 10 | Loans With Balance Due | Finance | [W10](W10%20-%20Loans%20With%20Balance%20Due.md) | ✅ Done | ✅ Complete |
+| 11 | Fixed Asset Values | Finance | [W11](W11%20-%20Fixed%20Asset%20Values.md) | ✅ Done | ✅ Complete |
 | 12 | *(Empty Slot)* | Other | — | N/A — no widget assigned to this slot | ➖ N/A |
-| 13 | Purchasing Management | Finance | [W13](W13%20-%20Purchasing%20Management.md) | 🔵 In progress | ⚪ Not started |
-| 14 | Main Content Tasks | Other | — (no file yet) | ⚪ Not started (no longer deferred — 🔵 In progress at Step 3, not eligible for Step 4 yet) | ⚪ Not started |
-| 15 | Bank Balances | Finance | [W15](W15%20-%20Bank%20Balances.md) | 🔵 In progress | ⚪ Not started |
-| 16 | Accounts Payable By Due Date | Finance | [W16](W16%20-%20Accounts%20Payable%20By%20Due%20Date.md) | 🔵 In progress | ⚪ Not started |
-| 17 | Gifts & Pledges | Finance | [W17](W17%20-%20Gifts%20Pledges.md) | 🔵 In progress | ⚪ Not started |
+| 13 | Purchasing Management | Finance | [W13](W13%20-%20Purchasing%20Management.md) | ✅ Done | ✅ Complete |
+| 14 | Main Content Tasks | Other | — (no file yet) | ✅ Completed by Jo (out of scope) | ✅ Complete |
+| 15 | Bank Balances | Finance | [W15](W15%20-%20Bank%20Balances.md) | ✅ Done | ✅ Complete |
+| 16 | Accounts Payable By Due Date | Finance | [W16](W16%20-%20Accounts%20Payable%20By%20Due%20Date.md) | ✅ Done | ✅ Complete |
+| 17 | Gifts & Pledges | Finance | [W17](W17%20-%20Gifts%20Pledges.md) | ✅ Done | ✅ Complete |
 
 ### Status key
 

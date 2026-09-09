@@ -20,7 +20,7 @@ pre code { background: none; padding: 0; }
 <body>
 
 <h1>Budget Compared to Actual - API Spec</h1>
-<p><span class="status">Status: DRAFT - not final</span></p>
+<p><span class="status">Status: Done - awaiting sign-off (drafting complete, owner review pending)</span></p>
 <h2>Overview</h2>
 <p>The widget answers one question: is the organisation's income or spending ahead of or behind its budget, for a chosen scope, over a chosen slice of time? The scope is Income accounts, Expense accounts, or one Special Report Line; time selection follows the Time Window Module contract (<code>window</code> + <code>grain</code> + <code>asOf</code>), whose authority for all time logic is <code>Step 3 - Mock_Work/Widget_Specs/Time Window Module.md</code>. The headline is the signed dollar variance over the window's posted buckets, with a percent of budget as support; favourability direction flips by account type and is a client presentation over the returned sign.</p>
 <p>This contract defines three APIs: a bounded data read fired on render and on every scope, window, grain, or asOf change (API 1); and two rarely-changing special-report lookups fired only when the report dialog opens (API 2 report list, API 3 lines within a report). The justification lives in the API inventory below. No API writes anything.</p>

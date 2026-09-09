@@ -1,6 +1,6 @@
 # Deposit Accounts - API Spec
 
-**Status: DRAFT - not final**
+**Status: Done - awaiting sign-off (drafting complete, owner review pending)**
 
 > Naming: the widget is titled **Deposits on Hand**. The modern API key, this folder and every path below use `deposit-accounts` [CODE, Widget_Comparison_Classic.html].
 

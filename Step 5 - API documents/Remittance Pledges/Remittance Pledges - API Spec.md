@@ -1,6 +1,6 @@
 # Remittance Pledges — API Spec
 
-**Status: DRAFT — not final** *(reopened 2026-08-24: the v3.0/v3.1/v3.2 widget rebuild changed the time-selection contract, added two response fields and added a third API. It was "Complete at Step 5 — awaiting management sign-off" from 2026-08-19; that applied to the v2.x design and no longer describes this document.)*
+**Status: SUPERSEDED - see v2/ (this V1 kept as history, per direct instruction 2026-09-07)** *(reopened 2026-08-24: the v3.0/v3.1/v3.2 widget rebuild changed the time-selection contract, added two response fields and added a third API. It was "Complete at Step 5 — awaiting management sign-off" from 2026-08-19; that applied to the v2.x design and no longer describes this document.)*
 
 ## Overview
 

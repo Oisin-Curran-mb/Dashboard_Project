@@ -1,7 +1,7 @@
 # W13 — Purchasing Management
 
 **Module:** Finance
-**Status:** 🟢 Final design — locked (built 2026-08-19, composed per the owner-confirmed sheet; v2.2 same day: approval-process Kanban with drag-to-action). Locked-doc rule: the body below describes only the current final design. Superseded design thinking is not deleted, it is dated and moved to the "Design History (superseded)" section at the end of this doc.
+**Status:** 🟢 Final design — locked (built 2026-08-19, composed per the owner-confirmed sheet; build rounds v2.1 through v2.6 the same day, ending at the approval-process Kanban with drag-to-action, colour-state cards, record-screen-parity modal and split Finish column; `FC_VERSION[13]` = 2.6, checked 2026-09-07). Locked-doc rule: the body below describes only the current final design. Superseded design thinking is not deleted, it is dated and moved to the "Design History (superseded)" section at the end of this doc.
 **Full history / rejected ideas:** [Widget_Specs/W13-Purchasing-Management.md](../Step%203%20-%20Mock_Work/Widget_Specs/W13-Purchasing-Management.md)
 **Data source & formulas:** [Step 1 - Dashboard Research/13 - Purchasing Management.md](../Step 1 - Dashboard Research/13%20-%20Purchasing%20Management.md)
 **Confluence dossier:** Step 6 pull, 2026-07-27 (Purchasing Management). Findings handled with statuses; see Sign-off Input below.
@@ -16,7 +16,7 @@
 
 **Status: documented, not built.** Items 1, 2, 4 and 6 are actionable once items 3 and 5 are settled, since all six touch the same board and rebuilding twice would be wasteful.
 
-**Last verified against build:** 2026-08-19 via build-final-widget (Final v2.2: 66-assertion DOM-shim Node driver, 0 failures + final-check-rules.py 0 HIGH). Previous: not yet audited.
+**Last verified against build:** 2026-09-07 via widget-final-check-audit (unattended). Previous: 2026-08-19 via build-final-widget (Final v2.2: 66-assertion DOM-shim Node driver, 0 failures + final-check-rules.py 0 HIGH); before that: not yet audited.
 
 **Evidence key:** `[LIVE]` verified in beta1/test1 on a stated date · `[SME]` interview-sourced (name + date) · `[RESEARCH]` desktop/market research · `[BUILD]` true of the mockup build · `[DOC]` backed by a written source document (named) · `[TO CONFIRM]` assumed, with the owner who can confirm. Claims with no mark are template boilerplate only. Conflicting evidence coexists: if two sources disagree, both claims stay recorded, each with its own mark, until someone with backend access settles it.
 
@@ -58,7 +58,7 @@ All rows are drawn from the Step 1 research doc unless marked otherwise. Legacy 
 | Overdue (Table flag/filter/highlight) | not confirmed | Needs a flag or date field marking POs past an expected turnaround. Built as: expected-by date in the past on a not-yet-approved order. If not real: the Overdue filter, highlight, and red row treatment drop from the Table view. | [TO CONFIRM — owner TBD; rendered as if real per Rule 11] |
 | Filter persistence | legacy behaviour | Both global filter selections are saved per user and remembered across sessions. | [DOC — Step 1 research]. ⚠️ Not implemented server-side in the Modern API yet (see Sign-off Readiness row 8). |
 
-- **Headline math:** no single headline; Glance shows counts per approval stage (see table above). The Glance card title reads the live "N awaiting my approval next" figure. [BUILD, 2026-08-19]
+- **Headline math:** no single headline; Glance shows counts per approval stage (see table above). The Glance card title reads the live "N pending approval" figure (`FC_KPI_HEADLINE[13]` renders "Purchasing: N pending approval", N = count of Pending-state requests; the pre-v2.2 "N awaiting my approval next" wording is superseded). [BUILD, checked in code 2026-09-07]
 - **Favourability/direction logic:** Overdue POs are the unfavourable signal, Table view only: red row highlight always paired with a text flag, never colour alone. [BUILD, 2026-08-19]
 - **Rounding / currency / locale rules:** amounts render as dollars with two decimals in the build; org-currency localisation is *not yet specified* beyond that.
 - **"Data as of" freshness:** *Not yet specified*. Refresh reloads the data [DOC — Step 1 research].
@@ -125,8 +125,8 @@ Rule 12 applies: Glance / Explore / Detail, no Small.
 | Size | Behaviour |
 |------|-----------|
 | **Glance (Jo's KPI size)** | Three compact state-count cards (Pending first), plus pending-request count and outstanding total. Card title reads the live "N pending approval" figure. No switch, no download. |
-| **Explore (mid tier)** | Kanban: all 4 columns, top 2 POs each, "+N more" into the Table view. Table: 5 rows. Global filters (Status, Approval Path) and the header Kanban/Table toggle visible. |
-| **Detail (largest tier)** | Kanban: all 4 columns, full cards, column scroll. Table: up to 10 rows, totals row, Department/Year/Overdue filters visible. Header Kanban/Table toggle visible. |
+| **Explore (mid tier)** | Kanban: the 3 state columns plus the split Finish column (Finish shows only when the status filter is "All statuses"), top 2 POs per state column, "+N more" into the Table view. Table: 5 rows. Global filters (Status, Approval Path) and the header Kanban/Table toggle visible. |
+| **Detail (largest tier)** | Kanban: the 3 state columns plus the split Finish column (same "All statuses" condition), full cards, column scroll. Table: up to 10 rows, totals row, Department/Year/Overdue filters visible. Header Kanban/Table toggle visible. |
 | **Expanded** | Active view, full detail, all filters live in the modal. |
 
 ## Accessibility

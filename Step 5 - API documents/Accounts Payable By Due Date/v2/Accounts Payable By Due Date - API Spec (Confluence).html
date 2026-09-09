@@ -1,0 +1,1448 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Accounts Payable By Due Date - API Spec</title>
+<style>
+body { font-family: -apple-system, Helvetica, Arial, sans-serif; max-width: 900px; margin: 30px auto; line-height: 1.5; color: #172B4D; }
+h1 { font-size: 24px; }
+h2 { font-size: 19px; border-bottom: 1px solid #DFE1E6; padding-bottom: 6px; margin-top: 32px; }
+h3 { font-size: 16px; margin-top: 20px; }
+table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+th, td { border: 1px solid #DFE1E6; padding: 6px 10px; text-align: left; vertical-align: top; }
+th { background: #F4F5F7; }
+code { background: #F4F5F7; padding: 1px 5px; border-radius: 3px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 90%; }
+pre { background: #F4F5F7; padding: 12px; border-radius: 4px; overflow-x: auto; }
+pre code { background: none; padding: 0; }
+.status { background: #FFF0B3; display: inline-block; padding: 3px 10px; border-radius: 3px; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<h1>Accounts Payable By Due Date - API Spec</h1>
+<p><span class="status">Status: Done - awaiting sign-off (drafting complete, owner review pending)</span></p>
+<hr />
+<h2>Overview (required)</h2>
+<p>The widget answers one question: how much does the organisation owe its suppliers, and when does that cash have to go out? Finance staff read the horizon-scoped total payable and the overdue figure at a glance, then work an aging-banded list of outstanding invoices (Overdue / Due this week / Due this month / Due later) to prioritise payments; the Detail tier adds a cash-requirements breakdown and a top-vendors-owed rollup. The widget is read-only: it presents and filters payables, it does not pay, schedule or post anything.</p>
+<p>This contract defines <strong>four APIs</strong>: a bounded aging summary fired on render (the Glance tier fires this alone), a paginated invoice list, a due-date facet lookup fired when the due-date popover opens, and a bounded top-vendors rollup fired at the Detail tier. The justification lives in the API inventory.</p>
+<p><strong>The single load-bearing open fact:</strong> every aging band in this contract is computed from <code>AP_Invoice.DueDate</code> relative to the as-of date. The sign-off dossier explicitly asks to <em>"Confirm aging basis is due date (not invoice date)"</em> and that confirmation has never been made against the real API or data [DOC - Confluence dossier 7371554882, section 10]. Until it is, every band boundary, the overdue figure, and the horizon rule are all conditional. See Still needs sign-off, item 1.</p>
+<hr />
+<h2>Design → API coverage (required)</h2>
+<table>
+<thead>
+<tr>
+<th>Design element</th>
+<th>Type</th>
+<th>API</th>
+<th>Field(s)</th>
+<th>Provenance</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Glance: "Accounts payable" scope chip</td>
+<td>state</td>
+<td>none</td>
+<td>none - static label, client-side</td>
+<td>n/a [BUILD]</td>
+</tr>
+<tr>
+<td>Glance / header: total payable</td>
+<td>KPI</td>
+<td>API 1</td>
+<td><code>totalDue</code></td>
+<td>DERIVED [DOC - Step 1 research]</td>
+</tr>
+<tr>
+<td>Glance / header: overdue pill (amount, invoice count)</td>
+<td>KPI</td>
+<td>API 1</td>
+<td><code>overdueTotal</code>, <code>overdueCount</code></td>
+<td>DERIVED [BUILD]</td>
+</tr>
+<tr>
+<td>Glance / header: "Nothing overdue" positive pill</td>
+<td>state</td>
+<td>API 1</td>
+<td><code>overdueTotal</code> = 0</td>
+<td>DERIVED [BUILD]</td>
+</tr>
+<tr>
+<td>Due-date filter chip label</td>
+<td>filter</td>
+<td>API 2</td>
+<td>request params <code>band</code> / <code>dueDate</code>; label is client state</td>
+<td>n/a [BUILD]</td>
+</tr>
+<tr>
+<td>Due-date horizon chip</td>
+<td>filter</td>
+<td>APIs 1-4</td>
+<td>request param <code>horizonDays</code></td>
+<td>n/a [BUILD]</td>
+</tr>
+<tr>
+<td>Table column: Vendor</td>
+<td>table column</td>
+<td>API 2</td>
+<td><code>rows[].vendor</code></td>
+<td>STORED [DOC - Step 1 research]</td>
+</tr>
+<tr>
+<td>Table column: Invoice</td>
+<td>table column</td>
+<td>API 2</td>
+<td><code>rows[].invoiceNumber</code></td>
+<td>STORED [DOC - Widget_Comparison_Classic.html]</td>
+</tr>
+<tr>
+<td>Table column: Due date (date line)</td>
+<td>table column</td>
+<td>API 2</td>
+<td><code>rows[].dueDate</code></td>
+<td>STORED [DOC - Step 1 research]</td>
+</tr>
+<tr>
+<td>Table column: Due date (days line: "Overdue by N days" / "Due today" / "Due in N days")</td>
+<td>table column</td>
+<td>API 2</td>
+<td><code>rows[].daysFromDue</code> - client formats the words</td>
+<td>DERIVED [BUILD]</td>
+</tr>
+<tr>
+<td>Table: aging-band grouped subheaders (band name, invoice count, subtotal)</td>
+<td>table grouping</td>
+<td>API 2</td>
+<td><code>rows[].band</code>, <code>bandSubtotals[]</code></td>
+<td>DERIVED [BUILD]</td>
+</tr>
+<tr>
+<td>Table footer: selection label, invoice count, selection total</td>
+<td>total</td>
+<td>API 2</td>
+<td><code>totalCount</code>, <code>totalAmount</code></td>
+<td>DERIVED [BUILD]</td>
+</tr>
+<tr>
+<td>Table: sortable headers (Vendor / Invoice / Due date / Amount)</td>
+<td>interaction</td>
+<td>API 2</td>
+<td>request params <code>sortBy</code>, <code>sortDir</code></td>
+<td>n/a [BUILD]</td>
+</tr>
+<tr>
+<td>Table: vendor search input (appears past 6 rows)</td>
+<td>filter</td>
+<td>API 2</td>
+<td>request param <code>vendorSearch</code></td>
+<td>n/a [BUILD]</td>
+</tr>
+<tr>
+<td>Table column: Amount</td>
+<td>table column</td>
+<td>API 2</td>
+<td><code>rows[].amountDue</code></td>
+<td>DERIVED [DOC - Step 1 research]</td>
+</tr>
+<tr>
+<td>Detail panel: "All due dates" selector row (count, grand total)</td>
+<td>drill / filter</td>
+<td>API 1</td>
+<td><code>invoiceCount</code>, <code>totalDue</code></td>
+<td>DERIVED [BUILD]</td>
+</tr>
+<tr>
+<td>Detail panel: four cash-requirement band rows (count, share of total, amount, disabled when empty)</td>
+<td>drill / filter</td>
+<td>API 1</td>
+<td><code>bands[].band</code>, <code>bands[].total</code>, <code>bands[].count</code> - share % is client-side</td>
+<td>DERIVED [BUILD]</td>
+</tr>
+<tr>
+<td>Detail panel: Top vendors owed (vendor, invoice count, overdue amount, total)</td>
+<td>table</td>
+<td>API 4</td>
+<td><code>vendors[].vendor</code>, <code>vendors[].count</code>, <code>vendors[].overdueTotal</code>, <code>vendors[].total</code></td>
+<td>DERIVED [BUILD]</td>
+</tr>
+<tr>
+<td>Due-date popover: "All due dates" entry with grand total</td>
+<td>filter option</td>
+<td>API 1</td>
+<td><code>totalDue</code></td>
+<td>DERIVED [BUILD]</td>
+</tr>
+<tr>
+<td>Due-date popover: "By aging" entries (only non-empty bands; count, amount, Overdue tag)</td>
+<td>filter option</td>
+<td>API 1</td>
+<td><code>bands[]</code> - non-empty selection and the Overdue tag are client-side</td>
+<td>DERIVED [BUILD]</td>
+</tr>
+<tr>
+<td>Due-date popover: "By specific date" entries (date, days label, count, per-date total, Overdue tag)</td>
+<td>filter option</td>
+<td>API 3</td>
+<td><code>dates[].dueDate</code>, <code>dates[].daysFromDue</code>, <code>dates[].count</code>, <code>dates[].total</code></td>
+<td>DERIVED [BUILD]</td>
+</tr>
+<tr>
+<td>Due-date popover: search input (appears past 8 distinct dates)</td>
+<td>filter</td>
+<td>API 3</td>
+<td>none - client-side view over the <code>dates[]</code> response</td>
+<td>n/a [BUILD]</td>
+</tr>
+<tr>
+<td>Horizon popover options</td>
+<td>filter option</td>
+<td>none</td>
+<td>none - STATIC enum, client-side</td>
+<td>n/a [BUILD]</td>
+</tr>
+<tr>
+<td>Empty state ("Nothing outstanding")</td>
+<td>state</td>
+<td>API 1</td>
+<td><code>invoiceCount</code> = 0</td>
+<td>DERIVED [BUILD]</td>
+</tr>
+<tr>
+<td>Loading skeleton on a due-filter or horizon change</td>
+<td>state</td>
+<td>none</td>
+<td>client-side while APIs 1-4 are in flight</td>
+<td>n/a [BUILD]</td>
+</tr>
+<tr>
+<td>Currency symbol on every amount</td>
+<td>formatting</td>
+<td>API 1</td>
+<td><code>currencyCode</code></td>
+<td>UNVERIFIED (backend team) [LIVE 23 Jul 2026 - renders GBP regardless of org, a known localisation defect]</td>
+</tr>
+</tbody>
+</table>
+<p>Every response field in the schemas below appears in a row above. The share-of-total percentages, day-count wording, mini-bar magnitudes and band presentation order are client-side derivations and appear in Where computation lives.</p>
+<hr />
+<h2>Tables (required)</h2>
+<table>
+<thead>
+<tr>
+<th>Table / repository</th>
+<th>Fields and members used</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>AP_Invoice</code></td>
+<td>invoice id, vendor link, <code>DueDate</code>, <code>Posted</code>, <code>AllPaid</code>, invoice number</td>
+</tr>
+<tr>
+<td><code>AP_InvoiceDetail</code></td>
+<td><code>Amount</code>, <code>Discount</code>, <code>Status</code> (line payment status; <code>U</code> unpaid, <code>X</code> partial)</td>
+</tr>
+<tr>
+<td><code>AP_Vendor</code></td>
+<td>vendor name (display name column), linked from each invoice</td>
+</tr>
+</tbody>
+</table>
+<p>No new tables and no schema changes are needed: this contract is new queries and new aggregations against the three existing tables above. The aging bands, the horizon rule, the pagination/sort contract, the due-date facet totals and the vendor rollup are all new <em>queries</em>, not new <em>storage</em>.</p>
+<p>Core formulas, quotable in isolation:</p>
+<ul>
+<li><strong>Qualifying invoices:</strong> <code>Posted = true AND DueDate != null AND AllPaid = false</code>. Fully paid invoices never appear [DOC - Step 1 research, confirmed against the legacy <code>AccountsPayableByDueDate : DataPanelControl</code> class via Widget_Comparison_Classic.html].</li>
+<li><strong>AmountDue per invoice:</strong> <code>SUM(AP_InvoiceDetail.Amount - AP_InvoiceDetail.Discount) WHERE Status IN ('U','X')</code>; invoices whose resulting AmountDue = 0 are excluded [DOC - Step 1 research; Widget_Comparison_Classic.html records the Modern API matching this logic].</li>
+<li><strong>Aging band of an invoice:</strong> let <code>d</code> = whole days from the as-of date to <code>DueDate</code>. <code>d &lt; 0</code> → <code>overdue</code>; <code>0 &lt;= d &lt;= 7</code> → <code>week</code>; <code>8 &lt;= d &lt;= 30</code> → <code>month</code>; <code>d &gt;= 31</code> → <code>later</code> [BUILD - the built band math, adopted as the locked design]. <strong>The basis (due date, not invoice date) is unconfirmed against the real data - Still needs sign-off, item 1.</strong></li>
+<li><strong>Horizon rule:</strong> with <code>horizonDays = N</code>, the working set is <code>WHERE d &lt; 0 OR d &lt;= N</code>. Overdue invoices are always included regardless of horizon [BUILD].</li>
+<li><strong>Filter applied to every read:</strong> the qualifying-invoices predicate plus the horizon rule. The <code>band</code> / <code>dueDate</code> selection then narrows API 2 only; APIs 1, 3 and 4 are horizon-scoped but never due-selection-scoped, because the header KPI, the popover option totals and the cash panel always describe the whole horizon-scoped set [BUILD].</li>
+</ul>
+<hr />
+<h2>Old vs. new (required)</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Old (live today)</th>
+<th>New (needed)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Endpoints</td>
+<td><code>GET .../accounts-payable-by-due-date/filters</code> (due-date list), <code>.../grid?dueDateFilter=</code> (whole row set, <code>InvoiceCount</code> + <code>TotalAmount</code>), <code>.../chart</code> (per-date sums, absolute values) [DOC - Widget_Comparison_Classic.html]</td>
+<td>Four endpoints per the inventory. The grid read gains pagination, server sort, horizon, band filtering and vendor search (<code>NEW</code> reshaping of an existing read). The chart endpoint is dropped: the design has no chart.</td>
+</tr>
+<tr>
+<td>Aging bands</td>
+<td>None. The old widget filters by exact due date only</td>
+<td><code>NEW</code> - band assignment, band aggregates and band subtotals, all server-side</td>
+</tr>
+<tr>
+<td>Horizon scoping</td>
+<td>None</td>
+<td><code>NEW</code> - <code>horizonDays</code> param on every read, overdue always included</td>
+</tr>
+<tr>
+<td>Summary aggregates</td>
+<td><code>InvoiceCount</code> + <code>TotalAmount</code> on the grid response only</td>
+<td><code>NEW</code> - a dedicated bounded summary (API 1) carrying overdue figures and band aggregates, so Glance never pays for rows</td>
+</tr>
+<tr>
+<td>Due-date filter options</td>
+<td>Flat <code>{Value, Label, IsDefault}</code> list, "Total" first, first real date auto-selected [DOC - Widget_Comparison_Classic.html]</td>
+<td>Reshaped (<code>NEW</code> fields on an existing read): per-date totals, counts and signed day offsets; default selection is "All due dates", not the earliest date</td>
+</tr>
+<tr>
+<td>Vendor rollup</td>
+<td>None</td>
+<td><code>NEW</code> - top-N vendors by amount owed with per-vendor overdue exposure (API 4)</td>
+</tr>
+<tr>
+<td>Pagination / sort</td>
+<td>None - the grid returns every row; the legacy filter is an in-memory rebind</td>
+<td><code>NEW</code> - <code>page</code>/<code>pageSize</code>/<code>sortBy</code>/<code>sortDir</code> with full-set aggregates</td>
+</tr>
+<tr>
+<td>Module access</td>
+<td>Metadata only, <strong>not enforced</strong>: any authenticated user can call the endpoints regardless of AP licence [DOC - Step 1 research, Modern API gap]</td>
+<td><code>NEW</code> - server-side entitlement enforcement is required before release (Still needs sign-off, item 5)</td>
+</tr>
+<tr>
+<td>Currency</td>
+<td>Renders GBP regardless of org [LIVE 23 Jul 2026]</td>
+<td><code>NEW</code> - <code>currencyCode</code> follows the organisation; the defect is fixed server-side</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>API inventory (required)</h2>
+<table>
+<thead>
+<tr>
+<th>API</th>
+<th>Purpose</th>
+<th>Trigger (when it fires)</th>
+<th>Cardinality</th>
+<th>R/W</th>
+<th>Cache posture</th>
+<th>Split trigger</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>API 1 - Aging summary</td>
+<td>Total payable, overdue figures, four band aggregates, as-of anchor, currency</td>
+<td>Widget render (every tier), horizon change, refresh</td>
+<td>Bounded: 4 bands + scalars</td>
+<td>R</td>
+<td>LIVE per request (matches the Modern API's no-server-cache posture)</td>
+<td>Cardinality gap: a bounded summary must never pay for an unbounded row list. Glance fires this alone</td>
+</tr>
+<tr>
+<td>API 2 - Invoice list</td>
+<td>The outstanding-invoice rows, paginated, sorted, searched, with full-set aggregates</td>
+<td>Explore/Detail render, due-filter change, horizon change, sort change, vendor search, page turn, refresh</td>
+<td>Unbounded row list</td>
+<td>R</td>
+<td>LIVE per request</td>
+<td>Cardinality gap vs API 1; grain gap: per-invoice rows vs aggregate snapshot</td>
+</tr>
+<tr>
+<td>API 3 - Due-date facet</td>
+<td>Distinct due dates in the horizon-scoped set with per-date totals, counts and day offsets, feeding the popover's "By specific date" section</td>
+<td>Due-date popover open; horizon change while the popover is open</td>
+<td>One row per distinct due date</td>
+<td>R</td>
+<td>LIVE per request</td>
+<td>Trigger gap: fired on a user action (opening the popover), never on render. Lifetime gap from API 2: an option list, not row data</td>
+</tr>
+<tr>
+<td>API 4 - Top vendors owed</td>
+<td>Per-vendor rollup: total owed, invoice count, overdue exposure, capped at <code>limit</code></td>
+<td>Detail tier render, horizon change at Detail, refresh at Detail</td>
+<td>Bounded: <code>limit</code> rows (default 5)</td>
+<td>R</td>
+<td>LIVE per request</td>
+<td>Conditional weight: only the Detail tier needs it; grain gap: per-vendor rollup vs per-invoice rows</td>
+</tr>
+</tbody>
+</table>
+<p>Merges considered and closed: APIs 1 and 2 stay separate because Glance must render from aggregates alone (cardinality gap), and they share the <code>asOf</code> anchor so the header total and the table rows cannot straddle a write. API 4 stays out of API 1 because two of three tiers never render it (conditional weight). API 3 stays out of API 1 because its row count is not bounded by definition and it is only needed when the popover opens (trigger gap); the popover's "By aging" section is fed from API 1, which the client already holds.</p>
+<p>There is no write in this contract. The pay/schedule action question is a recorded dispute, not a specced surface - see Still needs sign-off, item 2.</p>
+<hr />
+<h2>Call sequence (required)</h2>
+<table>
+<thead>
+<tr>
+<th>Interaction</th>
+<th>Calls fired</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Initial widget load - Glance</td>
+<td>API 1</td>
+<td>Aggregates only; no rows are ever fetched at Glance</td>
+</tr>
+<tr>
+<td>Initial widget load - Explore</td>
+<td>API 1 + API 2</td>
+<td>Both pass the same <code>asOf</code> once API 1 returns it (API 1 first, API 2 anchored to its <code>asOf</code>); the header total and the table describe the same snapshot</td>
+</tr>
+<tr>
+<td>Initial widget load - Detail</td>
+<td>API 1 + API 2 + API 4</td>
+<td>All three share the <code>asOf</code> anchor</td>
+</tr>
+<tr>
+<td>Open due-date popover</td>
+<td>API 3</td>
+<td>"All due dates" and "By aging" sections render from the held API 1 response; API 3 fills "By specific date"</td>
+</tr>
+<tr>
+<td>Change due filter (band or specific date)</td>
+<td>API 2</td>
+<td>API 1 is not refired: the header KPI and cash panel are horizon-scoped, not due-selection-scoped</td>
+</tr>
+<tr>
+<td>Change horizon</td>
+<td>API 1 + API 2 (+ API 4 at Detail; + API 3 if the popover is open)</td>
+<td>The client re-validates the current due selection against the new response and snaps it to "All due dates" if it is now empty or invalid; the snap is client-side, no extra call</td>
+</tr>
+<tr>
+<td>Change sort</td>
+<td>API 2</td>
+<td>Server-side sort; page resets to 1</td>
+</tr>
+<tr>
+<td>Vendor search (type in the table search box)</td>
+<td>API 2 (debounced)</td>
+<td>Server-side: the row set is paginated, so a client row filter would search one page, not the data</td>
+</tr>
+<tr>
+<td>Search within the due-date popover</td>
+<td>none</td>
+<td>Client-side view over the held API 3 response</td>
+</tr>
+<tr>
+<td>Page turn</td>
+<td>API 2</td>
+<td>Aggregates do not change: they span the full filtered set</td>
+</tr>
+<tr>
+<td>Select a cash-panel band row</td>
+<td>API 2</td>
+<td>Identical to a due-filter change; the panel itself re-renders from the held API 1 response</td>
+</tr>
+<tr>
+<td>Refresh</td>
+<td>API 1 + API 2 (+ API 4 at Detail)</td>
+<td>Preserves the current due selection and horizon [DOC - Step 1 research]; a fresh <code>asOf</code> is taken from the new API 1 response</td>
+</tr>
+<tr>
+<td>Submit action</td>
+<td>none</td>
+<td>No write exists in this contract</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>Filter architecture (required)</h2>
+<table>
+<thead>
+<tr>
+<th>Filter</th>
+<th>Option source</th>
+<th>Cardinality</th>
+<th>Execution</th>
+<th>Aggregate effect</th>
+<th>Cascade</th>
+<th>"All" wire form</th>
+<th>Round trips</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Due date (chip + popover: All / band / specific date)</td>
+<td>STATIC bands (<code>overdue</code>, <code>week</code>, <code>month</code>, <code>later</code>) + LOOKUP API 3 for specific dates</td>
+<td>4 bands + one option per distinct due date; distinct-date ceiling [TO CONFIRM - backend team]</td>
+<td>SERVER - <code>band</code> or <code>dueDate</code> param on API 2</td>
+<td>Yes: <code>totalCount</code>, <code>totalAmount</code>, <code>bandSubtotals</code> recompute over the selection. No: API 1 figures, which are horizon-scoped by design</td>
+<td>Options depend on the horizon: API 3 takes <code>horizonDays</code></td>
+<td>Omit both <code>band</code> and <code>dueDate</code></td>
+<td>1 (API 2)</td>
+</tr>
+<tr>
+<td>Due-date horizon (All outstanding / next 7 / 30 / 60 / 90 days)</td>
+<td>STATIC enum</td>
+<td>5</td>
+<td>SERVER - <code>horizonDays</code> on APIs 1-4</td>
+<td>Yes: every figure in the widget recomputes</td>
+<td>Parent of the due-date filter and of API 3's option list</td>
+<td>Omit <code>horizonDays</code></td>
+<td>2 at Explore (APIs 1+2), 3 at Detail (+ API 4), +1 if the popover is open (API 3)</td>
+</tr>
+<tr>
+<td>Vendor search (table input)</td>
+<td>free text</td>
+<td>n/a</td>
+<td>SERVER - <code>vendorSearch</code> on API 2. The set is paginated, so Framework 1 condition 1 fails for a client filter: the client holds one page, not the full set</td>
+<td>Yes: <code>totalCount</code>, <code>totalAmount</code> and <code>bandSubtotals</code> recompute over the matching set, so the footer and the band subheaders describe what the user sees</td>
+<td>None</td>
+<td>Omit <code>vendorSearch</code></td>
+<td>1 (API 2, debounced)</td>
+</tr>
+<tr>
+<td>Due-date popover search</td>
+<td>DERIVED from the API 3 response</td>
+<td>One entry per distinct date already held</td>
+<td>CLIENT - all three conditions hold: the full option set is present in the held API 3 response, it is bounded by the distinct-date ceiling (conditional on that ceiling being confirmed; see Volume), and it changes no server-computed aggregate (it narrows the visible option list only)</td>
+<td>No</td>
+<td>Depends on API 3, which depends on the horizon</td>
+<td>n/a (empty search box)</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Combination semantics:</strong> AND, narrowing, across horizon + due selection + vendor search. No OR pairs; no mutually exclusive UI pairs other than the wire-level rule below.</p>
+<p><strong>Conflict rule:</strong> <code>band</code> and <code>dueDate</code> are mutually exclusive on API 2; a request carrying both is rejected with HTTP 400 and error code <code>AP_FILTER_CONFLICT</code>. An unrecognised <code>band</code> value or a non-positive / non-whitelisted <code>horizonDays</code> is rejected the same way (<code>AP_BAD_PARAM</code>). A syntactically valid <code>dueDate</code> that simply matches nothing in the horizon-scoped set is <strong>not</strong> an error: it returns a well-formed zero response (empty <code>rows</code>, <code>totalCount</code> 0, <code>totalAmount</code> 0, all four <code>bandSubtotals</code> present with zero totals), because the client's snap rule can race a data change.</p>
+<p><strong>Cascade invalidation:</strong> when the horizon changes, the client re-validates the held due selection: a band selection whose band is now empty, or a specific date no longer present in the new facet, snaps back to "All due dates" before API 2 is called. The server does not enforce the snap; it serves the zero response above if a stale value arrives.</p>
+<p><strong>Lookup endpoints:</strong> the specific-date option list is API 3 in this contract (it replaces the existing <code>/filters</code> endpoint's role). The band options and horizon options are static enums and need no lookup.</p>
+<hr />
+<h2>Volume and performance (required)</h2>
+<table>
+<thead>
+<tr>
+<th>Dataset</th>
+<th>Typical rows</th>
+<th>Worst realistic rows (basis)</th>
+<th>Row width</th>
+<th>Payload at worst</th>
+<th>Verdict</th>
+<th>Server cost model</th>
+<th>Cache posture</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>API 1 summary</td>
+<td>4 band rows + 6 scalars</td>
+<td>4 band rows - bounded by definition (the band set is fixed)</td>
+<td>~5 fields, ~80 bytes/band</td>
+<td>~1 KB</td>
+<td>BOUNDED</td>
+<td>Single indexed scan over qualifying invoices joined to detail lines, CASE-banded aggregation; one aggregate join, no per-row subquery</td>
+<td>LIVE per request</td>
+</tr>
+<tr>
+<td>API 2 invoice rows</td>
+<td>12 [BUILD - demo dataset, a typical-case figure only]</td>
+<td>[TO CONFIRM - backend team]: no citable ceiling exists for outstanding AP invoices at a large org, and the demo size is not a basis</td>
+<td>7 fields, ~150 bytes/row</td>
+<td>~30 KB per 200-row page</td>
+<td>MUST PAGINATE</td>
+<td>Indexed scan with the qualifying predicate + horizon window, one aggregate join to detail lines for AmountDue, ORDER BY + OFFSET/FETCH; aggregates are one extra grouped pass over the same filtered set</td>
+<td>LIVE per request</td>
+</tr>
+<tr>
+<td>API 3 due-date facet</td>
+<td>7 distinct dates [BUILD - demo dataset]</td>
+<td>[TO CONFIRM - backend team]: distinct due dates among outstanding invoices; plausibly low hundreds at worst but uncited</td>
+<td>4 fields, ~60 bytes/row</td>
+<td>~12 KB at 200 dates</td>
+<td>BOUNDED - conditional on the ceiling above; if it exceeds roughly 200 the facet gains a server-side <code>search</code> param and this verdict is re-issued</td>
+<td>GROUP BY DueDate over the horizon-scoped set; single grouped scan</td>
+<td>LIVE per request</td>
+</tr>
+<tr>
+<td>API 4 top vendors</td>
+<td>5 rows</td>
+<td><code>limit</code> rows - bounded by definition (server caps at <code>limit</code>, maximum 20)</td>
+<td>4 fields, ~90 bytes/row</td>
+<td>~2 KB</td>
+<td>BOUNDED</td>
+<td>GROUP BY vendor over the full horizon-scoped set, ORDER BY total DESC, TOP <code>limit</code>; the grouping pass spans every qualifying invoice regardless of <code>limit</code></td>
+<td>LIVE per request</td>
+</tr>
+</tbody>
+</table>
+<p>There is no time series in this contract, so no N x M product arises.</p>
+<p>The built Final holds its whole 12-invoice dataset in the browser and therefore sorts, groups, searches and totals instantly client-side. That is a property of the fixture, not the contract: with no citable ceiling on outstanding invoices, the row list must paginate, and the hard rule follows - sort, vendor search, band grouping subtotals and every total are server-side.</p>
+<h3>Pagination contract</h3>
+<ul>
+<li><strong>Params:</strong> <code>page</code> (1-based, default 1), <code>pageSize</code> (default 50, maximum 200 - both defaulted here and awaiting owner confirmation, Still needs sign-off item 9).</li>
+<li><strong>What paginates:</strong> <code>rows[]</code> on API 2. Nothing else paginates.</li>
+<li><strong>What does not:</strong> <code>totalCount</code>, <code>totalAmount</code> and <code>bandSubtotals[]</code> on API 2 compute over the <strong>full filtered set</strong> (horizon + due selection + vendor search), never the page. API 1's figures span the full horizon-scoped set. Switching pages changes no total, no band subtotal, no KPI and no cash-panel figure.</li>
+<li><strong>Sort params:</strong> <code>sortBy</code> whitelist <code>vendor</code> | <code>invoiceNumber</code> | <code>dueDate</code> | <code>amountDue</code>; <code>sortDir</code> <code>asc</code> | <code>desc</code>. Default <code>dueDate asc</code>.</li>
+<li><strong>Deterministic total order:</strong> the requested sort, then <code>amountDue DESC</code> for equal due dates (the design's stated tie rule), then <code>invoiceId ASC</code> as the unique tiebreaker on every sort. Pagination is therefore stable under any sort.</li>
+<li><strong><code>totalCount</code></strong> is returned alongside every page, with <code>page</code> and <code>pageSize</code> echoed.</li>
+<li><strong>Past the last page:</strong> empty <code>rows</code>, correct <code>totalCount</code>, correct <code>totalAmount</code> and <code>bandSubtotals</code>, HTTP 200 - not an error.</li>
+</ul>
+<hr />
+<h2>Where computation lives (required)</h2>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Server or client</th>
+<th>Basis</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Qualifying-invoice set and AmountDue per invoice</td>
+<td>SERVER</td>
+<td>Detail lines are never transmitted</td>
+<td>The client never sees <code>AP_InvoiceDetail</code></td>
+</tr>
+<tr>
+<td>Total payable (<code>totalDue</code>)</td>
+<td>SERVER</td>
+<td>Spans the full horizon-scoped set</td>
+<td>The client holds at most one page</td>
+</tr>
+<tr>
+<td>Overdue total and count</td>
+<td>SERVER</td>
+<td>Same</td>
+<td>Same</td>
+</tr>
+<tr>
+<td>Band assignment per invoice (<code>band</code>)</td>
+<td>SERVER</td>
+<td>The banding rule is the contract's core business rule and must be identical everywhere it appears</td>
+<td>One implementation; the aging basis gate (sign-off item 1) lives server-side only</td>
+</tr>
+<tr>
+<td>Band aggregates (API 1 <code>bands[]</code>) and band subtotals (API 2 <code>bandSubtotals[]</code>)</td>
+<td>SERVER</td>
+<td>Span the full filtered set</td>
+<td>Paginated set</td>
+</tr>
+<tr>
+<td>Selection total and count (API 2 <code>totalAmount</code>, <code>totalCount</code>)</td>
+<td>SERVER</td>
+<td>Full filtered set</td>
+<td>Paginated set</td>
+</tr>
+<tr>
+<td><code>daysFromDue</code> (signed integer, negative = overdue)</td>
+<td>SERVER</td>
+<td>Pre-signed delta; the client formats words, never does date math</td>
+<td>The as-of date and its timezone live server-side</td>
+</tr>
+<tr>
+<td>"Overdue by N days" / "Due today" / "Due in N days" wording</td>
+<td>CLIENT</td>
+<td>Pure formatting over <code>daysFromDue</code></td>
+<td>Presentation</td>
+</tr>
+<tr>
+<td>Cash-panel share of total (band total / <code>totalDue</code>)</td>
+<td>CLIENT</td>
+<td>Pure arithmetic over two values in the held API 1 response</td>
+<td>When <code>totalDue</code> = 0 the client renders the empty state and never divides; a band with <code>count</code> 0 renders as a disabled "nothing due" row. No server-computed percentage exists in this contract, so no server division-by-zero rule is needed; this client rule is the zero rule</td>
+</tr>
+<tr>
+<td>Mini-bar magnitudes and top-vendor share bars</td>
+<td>CLIENT</td>
+<td>Presentation over served totals</td>
+<td>Presentation</td>
+</tr>
+<tr>
+<td>Sort order of <code>rows[]</code></td>
+<td>SERVER</td>
+<td>Paginated set</td>
+<td>Hard rule</td>
+</tr>
+<tr>
+<td>Band presentation order (Overdue, then week, month, later) and hiding empty bands in the popover/table</td>
+<td>CLIENT</td>
+<td>The server always returns all four bands including zeros; display order and empty-band presentation are presentation</td>
+<td>Server data stays presentation-neutral; the empty-band treatment can change without an API change</td>
+</tr>
+<tr>
+<td>Overdue tags in the popover and panel</td>
+<td>CLIENT</td>
+<td><code>daysFromDue &lt; 0</code> / band id = <code>overdue</code> over served fields</td>
+<td>Pure derivation</td>
+</tr>
+<tr>
+<td>Vendor rollup ranking (top N by total)</td>
+<td>SERVER</td>
+<td>Spans every qualifying invoice, not a page</td>
+<td>The client cannot rank what it does not hold</td>
+</tr>
+<tr>
+<td>Currency symbol placement</td>
+<td>CLIENT</td>
+<td>Formats <code>currencyCode</code></td>
+<td>Presentation; the code itself is served (sign-off item 6)</td>
+</tr>
+</tbody>
+</table>
+<p>Deltas: none exist in this contract beyond <code>daysFromDue</code>, which is returned pre-signed. Presentation thresholds: none are pending approval; the band boundaries are the locked design rule stated in Tables.</p>
+<hr />
+<h2>API 1: Aging summary (required)</h2>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/accounts-payable-by-due-date/summary
+</code></pre>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>horizonDays</code></td>
+<td>int</td>
+<td>no</td>
+<td>7, 30, 60, 90</td>
+<td>omitted = all outstanding</td>
+<td>Scopes the working set to invoices due within N days of the as-of date; overdue invoices are always included</td>
+</tr>
+<tr>
+<td><code>asOf</code></td>
+<td>ISO 8601 timestamp</td>
+<td>no</td>
+<td>any past-or-present timestamp the server accepts</td>
+<td>omitted = now</td>
+<td>Snapshot anchor; echoed in the response. On first call the client omits it and adopts the echoed value for companion calls</td>
+</tr>
+</tbody>
+</table>
+<p>Context header: see Auth and scoping.</p>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/accounts-payable-by-due-date/summary
+GET /api/dashboard/accounts-payable-by-due-date/summary?horizonDays=7   (with the horizon filter applied)
+</code></pre>
+<p>No URL encoding is needed for any parameter of this API.</p>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>asOf</code></td>
+<td>string (ISO 8601)</td>
+<td>NEW - server clock at evaluation [BUILD models a fixed anchor]</td>
+<td>Snapshot anchor; the date part, in the org timezone, is "today" for all band math. Timezone rule [TO CONFIRM - backend team]</td>
+</tr>
+<tr>
+<td><code>currencyCode</code></td>
+<td>string</td>
+<td>UNVERIFIED (backend team) - the org's currency; renders GBP regardless of org today [LIVE 23 Jul 2026]</td>
+<td>ISO 4217 code the client formats every amount with</td>
+</tr>
+<tr>
+<td><code>totalDue</code></td>
+<td>number</td>
+<td>DERIVED - SUM(AmountDue) over the horizon-scoped qualifying set [DOC - Step 1 research]</td>
+<td>Total payable</td>
+</tr>
+<tr>
+<td><code>invoiceCount</code></td>
+<td>number</td>
+<td>DERIVED - COUNT over the same set [DOC - Widget_Comparison_Classic.html: the grid returns InvoiceCount today]</td>
+<td>Feeds the "All due dates" row and the empty state</td>
+</tr>
+<tr>
+<td><code>overdueTotal</code></td>
+<td>number</td>
+<td>DERIVED - SUM(AmountDue) WHERE daysFromDue &lt; 0 [BUILD]</td>
+<td>The overdue pill</td>
+</tr>
+<tr>
+<td><code>overdueCount</code></td>
+<td>number</td>
+<td>DERIVED - COUNT WHERE daysFromDue &lt; 0 [BUILD]</td>
+<td>The pill's count detail</td>
+</tr>
+<tr>
+<td><code>bands[]</code></td>
+<td>array (always all 4)</td>
+<td>DERIVED [BUILD]</td>
+<td>One entry per aging band, zeros included</td>
+</tr>
+<tr>
+<td><code>bands[].band</code></td>
+<td>string</td>
+<td>DERIVED - band rule in Tables; basis unconfirmed [TO CONFIRM - backend team, sign-off item 1]</td>
+<td><code>overdue</code> | <code>week</code> | <code>month</code> | <code>later</code></td>
+</tr>
+<tr>
+<td><code>bands[].total</code></td>
+<td>number</td>
+<td>DERIVED - SUM(AmountDue) within the band [BUILD]</td>
+<td>Band amount</td>
+</tr>
+<tr>
+<td><code>bands[].count</code></td>
+<td>number</td>
+<td>DERIVED - COUNT within the band [BUILD]</td>
+<td>Band invoice count</td>
+</tr>
+</tbody>
+</table>
+<h3>Example response</h3>
+<pre><code>{
+  &quot;asOf&quot;: &quot;2026-07-23T14:00:00Z&quot;,
+  &quot;currencyCode&quot;: &quot;USD&quot;,
+  &quot;totalDue&quot;: 35711.25,
+  &quot;invoiceCount&quot;: 12,
+  &quot;overdueTotal&quot;: 7670.50,
+  &quot;overdueCount&quot;: 3,
+  &quot;bands&quot;: [
+    { &quot;band&quot;: &quot;overdue&quot;, &quot;total&quot;: 7670.50,  &quot;count&quot;: 3 },
+    { &quot;band&quot;: &quot;week&quot;,    &quot;total&quot;: 3720.75,  &quot;count&quot;: 3 },
+    { &quot;band&quot;: &quot;month&quot;,   &quot;total&quot;: 13100.00, &quot;count&quot;: 3 },
+    { &quot;band&quot;: &quot;later&quot;,   &quot;total&quot;: 11220.00, &quot;count&quot;: 3 }
+  ]
+}
+</code></pre>
+<p>The example values reproduce the build's demo dataset, anchored at its fixture date of 2026-07-23. Reconciliation: band totals 7670.50 + 3720.75 + 13100.00 + 11220.00 = 35711.25 = <code>totalDue</code>; band counts 3 + 3 + 3 + 3 = 12 = <code>invoiceCount</code>; <code>overdueTotal</code> equals the <code>overdue</code> band total and <code>overdueCount</code> its count. With <code>horizonDays=7</code> the same dataset returns <code>totalDue</code> 7670.50 + 3720.75 = 11391.25 and <code>invoiceCount</code> 6, with the <code>month</code> and <code>later</code> bands present at zero.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty (no qualifying invoices)</td>
+<td>HTTP 200: <code>totalDue</code> 0, <code>invoiceCount</code> 0, <code>overdueTotal</code> 0, <code>overdueCount</code> 0, all four bands present with zero totals and counts. This funds the "Nothing outstanding" state</td>
+</tr>
+<tr>
+<td>Partial (invoices exist but none inside the horizon)</td>
+<td>HTTP 200: overdue figures may be non-zero (overdue is always included); non-overdue bands zero. A legitimate data condition, not an error</td>
+</tr>
+<tr>
+<td>Not-yet-existing entity</td>
+<td>n/a - the read is org-scoped, not entity-keyed</td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td>HTTP 403 with error code <code>AP_NO_ACCESS</code>; no figures leak. Widget presentation for this state is an open product decision (sign-off item 5)</td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td>HTTP 503 with a retryable error envelope; the client shows the error-with-retry state, never a blank that reads as "nothing owed"</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>API 2: Invoice list (required)</h2>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/accounts-payable-by-due-date/invoices
+</code></pre>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>horizonDays</code></td>
+<td>int</td>
+<td>no</td>
+<td>7, 30, 60, 90</td>
+<td>omitted = all outstanding</td>
+<td>Same rule as API 1</td>
+</tr>
+<tr>
+<td><code>band</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>overdue</code>, <code>week</code>, <code>month</code>, <code>later</code></td>
+<td>omitted = no band filter</td>
+<td>Narrows rows to one aging band. Mutually exclusive with <code>dueDate</code></td>
+</tr>
+<tr>
+<td><code>dueDate</code></td>
+<td>string (ISO 8601 date)</td>
+<td>no</td>
+<td>any date</td>
+<td>omitted = no date filter</td>
+<td>Narrows rows to one exact due date. Mutually exclusive with <code>band</code></td>
+</tr>
+<tr>
+<td><code>vendorSearch</code></td>
+<td>string</td>
+<td>no</td>
+<td>free text, max 100 chars</td>
+<td>omitted = no search</td>
+<td>Case-insensitive substring match on vendor name; URL-encode it (spaces, ampersands and punctuation occur in real vendor names)</td>
+</tr>
+<tr>
+<td><code>sortBy</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>vendor</code>, <code>invoiceNumber</code>, <code>dueDate</code>, <code>amountDue</code></td>
+<td><code>dueDate</code></td>
+<td>Whitelisted sort key</td>
+</tr>
+<tr>
+<td><code>sortDir</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>asc</code>, <code>desc</code></td>
+<td><code>asc</code></td>
+<td>Sort direction</td>
+</tr>
+<tr>
+<td><code>page</code></td>
+<td>int</td>
+<td>no</td>
+<td>&gt;= 1</td>
+<td>1</td>
+<td>1-based page number</td>
+</tr>
+<tr>
+<td><code>pageSize</code></td>
+<td>int</td>
+<td>no</td>
+<td>1-200</td>
+<td>50</td>
+<td>Rows per page; maximum 200</td>
+</tr>
+<tr>
+<td><code>asOf</code></td>
+<td>ISO 8601 timestamp</td>
+<td>no</td>
+<td>as API 1</td>
+<td>omitted = now</td>
+<td>Pass API 1's echoed <code>asOf</code> so the header and the rows describe one snapshot</td>
+</tr>
+</tbody>
+</table>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/accounts-payable-by-due-date/invoices?page=1&amp;pageSize=50
+GET /api/dashboard/accounts-payable-by-due-date/invoices?horizonDays=30&amp;band=overdue&amp;sortBy=amountDue&amp;sortDir=desc&amp;page=1&amp;pageSize=50   (with filters applied)
+GET /api/dashboard/accounts-payable-by-due-date/invoices?vendorSearch=Guardian%20Insurance&amp;page=1&amp;pageSize=50   (vendor search, URL-encoded)
+</code></pre>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>asOf</code></td>
+<td>string (ISO 8601)</td>
+<td>NEW - echoed anchor</td>
+<td>Same anchor semantics as API 1</td>
+</tr>
+<tr>
+<td><code>rows[]</code></td>
+<td>array</td>
+<td>DERIVED - container; provenance carried by its child fields</td>
+<td>One entry per invoice on the requested page, in the deterministic order stated in the pagination contract</td>
+</tr>
+<tr>
+<td><code>rows[].invoiceId</code></td>
+<td>string (guid)</td>
+<td>STORED AP_Invoice id column [DOC - Widget_Comparison_Classic.html: the Modern grid row carries InvoiceId today]</td>
+<td>Stable row identity and the unique sort tiebreaker</td>
+</tr>
+<tr>
+<td><code>rows[].vendor</code></td>
+<td>string</td>
+<td>STORED AP_Vendor display-name column via the invoice's vendor link [DOC - Step 1 research; exact column name unconfirmed]</td>
+<td>Vendor column</td>
+</tr>
+<tr>
+<td><code>rows[].invoiceNumber</code></td>
+<td>string</td>
+<td>STORED AP_Invoice invoice number [DOC - Widget_Comparison_Classic.html]</td>
+<td>Invoice column</td>
+</tr>
+<tr>
+<td><code>rows[].dueDate</code></td>
+<td>string (ISO 8601 date)</td>
+<td>STORED AP_Invoice.DueDate [DOC - Step 1 research]</td>
+<td>Due date column, date line</td>
+</tr>
+<tr>
+<td><code>rows[].daysFromDue</code></td>
+<td>number</td>
+<td>DERIVED - whole days from the as-of date to DueDate, pre-signed (negative = overdue) [BUILD]</td>
+<td>Feeds the days line and the overdue emphasis</td>
+</tr>
+<tr>
+<td><code>rows[].band</code></td>
+<td>string</td>
+<td>DERIVED - band rule in Tables [BUILD]; basis gate applies (sign-off item 1)</td>
+<td>Funds the grouped subheaders without client date math</td>
+</tr>
+<tr>
+<td><code>rows[].amountDue</code></td>
+<td>number</td>
+<td>DERIVED - SUM(AP_InvoiceDetail.Amount - Discount) WHERE Status IN ('U','X') [DOC - Step 1 research]</td>
+<td>Amount column; signed (a net credit position within a qualifying invoice stays signed, edge case 8)</td>
+</tr>
+<tr>
+<td><code>bandSubtotals[]</code></td>
+<td>array (always all 4)</td>
+<td>DERIVED - over the full filtered set [BUILD shows per-band subheader subtotals]</td>
+<td>Grouped-view subheaders; zeros included</td>
+</tr>
+<tr>
+<td><code>bandSubtotals[].band</code></td>
+<td>string</td>
+<td>DERIVED - as above</td>
+<td>Band id</td>
+</tr>
+<tr>
+<td><code>bandSubtotals[].total</code></td>
+<td>number</td>
+<td>DERIVED - as above</td>
+<td>Band subtotal over the full filtered set</td>
+</tr>
+<tr>
+<td><code>bandSubtotals[].count</code></td>
+<td>number</td>
+<td>DERIVED - as above</td>
+<td>Band count over the full filtered set</td>
+</tr>
+<tr>
+<td><code>totalAmount</code></td>
+<td>number</td>
+<td>DERIVED - SUM(AmountDue) over the full filtered set, never the page [DOC - the existing grid returns TotalAmount today]</td>
+<td>Footer total</td>
+</tr>
+<tr>
+<td><code>totalCount</code></td>
+<td>number</td>
+<td>DERIVED - COUNT over the full filtered set [DOC - the existing grid returns InvoiceCount today]</td>
+<td>Footer count and pager arithmetic</td>
+</tr>
+<tr>
+<td><code>page</code></td>
+<td>int</td>
+<td>NEW - echo</td>
+<td>Requested page</td>
+</tr>
+<tr>
+<td><code>pageSize</code></td>
+<td>int</td>
+<td>NEW - echo</td>
+<td>Requested page size</td>
+</tr>
+</tbody>
+</table>
+<h3>Example response</h3>
+<pre><code>{
+  &quot;asOf&quot;: &quot;2026-07-23T14:00:00Z&quot;,
+  &quot;rows&quot;: [
+    { &quot;invoiceId&quot;: &quot;9f1e6a2b-0000-0000-0000-000000000001&quot;, &quot;vendor&quot;: &quot;Staples&quot;,           &quot;invoiceNumber&quot;: &quot;INV-0003&quot;, &quot;dueDate&quot;: &quot;2026-07-10&quot;, &quot;daysFromDue&quot;: -13, &quot;band&quot;: &quot;overdue&quot;, &quot;amountDue&quot;: 5555.00 },
+    { &quot;invoiceId&quot;: &quot;9f1e6a2b-0000-0000-0000-000000000002&quot;, &quot;vendor&quot;: &quot;Grainger Supply&quot;,   &quot;invoiceNumber&quot;: &quot;INV-2201&quot;, &quot;dueDate&quot;: &quot;2026-07-18&quot;, &quot;daysFromDue&quot;: -5,  &quot;band&quot;: &quot;overdue&quot;, &quot;amountDue&quot;: 1240.50 },
+    { &quot;invoiceId&quot;: &quot;9f1e6a2b-0000-0000-0000-000000000003&quot;, &quot;vendor&quot;: &quot;City Water &amp; Power&quot;,&quot;invoiceNumber&quot;: &quot;INV-2202&quot;, &quot;dueDate&quot;: &quot;2026-07-18&quot;, &quot;daysFromDue&quot;: -5,  &quot;band&quot;: &quot;overdue&quot;, &quot;amountDue&quot;: 875.00 }
+  ],
+  &quot;bandSubtotals&quot;: [
+    { &quot;band&quot;: &quot;overdue&quot;, &quot;total&quot;: 7670.50, &quot;count&quot;: 3 },
+    { &quot;band&quot;: &quot;week&quot;,    &quot;total&quot;: 0,       &quot;count&quot;: 0 },
+    { &quot;band&quot;: &quot;month&quot;,   &quot;total&quot;: 0,       &quot;count&quot;: 0 },
+    { &quot;band&quot;: &quot;later&quot;,   &quot;total&quot;: 0,       &quot;count&quot;: 0 }
+  ],
+  &quot;totalAmount&quot;: 7670.50,
+  &quot;totalCount&quot;: 3,
+  &quot;page&quot;: 1,
+  &quot;pageSize&quot;: 50
+}
+</code></pre>
+<p>This is the <code>band=overdue</code> call against the demo dataset. Reconciliation: row amounts 5555.00 + 1240.50 + 875.00 = 7670.50 = <code>totalAmount</code> = the <code>overdue</code> subtotal, and it matches API 1's <code>overdueTotal</code> and <code>bands[overdue].total</code> for the same <code>asOf</code> and horizon; <code>totalCount</code> 3 matches API 1's <code>overdueCount</code>. Row order shows the default sort: due date ascending, the 2026-07-18 tie broken by larger amount first, <code>invoiceId</code> as the final tiebreaker.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty (filter combination matches nothing, including a stale <code>dueDate</code> after a horizon change)</td>
+<td>HTTP 200: <code>rows</code> empty, <code>totalCount</code> 0, <code>totalAmount</code> 0, all four <code>bandSubtotals</code> present at zero</td>
+</tr>
+<tr>
+<td>Partial (horizon excludes some invoices)</td>
+<td>HTTP 200: normal shape over the horizon-scoped set; overdue rows always included</td>
+</tr>
+<tr>
+<td>Not-yet-existing entity</td>
+<td>n/a - org-scoped read</td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td>HTTP 403, <code>AP_NO_ACCESS</code>, no rows leak</td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td>HTTP 503, retryable envelope; client keeps the last-good table and shows the error state</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>API 3: Due-date facet (required)</h2>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/accounts-payable-by-due-date/due-dates
+</code></pre>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>horizonDays</code></td>
+<td>int</td>
+<td>no</td>
+<td>7, 30, 60, 90</td>
+<td>omitted = all outstanding</td>
+<td>Same rule as API 1; the facet lists only dates inside the horizon-scoped set</td>
+</tr>
+<tr>
+<td><code>asOf</code></td>
+<td>ISO 8601 timestamp</td>
+<td>no</td>
+<td>as API 1</td>
+<td>omitted = now</td>
+<td>Pass API 1's echoed anchor so the facet totals reconcile with the held summary</td>
+</tr>
+</tbody>
+</table>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/accounts-payable-by-due-date/due-dates
+GET /api/dashboard/accounts-payable-by-due-date/due-dates?horizonDays=30   (with the horizon applied)
+</code></pre>
+<p>No URL encoding is needed for any parameter of this API.</p>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>asOf</code></td>
+<td>string (ISO 8601)</td>
+<td>NEW - echoed anchor</td>
+<td>As API 1</td>
+</tr>
+<tr>
+<td><code>dates[]</code></td>
+<td>array, earliest first</td>
+<td>DERIVED - container; provenance carried by its child fields</td>
+<td>One entry per distinct due date in the horizon-scoped qualifying set [DOC - Step 1 research: dates are real invoice due dates, never user-configured]</td>
+</tr>
+<tr>
+<td><code>dates[].dueDate</code></td>
+<td>string (ISO 8601 date)</td>
+<td>STORED AP_Invoice.DueDate (distinct) [DOC - Step 1 research]</td>
+<td>The option's date</td>
+</tr>
+<tr>
+<td><code>dates[].daysFromDue</code></td>
+<td>number</td>
+<td>DERIVED - pre-signed day offset [BUILD]</td>
+<td>Feeds the option's days label and Overdue tag</td>
+</tr>
+<tr>
+<td><code>dates[].total</code></td>
+<td>number</td>
+<td>DERIVED - SUM(AmountDue) for the date [BUILD shows per-date totals]</td>
+<td>The option's amount</td>
+</tr>
+<tr>
+<td><code>dates[].count</code></td>
+<td>number</td>
+<td>DERIVED - COUNT for the date [BUILD]</td>
+<td>The option's invoice count</td>
+</tr>
+</tbody>
+</table>
+<h3>Example response</h3>
+<pre><code>{
+  &quot;asOf&quot;: &quot;2026-07-23T14:00:00Z&quot;,
+  &quot;dates&quot;: [
+    { &quot;dueDate&quot;: &quot;2026-07-10&quot;, &quot;daysFromDue&quot;: -13, &quot;total&quot;: 5555.00,  &quot;count&quot;: 1 },
+    { &quot;dueDate&quot;: &quot;2026-07-18&quot;, &quot;daysFromDue&quot;: -5,  &quot;total&quot;: 2115.50,  &quot;count&quot;: 2 },
+    { &quot;dueDate&quot;: &quot;2026-07-25&quot;, &quot;daysFromDue&quot;: 2,   &quot;total&quot;: 3720.75,  &quot;count&quot;: 3 },
+    { &quot;dueDate&quot;: &quot;2026-08-01&quot;, &quot;daysFromDue&quot;: 9,   &quot;total&quot;: 11650.00, &quot;count&quot;: 2 },
+    { &quot;dueDate&quot;: &quot;2026-08-15&quot;, &quot;daysFromDue&quot;: 23,  &quot;total&quot;: 1450.00,  &quot;count&quot;: 1 },
+    { &quot;dueDate&quot;: &quot;2026-09-01&quot;, &quot;daysFromDue&quot;: 40,  &quot;total&quot;: 9120.00,  &quot;count&quot;: 2 },
+    { &quot;dueDate&quot;: &quot;2026-09-30&quot;, &quot;daysFromDue&quot;: 69,  &quot;total&quot;: 2100.00,  &quot;count&quot;: 1 }
+  ]
+}
+</code></pre>
+<p>Reconciliation: per-date totals 5555.00 + 2115.50 + 3720.75 + 11650.00 + 1450.00 + 9120.00 + 2100.00 = 35711.25, matching API 1's <code>totalDue</code>; counts 1 + 2 + 3 + 2 + 1 + 2 + 1 = 12, matching <code>invoiceCount</code>, for the same <code>asOf</code> and horizon.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty (no qualifying invoices in the horizon)</td>
+<td>HTTP 200: <code>dates</code> empty</td>
+</tr>
+<tr>
+<td>Partial</td>
+<td>HTTP 200: only dates inside the horizon-scoped set appear; overdue dates always appear</td>
+</tr>
+<tr>
+<td>Not-yet-existing entity</td>
+<td>n/a - org-scoped read</td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td>HTTP 403, <code>AP_NO_ACCESS</code></td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td>HTTP 503, retryable envelope; the popover shows a retry state, not an empty option list</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>API 4: Top vendors owed (required)</h2>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/accounts-payable-by-due-date/vendors/top
+</code></pre>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>horizonDays</code></td>
+<td>int</td>
+<td>no</td>
+<td>7, 30, 60, 90</td>
+<td>omitted = all outstanding</td>
+<td>Same rule as API 1</td>
+</tr>
+<tr>
+<td><code>limit</code></td>
+<td>int</td>
+<td>no</td>
+<td>1-20</td>
+<td>5</td>
+<td>Number of vendors returned, ranked by total owed descending</td>
+</tr>
+<tr>
+<td><code>asOf</code></td>
+<td>ISO 8601 timestamp</td>
+<td>no</td>
+<td>as API 1</td>
+<td>omitted = now</td>
+<td>Shared anchor</td>
+</tr>
+</tbody>
+</table>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/accounts-payable-by-due-date/vendors/top
+GET /api/dashboard/accounts-payable-by-due-date/vendors/top?horizonDays=30&amp;limit=5   (with the horizon applied)
+</code></pre>
+<p>No URL encoding is needed for any parameter of this API.</p>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>asOf</code></td>
+<td>string (ISO 8601)</td>
+<td>NEW - echoed anchor</td>
+<td>As API 1</td>
+</tr>
+<tr>
+<td><code>vendors[]</code></td>
+<td>array, total owed descending, vendor name as the deterministic tiebreaker for equal totals</td>
+<td>DERIVED - container; provenance carried by its child fields</td>
+<td>Top <code>limit</code> vendors over the full horizon-scoped set</td>
+</tr>
+<tr>
+<td><code>vendors[].vendor</code></td>
+<td>string</td>
+<td>STORED AP_Vendor display-name column [DOC - Step 1 research; exact column name unconfirmed]</td>
+<td>Vendor name</td>
+</tr>
+<tr>
+<td><code>vendors[].total</code></td>
+<td>number</td>
+<td>DERIVED - SUM(AmountDue) per vendor [BUILD]</td>
+<td>Amount owed</td>
+</tr>
+<tr>
+<td><code>vendors[].count</code></td>
+<td>number</td>
+<td>DERIVED - COUNT per vendor [BUILD]</td>
+<td>Invoice count</td>
+</tr>
+<tr>
+<td><code>vendors[].overdueTotal</code></td>
+<td>number</td>
+<td>DERIVED - SUM(AmountDue) per vendor WHERE daysFromDue &lt; 0 [BUILD]</td>
+<td>The vendor's overdue exposure; zero when nothing is overdue</td>
+</tr>
+</tbody>
+</table>
+<h3>Example response</h3>
+<pre><code>{
+  &quot;asOf&quot;: &quot;2026-07-23T14:00:00Z&quot;,
+  &quot;vendors&quot;: [
+    { &quot;vendor&quot;: &quot;Guardian Insurance&quot;,    &quot;total&quot;: 16800.00, &quot;count&quot;: 2, &quot;overdueTotal&quot;: 0 },
+    { &quot;vendor&quot;: &quot;Staples&quot;,               &quot;total&quot;: 5555.00,  &quot;count&quot;: 1, &quot;overdueTotal&quot;: 5555.00 },
+    { &quot;vendor&quot;: &quot;Faithful Cleaning Co.&quot;, &quot;total&quot;: 4200.00,  &quot;count&quot;: 2, &quot;overdueTotal&quot;: 0 },
+    { &quot;vendor&quot;: &quot;Summit HVAC Services&quot;,  &quot;total&quot;: 3250.00,  &quot;count&quot;: 1, &quot;overdueTotal&quot;: 0 },
+    { &quot;vendor&quot;: &quot;Grainger Supply&quot;,       &quot;total&quot;: 2220.50,  &quot;count&quot;: 2, &quot;overdueTotal&quot;: 1240.50 }
+  ]
+}
+</code></pre>
+<p>Reconciliation: the five returned totals 16800.00 + 5555.00 + 4200.00 + 3250.00 + 2220.50 = 32025.50; the four vendors below the cut (City Water &amp; Power 875.00, Cornerstone Landscaping 1450.00, Harmony Music Licensing 720.00, Lakeside Print &amp; Mail 640.75) sum to 3685.75, and 32025.50 + 3685.75 = 35711.25 = API 1's <code>totalDue</code> for the same <code>asOf</code> and horizon. A top-N list deliberately does not sum to the grand total; the client must never present it as one.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty</td>
+<td>HTTP 200: <code>vendors</code> empty</td>
+</tr>
+<tr>
+<td>Partial (fewer vendors than <code>limit</code>)</td>
+<td>HTTP 200: as many entries as exist, no padding</td>
+</tr>
+<tr>
+<td>Not-yet-existing entity</td>
+<td>n/a - org-scoped read</td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td>HTTP 403, <code>AP_NO_ACCESS</code></td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td>HTTP 503, retryable envelope</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>Auth and scoping (required)</h2>
+<ul>
+<li><strong>Company / tenant scoping:</strong> every query is scoped to the caller's organisation context. The existing Modern API handler for this widget (<code>ApByDueDateHandlers.cs</code>) is recorded as taking an <code>X-BankAccountID</code> header into <code>ContextParams.BankAccountId</code> [DOC - Widget_Comparison_Classic.html], which is a surprising context key for an AP read (sibling widgets use <code>X-Company-ID</code>). Which header this contract's four endpoints must take is [TO CONFIRM - backend team]; the requirement that every query is tenant-scoped is not conditional.</li>
+<li><strong>Permission right:</strong> the legacy widget enforces Inquiry access on <code>/AccountsPayable</code> (<code>SecurityAccessType.Inquiry</code>) [DOC - Widget_Comparison_Classic.html]. The equivalent right must gate all four reads. There is no write in this contract, so no write right is defined.</li>
+<li><strong>Enforcement gap:</strong> the Modern API's module access for this widget is metadata-only and <strong>not enforced</strong> - any authenticated user can call the existing endpoints regardless of AP licence [DOC - Step 1 research]. Server-side enforcement is <code>NEW</code>, required work for all four endpoints before release (Still needs sign-off, item 5).</li>
+<li><strong>What a user without the right sees:</strong> undecided - hidden widget vs explicit no-access state is an open product decision [TO CONFIRM - Oisin Curran, flagged in the dossier]. The API side is decided: HTTP 403, <code>AP_NO_ACCESS</code>, no data in the body.</li>
+</ul>
+<hr />
+<h2>Edge cases (required)</h2>
+<ol>
+<li><strong>Empty results:</strong> any filter combination matching nothing returns the well-formed zero shapes in the state contracts, HTTP 200, never an error.</li>
+<li><strong>Missing comparison baseline:</strong> n/a - no comparison or delta-versus-prior exists in this contract.</li>
+<li><strong>Invoice due exactly on the as-of date:</strong> <code>daysFromDue</code> = 0, band <code>week</code>, not overdue. The overdue predicate is strictly <code>daysFromDue &lt; 0</code>.</li>
+<li><strong>Division by zero:</strong> the only percentage anywhere is the client-side cash-panel share; when <code>totalDue</code> is 0 the client renders the empty state and never divides.</li>
+<li><strong>Pagination past the end:</strong> empty <code>rows</code>, correct <code>totalCount</code>, correct aggregates, HTTP 200.</li>
+<li><strong>Conflicting params:</strong> <code>band</code> + <code>dueDate</code> together → HTTP 400 <code>AP_FILTER_CONFLICT</code>. A stale but well-formed <code>dueDate</code> → the zero response, not an error.</li>
+<li><strong>Invoice created mid-session:</strong> two calls anchored to the same <code>asOf</code> exclude it consistently; it appears after the next refresh takes a fresh anchor. Whether the backend can evaluate reads at a supplied <code>asOf</code> (versus treating it as echo-only, with drift accepted between calls made milliseconds apart) is [TO CONFIRM - backend team].</li>
+<li><strong>Negative line amounts (credits):</strong> <code>amountDue</code> is signed. An invoice whose lines net to a negative AmountDue stays in the set (only exact zero is excluded); the legacy chart's absolute-value treatment does not apply to any figure in this contract, so totals are true net obligations.</li>
+<li><strong>Invoice fully paid between anchor and render:</strong> the <code>Posted</code>/<code>AllPaid</code> predicate is evaluated at query time; the shared <code>asOf</code> keeps the summary and the rows on one snapshot per the anchor semantics in item 7.</li>
+<li><strong>Unknown <code>band</code> value or out-of-whitelist <code>horizonDays</code> / <code>pageSize</code> / <code>sortBy</code>:</strong> HTTP 400 <code>AP_BAD_PARAM</code>, naming the offending parameter.</li>
+<li><strong>Vendor search matching nothing:</strong> the zero response; <code>bandSubtotals</code> all present at zero so the grouped view collapses cleanly.</li>
+<li><strong>Two filters with overlapping value spaces:</strong> a <code>band</code> selection under a horizon that empties that band is legitimate and returns the zero response; the client-side snap rule normally prevents the call, but the server never treats it as an error.</li>
+<li><strong>Invoices with no due date:</strong> excluded by the qualifying predicate (<code>DueDate != null</code>); they are invisible to every figure, so a blank due date never behaves as a wildcard.</li>
+</ol>
+<hr />
+<h2>Not in scope (required)</h2>
+<ul>
+<li><strong>Any write:</strong> pay, schedule payment, create check, post to GL. The widget is a read-only overview; the actionability question is recorded as a dispute in Still needs sign-off, item 2. Separate action widgets for those tasks are assigned outside this project's queue.</li>
+<li><strong>Any chart endpoint:</strong> the design has no chart; the existing <code>/chart</code> endpoint is not part of this contract. A date-ordered chart is an unreviewed dossier proposal (sign-off item 3).</li>
+<li><strong>Drill-through to the AP module:</strong> not built; open with experts/dev (sign-off item 8). If adopted later it is a client-side deep link and needs no new API, but the target URL pattern would need verification.</li>
+<li><strong>A vendor filter chip:</strong> the design uses the table search instead; <code>vendorSearch</code> covers it.</li>
+<li><strong>Export / download:</strong> not in the design.</li>
+<li><strong>Unification with the <code>ap-ar-aging</code> Phase 2 widget:</strong> its bucket boundaries (Current/1-30/31-60/61-90/91+) differ from this widget's due-date-relative bands; reconciling the two is a recorded future question, not part of this contract [DOC - Widget_Comparison_New_Widgets.html via the Step 3 spec].</li>
+<li><strong>Bank Balances pairing ("can we cover it?"):</strong> an unreviewed dossier proposal (sign-off item 4); no cross-widget field is specced.</li>
+<li><strong>Data-freshness display:</strong> <code>asOf</code> is served, but a "data as of" UI treatment is unspecified in the design; nothing further is specced here (sign-off item 7).</li>
+</ul>
+<hr />
+<h2>Still needs sign-off (required)</h2>
+<ol>
+<li><strong>Aging basis: due date vs invoice date - the top open item, load-bearing for every band.</strong> The contract computes every band, the overdue figures and the horizon rule from <code>AP_Invoice.DueDate</code>. The dossier's states-and-constraints table instructs <em>"Confirm aging basis is due date (not invoice date). Label it."</em> [DOC - Confluence dossier 7371554882, section 10] and this has never been confirmed against the real API or data. <strong>Who decides:</strong> backend team, with Feargal Phelan for the product reading. <strong>Blocked until then:</strong> final band queries; a basis change re-derives <code>band</code>, <code>bands[]</code>, <code>bandSubtotals[]</code>, <code>overdueTotal</code>, <code>overdueCount</code>, <code>daysFromDue</code> and the horizon rule - effectively the whole contract's aggregation layer.</li>
+<li><strong>Actionability - recorded dispute, no side picked.</strong> Claim A: make the widget payable-actionable (select invoices, pay / schedule / one-step check, following the Payroll STO inline-action pattern) - the SME's core reason AP invoices are underused and the dossier's highest-value change [SME Marvin 13 Jul 2026; DOC - dossier 11.2, gaps table "Phase (SME top ask)"]. Claim B: the widget stays a focused due-date and aging overview and must not grow into a container for payment functions; separate action widgets (assigned to Aditya, outside this project) carry those tasks [DOC - Step 4 doc, Feargal call note dated 2026-08-25]. This contract specs the built read-only behaviour; a future write surface (payment initiation, scheduling, check creation) hangs entirely on this decision. <strong>Who decides:</strong> Feargal Phelan with the project owner. <strong>Blocked until then:</strong> any write API for this widget.</li>
+<li><strong>Dossier 11.3 / 11.4 (date-ordered chart; chart-table sync fixed consistently across AP / Deposit Accounts / Loans) - Unreviewed.</strong> No status has been assigned. The built design has no chart, so nothing built is affected, but no chart endpoint can be specced or refused until the owner assigns a status. <strong>Who decides:</strong> project owner (status call). <strong>Blocked until then:</strong> any chart/timeline endpoint.</li>
+<li><strong>Dossier 11.6 (pair with Bank Balances for a coverage read) - Unreviewed.</strong> Same treatment: no cross-widget contract is specced or excluded on merit until a status is assigned. <strong>Who decides:</strong> project owner. <strong>Blocked until then:</strong> any coverage/cash-pairing field.</li>
+<li><strong>Entitlement enforcement.</strong> Module access is metadata-only and not enforced in the Modern API; server-side enforcement is required before release, and the no-rights widget presentation (hidden vs explicit no-access) is undecided [TO CONFIRM - Oisin Curran for the presentation; backend team for enforcement]. <strong>Blocked until then:</strong> release, and the permission-denied row of every state contract stays provisional.</li>
+<li><strong>Currency localisation.</strong> Amounts render GBP regardless of org [LIVE 23 Jul 2026]; <code>currencyCode</code> is UNVERIFIED and the fix is backend work. <strong>Who decides/confirms:</strong> backend team. <strong>Blocked until then:</strong> the <code>currencyCode</code> field's provenance.</li>
+<li><strong>Data freshness.</strong> Cache posture is specced LIVE per request to match the existing Modern API behaviour, and <code>asOf</code> semantics (echo-only vs evaluable snapshot, org timezone for "today") are unconfirmed [TO CONFIRM - backend team]. <strong>Blocked until then:</strong> edge cases 7 and 9 stay provisional.</li>
+<li><strong>Drill-through to the AP module</strong> - open with experts/dev; nothing built, nothing specced. <strong>Who decides:</strong> experts/dev with the project owner.</li>
+<li><strong>Defaults taken in this draft needing owner confirmation:</strong> <code>pageSize</code> default 50 / max 200; API 4 <code>limit</code> default 5 / max 20; the API 3 BOUNDED verdict conditional on the distinct-date ceiling; worst-case volume ceilings [TO CONFIRM - backend team]. <strong>Who decides:</strong> project owner / backend team. <strong>Blocked until then:</strong> nothing - the defaults are usable, but they are defaults, not decisions.</li>
+<li><strong>Tenant context header</strong> - <code>X-BankAccountID</code> is recorded for the existing AP handler where sibling widgets use <code>X-Company-ID</code> [DOC - Widget_Comparison_Classic.html]; which one this contract takes is [TO CONFIRM - backend team]. <strong>Blocked until then:</strong> the header line in Auth and scoping.</li>
+<li><strong>Aging-label carryover check.</strong> A mislabeling bug ("Over 60" actually meaning 90+ days) confirmed for another widget may or may not apply to shared aging-label code; this widget's band labels are new and due-date-relative, so exposure is unconfirmed either way [DOC - Step 4 doc, Sign-off Readiness row 2]. <strong>Who decides:</strong> no owner is named yet; the project owner assigns one. <strong>Blocked until then:</strong> nothing in this contract; check before reusing any shared band-label source.</li>
+<li><strong>Div-based table accessibility parity</strong> (whether the hero table must carry <code>role=table</code> semantics) is [TO CONFIRM - Oisin Curran]. A frontend concern recorded here only because the dossier's accessibility item names it; no API field depends on it.</li>
+</ol>
+
+</body>
+</html>

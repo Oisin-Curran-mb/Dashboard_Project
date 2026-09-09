@@ -1,6 +1,6 @@
 # Payroll Scheduled Time Off - API Spec
 
-**Status: DRAFT - not final**
+**Status: Done - awaiting sign-off (drafting complete, owner review pending)**
 
 ---
 

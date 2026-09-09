@@ -20,7 +20,7 @@ pre code { background: none; padding: 0; }
 <body>
 
 <h1>Pension Plans - API Spec</h1>
-<p><span class="status">Status: DRAFT - not final</span></p>
+<p><span class="status">Status: Done - awaiting sign-off (drafting complete, owner review pending)</span></p>
 <h2>Overview</h2>
 <p>The widget answers one question: what is the conference's annual clergy-pension obligation right now, split by pension plan, narrowable to one church district, with a drill into the individual appointees on any plan. The data is a snapshot of the pension appointments active today (person active, plan started, not yet ended); there is no time axis, no window, no grain anywhere in this contract.</p>
 <p>This contract defines three APIs: a district lookup read once per widget lifetime (API 1), a bounded summary read fired on render and on every district change that carries both the per-plan rollup and the per-district cells behind it (API 2), and a per-plan appointee detail read fired only when the user opens the drill (API 3). The justification for exactly three lives in the API inventory. Every total, share and count on screen is client arithmetic over the summary response; the server returns aggregates and rows, never grand totals.</p>

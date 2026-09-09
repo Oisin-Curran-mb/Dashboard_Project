@@ -20,7 +20,7 @@ pre code { background: none; padding: 0; }
 <body>
 
 <h1>Remittance Pledges - API Spec</h1>
-<p><span class="status">Status: DRAFT - not final</span></p>
+<p><span class="status">Status: Done - awaiting sign-off (drafting complete, owner review pending)</span></p>
 <h2>Overview</h2>
 <p>The widget answers one question: which remittance pledges are not arriving as expected, and by how much. It is the exception side of the pledge pair; goal progress belongs to the Gifts and Pledges widget (W17). The card shows a behind-pace money headline, three pace cards (Behind, On track, Ahead) filtering a flat per-activity table, an alternate pacing-bars read of the same rows, and a drill screen per activity listing the individual donor pledges most behind pace, each of which expands to that donor's own payment schedule with the first skipped payment named. One date-range control scopes everything; its end is the pacing anchor and its start frames the window.</p>
 <p>This contract defines four APIs: a bounded per-activity pacing summary fired on render and on every range change (API 1), a paginated per-activity pledge list fired when a drill or the most-behind popup opens (API 2), a per-pledge payment schedule fired when a pledge row expands (API 3), and a server-side export that streams the current pledge view as a file (API 4). Everything the card itself shows runs client-side over API 1's bounded rows; everything under the drill runs server-side because the pledge list paginates.</p>

@@ -151,6 +151,102 @@ The two half-finished Step 4 audits were completed. Every hunk the interrupted 0
 
 ---
 
+# Continuation, 2026-09-07: gates-off completion run, W11 + W13 + W15 + W16 + W17
+
+Owner instruction: all remaining V2 docs completed, nothing halts. Mode used: every doc finishes; approval gates defaulted and logged; unknowns carried as [TO CONFIRM], never invented.
+
+## W11 - Fixed Asset Values (Step 4 stamped 2026-09-07; first-ever spec, lint 0 HIGH / 0 MED)
+
+**The audit found the doc's premise was dead:** the Jo port (v2.0-v2.2) was deleted on your instruction and the built Final is the 2026-09-03 from-scratch rebuild (52-asset register, 2 views, server-paged grid). The doc now describes the rebuild; the "locked"/"still undesigned" contradiction is resolved (your 08-30 hold lifted per your 09-07 instruction, noted in the doc).
+
+### Defaulted — confirm or correct
+- [ ] Nine red hunks applied (status, build record, views 3->2, Glance/Explore/Detail sizes, server sort/paging, filters, Rule 11 caveat, What Got Cut, new Sign-off Input section with Jo's J1-J7 recorded Unreviewed).
+- [ ] Sign-off Readiness row 7 marked "closed by supersession" (agent's call; reopen if you disagree). Rows 10-11 added; 10 rows now open.
+- [ ] Spec: pageSize max 100; invalid sortBy/valueType -> 400 (mock silently falls back; treated as fixture); stale valueId -> well-formed zero; server-ordered groups; five APIs incl. a preferences GET/PUT pair (Modern API persists nothing today).
+
+### Blocked on a fact — your call
+- [ ] DEFAULT VIEW CONFLICT: amended handoff says Donut, built code says Asset Detail (`FAF_STATE.view='assets'`). Spec follows the build. Settle it (Sign-off row 10).
+- [ ] The paged/sorted/totalled grid contract and any SalvageValue exposure exist NOWHERE in legacy/Modern API docs (the unpaged dollarType grid endpoint does exist): central NEW backend work, unscoped.
+- [ ] Six-dimension / five-measure feasibility never verified against real FA tables; three account dimensions deliberately return empty lists; org-wide KPI math stated in no source; volume ceilings uncited.
+- [ ] Jo's dossier flags J1-J7 all need accept/reject/dispute statuses (no reconciliation file exists).
+- [ ] fc-widget-11 chrome in the BUILD is stale (Logic panel still says the Final was deleted; blurb describes the dead port) and Widget_Specs has no 09-03 rebuild entry: needs a build-side chrome pass, not a doc edit.
+
+## W13 - Purchasing Management (Step 4 stamped 2026-09-07; first-ever spec, lint 0 HIGH / 0 MED)
+
+Audit: build never moved past 08-19 (FC_VERSION 2.6, all rounds same-day); four doc catches applied (headline wording, 2.0 -> 2.6 status line, Explore/Detail column description). The `.purf-root` export-styling worry from W03's audit checked out clean. NOTE: the audit agent also wrote a side file `Unattended Run - Decisions and Questions (2026-09-07).md` in this folder; its W13 audit items live there.
+
+Spec: `Purchasing Management/v2/` + DECISIONS.md. Seven APIs, and this is the first widget with WRITES: summary, board (server TOP-N per state), paginated table incl. archive, approval-paths reuse, POST transition, POST hold, POST payment-approvals.
+
+### Defaulted — confirm or correct
+- [ ] POST payment-approvals (API 7) is specced from the built behaviour but GATED with a do-not-build banner pending your C3 redirect-vs-rebuild ruling. Alternative was omitting it; flag if you would rather it were absent.
+- [ ] Close/Void folded into the transition endpoint; hold kept separate; Detail board capped at cardsPerState (25/100) where the build renders everything and scrolls.
+- [ ] Server-owned `isOverdue` instead of exposing a due date; record-modal edit surface treated as record-screen scope (navigation), not dashboard APIs.
+
+### Blocked on a fact — your call
+- [ ] C3 dispute (redirect vs rebuilt payment flow) decides whether API 7 exists at all.
+- [ ] Voided-request financial reversal behaviour; Rejected visibility for non-admins; paymentStatus read source; hold read/write backing; archive serving (Sign-off rows 9-13); Department/Year/Overdue fields (rows 1-3); volume ceilings for the caps.
+- [ ] Dossier 11.6 and stable-columns 11.5 still Unreviewed; the spec's table-column commitment is provisional on them.
+- [ ] Is a submitted-but-unissued payment stage needed? The two-value paymentStatus may be insufficient.
+
+## W15 - Bank Balances (Step 4 re-stamped 2026-09-07; first-ever spec, lint 0 HIGH / 0 MED)
+
+**The 08-30 doc was a rebuild behind:** the Final was rebuilt 2026-09-04 (bkF block; the v2.0 bankF port discarded 09-03). Nine hunks applied: two presentations not three (Account Cards removed 09-04), Jo's horizontal diverging bar, server paging (size 12) replacing trimming, the Overdrawn-only chip, Glance/Explore/Detail sizes, Sign-off Readiness grown 6 -> 10 rows, new Sign-off Input (Jo) section with everything Unreviewed (no reconciliation file).
+
+Spec: `Bank Balances/v2/` + DECISIONS.md. Three read-only APIs: paginated accounts (overdrawnOnly param, whole-set overdrawn count), per-account seven-line activity breakdown (entirely NEW, the waived Rule 11 ask, blocks Single Account mode), and an accounts lookup for the picker.
+
+### Defaulted — confirm or correct
+- [ ] pageSize max 100; past-the-end clamps and echoes (build's rule); picker as a separate third endpoint; three unused build aggregates dropped from the contract.
+- [ ] Spec follows the built paged-full-set model, NOT Ben Lane's top-3-5-plus-view-all preference (open design question, carried).
+
+### Blocked on a fact — your call
+- [ ] The paged accounts endpoint exists in NO Modern API doc: central new backend work, unscoped.
+- [ ] Worst-realistic account ceiling ("up to 50, sometimes more" is the only citable figure); permission right + no-right treatment.
+- [ ] Jo's dossier all Unreviewed, incl. her available-vs-unrestricted-cash "Do now" and a LIVE localisation defect (pound sign on a US org).
+- [ ] SME attribution conflict: dossier says "Marvin", Step 2 says Ben Lane, same 13 Jul interview. Recorded both-sides.
+- [ ] No FC_VERSION[15] exists in the build (badge renders empty); dated bkF comments are the only version record. Add one?
+- [ ] Build-side stale comments ("three PEER presentations", bar-gap string naming the removed Cards view) need a chrome pass, not doc edits.
+
+## W16 - Accounts Payable By Due Date (Step 4 stamped 2026-09-07; first-ever spec, lint 0 HIGH / 0 MED)
+
+Audit: the doc's Fine-Tuning entry was current but the BODY still described the pre-Final donut/cards design. Ten hunks applied (due-date popover + horizon chip, no view switch, aging-band hero table, all-columns sort with larger-amount tiebreak, Glance/Explore/Detail, empty/loading rows). Full before/after in the 2026-09-07 side questions doc. `.apf-root` btn-family check: clean, not a defect.
+
+Spec: `Accounts Payable By Due Date/v2/` + DECISIONS.md. Four read-only APIs: aging summary (Glance fires it alone), paginated invoices (full-set band subtotals), due-dates facet (replaces the modern /filters read), top-vendors rollup (Detail only). The modern /chart endpoint is dropped: the Final has no chart.
+
+### Defaulted — confirm or correct
+- [ ] pageSize 50/200, vendors limit 5/20; snap rule contracted client-side with server zero-response fallback; vendor search moved server-side though the build filters client-side.
+- [ ] APIs 1/3/4 deliberately ignore the due-date selection (matches the build) - reads oddly, confirm intended.
+- [ ] API 4 could fold into API 1 via a flag if four APIs feels like over-decomposition.
+
+### Blocked on a fact — your call
+- [ ] TOP ITEM: aging basis (due date vs invoice date) never confirmed against the real API - load-bearing for every band, overdue and horizon figure. Backend + Feargal.
+- [ ] Actionability dispute recorded both-sides, unresolved: Jo/SME 11.2 says pay/schedule from the widget is its biggest reason to exist; Feargal 2026-08-25 says it stays a focused overview. A future write surface hangs on this.
+- [ ] Dossier 11.3/11.4 want a date-ordered chart; the Final has none. 11.6 Bank Balances pairing absent everywhere. Both Unreviewed.
+- [ ] Entitlement enforcement is NEW (modern module access not enforced today); live GBP localisation defect; X-BankAccountID vs X-Company-ID header oddity in Widget_Comparison_Classic; div-table accessibility parity [TO CONFIRM - you].
+
+## W17 - Gifts Pledges (Step 4 stamped 2026-09-07 vs v1.3; first-ever spec, lint 0 HIGH / 0 MED)
+
+Audit: seven catch-up hunks (no-alphabetical-sort truth, campaign filter narrows not highlights, built interactions, empty/loading states, the "Open in Gifts and Pledges" Rule 11 stub flagged against the export-only constraint). The W03-audit prediction that `.gpf-root` misses the btn styling is FALSE: W17's root is `remf-root gpf-root` so exports render styled; correct that claim at its source when convenient.
+
+Spec: `Gifts Pledges/v2/` + DECISIONS.md. Five read-only APIs: campaign summary (adds pledgeDue/goal/progress to the modern 4-field DTO, nearly all NEW), campaigns lookup, paginated most-behind-first pledges (behindOnly serves the top-5 modal), gifts-per-pledge, server-side export.
+
+### Defaulted — confirm or correct
+- [ ] Received basis specced as PLEDGE-LINKED GIFTS ONLY (your 08-19 decision, what the build does). The Modern API's TotalRaised counts all posted gifts. This blocks every summed figure until backend confirms which is truth.
+- [ ] Proration anchored on rangeEnd; the legacy anchors on today, flagged as a defect not to replicate. Raw progressPercent served instead of the ProgressStatus enum.
+- [ ] pageSize max 100; Excel export; five-API decomposition (may read heavy for a 2-row live org).
+
+### Blocked on a fact — your call
+- [ ] % Due status inconsistency INSIDE the Step 4 doc: the CONFLICT row says disputed, Sign-off Readiness #2 says RESOLVED with live proof. Collapse it or keep it, your call; nothing auto-picked.
+- [ ] Goal-met colour: build says green, the comparison doc documents the API's status as "red (goal met)". Backend to confirm the mapping.
+- [ ] GF_Campaign vs GF_Purpose keying for Goal; GF_Pledge term/frequency/installment columns; volume ceilings.
+- [ ] Jo's dossier all Unreviewed: % Due -> % Fulfilled relabel, data-as-of stamp, GBP defect, entitlement/empty behaviour.
+- [ ] Four v1.2 judgement calls (bar cap lifted, trim removed, legend counts, best-first order) still await your review; fc-widget-17 Logic prose is stale vs v1.3 (build-side chrome pass, not doc).
+
+---
+
+# BOARD COMPLETE (2026-09-07)
+
+Every in-scope widget (W01-W07, W09-W11, W13, W15-W17; W08/W12/W14 deferred) now has a current, audit-stamped Step 4 doc AND a lint-clean V2 API spec. Confluence HTML for the 09-07 specs (W11, W13, W15, W16, W17) is deferred until you approve the drafts; the six earlier specs already carry theirs. Before the PR to Jo: read this doc top to bottom; the recurring cross-widget themes are the GBP localisation defect (three widgets), Unreviewed Jo dossiers with no reconciliation files (W02, W11, W15, W16, W17), and volume ceilings needed from Marvin/Feargal almost everywhere.
+
 ## W06 - Insurance Billing Plans V2 spec (finished 2026-09-02, lint 0 HIGH / 0 MED / 9 LOW)
 
 Attended run, queue item 1. The 08-30 batch drafted the spec `.md` and was then cut off before writing DECISIONS.md or the index row. Treated the draft as untrusted and diffed it against build v2.4: **it held up.** Every worked figure cross-foots against the real `INSF_PLANS` dataset (enrolled 128 + 54 + 96 + 71 + 0 = 349; cost 57600 + 33480 + 3648 + 639 + 0 = 95367), the interaction surface is fully covered, and all four legacy chart rules survive. Conflict gate CLEAR, as recorded before the cutoff. Two APIs: the existing insurance-type lookup reused unchanged, and one bounded nested data read with `typeId` as a server param.

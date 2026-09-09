@@ -1,0 +1,2073 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Purchasing Management - API Spec</title>
+<style>
+body { font-family: -apple-system, Helvetica, Arial, sans-serif; max-width: 900px; margin: 30px auto; line-height: 1.5; color: #172B4D; }
+h1 { font-size: 24px; }
+h2 { font-size: 19px; border-bottom: 1px solid #DFE1E6; padding-bottom: 6px; margin-top: 32px; }
+h3 { font-size: 16px; margin-top: 20px; }
+table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+th, td { border: 1px solid #DFE1E6; padding: 6px 10px; text-align: left; vertical-align: top; }
+th { background: #F4F5F7; }
+code { background: #F4F5F7; padding: 1px 5px; border-radius: 3px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 90%; }
+pre { background: #F4F5F7; padding: 12px; border-radius: 4px; overflow-x: auto; }
+pre code { background: none; padding: 0; }
+.status { background: #FFF0B3; display: inline-block; padding: 3px 10px; border-radius: 3px; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<h1>Purchasing Management - API Spec</h1>
+<p><span class="status">Status: Done - awaiting sign-off (drafting complete, owner review pending)</span></p>
+<hr />
+<h2>Overview</h2>
+<p>Purchasing Management is the dashboard's purchase-order approval board. It answers three questions: <em>what purchase requests are waiting, and for how long</em>, <em>what state is each request in</em>, and <em>what can I do about it from here</em>. The default view is a board with one column per approval state (Pending, Approved, Rejected), each column oldest-first so the longest-waiting request surfaces at the top; a second Table view lists everything over time, including the Closed and Voided archive. The widget is one of the few action-capable widgets in the set: a user actions a request directly from the board (approve, reject, return to pending, close, void, hold), each action recording a reason note.</p>
+<p>This contract defines <strong>seven APIs</strong>: a server-aggregated state-count summary that feeds the compact tier, a bounded per-state board read, a paginated request table, the existing approval-path lookup reused with a reshaped parameter, and three writes - an approval-state transition, a hold toggle, and an invoice payment-approval entry. The count is derived from the decomposition triggers in the API inventory, not chosen. All three writes and two of the read fields are backend work that does not exist today, and the payment-entry write additionally sits under an unresolved dispute (see Still needs sign-off): if the redirect reading is upheld, API 7 is dropped from this contract entirely.</p>
+<p>Framework verdicts, stated once and justified in their own sections below:</p>
+<ul>
+<li><strong>Filter execution.</strong> Every filter executes <strong>SERVER</strong>-side. The table paginates and the board is server-capped per column, so nothing over either set may be filtered client-side.</li>
+<li><strong>Volume.</strong> The table is <code>MUST PAGINATE</code>; the board is <code>BOUNDED</code> by construction (a fixed state set times a capped cards-per-state); the summary is <code>MUST AGGREGATE SERVER-SIDE</code>. No worst-realistic request count has a documented basis, so the ceilings are <code>[TO CONFIRM]</code> against a named owner.</li>
+<li><strong>Decomposition.</strong> Seven APIs, each citing a trigger. Close and Void were folded into the transition write rather than given their own endpoints, because the build routes them through the same guarded state-change logic as approve and reject.</li>
+<li><strong>Computation.</strong> Every count, total, sort order and state classification is server-side. The client derives the item-age label and the headline string from values already in the response, and nothing else.</li>
+</ul>
+<p>The drill-through is a navigation, not an API: selecting a card or row sends the user to the existing PO record screen at <code>/PurchasingManagement/Requests/Update/{orderId}</code> [DOC - Step 1 research; URL pattern seen live, beta1, 2026-08-19]. The record screen's own read and edit surface is out of this contract's scope.</p>
+<hr />
+<h2>Design → API coverage</h2>
+<table>
+<thead>
+<tr>
+<th>Design element</th>
+<th>Type</th>
+<th>API</th>
+<th>Field(s)</th>
+<th>Provenance</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Headline "N pending approval" (compact tier)</td>
+<td>KPI</td>
+<td>API 1</td>
+<td><code>states[].count</code> where <code>states[].state</code> is <code>Pending</code></td>
+<td>DERIVED count of visible Pending requests [BUILD]</td>
+</tr>
+<tr>
+<td>Three state-count cards (compact tier, Pending first)</td>
+<td>KPI</td>
+<td>API 1</td>
+<td><code>states[]</code>, <code>states[].state</code>, <code>states[].count</code></td>
+<td>DERIVED count per state [BUILD]</td>
+</tr>
+<tr>
+<td>Compact-tier caption "N pending requests, $X outstanding"</td>
+<td>KPI</td>
+<td>API 1</td>
+<td><code>states[].count</code> (Pending), <code>pendingOutstandingTotal</code></td>
+<td>DERIVED SUM(amount) over Pending [BUILD]</td>
+</tr>
+<tr>
+<td>Board columns, one per approval state</td>
+<td>View</td>
+<td>API 2</td>
+<td><code>columns[]</code>, <code>columns[].state</code></td>
+<td>DERIVED state mapping over <code>PO_Order.Status</code> plus the rejection marker [DOC - Step 1 research; BUILD]</td>
+</tr>
+<tr>
+<td>Column count chip</td>
+<td>KPI</td>
+<td>API 2</td>
+<td><code>columns[].totalCount</code></td>
+<td>DERIVED count over the full filtered state [BUILD]</td>
+</tr>
+<tr>
+<td>Board card (request number, vendor, amount)</td>
+<td>Card</td>
+<td>API 2</td>
+<td><code>columns[].cards[]</code>, <code>cards[].orderId</code>, <code>cards[].poNumber</code>, <code>cards[].vendor</code>, <code>cards[].amount</code></td>
+<td>STORED <code>PO_Order</code> [DOC - Step 1 research]</td>
+</tr>
+<tr>
+<td>Item-age label ("waiting N days" / "issued N days ago")</td>
+<td>Card</td>
+<td>API 2, API 3</td>
+<td><code>cards[].issuedDate</code>, <code>rows[].issuedDate</code>, with <code>asOf</code></td>
+<td>DERIVED client-side: whole days between <code>issuedDate</code> and <code>asOf</code> [BUILD]</td>
+</tr>
+<tr>
+<td>Overdue read on a card / red-flagged table row</td>
+<td>State</td>
+<td>API 2, API 3</td>
+<td><code>cards[].isOverdue</code>, <code>rows[].isOverdue</code></td>
+<td>UNVERIFIED (Feargal Phelan, backend): needs an expected-by date field on purchasing records [TO CONFIRM; Step 4 Sign-off Readiness row 3]</td>
+</tr>
+<tr>
+<td>Payment sub-state on an Approved card (paid / not paid)</td>
+<td>State</td>
+<td>API 2, API 3, API 5, API 6, API 7</td>
+<td><code>paymentStatus</code></td>
+<td>NEW: payment approval lives only on the record screen today, no dashboard read exists [TO CONFIRM - Feargal Phelan; Step 4 row 11]</td>
+</tr>
+<tr>
+<td>Hold sub-state (locked card, lock flag plus reason text)</td>
+<td>State</td>
+<td>API 2, API 3, API 5, API 6</td>
+<td><code>onHold</code>, <code>holdReason</code></td>
+<td>NEW dashboard read; hold itself is real on approval rows [LIVE - Approvals tab screenshot, 2026-08-19; Step 4 row 12]</td>
+</tr>
+<tr>
+<td>"+N more" link under a trimmed column</td>
+<td>Drill</td>
+<td>API 2</td>
+<td><code>columns[].totalCount</code> minus rendered card count; no extra field</td>
+<td>DERIVED client arithmetic [BUILD]</td>
+</tr>
+<tr>
+<td>Header caption "# requests: N, total $X"</td>
+<td>KPI</td>
+<td>API 2, API 3</td>
+<td><code>requestCount</code>, <code>totalAmount</code> (board); <code>totalCount</code>, <code>totalAmount</code> (table)</td>
+<td>DERIVED over the full filtered set, never the page [BUILD]</td>
+</tr>
+<tr>
+<td>Drag to Approved / Rejected / Pending with a reason note</td>
+<td>Action</td>
+<td>API 5</td>
+<td><code>targetState</code>, <code>reason</code> (request); <code>state</code> (response)</td>
+<td>NEW: no dashboard approve/reject write exists in either codebase [DOC - Step 6 dossier open question; Step 4 row 10]</td>
+</tr>
+<tr>
+<td>Finish column, Close drop (paid orders only)</td>
+<td>Action</td>
+<td>API 5</td>
+<td><code>targetState: "Closed"</code>, <code>reason</code></td>
+<td>NEW: Closed is manual on the record screen today [LIVE - beta1, 2026-08-19; Step 4 row 13]</td>
+</tr>
+<tr>
+<td>Finish column, Void drop (unpaid only)</td>
+<td>Action</td>
+<td>API 5</td>
+<td><code>targetState: "Voided"</code>, <code>reason</code></td>
+<td>NEW: Voided is manual on the record screen today [LIVE - beta1, 2026-08-19; Step 4 row 13]</td>
+</tr>
+<tr>
+<td>Put on hold / Remove hold with a reason</td>
+<td>Action</td>
+<td>API 6</td>
+<td><code>hold</code>, <code>reason</code> (request); <code>onHold</code>, <code>holdReason</code> (response)</td>
+<td>NEW write; mirrors the Approvals tab's Hold checkbox plus Reason [LIVE - screenshot, 2026-08-19; Step 4 row 12]</td>
+</tr>
+<tr>
+<td>Invoice payment entry and Submit for Approval</td>
+<td>Action</td>
+<td>API 7</td>
+<td><code>invoices[]</code>, <code>invoices[].invoiceNumber</code>, <code>invoices[].tax</code>, <code>invoices[].freight</code>, <code>invoices[].other</code>, <code>invoices[].distribution</code>, <code>distribution.description</code>, <code>distribution.project</code>, <code>distribution.amount</code>, <code>submitForApproval</code></td>
+<td>NEW and DISPUTED: see Still needs sign-off item 1 before building [TO CONFIRM - Feargal Phelan; Step 4 rows 11-12]</td>
+</tr>
+<tr>
+<td>PO Status filter (view-aware value list)</td>
+<td>Filter</td>
+<td>API 2, API 3</td>
+<td><code>state</code> param, echoed per column and row</td>
+<td>STATIC enum; the state set is fixed in code, not configurable [DOC - Widget_Comparison_Classic.html code trace]</td>
+</tr>
+<tr>
+<td>Approval Path filter</td>
+<td>Filter</td>
+<td>API 4, plus <code>approvalPathId</code> param on APIs 1-3</td>
+<td><code>paths[]</code>, <code>paths[].approvalPathId</code>, <code>paths[].name</code></td>
+<td>STORED <code>PO_ApprovalPath</code>, customer-defined data [DOC - Step 1 research]</td>
+</tr>
+<tr>
+<td>Department filter and Table column</td>
+<td>Filter / Table column</td>
+<td>API 3</td>
+<td><code>department</code> param, <code>rows[].department</code></td>
+<td>UNVERIFIED (Feargal Phelan, backend): no known source field on purchasing records [TO CONFIRM; Step 4 row 1]</td>
+</tr>
+<tr>
+<td>Year filter (Table only)</td>
+<td>Filter</td>
+<td>API 3</td>
+<td><code>fiscalYear</code> param, <code>rows[].fiscalYear</code></td>
+<td>UNVERIFIED (Feargal Phelan, backend): no known source field [TO CONFIRM; Step 4 row 2]</td>
+</tr>
+<tr>
+<td>Overdue-only toggle (Table only)</td>
+<td>Filter</td>
+<td>API 3</td>
+<td><code>overdueOnly</code> param, <code>rows[].isOverdue</code></td>
+<td>UNVERIFIED (Feargal Phelan, backend) [TO CONFIRM; Step 4 row 3]</td>
+</tr>
+<tr>
+<td>Table columns: PO #, Vendor, Amount, Status, Issued</td>
+<td>Table column</td>
+<td>API 3</td>
+<td><code>rows[].poNumber</code>, <code>rows[].vendor</code>, <code>rows[].amount</code>, <code>rows[].state</code>, <code>rows[].issuedDate</code></td>
+<td>STORED <code>PO_Order</code>; <code>state</code> DERIVED per the mapping in Tables [DOC - Step 1 research]</td>
+</tr>
+<tr>
+<td>Table totals row (request count plus combined amount)</td>
+<td>KPI</td>
+<td>API 3</td>
+<td><code>totalCount</code>, <code>totalAmount</code></td>
+<td>DERIVED over the full filtered set [BUILD]</td>
+</tr>
+<tr>
+<td>Table pager and trimmed-view caps</td>
+<td>State</td>
+<td>API 3</td>
+<td><code>page</code>, <code>pageSize</code>, <code>totalCount</code>, <code>sortBy</code>, <code>sortDir</code></td>
+<td>DERIVED [BUILD: trimmed tiers render the first rows of the oldest-first order]</td>
+</tr>
+<tr>
+<td>Board / Table view toggle</td>
+<td>View</td>
+<td>none</td>
+<td>switches which endpoint is called; no field</td>
+<td>DERIVED client state [BUILD]</td>
+</tr>
+<tr>
+<td>Card / row / edit-icon drill to the PO record</td>
+<td>Drill</td>
+<td>none (navigation)</td>
+<td><code>orderId</code> builds the record-screen URL</td>
+<td>STORED <code>PO_Order</code> key [DOC - Step 1 research]</td>
+</tr>
+<tr>
+<td>Empty states (nothing at all / filters match nothing / a state with zero requests)</td>
+<td>State</td>
+<td>API 1, API 2, API 3</td>
+<td>zero counts, empty <code>cards[]</code> and <code>rows[]</code>, <code>requestCount</code></td>
+<td>DERIVED well-formed zero responses [BUILD]</td>
+</tr>
+<tr>
+<td>Freshness anchor</td>
+<td>State</td>
+<td>all</td>
+<td><code>asOf</code></td>
+<td>DERIVED server clock, echoed on every response</td>
+</tr>
+</tbody>
+</table>
+<p>Access scoping is not a field: every read is filtered server-side to what the caller may see (administrators all orders, other users only orders on approval paths they are part of) [DOC - Step 1 research]. See Auth and scoping.</p>
+<hr />
+<h2>Tables</h2>
+<table>
+<thead>
+<tr>
+<th>Table / repository</th>
+<th>Fields and members used</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PO_Order</code></td>
+<td>Order key, requisition/order number, vendor, date issued, total/outstanding amount, <code>Status</code> (0 Unapproved, 1 Approved, 2 Closed, 3 Voided) [DOC - Step 1 research; LIVE - record-screen Status vocabulary, beta1, 2026-08-19]</td>
+</tr>
+<tr>
+<td><code>PO_ApprovalPath</code> / <code>PO_ApprovalUser</code></td>
+<td>Approval path definitions and path membership; drives both the access scope and the Approval Path lookup [DOC - Step 1 research]</td>
+</tr>
+<tr>
+<td><code>PO_Approval</code> (approval rows)</td>
+<td>Per-approver rows carrying approve/reject state, Reason, Hold checkbox plus its Reason, and updated-by identity [LIVE - Approvals tab screenshot, 2026-08-19]. Exact column names [TO CONFIRM - Feargal Phelan]</td>
+</tr>
+<tr>
+<td>Payment approval / check issue records</td>
+<td>The source of <code>paymentStatus</code> (the real paid signal is the check number and date being filled) [LIVE - Payment Approval tab screenshot, 2026-08-19]. Table not identified in any trace [TO CONFIRM - Feargal Phelan]</td>
+</tr>
+</tbody>
+</table>
+<p>No new tables are asserted by this contract. The reads are new queries against existing tables, with two exceptions that may need schema or join work: the <code>paymentStatus</code> read (no dashboard-facing source identified) and the three Rule 11 fields (<code>department</code>, <code>fiscalYear</code>, and the expected-by date behind <code>isOverdue</code>), none of which is confirmed to exist on purchasing records.</p>
+<p>Core statements a developer should check queries against:</p>
+<ul>
+<li><strong>State mapping:</strong> <code>Pending</code> = <code>PO_Order.Status = 0</code> and not rejected; <code>Approved</code> = <code>Status = 1</code>; <code>Rejected</code> = orders carrying a rejection on their approval rows (rejected orders exist in the data but no current widget query returns them); <code>Closed</code> = <code>Status = 2</code>; <code>Voided</code> = <code>Status = 3</code>. [DOC - Step 1 research; DOC - Widget_Comparison_Classic.html status logic; the Rejected read is NEW, Step 4 row 9]</li>
+<li><strong>Access scope on every read:</strong> administrators see all orders; every other user sees only orders on approval paths they are part of. [DOC - Step 1 research]</li>
+<li><strong>Overdue rule, stated once and owned by the server:</strong> a request is overdue when its expected-by date is before <code>asOf</code> and its state is <code>Pending</code>. [BUILD; the expected-by field is UNVERIFIED, Step 4 row 3]</li>
+<li><strong>Oldest-first everywhere:</strong> the default order in the table and inside each board column is date issued ascending, then <code>orderId</code> ascending as the unique tiebreaker. [BUILD; owner sort ruling recorded in Step 4]</li>
+<li><strong>Paid means check-issued:</strong> <code>paymentStatus = "paid"</code> must be read from the check having been issued, not from a request-side flag. [LIVE - Payment Approval tab, 2026-08-19]</li>
+</ul>
+<hr />
+<h2>Old vs. new</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Old (live today)</th>
+<th>New (needed)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Status filter</td>
+<td>Four personal-queue options (Needs my approval / Waiting for others / All pending / All orders), hardcoded in both codebases, with per-option WHERE logic</td>
+<td>STATIC five-state model (Pending / Approved / Rejected / Closed / Voided) plus All; the personal-queue options are not consumed. DERIVED reshaping of existing status logic</td>
+</tr>
+<tr>
+<td>Rejected orders</td>
+<td>Never returned by any widget query</td>
+<td>Served as the Rejected state. NEW data change [Step 4 row 9]</td>
+</tr>
+<tr>
+<td>Closed / Voided orders</td>
+<td>Statuses 2 and 3 never selected by the widget's queries</td>
+<td>Served to the table as archive states. NEW [Step 4 row 13]</td>
+</tr>
+<tr>
+<td>Grid read</td>
+<td>One unpaginated grid endpoint <code>GET .../grid?status={int}&amp;approvalPathId={guid}</code> returning <code>{OrderId, RequisitionOrOrderNumber, Description, Date, TotalOrOutstanding}</code></td>
+<td>Split into a summary, a per-state board and a paginated table, all with full-set aggregates. DERIVED reshaping</td>
+</tr>
+<tr>
+<td>Approval-path lookup</td>
+<td><code>GET .../approval-paths?status={int}</code> returning <code>{ApprovalId, Name}</code></td>
+<td>Reused with the <code>state</code> string parameter in place of the legacy status integer. DERIVED reshaping</td>
+</tr>
+<tr>
+<td>Writes</td>
+<td>None: the dashboard is read-only; all actioning happens on the record screen</td>
+<td>Approval-state transition, hold toggle, and (disputed) payment entry. NEW [Step 4 rows 10-13]</td>
+</tr>
+<tr>
+<td>Payment status</td>
+<td>Not served anywhere; payment approval is record-screen-only</td>
+<td><code>paymentStatus</code> read field on Approved requests. NEW [Step 4 row 11]</td>
+</tr>
+<tr>
+<td>Hold</td>
+<td>Real on approval rows, not served to the dashboard</td>
+<td><code>onHold</code> / <code>holdReason</code> read fields plus the hold write. NEW [Step 4 row 12]</td>
+</tr>
+<tr>
+<td>Encumbrance chart</td>
+<td><code>GET .../chart</code> live today</td>
+<td>Not consumed. The chart is cut from the design</td>
+</tr>
+<tr>
+<td>Status-options lookup</td>
+<td><code>GET .../status-options</code> returns the static four-option array</td>
+<td>Not consumed. The client's state list is a static enum</td>
+</tr>
+<tr>
+<td>Filter persistence</td>
+<td>Legacy saves both filter selections per user across sessions</td>
+<td>Not implemented in the Modern API. Requirement stands, mechanism outside this contract [Step 4 row 8; see Not in scope]</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>API inventory</h2>
+<table>
+<thead>
+<tr>
+<th>API</th>
+<th>Purpose</th>
+<th>Trigger (when it fires)</th>
+<th>Cardinality</th>
+<th>R/W</th>
+<th>Cache posture</th>
+<th>Split trigger</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>API 1: request summary</td>
+<td>State counts plus pending outstanding total for the compact tier</td>
+<td>Compact-tier render; refresh</td>
+<td>3 state rows plus 1 total</td>
+<td>R</td>
+<td>LIVE per request</td>
+<td>Cardinality gap: the compact tier must never pay for card lists</td>
+</tr>
+<tr>
+<td>API 2: approval board</td>
+<td>Per-state card lists, capped per column, with full-set aggregates</td>
+<td>Board render; status or path filter change; after any write</td>
+<td>3 columns x <code>cardsPerState</code> cap</td>
+<td>R</td>
+<td>LIVE per request</td>
+<td>Grain gap: per-state capped lists vs one flat pageable list; trigger gap vs API 3 (a view the user has not opened)</td>
+</tr>
+<tr>
+<td>API 3: request table</td>
+<td>Paginated, sortable flat list including the archive states</td>
+<td>Table view opened; table filter, sort or page change</td>
+<td>One page (max 100 rows) plus full-set aggregates</td>
+<td>R</td>
+<td>LIVE per request</td>
+<td>Cardinality gap: unbounded list vs bounded board; carries archive states the board never serves</td>
+</tr>
+<tr>
+<td>API 4: approval-path lookup</td>
+<td>The Approval Path filter's options, scoped to the caller</td>
+<td>First render; status filter change (cascade)</td>
+<td>Customer-defined path count [TO CONFIRM - Feargal Phelan]</td>
+<td>R</td>
+<td>TTL 15 min per user+state</td>
+<td>Lifetime gap: customer configuration changes rarely; pre-existing endpoint reused</td>
+</tr>
+<tr>
+<td>API 5: state transition (write)</td>
+<td>Approve, reject, return to pending, close or void one request, with a reason</td>
+<td>Drop confirmed on a board column or Finish target</td>
+<td>1 request</td>
+<td>W</td>
+<td>none</td>
+<td>Read vs write</td>
+</tr>
+<tr>
+<td>API 6: hold toggle (write)</td>
+<td>Put one request on hold or remove the hold, with a reason</td>
+<td>Hold action confirmed</td>
+<td>1 request</td>
+<td>W</td>
+<td>none</td>
+<td>Read vs write; separate from API 5 because hold is orthogonal to state and never changes it</td>
+</tr>
+<tr>
+<td>API 7: payment approval entry (write)</td>
+<td>Enter invoice payment approvals and submit, marking the request paid</td>
+<td>Submit for Approval confirmed</td>
+<td>1 request, up to a handful of invoice lines</td>
+<td>W</td>
+<td>none</td>
+<td>Read vs write; DISPUTED - dropped entirely if the redirect ruling lands (Still needs sign-off item 1)</td>
+</tr>
+</tbody>
+</table>
+<p>Merges considered and closed:</p>
+<ul>
+<li><strong>API 1 into API 2:</strong> rejected. The compact tier fires alone and must not carry card lists; the board response does carry the same aggregates so the two tiers reconcile.</li>
+<li><strong>Close/Void as their own endpoint:</strong> rejected. The build routes Close and Void through the same guarded state-change logic as approve and reject, so they are <code>targetState</code> values on API 5 with server-enforced eligibility, not a second write surface.</li>
+<li><strong>API 6 into API 5:</strong> rejected. Hold does not change the approval state, and a combined body would allow contradictory intents in one call.</li>
+</ul>
+<hr />
+<h2>Call sequence</h2>
+<table>
+<thead>
+<tr>
+<th>Interaction</th>
+<th>Calls fired</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Initial widget load (compact tier)</td>
+<td>API 1</td>
+<td>One call, aggregates only</td>
+</tr>
+<tr>
+<td>Initial widget load (mid or large tier, board view)</td>
+<td>API 4, then API 2</td>
+<td>Path options first so the filter renders; both reads echo <code>asOf</code></td>
+</tr>
+<tr>
+<td>Change PO Status filter</td>
+<td>API 4, then API 2 or API 3</td>
+<td>Cascade: path options re-derive for the new state; a stale path selection resets to All client-side</td>
+</tr>
+<tr>
+<td>Change Approval Path filter</td>
+<td>API 2 (board) or API 3 (table)</td>
+<td>No lookup refetch; options do not depend on the path itself</td>
+</tr>
+<tr>
+<td>Switch view (board to table, or back)</td>
+<td>API 3 or API 2</td>
+<td>The "+N more" link is this same switch to the table</td>
+</tr>
+<tr>
+<td>Change Department / Year / Overdue-only (table)</td>
+<td>API 3</td>
+<td>Table-only params; the board never sends them</td>
+</tr>
+<tr>
+<td>Change table sort or page</td>
+<td>API 3</td>
+<td><code>sortBy</code> / <code>sortDir</code> / <code>page</code></td>
+</tr>
+<tr>
+<td>Open drill (card, row, or edit icon)</td>
+<td>none</td>
+<td>Navigation to <code>/PurchasingManagement/Requests/Update/{orderId}</code></td>
+</tr>
+<tr>
+<td>Confirm a drag move (approve / reject / return)</td>
+<td>API 5, then API 2</td>
+<td>The refetch shares the write response's <code>asOf</code> so the board cannot straddle the write</td>
+</tr>
+<tr>
+<td>Confirm a Finish drop (Close or Void)</td>
+<td>API 5, then API 2</td>
+<td>Same anchor rule</td>
+</tr>
+<tr>
+<td>Confirm hold / remove hold</td>
+<td>API 6, then API 2 or API 3</td>
+<td>Same anchor rule</td>
+</tr>
+<tr>
+<td>Confirm Submit for Approval (payment entry)</td>
+<td>API 7, then API 2</td>
+<td>DISPUTED; if the redirect ruling lands this row becomes a navigation instead</td>
+</tr>
+<tr>
+<td>Refresh</td>
+<td>API 1 (compact) or API 4 + current view's read</td>
+<td>Re-runs the current state; a fresh <code>asOf</code> is adopted</td>
+</tr>
+</tbody>
+</table>
+<p>Where two calls must reconcile on screen (API 1's counts against API 2's column counts, or a write response against the follow-up read), the shared anchor is <code>asOf</code>: the client passes the last anchor it holds and both responses echo the anchor they were computed at.</p>
+<hr />
+<h2>Filter architecture</h2>
+<table>
+<thead>
+<tr>
+<th>Filter</th>
+<th>Option source</th>
+<th>Cardinality</th>
+<th>Execution</th>
+<th>Aggregate effect</th>
+<th>Cascade</th>
+<th>"All" wire form</th>
+<th>Round trips</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PO Status</td>
+<td>STATIC enum: board offers All, Pending, Approved, Rejected; table adds Closed, Voided</td>
+<td>4 (board) / 6 (table)</td>
+<td>SERVER: <code>state</code> param on APIs 2 and 3</td>
+<td>Yes: every count and total</td>
+<td>Drives API 4's option list</td>
+<td>Omit the param</td>
+<td>2 (API 4 + the view's read)</td>
+</tr>
+<tr>
+<td>Approval Path</td>
+<td>LOOKUP: API 4, scoped to paths the caller is authorised on</td>
+<td>Customer-defined; 4 in the build's dataset [BUILD]; realistic ceiling [TO CONFIRM - Feargal Phelan]</td>
+<td>SERVER: <code>approvalPathId</code> param on APIs 1, 2, 3</td>
+<td>Yes: every count and total</td>
+<td>Options depend on PO Status</td>
+<td>Omit the param</td>
+<td>1</td>
+</tr>
+<tr>
+<td>Department (table only)</td>
+<td>STATIC list in the build; real source [TO CONFIRM - Feargal Phelan, Step 4 row 1]</td>
+<td>5 in the build [BUILD]; unknown for real data</td>
+<td>SERVER: <code>department</code> param on API 3</td>
+<td>Yes: <code>totalCount</code>, <code>totalAmount</code></td>
+<td>None</td>
+<td>Omit the param</td>
+<td>1</td>
+</tr>
+<tr>
+<td>Year (table only)</td>
+<td>DERIVED from data (fiscal years present); real source [TO CONFIRM - Feargal Phelan, Step 4 row 2]</td>
+<td>Small (a few fiscal years)</td>
+<td>SERVER: <code>fiscalYear</code> param on API 3</td>
+<td>Yes: <code>totalCount</code>, <code>totalAmount</code></td>
+<td>None</td>
+<td>Omit the param</td>
+<td>1</td>
+</tr>
+<tr>
+<td>Overdue only (table only)</td>
+<td>STATIC toggle</td>
+<td>2</td>
+<td>SERVER: <code>overdueOnly</code> param on API 3</td>
+<td>Yes: <code>totalCount</code>, <code>totalAmount</code></td>
+<td>None</td>
+<td>Omit the param (false)</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Every filter is SERVER-side because API 3 paginates and API 2 is column-capped: the client never holds the full set, so no client filter can satisfy Framework 1's first condition.</li>
+<li><strong>Combination semantics:</strong> AND across all filters, always narrowing. No OR pairs, no mutually exclusive pairs.</li>
+<li><strong>Conflict rule:</strong> a syntactically valid combination that matches nothing (for example a path that has no orders in the selected state - the two draw on overlapping value spaces) returns a well-formed zero response, not an error. An <code>approvalPathId</code> that does not exist in the tenant, or that the caller is not authorised on, is a <code>400 unknown-approval-path</code>: unknown ids are faults, empty intersections are data.</li>
+<li><strong>Cascade invalidation:</strong> when PO Status changes, the client refetches API 4 and, if the selected path is absent from the new option list, resets the selection to All before calling the view's read. The server does not remember filter state.</li>
+<li><strong>Board state values:</strong> API 2 accepts only <code>Pending</code>, <code>Approved</code>, <code>Rejected</code>. <code>Closed</code> or <code>Voided</code> on the board endpoint is a <code>400 invalid-state-for-board</code>; the client treats an archive state as All when switching back to the board.</li>
+<li><strong>Blank values are not wildcards:</strong> a row with no department value is included under "All Departments" and excluded by any specific <code>department</code> value; the same rule applies to <code>fiscalYear</code>. A row with no expected-by date is never overdue and is excluded by <code>overdueOnly=true</code>.</li>
+</ul>
+<hr />
+<h2>Volume and performance</h2>
+<table>
+<thead>
+<tr>
+<th>Dataset</th>
+<th>Typical rows</th>
+<th>Worst realistic rows (basis)</th>
+<th>Row width</th>
+<th>Payload at worst</th>
+<th>Verdict</th>
+<th>Server cost model</th>
+<th>Cache posture</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>API 1 summary</td>
+<td>3 state rows + 1 total</td>
+<td>Fixed at 3 states by the enum</td>
+<td>2 fields per state row, ~40 bytes</td>
+<td>&lt; 1 KB</td>
+<td>MUST AGGREGATE SERVER-SIDE</td>
+<td>Single grouped scan over the caller's visible orders</td>
+<td>LIVE</td>
+</tr>
+<tr>
+<td>API 2 board</td>
+<td>18 cards total in the build's dataset [BUILD - demo figure, not a ceiling]</td>
+<td>3 states x <code>cardsPerState</code> max 100 = 300 cards by construction; underlying per-state counts [TO CONFIRM - Feargal Phelan]</td>
+<td>9 fields, ~220 bytes/card</td>
+<td>~66 KB at the construction cap</td>
+<td>BOUNDED (by the cap, not by the data)</td>
+<td>One indexed scan per state with TOP-N, plus one grouped count</td>
+<td>LIVE</td>
+</tr>
+<tr>
+<td>API 3 table page</td>
+<td>18 rows in the build's dataset [BUILD - demo figure]</td>
+<td>One page, <code>pageSize</code> max 100; underlying total [TO CONFIRM - Feargal Phelan]</td>
+<td>11 fields, ~260 bytes/row</td>
+<td>~26 KB per page</td>
+<td>MUST PAGINATE</td>
+<td>Single indexed scan with ORDER BY + OFFSET, plus one grouped aggregate over the filtered set</td>
+<td>LIVE</td>
+</tr>
+<tr>
+<td>API 4 paths</td>
+<td>4 in the build's dataset [BUILD]</td>
+<td>Customer-defined [TO CONFIRM - Feargal Phelan]</td>
+<td>2 fields, ~60 bytes</td>
+<td>A few KB</td>
+<td>BOUNDED (customer configuration, not transactional data)</td>
+<td>One join over <code>PO_ApprovalPath</code> / <code>PO_ApprovalUser</code> scoped to the caller</td>
+<td>TTL 15 min per user+state</td>
+</tr>
+</tbody>
+</table>
+<p>There is no citable ceiling for how many purchase orders a large organisation holds open, which is exactly why the table paginates and the board is capped rather than mirroring the build's load-everything behaviour: the build's 18-request dataset makes every operation feel instant, and that is a property of the fixture, not of the contract. No time series exists in this contract, so there is no N x M product to state.</p>
+<h3>Pagination contract</h3>
+<p>Applies to API 3 (the only <code>MUST PAGINATE</code> verdict).</p>
+<ul>
+<li><strong>Params:</strong> <code>page</code> (1-based, default 1), <code>pageSize</code> (default 10, <strong>maximum 100</strong>).</li>
+<li><strong>What paginates:</strong> the <code>rows[]</code> array, and nothing else.</li>
+<li><strong>What does not:</strong> <code>totalCount</code> and <code>totalAmount</code> compute over the <strong>full filtered set</strong>, never the page. Switching pages changes no total, count, or compact-tier figure.</li>
+<li><strong>Sort params:</strong> <code>sortBy</code> whitelist: <code>issuedDate</code> (default), <code>poNumber</code>, <code>vendor</code>, <code>amount</code>, <code>department</code>, <code>state</code>. <code>sortDir</code>: <code>asc</code> (default) or <code>desc</code>. The default order is the design's aging read: oldest first.</li>
+<li><strong>Deterministic total order:</strong> every sort ends in <code>orderId</code> ascending as the unique tiebreaker, so pages never duplicate or skip rows.</li>
+<li><strong><code>totalCount</code></strong> is returned alongside every page.</li>
+<li><strong>Past the last page:</strong> empty <code>rows[]</code>, correct <code>totalCount</code> and <code>totalAmount</code>, HTTP 200, not an error.</li>
+</ul>
+<p>The board (API 2) does not paginate; its columns are capped by <code>cardsPerState</code> and each column carries its own <code>totalCount</code> so the client can render "+N more" without a second call. Requests beyond the cap are reached through the table.</p>
+<hr />
+<h2>Where computation lives</h2>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Server or client</th>
+<th>Basis</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>State classification (Pending / Approved / Rejected / Closed / Voided)</td>
+<td>Server</td>
+<td><code>PO_Order.Status</code> plus the rejection marker [DOC - Step 1 research]</td>
+<td>Requires the status and approval rows the client never holds</td>
+</tr>
+<tr>
+<td>Per-state counts (compact cards, column chips)</td>
+<td>Server</td>
+<td>Grouped count over the caller's visible orders</td>
+<td>Spans the full set, not the shipped cards</td>
+</tr>
+<tr>
+<td>Pending outstanding total</td>
+<td>Server</td>
+<td>SUM(amount) over visible Pending requests</td>
+<td>Spans the full set</td>
+</tr>
+<tr>
+<td>Board and table header aggregates (<code>requestCount</code> / <code>totalCount</code>, <code>totalAmount</code>)</td>
+<td>Server</td>
+<td>SUM/COUNT over the full filtered set</td>
+<td>The set is paginated or capped</td>
+</tr>
+<tr>
+<td>Table totals row</td>
+<td>Client formats <code>totalCount</code> and <code>totalAmount</code></td>
+<td>Values already in the response</td>
+<td>Pure formatting</td>
+</tr>
+<tr>
+<td>Item-age label ("waiting N days")</td>
+<td>Client</td>
+<td>Whole days between <code>issuedDate</code> and <code>asOf</code>, both in the response</td>
+<td>Pure arithmetic over shipped values</td>
+</tr>
+<tr>
+<td>Overdue flag</td>
+<td>Server (<code>isOverdue</code>)</td>
+<td>Expected-by date before <code>asOf</code> on a Pending request</td>
+<td>It is a server filter (<code>overdueOnly</code>), so the flag and the filter must share one implementation</td>
+</tr>
+<tr>
+<td>Sort order (table and within each column)</td>
+<td>Server</td>
+<td><code>issuedDate</code> asc, <code>orderId</code> tiebreaker</td>
+<td>Both sets are server-limited</td>
+</tr>
+<tr>
+<td>"+N more" figure</td>
+<td>Client</td>
+<td><code>columns[].totalCount</code> minus cards shipped</td>
+<td>Pure arithmetic</td>
+</tr>
+<tr>
+<td>Headline string ("Purchasing: N pending approval")</td>
+<td>Client</td>
+<td>The Pending <code>states[].count</code></td>
+<td>String formatting over a shipped value</td>
+</tr>
+<tr>
+<td>Hold and payment sub-state presentation</td>
+<td>Client</td>
+<td><code>onHold</code>, <code>holdReason</code>, <code>paymentStatus</code> shipped raw</td>
+<td>Presentation bands the raw values; every visual state is paired with a text label</td>
+</tr>
+<tr>
+<td>Action eligibility guards (close needs paid, void needs unpaid, held and terminal requests refuse transitions)</td>
+<td>Server, authoritative</td>
+<td>The rules in API 5 and API 6</td>
+<td>The client may pre-check to suppress an affordance, but the server enforces on every write</td>
+</tr>
+</tbody>
+</table>
+<p>No API in this contract computes a percentage, so no division-by-zero rule is needed; that is stated deliberately, not omitted. No deltas exist in this contract. No presentation threshold exists beyond the overdue rule stated in Tables.</p>
+<hr />
+<h2>API 1: request summary</h2>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/purchasing-management/summary
+</code></pre>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>approvalPathId</code></td>
+<td>string (guid), query</td>
+<td>No</td>
+<td>A path the caller is authorised on</td>
+<td>omitted = all paths</td>
+<td>Narrows every figure to one approval path. The compact tier carries no status filter, so there is no <code>state</code> param here [BUILD]</td>
+</tr>
+</tbody>
+</table>
+<p>Context headers: <code>X-Company-ID</code>, <code>X-UserTenant-ID</code> [DOC - Widget_Comparison_Classic.html, modern purchasing-management identity].</p>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/purchasing-management/summary
+GET /api/dashboard/purchasing-management/summary?approvalPathId=7f3a9c2e-1b44-4e0a-9c11-2d6f8a5b0e19
+</code></pre>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>asOf</code></td>
+<td>string (date-time)</td>
+<td>DERIVED server clock</td>
+<td>The anchor every derived figure was computed at</td>
+</tr>
+<tr>
+<td><code>states[]</code></td>
+<td>array</td>
+<td>DERIVED</td>
+<td>Exactly three rows, one per active approval state, in the fixed order Pending, Approved, Rejected</td>
+</tr>
+<tr>
+<td><code>states[].state</code></td>
+<td>string</td>
+<td>DERIVED state mapping (see Tables) [DOC - Step 1 research]</td>
+<td><code>Pending</code>, <code>Approved</code> or <code>Rejected</code></td>
+</tr>
+<tr>
+<td><code>states[].count</code></td>
+<td>integer</td>
+<td>DERIVED count per state over the caller's visible orders [BUILD]</td>
+<td>The compact card figure; the Pending row is also the headline figure</td>
+</tr>
+<tr>
+<td><code>pendingOutstandingTotal</code></td>
+<td>number</td>
+<td>DERIVED SUM(amount) over visible Pending requests [BUILD]</td>
+<td>The "$X outstanding" caption figure</td>
+</tr>
+</tbody>
+</table>
+<h3>Example response</h3>
+<pre><code>{
+  &quot;asOf&quot;: &quot;2026-08-19T14:05:00Z&quot;,
+  &quot;states&quot;: [
+    { &quot;state&quot;: &quot;Pending&quot;, &quot;count&quot;: 10 },
+    { &quot;state&quot;: &quot;Approved&quot;, &quot;count&quot;: 6 },
+    { &quot;state&quot;: &quot;Rejected&quot;, &quot;count&quot;: 2 }
+  ],
+  &quot;pendingOutstandingTotal&quot;: 7577.50
+}
+</code></pre>
+<p>Reconciliation: the three state counts sum to the visible active total, 10 + 6 + 2 = 18, which is the same 18 API 2 returns as <code>requestCount</code> under the same filters and anchor. <code>pendingOutstandingTotal</code> 7577.50 equals the sum of the ten Pending amounts and matches API 3's <code>totalAmount</code> for <code>state=Pending</code>.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty (no rows match)</td>
+<td>200 with all three counts 0 and <code>pendingOutstandingTotal</code> 0. The client renders the caught-up empty state</td>
+</tr>
+<tr>
+<td>Partial (data exists for only part of the requested span)</td>
+<td>Not applicable: there is no requested span; figures are point-in-time at <code>asOf</code></td>
+</tr>
+<tr>
+<td>Not-yet-existing entity (predates the requested window)</td>
+<td>Not applicable: no entity id and no window</td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td>403 when the caller lacks the module read right (right name [TO CONFIRM - Feargal Phelan]); what the tile renders is an open product decision (Still needs sign-off item 12)</td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td>503; the client shows the error state, never a zero that reads as "nothing pending"</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>API 2: approval board</h2>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/purchasing-management/board
+</code></pre>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>state</code></td>
+<td>string, query</td>
+<td>No</td>
+<td><code>Pending</code>, <code>Approved</code>, <code>Rejected</code></td>
+<td>omitted = all three</td>
+<td>One column instead of three. <code>Closed</code> / <code>Voided</code> are rejected here: the board is the live approval flow only</td>
+</tr>
+<tr>
+<td><code>approvalPathId</code></td>
+<td>string (guid), query</td>
+<td>No</td>
+<td>A path the caller is authorised on</td>
+<td>omitted = all paths</td>
+<td>Narrows cards and every aggregate</td>
+</tr>
+<tr>
+<td><code>cardsPerState</code></td>
+<td>integer, query</td>
+<td>No</td>
+<td>1 to 100</td>
+<td>25</td>
+<td>TOP-N cap per column, oldest first. The mid tier requests 2; the large tier the default</td>
+</tr>
+</tbody>
+</table>
+<p>Context headers: <code>X-Company-ID</code>, <code>X-UserTenant-ID</code>.</p>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/purchasing-management/board?cardsPerState=2
+GET /api/dashboard/purchasing-management/board?state=Pending&amp;approvalPathId=7f3a9c2e-1b44-4e0a-9c11-2d6f8a5b0e19&amp;cardsPerState=25
+</code></pre>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>asOf</code></td>
+<td>string (date-time)</td>
+<td>DERIVED server clock</td>
+<td>Shared anchor; the client derives age labels against it</td>
+</tr>
+<tr>
+<td><code>requestCount</code></td>
+<td>integer</td>
+<td>DERIVED count over the full filtered active set [BUILD]</td>
+<td>The header caption's "# requests" figure</td>
+</tr>
+<tr>
+<td><code>totalAmount</code></td>
+<td>number</td>
+<td>DERIVED SUM(amount) over the same set [BUILD]</td>
+<td>The header caption's total</td>
+</tr>
+<tr>
+<td><code>columns[]</code></td>
+<td>array</td>
+<td>DERIVED</td>
+<td>One entry per requested state, fixed order Pending, Approved, Rejected</td>
+</tr>
+<tr>
+<td><code>columns[].state</code></td>
+<td>string</td>
+<td>DERIVED state mapping [DOC - Step 1 research]</td>
+<td>The column's approval state</td>
+</tr>
+<tr>
+<td><code>columns[].totalCount</code></td>
+<td>integer</td>
+<td>DERIVED count over the full filtered state [BUILD]</td>
+<td>Column chip figure; also funds "+N more"</td>
+</tr>
+<tr>
+<td><code>columns[].cards[]</code></td>
+<td>array</td>
+<td>DERIVED TOP-N per state, oldest first [BUILD]</td>
+<td>Oldest-first TOP-N per column, at most <code>cardsPerState</code> entries</td>
+</tr>
+<tr>
+<td><code>columns[].cards[].orderId</code></td>
+<td>string (guid)</td>
+<td>STORED <code>PO_Order</code> key [DOC - Step 1 research]</td>
+<td>Drill navigation key and write target</td>
+</tr>
+<tr>
+<td><code>columns[].cards[].poNumber</code></td>
+<td>string</td>
+<td>STORED <code>PO_Order</code> requisition/order number [DOC - Step 1 research]</td>
+<td>The card's reference</td>
+</tr>
+<tr>
+<td><code>columns[].cards[].vendor</code></td>
+<td>string</td>
+<td>STORED <code>PO_Order</code> vendor [DOC - Step 1 research]</td>
+<td></td>
+</tr>
+<tr>
+<td><code>columns[].cards[].amount</code></td>
+<td>number</td>
+<td>STORED <code>PO_Order</code> total/outstanding amount [DOC - Step 1 research]</td>
+<td></td>
+</tr>
+<tr>
+<td><code>columns[].cards[].issuedDate</code></td>
+<td>string (date)</td>
+<td>STORED <code>PO_Order</code> date issued [DOC - Step 1 research]</td>
+<td>Feeds the client-side age label</td>
+</tr>
+<tr>
+<td><code>columns[].cards[].isOverdue</code></td>
+<td>boolean</td>
+<td>UNVERIFIED (Feargal Phelan): expected-by date before <code>asOf</code> on a Pending request [TO CONFIRM; Step 4 row 3]</td>
+<td>Overdue read; always paired with a text label</td>
+</tr>
+<tr>
+<td><code>columns[].cards[].onHold</code></td>
+<td>boolean</td>
+<td>NEW dashboard read; hold is real on approval rows [LIVE - Approvals tab, 2026-08-19; Step 4 row 12]</td>
+<td>A held request refuses transitions until the hold is removed</td>
+</tr>
+<tr>
+<td><code>columns[].cards[].holdReason</code></td>
+<td>string or null</td>
+<td>NEW, same source [Step 4 row 12]</td>
+<td>The most recent hold reason; null when not held</td>
+</tr>
+<tr>
+<td><code>columns[].cards[].paymentStatus</code></td>
+<td>string or null</td>
+<td>NEW: no dashboard payment read exists today [TO CONFIRM - Feargal Phelan; Step 4 row 11]</td>
+<td><code>unpaid</code> or <code>paid</code> on Approved requests, null otherwise. Paid means check-issued</td>
+</tr>
+</tbody>
+</table>
+<h3>Example response</h3>
+<p><code>GET .../board?cardsPerState=2</code> over the build's dataset:</p>
+<pre><code>{
+  &quot;asOf&quot;: &quot;2026-08-19T14:05:00Z&quot;,
+  &quot;requestCount&quot;: 18,
+  &quot;totalAmount&quot;: 13953.75,
+  &quot;columns&quot;: [
+    {
+      &quot;state&quot;: &quot;Pending&quot;,
+      &quot;totalCount&quot;: 10,
+      &quot;cards&quot;: [
+        { &quot;orderId&quot;: &quot;a1e07c44-5b7f-4f2e-9d31-6c0a8e2b91d0&quot;, &quot;poNumber&quot;: &quot;PO-2885&quot;, &quot;vendor&quot;: &quot;Facilities Plus&quot;, &quot;amount&quot;: 1975.00, &quot;issuedDate&quot;: &quot;2026-06-05&quot;, &quot;isOverdue&quot;: true, &quot;onHold&quot;: false, &quot;holdReason&quot;: null, &quot;paymentStatus&quot;: null },
+        { &quot;orderId&quot;: &quot;b2f18d55-6c80-4a3f-8e42-7d1b9f3ca2e1&quot;, &quot;poNumber&quot;: &quot;PO-2888&quot;, &quot;vendor&quot;: &quot;IT Direct&quot;, &quot;amount&quot;: 2350.00, &quot;issuedDate&quot;: &quot;2026-06-18&quot;, &quot;isOverdue&quot;: true, &quot;onHold&quot;: false, &quot;holdReason&quot;: null, &quot;paymentStatus&quot;: null }
+      ]
+    },
+    {
+      &quot;state&quot;: &quot;Approved&quot;,
+      &quot;totalCount&quot;: 6,
+      &quot;cards&quot;: [
+        { &quot;orderId&quot;: &quot;c3a29e66-7d91-4b40-9f53-8e2c0a4db3f2&quot;, &quot;poNumber&quot;: &quot;PO-2610&quot;, &quot;vendor&quot;: &quot;A-1 Advertising&quot;, &quot;amount&quot;: 140.00, &quot;issuedDate&quot;: &quot;2025-04-04&quot;, &quot;isOverdue&quot;: false, &quot;onHold&quot;: false, &quot;holdReason&quot;: null, &quot;paymentStatus&quot;: &quot;paid&quot; },
+        { &quot;orderId&quot;: &quot;d4b30f77-8ea2-4c51-a064-9f3d1b5ec403&quot;, &quot;poNumber&quot;: &quot;PO-2655&quot;, &quot;vendor&quot;: &quot;Acme Paper Supply&quot;, &quot;amount&quot;: 76.25, &quot;issuedDate&quot;: &quot;2025-09-15&quot;, &quot;isOverdue&quot;: false, &quot;onHold&quot;: false, &quot;holdReason&quot;: null, &quot;paymentStatus&quot;: &quot;paid&quot; }
+      ]
+    },
+    {
+      &quot;state&quot;: &quot;Rejected&quot;,
+      &quot;totalCount&quot;: 2,
+      &quot;cards&quot;: [
+        { &quot;orderId&quot;: &quot;e5c41a88-9fb3-4d62-b175-0a4e2c6fd514&quot;, &quot;poNumber&quot;: &quot;PO-2902&quot;, &quot;vendor&quot;: &quot;Catering Co.&quot;, &quot;amount&quot;: 520.00, &quot;issuedDate&quot;: &quot;2026-08-06&quot;, &quot;isOverdue&quot;: false, &quot;onHold&quot;: false, &quot;holdReason&quot;: null, &quot;paymentStatus&quot;: null },
+        { &quot;orderId&quot;: &quot;f6d52b99-0ac4-4e73-c286-1b5f3d7ae625&quot;, &quot;poNumber&quot;: &quot;PO-2906&quot;, &quot;vendor&quot;: &quot;IT Direct&quot;, &quot;amount&quot;: 3150.00, &quot;issuedDate&quot;: &quot;2026-08-15&quot;, &quot;isOverdue&quot;: false, &quot;onHold&quot;: false, &quot;holdReason&quot;: null, &quot;paymentStatus&quot;: null }
+      ]
+    }
+  ]
+}
+</code></pre>
+<p>Reconciliation: the column <code>totalCount</code> figures sum to the header figure, 10 + 6 + 2 = 18, which is <code>requestCount</code> and matches API 1's three counts under the same anchor. <code>totalAmount</code> sums the three full state totals, 7577.50 + 2706.25 + 3670.00 = 13953.75. The cards shipped (2 + 2 + 2 = 6) are a TOP-N subset; aggregates never derive from them.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty (no rows match)</td>
+<td>200, <code>requestCount</code> 0, <code>totalAmount</code> 0, each requested column present with <code>totalCount</code> 0 and empty <code>cards[]</code>. A column with zero requests stays present so the client can render its quiet "None waiting" line</td>
+</tr>
+<tr>
+<td>Partial (data exists for only part of the requested span)</td>
+<td>Not applicable: no span; the board is point-in-time at <code>asOf</code></td>
+</tr>
+<tr>
+<td>Not-yet-existing entity (predates the requested window)</td>
+<td>Not applicable: no entity id and no window</td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td>403 without the module read right (right name [TO CONFIRM - Feargal Phelan])</td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td>503; the client keeps the last rendered board with its stale <code>asOf</code> visible, or shows the error state, never an empty board that reads as caught-up</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>API 3: request table</h2>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/purchasing-management/requests
+</code></pre>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>state</code></td>
+<td>string, query</td>
+<td>No</td>
+<td><code>Pending</code>, <code>Approved</code>, <code>Rejected</code>, <code>Closed</code>, <code>Voided</code></td>
+<td>omitted = all five</td>
+<td>The table's All includes the archive, by design</td>
+</tr>
+<tr>
+<td><code>approvalPathId</code></td>
+<td>string (guid), query</td>
+<td>No</td>
+<td>A path the caller is authorised on</td>
+<td>omitted = all paths</td>
+<td>Narrows rows and both full-set aggregates</td>
+</tr>
+<tr>
+<td><code>department</code></td>
+<td>string, query</td>
+<td>No</td>
+<td>A department value present on purchasing records [TO CONFIRM - Feargal Phelan, Step 4 row 1]</td>
+<td>omitted = all, including blank</td>
+<td>Blank departments are excluded by any specific value</td>
+</tr>
+<tr>
+<td><code>fiscalYear</code></td>
+<td>string, query</td>
+<td>No</td>
+<td>A fiscal year, e.g. <code>FY 2026</code> [TO CONFIRM - Feargal Phelan, Step 4 row 2]</td>
+<td>omitted = all years</td>
+<td>Table-only historical lookup window</td>
+</tr>
+<tr>
+<td><code>overdueOnly</code></td>
+<td>boolean, query</td>
+<td>No</td>
+<td><code>true</code>, <code>false</code></td>
+<td><code>false</code></td>
+<td><code>true</code> keeps only overdue rows per the single overdue rule in Tables [TO CONFIRM - Feargal Phelan, Step 4 row 3]</td>
+</tr>
+<tr>
+<td><code>page</code></td>
+<td>integer, query</td>
+<td>No</td>
+<td>&gt;= 1</td>
+<td>1</td>
+<td>1-based</td>
+</tr>
+<tr>
+<td><code>pageSize</code></td>
+<td>integer, query</td>
+<td>No</td>
+<td>1 to 100</td>
+<td>10</td>
+<td>Maximum 100</td>
+</tr>
+<tr>
+<td><code>sortBy</code></td>
+<td>string, query</td>
+<td>No</td>
+<td><code>issuedDate</code>, <code>poNumber</code>, <code>vendor</code>, <code>amount</code>, <code>department</code>, <code>state</code></td>
+<td><code>issuedDate</code></td>
+<td>Whitelist; anything else is a 400</td>
+</tr>
+<tr>
+<td><code>sortDir</code></td>
+<td>string, query</td>
+<td>No</td>
+<td><code>asc</code>, <code>desc</code></td>
+<td><code>asc</code></td>
+<td>Default order is oldest first, the design's aging read</td>
+</tr>
+</tbody>
+</table>
+<p>Context headers: <code>X-Company-ID</code>, <code>X-UserTenant-ID</code>.</p>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/purchasing-management/requests?page=1&amp;pageSize=10
+GET /api/dashboard/purchasing-management/requests?state=Pending&amp;department=Facilities&amp;overdueOnly=true&amp;page=1&amp;pageSize=10&amp;sortBy=issuedDate&amp;sortDir=asc
+</code></pre>
+<p>No value in the whitelist needs URL-encoding; a real department value containing spaces (for example <code>Education Ministry</code> as a path name does) must be URL-encoded by the client.</p>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>asOf</code></td>
+<td>string (date-time)</td>
+<td>DERIVED server clock</td>
+<td>Shared anchor</td>
+</tr>
+<tr>
+<td><code>page</code></td>
+<td>integer</td>
+<td>DERIVED echo</td>
+<td></td>
+</tr>
+<tr>
+<td><code>pageSize</code></td>
+<td>integer</td>
+<td>DERIVED echo</td>
+<td></td>
+</tr>
+<tr>
+<td><code>totalCount</code></td>
+<td>integer</td>
+<td>DERIVED count over the full filtered set [BUILD]</td>
+<td>Totals-row count; never the page's row count</td>
+</tr>
+<tr>
+<td><code>totalAmount</code></td>
+<td>number</td>
+<td>DERIVED SUM(amount) over the full filtered set [BUILD]</td>
+<td>Totals-row amount</td>
+</tr>
+<tr>
+<td><code>sortBy</code></td>
+<td>string</td>
+<td>DERIVED echo</td>
+<td></td>
+</tr>
+<tr>
+<td><code>sortDir</code></td>
+<td>string</td>
+<td>DERIVED echo</td>
+<td></td>
+</tr>
+<tr>
+<td><code>rows[]</code></td>
+<td>array</td>
+<td>DERIVED one page of the sorted, filtered set [BUILD]</td>
+<td>One page, at most <code>pageSize</code> entries</td>
+</tr>
+<tr>
+<td><code>rows[].orderId</code></td>
+<td>string (guid)</td>
+<td>STORED <code>PO_Order</code> key [DOC - Step 1 research]</td>
+<td>Drill navigation key</td>
+</tr>
+<tr>
+<td><code>rows[].poNumber</code></td>
+<td>string</td>
+<td>STORED <code>PO_Order</code> requisition/order number [DOC - Step 1 research]</td>
+<td></td>
+</tr>
+<tr>
+<td><code>rows[].vendor</code></td>
+<td>string</td>
+<td>STORED <code>PO_Order</code> vendor [DOC - Step 1 research]</td>
+<td></td>
+</tr>
+<tr>
+<td><code>rows[].amount</code></td>
+<td>number</td>
+<td>STORED <code>PO_Order</code> total/outstanding amount [DOC - Step 1 research]</td>
+<td></td>
+</tr>
+<tr>
+<td><code>rows[].department</code></td>
+<td>string or null</td>
+<td>UNVERIFIED (Feargal Phelan): no known source field [TO CONFIRM; Step 4 row 1]</td>
+<td>Drops from the contract, with its filter and column, if the field is not real</td>
+</tr>
+<tr>
+<td><code>rows[].fiscalYear</code></td>
+<td>string or null</td>
+<td>UNVERIFIED (Feargal Phelan): no known source field [TO CONFIRM; Step 4 row 2]</td>
+<td>Same conditional</td>
+</tr>
+<tr>
+<td><code>rows[].state</code></td>
+<td>string</td>
+<td>DERIVED state mapping [DOC - Step 1 research]</td>
+<td>One of the five states; the Status column's pill text</td>
+</tr>
+<tr>
+<td><code>rows[].onHold</code></td>
+<td>boolean</td>
+<td>NEW dashboard read [Step 4 row 12]</td>
+<td></td>
+</tr>
+<tr>
+<td><code>rows[].holdReason</code></td>
+<td>string or null</td>
+<td>NEW [Step 4 row 12]</td>
+<td></td>
+</tr>
+<tr>
+<td><code>rows[].paymentStatus</code></td>
+<td>string or null</td>
+<td>NEW [TO CONFIRM - Feargal Phelan; Step 4 row 11]</td>
+<td><code>unpaid</code> / <code>paid</code> on Approved and Closed requests, null otherwise</td>
+</tr>
+<tr>
+<td><code>rows[].issuedDate</code></td>
+<td>string (date)</td>
+<td>STORED <code>PO_Order</code> date issued [DOC - Step 1 research]</td>
+<td>The Issued column; feeds the age read</td>
+</tr>
+<tr>
+<td><code>rows[].isOverdue</code></td>
+<td>boolean</td>
+<td>UNVERIFIED (Feargal Phelan) [TO CONFIRM; Step 4 row 3]</td>
+<td>Red-flagged row read, always paired with a text flag</td>
+</tr>
+</tbody>
+</table>
+<h3>Example response</h3>
+<p><code>GET .../requests?state=Pending&amp;page=1&amp;pageSize=2</code>:</p>
+<pre><code>{
+  &quot;asOf&quot;: &quot;2026-08-19T14:05:00Z&quot;,
+  &quot;page&quot;: 1,
+  &quot;pageSize&quot;: 2,
+  &quot;totalCount&quot;: 10,
+  &quot;totalAmount&quot;: 7577.50,
+  &quot;sortBy&quot;: &quot;issuedDate&quot;,
+  &quot;sortDir&quot;: &quot;asc&quot;,
+  &quot;rows&quot;: [
+    { &quot;orderId&quot;: &quot;a1e07c44-5b7f-4f2e-9d31-6c0a8e2b91d0&quot;, &quot;poNumber&quot;: &quot;PO-2885&quot;, &quot;vendor&quot;: &quot;Facilities Plus&quot;, &quot;amount&quot;: 1975.00, &quot;department&quot;: &quot;Facilities&quot;, &quot;fiscalYear&quot;: &quot;FY 2026&quot;, &quot;state&quot;: &quot;Pending&quot;, &quot;onHold&quot;: false, &quot;holdReason&quot;: null, &quot;paymentStatus&quot;: null, &quot;issuedDate&quot;: &quot;2026-06-05&quot;, &quot;isOverdue&quot;: true },
+    { &quot;orderId&quot;: &quot;b2f18d55-6c80-4a3f-8e42-7d1b9f3ca2e1&quot;, &quot;poNumber&quot;: &quot;PO-2888&quot;, &quot;vendor&quot;: &quot;IT Direct&quot;, &quot;amount&quot;: 2350.00, &quot;department&quot;: &quot;IT&quot;, &quot;fiscalYear&quot;: &quot;FY 2026&quot;, &quot;state&quot;: &quot;Pending&quot;, &quot;onHold&quot;: false, &quot;holdReason&quot;: null, &quot;paymentStatus&quot;: null, &quot;issuedDate&quot;: &quot;2026-06-18&quot;, &quot;isOverdue&quot;: true }
+  ]
+}
+</code></pre>
+<p>Reconciliation: <code>totalCount</code> 10 and <code>totalAmount</code> 7577.50 span the full Pending set, not the two rows shipped, and match API 1's Pending count and <code>pendingOutstandingTotal</code> under the same anchor. Across the whole dataset the per-state amounts sum to the unfiltered table total: 7577.50 + 2706.25 + 3670.00 = 13953.75, which is API 2's <code>totalAmount</code>.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty (no rows match)</td>
+<td>200, empty <code>rows[]</code>, <code>totalCount</code> 0, <code>totalAmount</code> 0. The client renders the in-table empty row plus a zero totals row</td>
+</tr>
+<tr>
+<td>Partial (data exists for only part of the requested span)</td>
+<td>Not applicable as a span: <code>fiscalYear</code> filtering either matches rows or does not; a year with no rows is the empty case above</td>
+</tr>
+<tr>
+<td>Not-yet-existing entity (predates the requested window)</td>
+<td>Not applicable: no entity id addresses this read</td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td>403 without the module read right (right name [TO CONFIRM - Feargal Phelan])</td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td>503; error state, never an empty table that reads as no requests</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>API 4: approval-path lookup</h2>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/purchasing-management/approval-paths
+</code></pre>
+<p>This endpoint exists today with a legacy status integer (<code>?status={int}</code>) [DOC - Widget_Comparison_Classic.html]; this contract reuses it with the <code>state</code> string of the new model. Results are scoped to paths the caller is authorised on, exactly as today.</p>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>state</code></td>
+<td>string, query</td>
+<td>No</td>
+<td>The five states, per the view's value list</td>
+<td>omitted = all states the caller's view serves</td>
+<td>The option list is the distinct paths among orders matching this state, so it cascades from the PO Status filter [DOC - Step 1 research]</td>
+</tr>
+</tbody>
+</table>
+<p>Context headers: <code>X-Company-ID</code>, <code>X-UserTenant-ID</code>.</p>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/purchasing-management/approval-paths
+GET /api/dashboard/purchasing-management/approval-paths?state=Pending
+</code></pre>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>paths[]</code></td>
+<td>array</td>
+<td>DERIVED distinct paths on the caller's visible orders [DOC - Step 1 research]</td>
+<td>Distinct paths on the caller's visible orders in the requested state</td>
+</tr>
+<tr>
+<td><code>paths[].approvalPathId</code></td>
+<td>string (guid)</td>
+<td>STORED <code>PO_ApprovalPath</code> key (<code>ApprovalId</code> in the existing DTO) [DOC - Widget_Comparison_Classic.html]</td>
+<td>The <code>approvalPathId</code> filter value</td>
+</tr>
+<tr>
+<td><code>paths[].name</code></td>
+<td>string</td>
+<td>STORED <code>PO_ApprovalPath</code> name [DOC - Step 1 research]</td>
+<td>Customer-defined display name</td>
+</tr>
+</tbody>
+</table>
+<h3>Example response</h3>
+<pre><code>{
+  &quot;paths&quot;: [
+    { &quot;approvalPathId&quot;: &quot;7f3a9c2e-1b44-4e0a-9c11-2d6f8a5b0e19&quot;, &quot;name&quot;: &quot;Administration&quot; },
+    { &quot;approvalPathId&quot;: &quot;8a4b0d3f-2c55-4f1b-8d22-3e7a9b6c1f20&quot;, &quot;name&quot;: &quot;Education Ministry&quot; },
+    { &quot;approvalPathId&quot;: &quot;9b5c1e40-3d66-4a2c-9e33-4f8b0c7d2a31&quot;, &quot;name&quot;: &quot;Everyone&quot; },
+    { &quot;approvalPathId&quot;: &quot;0c6d2f51-4e77-4b3d-af44-5a9c1d8e3b42&quot;, &quot;name&quot;: &quot;QA Path&quot; }
+  ]
+}
+</code></pre>
+<p>Reconciliation: the four paths are the distinct <code>path</code> values across the dataset's 18 orders; a filter over any one of them plus the other three partitions the set, for example Administration's 5 orders plus the other paths' 13 account for every order, 5 + 13 = 18.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty (no rows match)</td>
+<td>200 with empty <code>paths[]</code>. The client renders the filter disabled, exactly as it does when only one path exists</td>
+</tr>
+<tr>
+<td>Partial (data exists for only part of the requested span)</td>
+<td>Not applicable: no span</td>
+</tr>
+<tr>
+<td>Not-yet-existing entity (predates the requested window)</td>
+<td>Not applicable</td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td>403 without the module read right</td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td>503; the client keeps the previous option list rather than blanking the filter</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>API 5: state transition (write)</h2>
+<h3>Endpoint</h3>
+<pre><code>POST /api/dashboard/purchasing-management/requests/{orderId}/transition
+</code></pre>
+<p>No approve/reject/close/void write exists for the dashboard in either codebase today; this is the contract's central NEW backend work [DOC - Step 6 dossier open question "Can approve/reject be done via API?"; Step 4 rows 10 and 13]. On the record screen today, Closed and Voided are manual status edits [LIVE - beta1, 2026-08-19].</p>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>orderId</code></td>
+<td>string (guid), path</td>
+<td>Yes</td>
+<td>A visible <code>PO_Order</code> key</td>
+<td>none</td>
+<td>The request being actioned</td>
+</tr>
+<tr>
+<td><code>targetState</code></td>
+<td>string, body</td>
+<td>Yes</td>
+<td><code>Pending</code>, <code>Approved</code>, <code>Rejected</code>, <code>Closed</code>, <code>Voided</code></td>
+<td>none</td>
+<td>The desired state. Eligibility guards below</td>
+</tr>
+<tr>
+<td><code>reason</code></td>
+<td>string, body</td>
+<td>No (required when <code>targetState</code> is <code>Rejected</code> or <code>Voided</code>)</td>
+<td>Up to 2000 characters</td>
+<td>empty</td>
+<td>The reason note recorded on the request, mirroring the Approvals tab's Reason [LIVE - screenshot, 2026-08-19]</td>
+</tr>
+<tr>
+<td><code>fromState</code></td>
+<td>string, body</td>
+<td>Yes</td>
+<td>The state the client last read</td>
+<td>none</td>
+<td>Concurrency guard: the write is refused if the request has moved since the client read it</td>
+</tr>
+</tbody>
+</table>
+<p>Context headers: <code>X-Company-ID</code>, <code>X-UserTenant-ID</code>.</p>
+<p>Server-enforced guards, in the order checked; each mirrors the build's move logic [BUILD]:</p>
+<ol>
+<li>A request the caller may not action is refused (403). The exact authority rule - path membership, approver sequence position, or an admin override - is [TO CONFIRM - Feargal Phelan]; see Still needs sign-off item 11.</li>
+<li>A held request refuses every transition until the hold is removed (409 <code>on-hold</code>).</li>
+<li><code>Closed</code> and <code>Voided</code> are terminal: a request already in either state refuses every transition (422 <code>terminal-state</code>).</li>
+<li><code>Closed</code> requires the request to be Approved and paid (422 <code>close-requires-paid</code>).</li>
+<li><code>Voided</code> requires the request not to be paid (422 <code>void-requires-unpaid</code>); reversing an issued check is an Accounts Payable flow, not a dashboard action.</li>
+<li><code>targetState</code> equal to the current state returns 200 unchanged: a same-state drop is a no-op, not an error.</li>
+</ol>
+<h3>Example requests</h3>
+<pre><code>POST /api/dashboard/purchasing-management/requests/b2f18d55-6c80-4a3f-8e42-7d1b9f3ca2e1/transition
+{&quot;targetState&quot;: &quot;Approved&quot;, &quot;reason&quot;: &quot;Budget confirmed with Finance&quot;, &quot;fromState&quot;: &quot;Pending&quot;}
+
+POST /api/dashboard/purchasing-management/requests/c3a29e66-7d91-4b40-9f53-8e2c0a4db3f2/transition
+{&quot;targetState&quot;: &quot;Closed&quot;, &quot;reason&quot;: &quot;Order fulfilled and paid&quot;, &quot;fromState&quot;: &quot;Approved&quot;}
+</code></pre>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>asOf</code></td>
+<td>string (date-time)</td>
+<td>DERIVED server clock after the write</td>
+<td>Fresh anchor the client adopts for its follow-up board read</td>
+</tr>
+<tr>
+<td><code>orderId</code></td>
+<td>string (guid)</td>
+<td>STORED <code>PO_Order</code> key</td>
+<td>The request written</td>
+</tr>
+<tr>
+<td><code>poNumber</code></td>
+<td>string</td>
+<td>STORED <code>PO_Order</code> requisition/order number</td>
+<td>Lets the client confirm the card it moved</td>
+</tr>
+<tr>
+<td><code>state</code></td>
+<td>string</td>
+<td>DERIVED state mapping after the write</td>
+<td>The state after the transition</td>
+</tr>
+<tr>
+<td><code>onHold</code></td>
+<td>boolean</td>
+<td>NEW read [Step 4 row 12]</td>
+<td>Unchanged by this write</td>
+</tr>
+<tr>
+<td><code>holdReason</code></td>
+<td>string or null</td>
+<td>NEW [Step 4 row 12]</td>
+<td>Unchanged by this write</td>
+</tr>
+<tr>
+<td><code>paymentStatus</code></td>
+<td>string or null</td>
+<td>NEW [Step 4 row 11]</td>
+<td>Unchanged by this write</td>
+</tr>
+</tbody>
+</table>
+<h3>Example response</h3>
+<pre><code>{
+  &quot;asOf&quot;: &quot;2026-08-19T14:06:12Z&quot;,
+  &quot;orderId&quot;: &quot;b2f18d55-6c80-4a3f-8e42-7d1b9f3ca2e1&quot;,
+  &quot;poNumber&quot;: &quot;PO-2888&quot;,
+  &quot;state&quot;: &quot;Approved&quot;,
+  &quot;onHold&quot;: false,
+  &quot;holdReason&quot;: null,
+  &quot;paymentStatus&quot;: &quot;unpaid&quot;
+}
+</code></pre>
+<p>Reconciliation: one request moved from Pending to Approved, so the follow-up board read shows Pending 9 and Approved 7, and the active total is unchanged, 9 + 7 + 2 = 18, the same <code>requestCount</code> as before the write. A transition changes a state, never a row count; a <code>Closed</code> or <code>Voided</code> result leaves the active board (its column counts drop by one) while the table's archive gains it.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty (no rows match)</td>
+<td>Not applicable: a write names exactly one request; a missing one is the unknown-id case in Edge cases</td>
+</tr>
+<tr>
+<td>Partial (data exists for only part of the requested span)</td>
+<td>Not applicable: no span</td>
+</tr>
+<tr>
+<td>Not-yet-existing entity (predates the requested window)</td>
+<td>404 <code>unknown-order</code> when <code>orderId</code> does not exist in the tenant or is not visible to the caller. Existence is not disclosed to unauthorised callers</td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td>403 when the caller lacks the write authority for this request (rule [TO CONFIRM - Feargal Phelan]). Distinct from the module-read 403 so the client can suppress action affordances, not the whole widget</td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td>503; the client must treat the outcome as unknown, re-read API 2 and re-render before offering the action again</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>API 6: hold toggle (write)</h2>
+<h3>Endpoint</h3>
+<pre><code>POST /api/dashboard/purchasing-management/requests/{orderId}/hold
+</code></pre>
+<p>Hold is real in the approval model (a Hold checkbox plus Reason per approval row [LIVE - Approvals tab screenshot, 2026-08-19]) but is not writable from the dashboard today; both directions of this write are NEW [Step 4 row 12]. Whether the payment side has its own separate hold is not visible in any code trace and is [TO CONFIRM - Feargal Phelan].</p>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>orderId</code></td>
+<td>string (guid), path</td>
+<td>Yes</td>
+<td>A visible <code>PO_Order</code> key</td>
+<td>none</td>
+<td>The request being held or released</td>
+</tr>
+<tr>
+<td><code>hold</code></td>
+<td>boolean, body</td>
+<td>Yes</td>
+<td><code>true</code>, <code>false</code></td>
+<td>none</td>
+<td>The desired hold state, so a repeated call is idempotent</td>
+</tr>
+<tr>
+<td><code>reason</code></td>
+<td>string, body</td>
+<td>Yes</td>
+<td>Up to 2000 characters</td>
+<td>none</td>
+<td>Recorded on the request in both directions [BUILD]</td>
+</tr>
+</tbody>
+</table>
+<p>Context headers: <code>X-Company-ID</code>, <code>X-UserTenant-ID</code>.</p>
+<p>Server-enforced guards [BUILD]: <code>hold: true</code> is accepted only while the request is in progress - Pending, or Approved and unpaid - never on paid, Rejected, Closed or Voided requests (422 <code>hold-not-available</code>). <code>hold: false</code> on a request that is not held returns 200 unchanged.</p>
+<h3>Example requests</h3>
+<pre><code>POST /api/dashboard/purchasing-management/requests/a1e07c44-5b7f-4f2e-9d31-6c0a8e2b91d0/hold
+{&quot;hold&quot;: true, &quot;reason&quot;: &quot;Waiting on budget confirmation&quot;}
+
+POST /api/dashboard/purchasing-management/requests/a1e07c44-5b7f-4f2e-9d31-6c0a8e2b91d0/hold
+{&quot;hold&quot;: false, &quot;reason&quot;: &quot;Budget confirmed&quot;}
+</code></pre>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>asOf</code></td>
+<td>string (date-time)</td>
+<td>DERIVED server clock after the write</td>
+<td>Fresh anchor</td>
+</tr>
+<tr>
+<td><code>orderId</code></td>
+<td>string (guid)</td>
+<td>STORED <code>PO_Order</code> key</td>
+<td></td>
+</tr>
+<tr>
+<td><code>poNumber</code></td>
+<td>string</td>
+<td>STORED <code>PO_Order</code> number</td>
+<td></td>
+</tr>
+<tr>
+<td><code>state</code></td>
+<td>string</td>
+<td>DERIVED state mapping</td>
+<td>Unchanged by this write</td>
+</tr>
+<tr>
+<td><code>onHold</code></td>
+<td>boolean</td>
+<td>NEW [Step 4 row 12]</td>
+<td>The hold state after the write</td>
+</tr>
+<tr>
+<td><code>holdReason</code></td>
+<td>string or null</td>
+<td>NEW [Step 4 row 12]</td>
+<td>The reason just recorded, or null after a release</td>
+</tr>
+<tr>
+<td><code>paymentStatus</code></td>
+<td>string or null</td>
+<td>NEW [Step 4 row 11]</td>
+<td>Unchanged by this write</td>
+</tr>
+</tbody>
+</table>
+<h3>Example response</h3>
+<pre><code>{
+  &quot;asOf&quot;: &quot;2026-08-19T14:07:40Z&quot;,
+  &quot;orderId&quot;: &quot;a1e07c44-5b7f-4f2e-9d31-6c0a8e2b91d0&quot;,
+  &quot;poNumber&quot;: &quot;PO-2885&quot;,
+  &quot;state&quot;: &quot;Pending&quot;,
+  &quot;onHold&quot;: true,
+  &quot;holdReason&quot;: &quot;Waiting on budget confirmation&quot;,
+  &quot;paymentStatus&quot;: null
+}
+</code></pre>
+<p>Reconciliation: a hold changes no state and no count; the board's column figures after this write are the same 10 + 6 + 2 = 18 as before it. The held request stays in its column, locked, until a release.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty (no rows match)</td>
+<td>Not applicable: a write names exactly one request</td>
+</tr>
+<tr>
+<td>Partial (data exists for only part of the requested span)</td>
+<td>Not applicable</td>
+</tr>
+<tr>
+<td>Not-yet-existing entity (predates the requested window)</td>
+<td>404 <code>unknown-order</code>, as API 5</td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td>403 under the same write-authority rule as API 5 [TO CONFIRM - Feargal Phelan]</td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td>503; outcome unknown, re-read before re-offering</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>API 7: payment approval entry (write) - DISPUTED, see Still needs sign-off item 1</h2>
+<h3>Endpoint</h3>
+<pre><code>POST /api/dashboard/purchasing-management/requests/{orderId}/payment-approvals
+</code></pre>
+<p><strong>Read this first:</strong> whether this endpoint should exist at all is an unresolved dispute. One reading holds that the dashboard should preserve the existing payment functionality and redirect users to the established payment screen; the built Final instead performs the payment entry in place. This section specs what the built Final does, because that is the standing build; if the redirect ruling lands, this API is dropped entirely and the unpaid-card selection becomes a navigation to the record screen's Payment Approval tab. Do not build this endpoint before that ruling.</p>
+<p>Grounding in the built behaviour: the entry surface mirrors the record screen's Add Invoice Payment Approval (invoice number, tax, freight, other, per-invoice account distribution, Submit for Approval) [LIVE - beta1 Requests/Update click-through, 2026-08-19]. Payment approval is an invoice-level workflow on its own Payment Approval Path, and no dashboard API serves or writes any of it today [Step 4 rows 11-12].</p>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>orderId</code></td>
+<td>string (guid), path</td>
+<td>Yes</td>
+<td>A visible, Approved, unpaid <code>PO_Order</code> key</td>
+<td>none</td>
+<td>The request being paid</td>
+</tr>
+<tr>
+<td><code>invoices[]</code></td>
+<td>array, body</td>
+<td>Yes</td>
+<td>At least one entry</td>
+<td>none</td>
+<td>The invoice payment approvals being entered</td>
+</tr>
+<tr>
+<td><code>invoices[].invoiceNumber</code></td>
+<td>string, body</td>
+<td>Yes</td>
+<td>Non-empty</td>
+<td>none</td>
+<td>The vendor invoice being approved for payment</td>
+</tr>
+<tr>
+<td><code>invoices[].tax</code></td>
+<td>number, body</td>
+<td>No</td>
+<td>&gt;= 0</td>
+<td>0</td>
+<td>Invoice-level tax amount</td>
+</tr>
+<tr>
+<td><code>invoices[].freight</code></td>
+<td>number, body</td>
+<td>No</td>
+<td>&gt;= 0</td>
+<td>0</td>
+<td>Invoice-level freight amount</td>
+</tr>
+<tr>
+<td><code>invoices[].other</code></td>
+<td>number, body</td>
+<td>No</td>
+<td>&gt;= 0</td>
+<td>0</td>
+<td>Invoice-level other charges</td>
+</tr>
+<tr>
+<td><code>invoices[].distribution</code></td>
+<td>object, body</td>
+<td>Yes</td>
+<td>One distribution object per invoice entry</td>
+<td>none</td>
+<td>The account distribution for this invoice</td>
+</tr>
+<tr>
+<td><code>invoices[].distribution.description</code></td>
+<td>string, body</td>
+<td>No</td>
+<td>Free text</td>
+<td>empty</td>
+<td>Distribution line description</td>
+</tr>
+<tr>
+<td><code>invoices[].distribution.project</code></td>
+<td>string, body</td>
+<td>No</td>
+<td>Free text</td>
+<td>empty</td>
+<td>Project reference on the distribution line</td>
+</tr>
+<tr>
+<td><code>invoices[].distribution.amount</code></td>
+<td>number, body</td>
+<td>Yes</td>
+<td>&gt; 0</td>
+<td>none</td>
+<td>The distribution amount for this invoice</td>
+</tr>
+<tr>
+<td><code>submitForApproval</code></td>
+<td>boolean, body</td>
+<td>Yes</td>
+<td><code>true</code></td>
+<td>none</td>
+<td>The build's one-step submit. The real paid signal is the check being issued downstream; see the response note</td>
+</tr>
+</tbody>
+</table>
+<p>Context headers: <code>X-Company-ID</code>, <code>X-UserTenant-ID</code>.</p>
+<p>Server-enforced guards [BUILD]: the request must be Approved and unpaid (422 <code>not-payable</code>); a held request refuses payment entry until the hold is removed (409 <code>on-hold</code>).</p>
+<h3>Example requests</h3>
+<pre><code>POST /api/dashboard/purchasing-management/requests/17e8ab02-3f9c-4d15-b6a7-c85d20e94f36/payment-approvals
+{&quot;invoices&quot;: [{&quot;invoiceNumber&quot;: &quot;INV-2872&quot;, &quot;tax&quot;: 0, &quot;freight&quot;: 0, &quot;other&quot;: 0, &quot;distribution&quot;: {&quot;description&quot;: &quot;Facility supplies&quot;, &quot;project&quot;: &quot;&quot;, &quot;amount&quot;: 890.00}}], &quot;submitForApproval&quot;: true}
+
+POST /api/dashboard/purchasing-management/requests/28f9bc13-4a0d-4e26-c7b8-d96e31f05a47/payment-approvals
+{&quot;invoices&quot;: [{&quot;invoiceNumber&quot;: &quot;INV-2879&quot;, &quot;tax&quot;: 0, &quot;freight&quot;: 0, &quot;other&quot;: 0, &quot;distribution&quot;: {&quot;description&quot;: &quot;Workstation order&quot;, &quot;project&quot;: &quot;IT-26&quot;, &quot;amount&quot;: 1540.00}}], &quot;submitForApproval&quot;: true}
+</code></pre>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>asOf</code></td>
+<td>string (date-time)</td>
+<td>DERIVED server clock after the write</td>
+<td>Fresh anchor</td>
+</tr>
+<tr>
+<td><code>orderId</code></td>
+<td>string (guid)</td>
+<td>STORED <code>PO_Order</code> key</td>
+<td></td>
+</tr>
+<tr>
+<td><code>poNumber</code></td>
+<td>string</td>
+<td>STORED <code>PO_Order</code> number</td>
+<td></td>
+</tr>
+<tr>
+<td><code>state</code></td>
+<td>string</td>
+<td>DERIVED state mapping</td>
+<td>Unchanged: payment entry never changes the approval state</td>
+</tr>
+<tr>
+<td><code>paymentStatus</code></td>
+<td>string</td>
+<td>NEW [Step 4 row 11]</td>
+<td>The state after the write. The built Final treats submit as one step to <code>paid</code>; developers must treat <code>paid</code> as check-issued, so if the real workflow inserts a submitted-but-unissued stage, this contract's two-value field is insufficient and comes back to sign-off</td>
+</tr>
+</tbody>
+</table>
+<h3>Example response</h3>
+<pre><code>{
+  &quot;asOf&quot;: &quot;2026-08-19T14:09:05Z&quot;,
+  &quot;orderId&quot;: &quot;17e8ab02-3f9c-4d15-b6a7-c85d20e94f36&quot;,
+  &quot;poNumber&quot;: &quot;PO-2872&quot;,
+  &quot;state&quot;: &quot;Approved&quot;,
+  &quot;paymentStatus&quot;: &quot;paid&quot;
+}
+</code></pre>
+<p>Reconciliation: payment entry changes a sub-state, never a state, so every column count is unchanged, 10 + 6 + 2 = 18; within Approved the paid population rises by one and unpaid falls by one, 5 + 1 = 6, the Approved column total.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty (no rows match)</td>
+<td>Not applicable: a write names exactly one request</td>
+</tr>
+<tr>
+<td>Partial (data exists for only part of the requested span)</td>
+<td>Not applicable</td>
+</tr>
+<tr>
+<td>Not-yet-existing entity (predates the requested window)</td>
+<td>404 <code>unknown-order</code>, as API 5</td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td>403; whether payment entry needs a separate right from approval [TO CONFIRM - Feargal Phelan]</td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td>503; outcome unknown, re-read before re-offering</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>Auth and scoping</h2>
+<ul>
+<li><strong>Company / tenant scoping:</strong> every call carries <code>X-Company-ID</code> and <code>X-UserTenant-ID</code>, and every query is scoped by them [DOC - Widget_Comparison_Classic.html, modern purchasing-management identity].</li>
+<li><strong>Read scope within the module:</strong> administrators see all orders; every other user sees only orders on approval paths they are part of [DOC - Step 1 research]. This scope applies inside every read: counts, totals, cards, rows and path options are all computed over the caller's visible set only. Note one deliberate scope change carried from the design: rejected orders, which no current query returns to anyone, are served under the same visibility rule [Step 4 row 9]. Whether non-admins should see rejected orders on paths they belong to is part of that row's backend confirmation.</li>
+<li><strong>Permission right to read:</strong> the module read right's exact name is [TO CONFIRM - Feargal Phelan]. What a user without it sees - a hidden tile, an empty tile, or an error - is an open product decision (Still needs sign-off item 12).</li>
+<li><strong>Permission to write:</strong> the three writes require action authority on the specific request, enforced server-side on every call; a user with read but not write gets 403 from the writes while all reads keep working, and the client uses that distinction to suppress action affordances only. The exact authority rule (path membership, the approver's sequence position, admin override) is [TO CONFIRM - Feargal Phelan]; the design requirement that visible actions respect both the approval path and the viewing user's permissions is recorded but not yet built, so this contract makes the server the authority and leaves affordance-level hints to a later revision (Still needs sign-off item 11).</li>
+</ul>
+<hr />
+<h2>Edge cases</h2>
+<ol>
+<li><strong>Org has no purchase requests at all:</strong> every read returns its well-formed zero shape; the client renders the caught-up empty state, not an error.</li>
+<li><strong>Filters match nothing</strong> (including a valid path with no orders in the selected state): zero response, not an error; the board keeps its requested columns at <code>totalCount</code> 0.</li>
+<li><strong>Stale path after a status change:</strong> the client resets a path missing from API 4's refreshed list to All before the next read; a stale <code>approvalPathId</code> that still exists but matches nothing is case 2.</li>
+<li><strong>Unknown or unauthorised <code>approvalPathId</code>:</strong> 400 <code>unknown-approval-path</code> on reads.</li>
+<li><strong>Blank department or fiscal year on a row:</strong> included under All, excluded by any specific value; a blank is never a wildcard.</li>
+<li><strong>No expected-by date on a request:</strong> <code>isOverdue</code> is false; <code>overdueOnly=true</code> excludes it.</li>
+<li><strong>Pagination past the last page:</strong> 200, empty <code>rows[]</code>, correct <code>totalCount</code> and <code>totalAmount</code>.</li>
+<li><strong><code>sortBy</code> outside the whitelist, or <code>Closed</code>/<code>Voided</code> sent to the board endpoint:</strong> 400 with the named error; the client never reaches either through its own controls.</li>
+<li><strong>Unknown <code>orderId</code> on any write:</strong> 404 <code>unknown-order</code>; existence is not disclosed to unauthorised callers.</li>
+<li><strong>Transition on a request another user moved first:</strong> <code>fromState</code> no longer matches, 409 <code>state-conflict</code> with the current state in the body so the client can name who-got-there-first behaviour rather than a generic failure; the client re-reads API 2 with the response's <code>asOf</code>.</li>
+<li><strong>Transition or payment entry on a held request:</strong> 409 <code>on-hold</code> with the hold reason in the body.</li>
+<li><strong>Close on an unpaid request, or void on a paid one:</strong> 422 with the named guard error; the eligibility rules live on the server, the client's drop-target hints are presentation only.</li>
+<li><strong>Any transition on a Closed or Voided request:</strong> 422 <code>terminal-state</code>; both states are final, approvals locked, payment history read-only.</li>
+<li><strong>Same-state transition or already-released hold:</strong> 200 unchanged, idempotent no-op.</li>
+<li><strong>Two filters intersecting to an empty set while aggregates exist elsewhere:</strong> the zero response's <code>totalCount</code>/<code>totalAmount</code> are 0 for the filtered population; no aggregate from a wider population is ever returned alongside narrower rows.</li>
+</ol>
+<hr />
+<h2>Not in scope</h2>
+<ul>
+<li><strong>The PO record screen's read and edit surface</strong> (header form, line items, approvals grid, attachments, notes): the drill navigates to the existing Requests/Update screen, which owns all of it. The build's record-parity popup is a mock stand-in for that navigation, not a second contract.</li>
+<li><strong>The encumbrance chart and its endpoint:</strong> cut from the design; the existing <code>chart</code> endpoint stays live for legacy but is not consumed.</li>
+<li><strong>The status-options endpoint:</strong> the state list is a static client enum; the endpoint is not consumed.</li>
+<li><strong>Per-user filter persistence:</strong> the legacy widget saves both filter selections per user; the Modern API does not [Step 4 row 8]. The requirement stands but its mechanism (a shared dashboard preference service versus a per-widget pair) is a platform decision outside this contract; until it lands, filters reset per session.</li>
+<li><strong>Approval-path ordering and the viewer's own position in it</strong> (which approvals are complete, which await the viewer): a recorded design requirement, not in the built Final, and it will add fields to APIs 2 and 3 when designed (Still needs sign-off item 10).</li>
+<li><strong>Separating purchase-order approvals from invoice/payment approvals in the filters:</strong> same status - recorded requirement, not built (Still needs sign-off item 10).</li>
+<li><strong>Export / download:</strong> the built Final has none.</li>
+<li><strong>A keyboard alternative to drag:</strong> a frontend accessibility gap flagged in Step 4; no API impact.</li>
+<li><strong>The legacy personal-queue reads</strong> ("awaiting my approval next" and its sequence-chain check): not a column, filter or field in this design. The sequence logic itself still matters to the write-authority rule (Still needs sign-off item 8).</li>
+</ul>
+<hr />
+<h2>Still needs sign-off</h2>
+<ol>
+<li><strong>Payment flow: redirect versus in-place entry - Disputed, no side picked.</strong> Claim A: the dashboard should preserve existing payment functionality and may redirect users to the established payment screen; evidence: Feargal Phelan's stated requirement, recorded in the Step 4 doc. Claim B: payment entry belongs in the widget's record popup, entering invoice numbers and submitting marks the request paid; evidence: the built Final's owner-directed behaviour, verified against the live Requests/Update screen [LIVE - beta1, 2026-08-19]. Decider: Feargal Phelan with the project owner (held on action item C3). Blocked until then: building API 7 at all. If Claim A wins, API 7 is dropped from this contract and the unpaid-card selection becomes a navigation.</li>
+<li><strong>Voided requests' financial treatment - both sides recorded.</strong> The built Final treats void as a simple terminal status write with a reason. The recorded caution is that the design should avoid assuming what underlying financial reversal process occurs. Decider: Feargal Phelan. Blocked: the <code>Voided</code> branch of API 5 beyond the status write; nothing in this contract asserts any reversal behaviour.</li>
+<li><strong>Rejected orders served to the dashboard</strong> [Step 4 row 9]: no current query returns them. Decider: Feargal Phelan (backend). Blocked: the Rejected column and state.</li>
+<li><strong>The transition write's existence</strong> [Step 4 row 10]: no approve/reject write exists in either codebase; the dossier's own open question. Decider: Feargal Phelan (backend). Blocked: API 5.</li>
+<li><strong><code>paymentStatus</code> as a dashboard read</strong> [Step 4 row 11]: no source identified; paid must mean check-issued. Decider: Feargal Phelan (backend). Blocked: the payment sub-state on APIs 2 and 3, and API 7's response.</li>
+<li><strong>Hold read and write, and whether the payment side has its own hold</strong> [Step 4 row 12]. Decider: Feargal Phelan (backend). Blocked: <code>onHold</code>/<code>holdReason</code> and API 6.</li>
+<li><strong>Archive serving and the status write</strong> [Step 4 row 13]: the widget's queries never select statuses 2 and 3 today. Decider: Feargal Phelan (backend). Blocked: the table's Closed/Voided values and API 5's Close/Void targets.</li>
+<li><strong>The sequence-chain approval logic</strong> [Step 4 row 7]: the Modern API only approximately reimplements the legacy "next approver" check; accepted as a known risk for the mock, but the write-authority rule in APIs 5-7 depends on getting it right. Decider: Feargal Phelan (backend). Blocked: the authority rule's definition, not the endpoint shapes.</li>
+<li><strong>Department, Year and Overdue as real fields</strong> [Step 4 rows 1-3]: none is confirmed to exist. Decider: Feargal Phelan (backend), with the project owner on what drops. Blocked: <code>department</code>, <code>fiscalYear</code>, <code>isOverdue</code>, their filters and the Department column; each drops cleanly if not real.</li>
+<li><strong>The pending board requirements: approval-path ordering with the viewer's position, permission-aware action affordances, and PO-versus-invoice approval separation.</strong> Recorded design requirements, deliberately not built pending items 1 and 2 above. Decider: project owner (Oisin Curran) with Feargal Phelan. Blocked: nothing in this contract; each will extend APIs 2 and 3 when designed.</li>
+<li><strong>The write-authority rule</strong> (who may action which request, and how the approver sequence factors in). Decider: Feargal Phelan (backend). Blocked: the 403 semantics of all three writes.</li>
+<li><strong>No-rights behaviour</strong> (hidden tile, empty tile, or error) and the module right's exact name. Decider: project owner (Oisin Curran). Blocked: the permission-denied state contracts' rendering, not their status codes.</li>
+<li><strong>Volume ceilings</strong> for open purchase orders and approval paths at a large organisation. Decider: Feargal Phelan (backend). Blocked: confirmation of the <code>cardsPerState</code> and <code>pageSize</code> caps as adequate.</li>
+<li><strong>Dossier finding 11.5, stable-columns half - Unreviewed.</strong> The dossier recommends the table keep one steady column layout across statuses. The built table does use one fixed column set, but the finding has no assigned status, so the column commitment stays provisional. Decider: project owner (Oisin Curran) to status the finding. Blocked: final commitment of the table column list. (The aging half of 11.5 is Accepted and built: age labels, oldest-first.)</li>
+<li><strong>Dossier finding 11.6 - Unreviewed.</strong> Chart-values-as-text is moot (the chart is cut); naming the action icons and keyboard operability are frontend concerns with no field impact. Decider: project owner (Oisin Curran) to status the finding. Blocked: nothing in this contract; recorded so the dossier reconciles.</li>
+</ol>
+<p>Rejected findings requiring a note: the dossier's "keep the encumbrance chart, two jobs both kept" recommendation was not adopted; the queue-only scope stands and the chart endpoint is out of contract. The dossier's inline approve/reject overlay (11.2) is Accepted in substance: actioning is in-widget, in drag form rather than overlay form, and the open-full-record route is kept.</p>
+
+</body>
+</html>

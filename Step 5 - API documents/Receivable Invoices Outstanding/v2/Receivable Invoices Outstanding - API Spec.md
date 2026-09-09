@@ -1,6 +1,6 @@
 # Receivable Invoices Outstanding — API Spec
 
-**Status: DRAFT — not final**
+**Status: Done - awaiting sign-off (drafting complete, owner review pending)**
 
 ## Overview
 

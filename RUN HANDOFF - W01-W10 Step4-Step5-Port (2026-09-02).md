@@ -14,7 +14,7 @@ million tokens; per-widget sequential runs since then have a 100% completion rat
 
 ## 1. Current standing (verified 2026-09-02)
 
-W08 is deferred (no Step 4 doc, recorded out of scope), so W01-W10 means nine widgets.
+W08 is out of scope: it is Jo's own widget, Completed by Jo (Steps 3-6, owner ruling 2026-09-07), never ported or modified here; the same ruling covers W14. So W01-W10 means nine widgets.
 
 | Widget | Step 4 doc | Step 5 V2 spec | Port to Jo's shell |
 |---|---|---|---|

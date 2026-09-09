@@ -7,7 +7,7 @@
 **Confluence dossier:** none yet
 **[v1.3 — 2026-08-25, Feargal call] EXPORT is this widget's only action, deliberately.** Feargal concluded that users may have no direct workflow action from the gifts view; for the initial version, exposing the report data and allowing export is sufficient, and **additional actions must not be invented without a demonstrated user need**. Treat that as a standing constraint on this widget, not a temporary state — a later session should not "improve" it by adding approve/post/write-off style actions. Two export points implement the purpose-to-donor path he asked for: a header Export that exports the active view's data, and a second Export inside an expanded campaign's donor breakdown, scoped to that campaign. Both are Rule 11 toast stubs (no export backend in the mock). Verified: 141-assertion driver, 0 failures, including an assertion that no invented action verb appears anywhere on the card.
 
-**Last verified against build:** 2026-08-24 (build-final-widget driver: **121 assertions, 0 failures**, plus final-check-rules.py 0 HIGH; Final Check tab, opt 'F' / gpF, **FC_VERSION 1.2**). **v1.2 separates the two views so they stop overlapping**, per direct instruction after the owner reviewed the Detail render: Goal Progress is bars only and uncapped, Summary Table is the table only with totals at both tiers, the duplicated Detail goal panel is removed and Detail is a single full-width panel, and the panel's status counts plus "Remaining to goal overall" moved into the Goal Progress legend so nothing was lost. Rollback via `GPF_V12_LAYOUT` (default true; false restores v1.1 exactly, driver-verified). Previous: 2026-08-19 (69 assertions, FC_VERSION 1.0)
+**Last verified against build:** 2026-09-07 via widget-final-check-audit (unattended); Final Check tab, opt 'F' / gpF, **FC_VERSION 1.3** (latest changelog entry v1.3, 2026-08-25, already recorded above; nothing newer for W17). Previous: 2026-08-24 (build-final-widget driver: **121 assertions, 0 failures**, plus final-check-rules.py 0 HIGH; Final Check tab, opt 'F' / gpF, **FC_VERSION 1.2**). **v1.2 separates the two views so they stop overlapping**, per direct instruction after the owner reviewed the Detail render: Goal Progress is bars only and uncapped, Summary Table is the table only with totals at both tiers, the duplicated Detail goal panel is removed and Detail is a single full-width panel, and the panel's status counts plus "Remaining to goal overall" moved into the Goal Progress legend so nothing was lost. Rollback via `GPF_V12_LAYOUT` (default true; false restores v1.1 exactly, driver-verified). Previous: 2026-08-19 (69 assertions, FC_VERSION 1.0)
 
 **Evidence key:** `[LIVE]` verified in beta1/test1 on a stated date · `[SME]` interview-sourced (name + date) · `[RESEARCH]` desktop/market research · `[BUILD]` true of the mockup build · `[DOC]` backed by a written source document (named) · `[TO CONFIRM]` assumed, with the owner who can confirm. Claims with no mark are template boilerplate only. Conflicting evidence coexists: if two sources disagree, both claims stay recorded, each with its own mark, until someone with backend access settles it.
 
@@ -63,17 +63,17 @@ All rows are drawn from the Step 1 research doc unless marked otherwise. Legacy 
 | State | Behaviour |
 |---|---|
 | No module rights / entitlement | *Not yet specified*. |
-| Empty (org has no active pledge purposes) | *Not yet specified*. Known rule: the purpose list requires `Active = true` [DOC — Step 1 research]. |
+| Empty (org has no active pledge purposes) | Built (mock): Glance shows "None set up" with "no campaigns to show yet"; Explore/Detail show an empty-state card, "No gift or pledge campaigns yet", with guidance text [BUILD]. Known rule: the purpose list requires `Active = true` [DOC — Step 1 research]. |
 | Partial (some data missing) | Gifts count only if posted (`JournalID != null`), not voided (`UnDoJournalID = null`), and dated on or before the as-of date [DOC — Step 1 research]. A campaign with active pledges but no gifts yet, or gifts but no active pledge rows: *not yet specified*. |
-| Loading | *Not yet specified*. |
+| Loading | Built (mock): a campaign or date-range change shows a header skeleton plus shimmer rows for a simulated 800ms load; view switches, drills and paging re-render with no loading state [BUILD]. Real-API spinner/timeout behaviour still *not yet specified*. |
 | Error / API failure | *Not yet specified*. |
 | Stale data | The old design saved the selected date across page refreshes [DOC — Step 1 research]; whether the new Date Range preset persists the same way is *not yet specified*. No "data as of" stamp specified. |
 
 ## Interaction Spec
 
 - **Old design baseline:** table only, no chart; no drill-down or navigation away from the dashboard observed, and no interactions with other widgets [DOC — Step 1 research].
-- **Campaign filter:** highlights the selected campaign across all views (see Fine-Tuning Notes). The visual form of that highlight is *not yet specified*.
-- **Progress bar hover, donut segment hover/click, table row click:** *Not yet specified*.
+- **Campaign filter (as built):** narrows the widget to the selected campaign; the dataset is filtered, so every view and the totals recompute for that campaign [BUILD]. The earlier "highlights the selected campaign across all views" idea was never built and no highlight treatment exists.
+- **Bar and row interactions (as built):** clicking a Goal Progress bar opens the top-5 most-behind donor pledges modal for that campaign; clicking a Summary Table campaign row expands its per-donor breakdown inline (paginated 20 per page); clicking a pledge row inside that breakdown expands its gift transactions [BUILD]. Donut interactions no longer apply (view removed in v1.1). Keyboard: bars and rows carry role="button", tabindex and aria labels; Escape closes popovers and the modal [BUILD].
 - **Keyboard / focus behaviour** for filters, Switch View, and chart elements: *Not yet specified*.
 
 ## Filters
@@ -85,14 +85,18 @@ All rows are drawn from the Step 1 research doc unless marked otherwise. Legacy 
 No Fiscal Year filter — old design has no fiscal-year dimension for this widget. **Open item, needs product/dev decision before build:** how Pledge Due and % Due are computed for Current Month/Year to Date vs. Campaign Total — see Widget_Specs history for the full math question. KPI size shows Date Range only.
 
 ## Data Table Sort
-Fixed — Campaign (Pledge Purpose) name, alphabetical. Not user-changeable.
+**[Build reality, recorded 2026-09-07 audit]** No alphabetical sort is implemented in the built Final [BUILD]: the Summary Table renders campaigns in the data's own order (the mock seed mirrors the live product's row order), Goal Progress bars rank closest to goal first, and the donor drill ranks most behind pace first. None are user-changeable. The fixed alphabetical rule below belonged to the A/B/C design and was never carried into gpF.
+
+*(Superseded:)* Fixed — Campaign (Pledge Purpose) name, alphabetical. Not user-changeable.
 
 **[v1.2 — 2026-08-24] The trimmed-view rule is superseded.** Neither view trims any more: Goal Progress shows a bar for every campaign and Summary Table shows every row with totals, both scrolling inside their card. This dissolves Sign-off Readiness row 7 (trimmed-view ranking) rather than answering it, and it removes an internal inconsistency where the bars ranked best-first while the trimmed table ranked worst-first. Original rule kept below for the record.
 
 *(Superseded:)* **Trimmed-view rule:** at Small (2-3 campaigns) and Medium (4-5 campaigns), the subset is the first N in the fixed sort above, i.e. alphabetical by campaign name. An alphabetical top-N does not surface the campaigns that most need attention; whether the trimmed views should instead rank by need (for example % Due or Due Remaining) is [TO CONFIRM — owner TBD]. See Sign-off Readiness.
 
 ## Drill-Through
-None — matches old design. Flag if a link to the Donors and Gifts module is wanted later.
+**[Build reality, recorded 2026-09-07 audit]** The top-5 most-behind donors modal's footer carries an "Open in Gifts and Pledges" button, a Rule 11 toast stub (no navigation backend in the mock) [BUILD, gpF `open-record` handler]. No other navigation exists. Whether that link ships for real remains Sign-off Readiness #6. [TO CONFIRM, owner: Oisin] whether this navigation stub is compatible with the standing v1.3 constraint that Export is the widget's only action (the stub predates v1.3 and the driver's banned-verb assertion does not cover "Open").
+
+*(Superseded:)* None — matches old design. Flag if a link to the Donors and Gifts module is wanted later.
 
 ## Refresh
 Standalone icon, present at every size including KPI.
@@ -159,4 +163,4 @@ This doc has 7 open items; it is not sign-off-ready until this table is empty or
 ## Fine-Tuning Notes
 - Campaigns exceeding their Pledge Total shown in green with a "✓ Goal Met" badge
 - Due Remaining amounts in amber/red (can be negative if ahead of schedule)
-- Campaign filter highlights the selected campaign across all views
+- Campaign filter narrows every view to the selected campaign (as built; no highlight treatment exists)
