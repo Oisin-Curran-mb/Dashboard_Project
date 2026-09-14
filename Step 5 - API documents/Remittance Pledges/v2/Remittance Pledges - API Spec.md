@@ -50,7 +50,7 @@ This contract defines four APIs: a bounded per-activity pacing summary fired on 
 | Table / repository | Fields and members used |
 |---|---|
 | `RM_Activity` | `ActivityID` (key), `Name`, `Sequence`, `CompanyID` (scope). Queried via `RMActivityRepository` |
-| `RM_Pledge` | `PledgeID`, `ActivityID`, `ChurchID`, `BeginDate` (date NOT NULL), `EndDate` (date NOT NULL), `Frequency` (int NOT NULL), `Duration` (int NOT NULL), `Active` |
+| `RM_Pledge` | `PledgeID`, `ChurchID`, `BeginDate` (date NOT NULL), `EndDate` (date NOT NULL), `Frequency` (int NOT NULL, payments per year), `Duration` (int NOT NULL, instalment count), `Active`. **Corrected 2026-09-14: this table has NO `ActivityID` column.** The activity link is `RM_PledgeDetail.ActivityID` (NOT NULL) — a pledge reaches activities only through the detail rows, so one pledge can span several activities. Verified live: a single pledge produced two widget rows (University Fund and Episcopal Fund). Two consequences: a pledge with zero detail rows is **legal and activity-less**, and is invisible to this widget and to every report, both of which walk in through the detail table; and no per-pledge amount exists on the header at all |
 | `RM_PledgeDetail` | `Pledge` (money) - the pledged amount |
 | `RM_History` | `HistoryID`, `HistoryBatchID`, `ChurchID`, `CheckDate`, `CheckNumber` (nvarchar(15), free text), `Amount` (whole-check total, not used for per-activity sums), `VoidJournalID` |
 | `RM_HistoryDetail` | `HistoryDetailID`, `HistoryID`, `ActivityID`, `Amount` (the per-activity portion of a receipt - this is what gets summed) |

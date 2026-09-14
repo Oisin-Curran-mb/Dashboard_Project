@@ -15,6 +15,23 @@ _Findings addendum to `04 - Remittance Pledges.md`, written 2026-08-08 from a di
 **The grid columns** (`gridPledges`, Telerik, sorting off, no multi-select), in order:
 `Seq.` · `Activity` · `Annual` · `YTD Expected` · `YTD Paid` · `Outstanding` · `% Paid`.
 
+> **[CORRECTIONS — 2026-09-14]** Two of the three calculation lines below are wrong, and both
+> errors were inherited from the Step 1 doc. Originals kept underneath, unedited.
+>
+> - **No `Active` filter exists.** The line below says Annual counts "only for rows whose parent
+>   `RM_Pledge.Active = true`". `GetWidgetData` applies **no `Active` check** — the term test is the
+>   only pledge-side filter. Confirmed in live data 2026-09-14: a pledge with `Active` unticked still
+>   appears in the widget. The v2 API spec in this folder states this correctly.
+> - **YTD Paid is not "per activity".** It is summed by walking `RM_PledgeDetail → RMHistoryDetails`,
+>   so it counts **only pledge-linked receipts**. "Nonpledge details" (`PledgeDetailID IS NULL`),
+>   which the reports treat as a first-class named case, are **excluded** — so this figure is less
+>   than what the activity actually received. The v2 spec's `paid` formula carries the same wording
+>   and cites `RMActivityRepository.cs:83` for it, but that line goes through the detail table; if
+>   the new contract intends to include nonpledge receipts, that is a **change in definition**, not
+>   the legacy behaviour, and should be marked as one.
+> - The `YTD Expected` line below is **correct** and already flags the month/12 versus day/365
+>   split. Verified live at 1 Sep 2019: header 66.85%, column 75%.
+
 **The calculations** (from `RMActivityRepository.GetWidgetData(dateReceiptsThru)` and the `RMWidgetActivityRecord` POCO):
 - **Annual (pledged)** = `SUM(RM_PledgeDetail.Pledge)` grouped by activity, only for rows whose parent `RM_Pledge.Active = true` and whose pledge term brackets the date (`RM_Pledge.BeginDate <= ReceiptsThru <= RM_Pledge.EndDate`).
 - **YTD Paid** = `SUM(RM_HistoryDetail.Amount)` per activity, counting a receipt only if `RM_HistoryBatch.Posted = true` AND `RM_History.VoidJournalID IS NULL` AND `RM_History.CheckDate <= ReceiptsThru`.
