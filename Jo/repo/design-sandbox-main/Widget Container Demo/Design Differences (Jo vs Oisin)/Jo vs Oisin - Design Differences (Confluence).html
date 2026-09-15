@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Design Differences — Jo vs Ours</title>
+<style>
+body { font-family: -apple-system, Helvetica, Arial, sans-serif; max-width: 900px; margin: 30px auto; line-height: 1.5; color: #172B4D; }
+h1 { font-size: 24px; }
+h2 { font-size: 19px; border-bottom: 1px solid #DFE1E6; padding-bottom: 6px; margin-top: 32px; }
+h3 { font-size: 16px; margin-top: 20px; }
+table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+th, td { border: 1px solid #DFE1E6; padding: 6px 10px; text-align: left; vertical-align: top; }
+th { background: #F4F5F7; }
+code { background: #F4F5F7; padding: 1px 5px; border-radius: 3px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 90%; }
+pre { background: #F4F5F7; padding: 12px; border-radius: 4px; overflow-x: auto; }
+pre code { background: none; padding: 0; }
+.status { background: #FFF0B3; display: inline-block; padding: 3px 10px; border-radius: 3px; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<h1>Design Differences — Jo vs Ours</h1>
+<p>This document records, per widget, how <strong>our</strong> finalized version differs from <strong>Jo Lopez's</strong> version in the <code>design-sandbox</code> Widget Container Demo (<code>index.html</code>), and why each difference exists. "Jo" means her original widget block in that file; "Ours" means the finalized version in this repo (the built Final in the mockup, locked in the Step 4 doc, specced in Step 5). Our ported widgets sit alongside Jo's originals in her shell as namespaced "(MB updated)" cards; this doc explains the deltas a reviewer will see between the two.</p>
+<p>Every difference row is grounded in a concrete source using the evidence key below. Where we deliberately kept something identical to Jo, it is listed under "Parity kept" so the scope of change is clear.</p>
+<h2>Evidence key</h2>
+<ul>
+<li><strong>[DESIGN — ...]</strong> a final design decision: an owner-directed change or a locked choice in the widget's Step 4 - Widget Final Design doc.</li>
+<li><strong>[API — ...]</strong> a data-contract or API-shape reason from the widget's Step 5 API spec.</li>
+<li><strong>[CODE — ...]</strong> a backend-logic reason traced in the MBAccounting codebase.</li>
+</ul>
+<hr />
+<h2>W01 — Budget Compared to Actual</h2>
+<p>Our version = Jo's Budget widget with the reusable <strong>Time Window Module</strong> layered on; everything else is kept at parity.</p>
+<table>
+<thead>
+<tr>
+<th>Aspect</th>
+<th>Jo's design</th>
+<th>Our design</th>
+<th>Why</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Interval grains</td>
+<td>Month / Quarter / Period / Year (M Q P Y)</td>
+<td>Day / Week / Month / Period / Quarter / Year (D W M P Q Y), toggle reads smallest-first with Period before Quarter</td>
+<td>Users asked to slice the comparison finer than month; standardised on the reusable Time Window Module</td>
+<td>[DESIGN — Step 4 Views/Filters, Time Window Module; owner "add day and week"]</td>
+</tr>
+<tr>
+<td>Grain availability</td>
+<td>All grains always offered</td>
+<td>A grain is offered only when it yields 2 to 31 data points for the chosen window; each window defaults to its smallest available grain</td>
+<td>Keeps charts legible (no 1-point or 100-point charts) and gives a sensible default per window</td>
+<td>[DESIGN — Step 4 Time Window Module availability law]</td>
+</tr>
+<tr>
+<td>Time windows</td>
+<td>Spans: this fiscal year, last fiscal year, all time</td>
+<td>This month · This period · This quarter (rolling 3 months) · This year (rolling 12 months) · This fiscal year (YTD)</td>
+<td>Standardised window set from the Time Window Module, shared across widgets</td>
+<td>[DESIGN — Step 4 Time Window Module]</td>
+</tr>
+<tr>
+<td>Weekly grain</td>
+<td>Not offered</td>
+<td>Week grain offered (Large / Expanded only), confirmed feasible</td>
+<td>A code review indicates a weekly grain is derivable from the GL data, so Week ships rather than staying gated</td>
+<td>[DESIGN — owner confirmed 2026-08-05; API — Step 5]</td>
+</tr>
+<tr>
+<td>Fiscal year scope</td>
+<td>Fixed fiscal-year handling</td>
+<td>Fiscal year treated as per-organisation (not a global July-June constant); consolidated/master-company rollup must combine child accounts</td>
+<td>The org's fiscal calendar varies, and the modern API currently returns empty for master companies, a regression to fix</td>
+<td>[API — Step 5 spec requirement; CODE — modern API CompanyNumber=0 returns empty]</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Parity kept (identical to Jo):</strong> the Income / Expense / Special-report account-scope dropdown with the two-part (Report, then Report line) branded searchable picker; two-purple bars (light budget, dark actual) with favourability shown only in the KPI pill and hover popover, never on the bars; the running YTD total; the two-independent-panel Detail (Explore) layout; the "No trend to show" guard for line view with fewer than 2 points; the no-budget empty state; and the KPI header strip. [DESIGN — parity with Jo]</p>
+<p><em>Section updated 2026-08-04.</em></p>
+<hr />
+<h2>W02 — Pension Plans</h2>
+<p>Our version = Jo's Pension widget plus a new grouped-bar-by-district view and an all-districts aggregate; the rest is kept at parity.</p>
+<table>
+<thead>
+<tr>
+<th>Aspect</th>
+<th>Jo's design</th>
+<th>Our design</th>
+<th>Why</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Views</td>
+<td>Plan table as the body, with a bar/pie toggle offered only at her largest size</td>
+<td>Three views under a Table / Pie / By district toggle, Table as the default; Detail shows table (left) and the active chart (right) as two synced panels</td>
+<td>Users compare the plan mix and the district mix, so both a whole-org chart and a per-district chart are first-class, not a largest-size extra</td>
+<td>[DESIGN — Step 4 Views v2; Size behaviour]</td>
+</tr>
+<tr>
+<td>Grouped Bar by District</td>
+<td>Not offered</td>
+<td>New view: district groups on the x-axis, one bar per plan (same fixed amethyst plan ramp as the table dots and pie), a group total per district, and each bar drills to that plan and that district</td>
+<td>Surfaces a second real dimension already in the data (plan spend by district) that a single donut cannot show</td>
+<td>[DESIGN — Step 4 View 2; API — Step 5 grouped-bar matrix]</td>
+</tr>
+<tr>
+<td>District scope</td>
+<td>District filter narrows the snapshot</td>
+<td>Same, plus an explicit All Districts aggregate that sums every district (48,252.43); a specific district narrows to its own total (District 1 = 22,873.84 / 4 appointees)</td>
+<td>The all-districts rollup is the headline a finance user opens on; the district list is shown by Name</td>
+<td>[API — Step 5 Example 1; CODE — district = PB_ControlTable ControlTableID shown as Name]</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Parity kept (identical to Jo):</strong> the two-row header with the district filter chip on the left and the KPI money + appointee badge on the left; the sortable plan table; the donut pie and share bars in the fixed amethyst plan ramp; the loading skeleton that fires only on a district change (not on a view toggle); the appointee drill modal; the empty state; and values carried as DOM text. [DESIGN — parity with Jo]</p>
+<p><strong>Open items (carried, not invented):</strong> the Pension Billing drill-through still has no target URL [DESIGN — Step 4 open item]; export is a stub toast pending a backend decision [API — Step 5]; the Charge / church-organisation column shows mock org names because the real API returns an empty string today, a pre-existing defect [CODE — pension-plans grid].</p>
+<p><em>Section updated 2026-08-05.</em></p>
+<hr />
+<h2>W03 — Payroll Distributions</h2>
+<p>Our version = Jo's Payroll widget with a standardised period set and an explicit zero-personal-data rule; the rest is kept at parity.</p>
+<table>
+<thead>
+<tr>
+<th>Aspect</th>
+<th>Jo's design</th>
+<th>Our design</th>
+<th>Why</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Period presets</td>
+<td>This month / This quarter / All time / This year</td>
+<td>This month (default) / This period / This quarter / This year / All time, smallest-first, with the Custom From/To row kept</td>
+<td>Standardised, ordered period set matching the project's window conventions; adds an explicit fiscal Period option</td>
+<td>[DESIGN — Step 4 Filters v2]</td>
+</tr>
+<tr>
+<td>Rolling window definitions</td>
+<td>Calendar-style</td>
+<td>This quarter = rolling last 3 months, This year = rolling last 12 months; This period is a distinct fiscal-period param</td>
+<td>Matches how finance reads a rolling payroll window rather than a calendar cut</td>
+<td>[DESIGN — Step 4 Filters v2]</td>
+</tr>
+<tr>
+<td>Data exposed</td>
+<td>Distribution breakdown</td>
+<td>Breakdown stops at distribution x pay-type dollar amounts only: no hours, no rates, no employee names, no check numbers</td>
+<td>Owner decision for zero personal data on this widget; the grouping is org-defined distribution labels, which carry no personal detail</td>
+<td>[DESIGN — owner decision, Step 4; API — Step 5 zero-personal-data; CODE — grouping = PR_CompensationDistribution.Name over PR_HistoryCompensation]</td>
+</tr>
+<tr>
+<td>Grain / comparison</td>
+<td>Not present</td>
+<td>Deliberately not added (no grain toggle, no prior-period comparison)</td>
+<td>Sign-off decision F3 kept comparison out of scope for this widget</td>
+<td>[DESIGN — Step 4 sign-off F3]</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Parity kept (identical to Jo):</strong> the two-row header with the period and scope chips on the left and the view toggle on the right; the percent bars and the blue-ramp donut with legend hover-sync; the Custom From/To date fields; the one clean empty state; and the instant client-side recompute (no fetch, no skeleton) since a period change is already in hand. [DESIGN — parity with Jo]</p>
+<p><strong>Open items (carried, not invented):</strong> exports are honest stubs via Jo's existing export menu (no backend decided) [API — Step 5]; no Department filter, pay-date anchoring, recurrence, or drill-through-to-module link were added (all cut or rejected in Step 4) [DESIGN — Step 4 What Got Cut].</p>
+<p><em>Section updated 2026-08-05.</em></p>
+<hr />
+<h2>W04 — Remittance Pledges</h2>
+<p>Our version = Jo's Remittance widget with a report-style table (Version A), a separate Pacing Bars view (Version B), a corrected per-pledge-term pacing calculation, and a day-based colour scale.</p>
+<table>
+<thead>
+<tr>
+<th>Aspect</th>
+<th>Jo's design</th>
+<th>Our design</th>
+<th>Why</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Table view</td>
+<td>Table with pacing shown inline</td>
+<td>Version-A report table (Activity, Pledge, Expected, Paid, Outstanding, % Paid, Total), strictly table-only with no in-cell bar or status column</td>
+<td>Owner wanted the report table as the base look, kept clean</td>
+<td>[DESIGN — Step 4 Views v2, Version A]</td>
+</tr>
+<tr>
+<td>Pacing bars</td>
+<td>Inline with the table</td>
+<td>A separate Pacing Bars view behind a Table / Pacing bars toggle (Explore and Detail); bars do not appear in the table view</td>
+<td>Owner wanted pacing as its own view (Version B), not mixed into the report table</td>
+<td>[DESIGN — Step 4 Views v2, Version B; "remove the bars in the table view"]</td>
+</tr>
+<tr>
+<td>Pacing calculation</td>
+<td>Calendar-year approximation</td>
+<td>Per pledge term: Expected = TotalPledge x daysSinceBeginDate / totalTermDays, using each pledge's own BeginDate/EndDate</td>
+<td>The calendar-year approach mis-paces multi-year and off-cycle pledges; this is the dev-confirmed calculation-only fix, no new data needed</td>
+<td>[API — Step 5 formula; CODE — RM_Pledge.BeginDate / EndDate already queried]</td>
+</tr>
+<tr>
+<td>Colour scale</td>
+<td>Not a day-based scale</td>
+<td>Exactly four day-based bands keyed to daysAhead: 30+ ahead (dark green), on track within +/-30 (green), about 30 days behind (amber), 60+ days behind (red); colour is always paired with the status chip text and values</td>
+<td>Owner-specified four-band ahead/behind scale so users read pacing at a glance without colour being the only signal</td>
+<td>[DESIGN — owner four-band scale; API — Step 5 returns raw numbers, bands are frontend]</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Parity kept (identical to Jo):</strong> the receipts-through chip (Today / End of last month presets); the per-pledge drill modal; the refresh-commits fetch with the ~800ms skeleton (loading only on a receipts-through commit); Escape/backdrop close; and export / open-in-Remittance stubs. [DESIGN — parity with Jo]</p>
+<p><strong>Resolved (owner, 2026-08-05):</strong> pacing stays linear-by-days; the stepped-by-payment-schedule alternative is not pursued. Frequency/Duration remain in the data, unused for pacing [DESIGN — owner].</p>
+<p><em>Section updated 2026-08-05.</em></p>
+<hr />
+<h2>W05 — Receivable Invoices Outstanding</h2>
+<p>Our version = Jo's AR widget one-to-one, with one addition inside the bucket pop-up: a select-and-confirm "move to unposted" action.</p>
+<table>
+<thead>
+<tr>
+<th>Aspect</th>
+<th>Jo's design</th>
+<th>Our design</th>
+<th>Why</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Bucket pop-up (invoice list)</td>
+<td>Read-only list, Close only</td>
+<td>Same list plus a row-level checkbox per invoice (no select-all), an always-enabled Confirm button beside Close, and a live "(N invoices selected)" count</td>
+<td>Owner wants to select invoices in a bucket and act on them, not just view them</td>
+<td>[DESIGN — Step 4 Interaction Spec; owner screenshot]</td>
+</tr>
+<tr>
+<td>Confirm action</td>
+<td>None</td>
+<td>On Confirm, an inline footer note reading "Move to unposted transactions" appears; the action is a dev-intent signal only, it does not model or name any transaction type</td>
+<td>The action is wanted, but the underlying transaction type is not yet settled, so the UI signals intent without inventing backend behaviour</td>
+<td>[DESIGN — Step 4; API — Step 5 Move to Unposted logic notes]</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Parity kept (identical to Jo, one-to-one):</strong> the aging summary and buckets; the Received-through and Source filters; the Details / Attachments / Note / Payments invoice drill modal; the KPI and view chrome; the empty and single-bucket states; and the Bill To column showing blank by design (the modern API's BillToDisplay gap). [DESIGN — parity with Jo]</p>
+<p><strong>Narrowed (owner, 2026-08-05):</strong> Confirm does NOT stage to an entry screen; it creates the transaction through an existing code path (Payment Processing / ARPayment is the likely mechanism), but the exact process still has to be added and the target is not specifiable yet, so the UI keeps only the intent label and models no transaction type [API — Step 5 logic notes; DESIGN — owner]. The Bill To blank remains a pre-existing modern-API defect, not a design choice [CODE — BillToDisplay].</p>
+<p><em>Section updated 2026-08-05.</em></p>
+<hr />
+<h2>W06 — Insurance Billing Plans</h2>
+<p>Our version = Jo's Insurance widget one-to-one, with an expandable Type-to-Plan table that adds a Cost column while keeping her Share.</p>
+<table>
+<thead>
+<tr>
+<th>Aspect</th>
+<th>Jo's design</th>
+<th>Our design</th>
+<th>Why</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Breakdown table</td>
+<td>Flat plan list at Explore; a non-expandable group only at Detail</td>
+<td>Plans nested under their insurance TYPE as an expandable table (types as parents with subtotals, collapsed by default, instant no-fetch toggle) in both Explore and Detail</td>
+<td>Owner wanted the sub-categories shown in table form, plans grouped under their type, expandable, in the view</td>
+<td>[DESIGN — Step 4 owner change, both views]</td>
+</tr>
+<tr>
+<td>Cost</td>
+<td>Enrolled count only</td>
+<td>Adds a Cost column per plan and per type, alongside the enrolled count</td>
+<td>Owner wanted both count and cost per plan and per type</td>
+<td>[DESIGN — Step 4 owner change; API — Step 5 Cost = SUM of enrolment Rate; CODE — IBEmployeePlan.Rate / IBPlanRate]</td>
+</tr>
+<tr>
+<td>Share</td>
+<td>Shown</td>
+<td>Kept in both Explore and Detail, on both parent (type) and child (plan) rows, same meaning as Jo (row enrolled / grand total in view)</td>
+<td>Owner asked to keep the Share in both views like Jo's design</td>
+<td>[DESIGN — Step 4 owner "keep the share in both views"]</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Parity kept (identical to Jo):</strong> the Glance KPI card (total enrolled + plan-count pill + "employees and dependents" caption); the insurance-type filter chip as the only fetch (800ms skeleton, sort/expand instant); the amethyst Share bars; the "No insurance plans yet" empty state; and a zero-enrolment plan shown as a 0 / 0% row. [DESIGN — parity with Jo]</p>
+<p><strong>Resolved (owner + code, 2026-08-05):</strong> Cost is the per-enrolment premium; the Cost column shows the <strong>total premium</strong> (SUM of each enrolment's Rate). The code splits every enrolment into an employer share (Rate minus RateIndividual) and an employee share (RateIndividual), so employer-only or employee-only totals are derivable from the same data later if wanted; EmployerBilled and PreTax are flags on the enrolment [CODE — IBEmployeeRepository; DESIGN — owner default = total premium]. Dependents carry their own premium and are counted. <strong>Still open:</strong> the coverage-tier (IBTypeElection) third level is intentionally not surfaced (future); a Step 5 build follow-up (type filter as a client-side view over one nested response, no fetch) is noted but not applied here [API — Step 5].</p>
+<p><em>Section updated 2026-08-05.</em></p>
+<hr />
+<h2>W07 — Deposits on Hand</h2>
+<p>Our version = Jo's Deposits widget with four owner-directed changes; everything else is kept at parity. (Jo titles it "Deposits"; the widget was renamed "Deposits on Hand" by management, rename not yet executed project-wide.)</p>
+<table>
+<thead>
+<tr>
+<th>Aspect</th>
+<th>Jo's design</th>
+<th>Our design</th>
+<th>Why</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Table pagination</td>
+<td>Full list, unpaginated</td>
+<td>50 accounts per page with a pager over a 125-account dataset; the KPI total and all subtotals compute over the full filtered set (pagination is display-only); grand total 106,726,837</td>
+<td>Real orgs run to hundreds of depositor accounts, so the table needs paging while the headline stays a true total</td>
+<td>[DESIGN — Step 4 owner change 1; API — Step 5 Pagination]</td>
+</tr>
+<tr>
+<td>Breakdown toggle</td>
+<td>A breakdown that did not depend on scope</td>
+<td>Scope-dependent: at All Accounts the toggle offers Total / By Account Type only (the standalone all-accounts By Account is removed); with a single account type in scope it offers Total / By Account (that type's own accounts)</td>
+<td>Removes a confusing all-accounts account-level view and makes the breakdown mean the same thing as the current scope</td>
+<td>[DESIGN — Step 4 owner change 2]</td>
+</tr>
+<tr>
+<td>Chart click</td>
+<td>Clicking a chart series expanded / opened a drill-modal</td>
+<td>Clicking an account-TYPE series (donut slice or trend line) re-scopes the top-left filter to that type and switches the breakdown to By Account; clicking an individual ACCOUNT series is inert; the old chart click-to-expand / drill-modal is removed; the table-row detail modal is kept</td>
+<td>Owner wanted charts to drill by re-scoping, not to open a separate focus/modal</td>
+<td>[DESIGN — Step 4 owner change 3]</td>
+</tr>
+<tr>
+<td>Compare To scale</td>
+<td>Did not include a fiscal Period option</td>
+<td>Six options: Previous week / month / period / quarter / fiscal year / calendar year, with the fiscal Period sitting between month and quarter</td>
+<td>Owner added a real intermediate fiscal-period delta between month and quarter</td>
+<td>[DESIGN — Step 4 owner change 4]</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Parity kept (identical to Jo):</strong> the account-scope chip (All Accounts / a type / an individual account, searchable); the three views Table (default) / Distribution (donut) / Trend (multi-line); the KPI headline with delta pill and scrubbable sparkline; the account/type detail modal (opened from a table row); the empty and loading states; and values carried as DOM text. Jo's fourth size tier (large) is dropped, mapping her four tiers to our three (Glance / Explore / Detail = kpi / wide / xwide). [DESIGN — parity with Jo; Rule 12 sizing]</p>
+<p><strong>Resolved (owner, 2026-08-05):</strong> the out-of-widget drill-through is dropped for v1 (the in-widget row detail modal is enough; there is no jump to a module screen, since none exists) [DESIGN — owner]. Historical period-end balances for Trend and non-current Compare To are computed <strong>on demand</strong> for the first draft, to be optimized (precomputed) later if needed [DESIGN — owner; API — Step 5]. <strong>Still open:</strong> the balance tie-out against the modern DHAccount.CalcBalance is a backend concern not addressed here [CODE — DHAccount].</p>
+<p><em>Section updated 2026-08-05.</em></p>
+
+</body>
+</html>
