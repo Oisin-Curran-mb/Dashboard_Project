@@ -124,6 +124,11 @@ Drawn from `General Widget Design Rules.md` — Rules 1–11 and Universal Defau
 
 Work through each state category. Mark each sub-item as: `[ ] Designed` (a state treatment exists in Step 6 or Step 4) · `[ ] Verified` (confirmed working in the live build) · `[ ] N/A` (this state cannot occur for this widget — explain why in Notes).
 
+> **W07 source notes for this section:**
+> - Step 6 §5.3 defines six widget states — States 3 and 4 are **Spec agreed (13 Jul 2026)**; States 5 and 6 are **Proposed** (not yet formally signed off).
+> - Step 6 §5.4 lists W07-specific constraints: regulatory accuracy (NASAA-regulated figures), account identity (two accounts can share the same name — Account# is the only disambiguator), org-locale formatting (currency/dates from org locale, never client/server), accessibility (WCAG 2.1 AA).
+> - Step 4 is the locked final design (rebuilt 2026-07-09, last updated 2026-07-13). All five sizes are offered: KPI, Small, Medium, Large, Expanded.
+
 ---
 
 ### 3a. Loading State
@@ -132,124 +137,124 @@ The widget must show a loading/in-progress indicator while data is being fetched
 
 | # | Check | Designed | Verified | Notes |
 |---|---|---|---|---|
-| L1 | **Skeleton / placeholder UI** is shown while data loads — not a blank white card or a spinner alone | `[ ]` | `[ ]` | |
-| L2 | The loading state renders correctly at **KPI / Small** (smallest size) without overflow or broken layout | `[ ]` | `[ ]` | |
-| L3 | The loading animation matches the project standard (3-bubble loading animation, 0–5s random delay on page load, per project convention) | `[ ]` | `[ ]` | |
-| L4 | The skeleton placeholder approximates the shape of the loaded content (e.g. bars, rows, a KPI number block) — not a generic spinner that gives no content hint | `[ ]` | `[ ]` | |
+| L1 | **Skeleton / placeholder UI** is shown while data loads — not a blank white card or a spinner alone | `[ ]` | `[ ]` | Step 6 §5.3 State 5 (Proposed). Skeleton must match the widget's final layout — table-row placeholders for Table view, donut outline for Distribution, line-chart outline for Trend. |
+| L2 | The loading state renders correctly at **KPI / Small** (smallest size) without overflow or broken layout | `[ ]` | `[ ]` | KPI is a 0.5-height strip. Appropriate skeleton: a single value-block placeholder (headline + sparkline area). Must not overflow the strip. |
+| L3 | The loading animation matches the project standard (3-bubble loading animation, 0–5s random delay on page load, per project convention) | `[ ]` | `[ ]` | Project standard: 3-bubble animation + 0–5s random delay on initial page load. Step 6 adds: no spinners *over* stale numbers — subsequent card refreshes should use a shimmer/skeleton, not a spinner over old balance figures. |
+| L4 | The skeleton placeholder approximates the shape of the loaded content (e.g. bars, rows, a KPI number block) — not a generic spinner that gives no content hint | `[ ]` | `[ ]` | No layout shift on data arrival. Skeleton proportions should approximate: ~3 rows for Table, a circle for Distribution, a short horizontal line for Trend. |
 
 ---
 
 ### 3b. Empty State — No Data Available
 
-This state occurs when the data source returns zero records for the **default filter configuration** (no user action has been taken). It is **different from No Results** (Section 3c), which results from a user filter action.
+This state corresponds to **Step 6 §5.3 State 3: "Module present, zero accounts"** — the org has Deposits On Hand but no deposit accounts have been created yet. It is **different from No Results** (Section 3c), which results from a user filter action.
 
 | # | Check | Designed | Verified | Notes |
 |---|---|---|---|---|
-| E1 | A **helpful, plain-language message** is shown explaining that no data is available (e.g. "No accounts found for this period") — not a blank card or a raw "0 results" label | `[ ]` | `[ ]` | |
-| E2 | A **primary action** is offered where appropriate (e.g. "Add Account", "Set up a plan", "Contact your administrator") — only include if a real action exists and is confirmed in Step 6 or Step 4; do not add a placeholder button that does nothing | `[ ]` | `[ ]` | N/A if no action available |
-| E3 | The empty state renders correctly at **KPI / Small** — message is readable, primary action (if present) is reachable, layout does not break | `[ ]` | `[ ]` | |
-| E4 | The empty state is **visually distinct from the error state** — no red colour, no error icon | `[ ]` | `[ ]` | |
-| E5 | Filters remain accessible in the empty state so the user can try a different configuration | `[ ]` | `[ ]` | |
+| E1 | A **helpful, plain-language message** is shown explaining that no data is available (e.g. "No accounts found for this period") — not a blank card or a raw "0 results" label | `[ ]` | `[ ]` | Step 6 §5.3 State 3 (**Spec agreed, 13 Jul 2026**). Message names the module ("Deposits On Hand") + one line on what the widget shows. Confirmed info tooltip copy (Step 6): *"Balances of the deposit accounts your organization holds for depositors, such as congregations or individuals whose funds you manage and pay interest on."* |
+| E2 | A **primary action** is offered where appropriate (e.g. "Add Account", "Set up a plan", "Contact your administrator") — only include if a real action exists and is confirmed in Step 6 or Step 4; do not add a placeholder button that does nothing | `[ ]` | `[ ]` | **+ Add Account** → opens Deposits On Hand (Modify > Account Information, new account). Visible only to users with create-account rights; read-only users see the explanation text without the button. Spec agreed 13 Jul 2026. |
+| E3 | The empty state renders correctly at **KPI / Small** — message is readable, primary action (if present) is reachable, layout does not break | `[ ]` | `[ ]` | At KPI (0.5-height strip): message must be readable in 1–2 lines; the Add Account button (if shown) must be reachable. If the strip is too tight, the action could surface via the 3-dot menu at KPI size. |
+| E4 | The empty state is **visually distinct from the error state** — no red colour, no error icon | `[ ]` | `[ ]` | Visually lighter treatment than the Error state — no red, no warning icon. |
+| E5 | Filters remain accessible in the empty state so the user can try a different configuration | `[ ]` | `[ ]` | Account Type filter remains accessible (shows "All Types" at zero accounts). This lets the user confirm they're looking at the right scope before concluding there are no accounts. |
 
 ---
 
 ### 3c. No Results State — Filter Produced Zero Matches
 
-This state occurs when the user applies a filter combination that returns zero records, but data **does** exist for other configurations. It is distinct from Empty (Section 3b): the data exists; the user's selection excluded it.
+This state corresponds to **Step 6 §5.3 State 4: "Accounts exist, filter matches none"** — the org has deposit accounts but the active Account Type filter excludes all of them. It is distinct from Empty (Section 3b): data exists; the user's selection excluded it.
 
 | # | Check | Designed | Verified | Notes |
 |---|---|---|---|---|
-| NR1 | A **"No results found"** message (or equivalent) is shown — clearly distinguishable from the Empty state message | `[ ]` | `[ ]` | |
-| NR2 | A **"Clear filters"** or **"Change filters"** action is offered and functional | `[ ]` | `[ ]` | |
-| NR3 | The active filter chips/labels remain visible in the no-results state so the user can see why there are no results | `[ ]` | `[ ]` | |
-| NR4 | The no-results state renders correctly at **KPI / Small** — message and action are both reachable without overflow | `[ ]` | `[ ]` | |
-| NR5 | "Clear filters" resets to the **default filter state** (as confirmed in Step 6, or Step 4 Filters section if Step 6 is silent) — not to a blank/no-filter state | `[ ]` | `[ ]` | |
+| NR1 | A **"No results found"** message (or equivalent) is shown — clearly distinguishable from the Empty state message | `[ ]` | `[ ]` | Step 6 §5.3 State 4 (**Spec agreed, 13 Jul 2026**). Show explicit zeros: "# Accounts: 0" and balance "0.00" in the org's currency. Cause stated: "No accounts of this type." No chart panel — a short text line replaces it. |
+| NR2 | A **"Clear filters"** or **"Change filters"** action is offered and functional | `[ ]` | `[ ]` | **"Show all"** action clears the Account Type filter and resets to "All Types" (the default). Spec agreed 13 Jul 2026. |
+| NR3 | The active filter chips/labels remain visible in the no-results state so the user can see why there are no results | `[ ]` | `[ ]` | The active Account Type filter-tag chip must remain visible so the user can see why there are no results. Note: Step 4 (2026-07-13 fix) confirms filter-tag chips are present at Small size. |
+| NR4 | The no-results state renders correctly at **KPI / Small** — message and action are both reachable without overflow | `[ ]` | `[ ]` | At KPI/Small: "No accounts of this type" message and "Show all" link must both fit within the constrained height without overflow. |
+| NR5 | "Clear filters" resets to the **default filter state** (as confirmed in Step 6, or Step 4 Filters section if Step 6 is silent) — not to a blank/no-filter state | `[ ]` | `[ ]` | "Show all" resets to Account Type = "All Types" (the confirmed default per Step 4), not a blank/no-filter state. |
 
 ---
 
 ### 3d. Error State — Failed to Load
 
-This state occurs when the data fetch fails (network error, API timeout, server error, permissions error).
+This state occurs when the data fetch fails (network error, API timeout, server error, permissions error). W07-specific severity: deposit account balances are NASAA-regulated figures used in investor reporting — a wrong balance is considered worse than no balance.
 
 | # | Check | Designed | Verified | Notes |
 |---|---|---|---|---|
-| ER1 | A **"Failed to load"** message (or equivalent) is shown — clearly distinct from Empty and No Results states | `[ ]` | `[ ]` | |
-| ER2 | A **"Retry"** action is offered and functional — clicking it re-triggers the data fetch without a full page reload | `[ ]` | `[ ]` | |
-| ER3 | The error message does **not** expose raw technical detail (stack traces, HTTP status codes, API endpoint URLs) to the end user | `[ ]` | `[ ]` | |
-| ER4 | The error state renders correctly at **KPI / Small** — message and retry action are both visible without overflow | `[ ]` | `[ ]` | |
-| ER5 | After a successful retry, the widget returns to its normal loaded state (not stuck in an error state) | `[ ]` | `[ ]` | |
+| ER1 | A **"Failed to load"** message (or equivalent) is shown — clearly distinct from Empty and No Results states | `[ ]` | `[ ]` | Step 6 §5.3 State 6 (Proposed). **Critical W07 constraint (Step 6):** "Never render stale figures without their 'data as of' stamp; a wrong balance is worse than no balance for regulated figures." On error, show no balance figures at all — a clear plain-language message only. |
+| ER2 | A **"Retry"** action is offered and functional — clicking it re-triggers the data fetch without a full page reload | `[ ]` | `[ ]` | Retry re-fetches balances without a full page reload. Standard pattern. |
+| ER3 | The error message does **not** expose raw technical detail (stack traces, HTTP status codes, API endpoint URLs) to the end user | `[ ]` | `[ ]` | W07 is regulated (NASAA extension-fund securities reporting) — error message wording must be appropriate for a financial context. No stack traces, HTTP codes, or API URLs visible to end users. |
+| ER4 | The error state renders correctly at **KPI / Small** — message and retry action are both visible without overflow | `[ ]` | `[ ]` | At KPI (0.5-height strip): error message + Retry button both visible within the constrained height without overflow. |
+| ER5 | After a successful retry, the widget returns to its normal loaded state (not stuck in an error state) | `[ ]` | `[ ]` | After successful retry: widget restores normal state and preserves the last-active filter selection (Account Type and Compare To). |
 
 ---
 
 ### 3e. Permissions State — Hidden or Restricted Data
 
-This state occurs when the current user does not have access to some or all of the widget's data (e.g. a payroll widget for a user without payroll permissions, or a multi-department widget for a user with only one department's access).
+W07 has two distinct permission states defined in Step 6 §5.3: **State 1** (org does not have the module — widget hidden from chooser) and **State 2** (module present, user has no rights — widget hidden for that user). Both are currently marked "To confirm" in Step 6.
 
 | # | Check | Designed | Verified | Notes |
 |---|---|---|---|---|
-| P1 | The widget handles **fully restricted access** — shows a clear "You don't have access" message, not a broken or empty card | `[ ]` | `[ ]` | N/A if this widget has no permission gating |
-| P2 | The widget handles **partially restricted access** — restricted items are hidden cleanly, totals reflect only what the user can see | `[ ]` | `[ ]` | N/A if partial access is not applicable |
-| P3 | The **Department filter** (or equivalent scope-limiting filter) is hidden or disabled when the user has access to only one scope — not shown unconditionally (see W09 precedent) | `[ ]` | `[ ]` | N/A if no role-scoped filter |
-| P4 | The permissions state renders correctly at **KPI / Small** — restricted-access message is readable; the widget does not silently show $0 / 0 records as if real data were present | `[ ]` | `[ ]` | |
+| P1 | The widget handles **fully restricted access** — shows a clear "You don't have access" message, not a broken or empty card | `[ ]` | `[ ]` | Step 6 §5.3 State 2 (To confirm): widget hidden entirely for users with no module rights — consistent with Bank Balances precedent (not shown as restricted; fully hidden). **Step 6 open question:** whether widget visibility currently respects module security rights. Tracked in Section 8h. |
+| P2 | The widget handles **partially restricted access** — restricted items are hidden cleanly, totals reflect only what the user can see | `[ ]` | `[ ]` | Step 6 Constraint: "Per-account visibility follows user rights (Bank Balances precedent)." Restricted accounts are hidden cleanly; totals and counts reflect only visible accounts. Segregation of duties: widget stays read-and-navigate only — create/edit actions appear only behind rights (see Empty state E2). |
+| P3 | The **Department filter** (or equivalent scope-limiting filter) is hidden or disabled when the user has access to only one scope — not shown unconditionally (see W09 precedent) | `[ ]` | N/A | N/A — Account Type is a product-category filter, not a per-user permission scope (unlike W09's Department filter). No equivalent "hide filter when user has only one scope" rule applies here. |
+| P4 | The permissions state renders correctly at **KPI / Small** — restricted-access message is readable; the widget does not silently show $0 / 0 records as if real data were present | `[ ]` | `[ ]` | At KPI/Small: a restricted-access message must show — never silently render $0 / "# Accounts: 0" as if real data were present. A short message (e.g. "You don't have access to Deposit Accounts") is sufficient at KPI size. |
 
 ---
 
 ### 3f. Stale Data State
 
-This state occurs when the data displayed may be older than expected — for example, a refresh has not run, or the data was last updated outside the current period.
+This state occurs when the data displayed may be older than expected. For W07, data freshness is a regulatory concern — balances feed depositor statements and NASAA investor reporting.
 
 | # | Check | Designed | Verified | Notes |
 |---|---|---|---|---|
-| SD1 | A **"Last updated"** timestamp is accessible (via the Info Eye, a footer note, or an inline label) so the user can judge data freshness | `[ ]` | `[ ]` | |
-| SD2 | If data is older than a defined threshold (confirm threshold from Step 6, or Step 4 / backend spec if Step 6 is silent), a **visual stale-data indicator** is shown | `[ ]` | `[ ]` | N/A if no stale threshold is defined |
-| SD3 | The **Refresh icon** (always present per Rule 7) is clearly available — the user has a self-service path to request fresh data | `[ ]` | `[ ]` | |
-| SD4 | The stale-data indicator is **distinct from the error state** — it communicates "old data", not "broken widget" | `[ ]` | `[ ]` | |
+| SD1 | A **"Last updated"** timestamp is accessible (via the Info Eye, a footer note, or an inline label) so the user can judge data freshness | `[ ]` | `[ ]` | Step 6 Gap 6 (fix direction): separate the Refresh action from a **"Data as of"** stamp that updates on every render, including filter changes. Step 4 confirms standalone Refresh icon at every size including KPI. The old design's "Last refreshed" timestamp was the button itself and lagged filter re-renders — this is a known gap to fix. |
+| SD2 | If data is older than a defined threshold (confirm threshold from Step 6, or Step 4 / backend spec if Step 6 is silent), a **visual stale-data indicator** is shown | `[ ]` | N/A | N/A — no explicit stale-data threshold is defined in Step 6 or Step 4. The "Data as of" timestamp (SD1) provides freshness signal; a threshold-based visual indicator is not part of the current spec. |
+| SD3 | The **Refresh icon** (always present per Rule 7) is clearly available — the user has a self-service path to request fresh data | `[ ]` | `[ ]` | Step 4: standalone Refresh icon present at every size including KPI. This is the user's self-service path to fresh data. |
+| SD4 | The stale-data indicator is **distinct from the error state** — it communicates "old data", not "broken widget" | `[ ]` | `[ ]` | Stale-data signal = the "Data as of" timestamp becoming old. Must not use red colour or error icon — visually distinct from the Error state. |
 
 ---
 
 ### 3g. Cross-Control Conflicts
 
-This state occurs when two or more user interactions produce a logically inconsistent or technically invalid combined state.
+This state covers W07's two filters (Account Type and Compare To) and the three-view Switch View interacting with each other and with size changes.
 
 | # | Check | Designed | Verified | Notes |
 |---|---|---|---|---|
-| CC1 | **Company / organisation change** — if the user switches company/entity context, filters referencing the previous company's data are reset or invalidated gracefully, not left showing stale selections | `[ ]` | `[ ]` | N/A if no company-switcher context |
-| CC2 | **Sort + Filter combination** — applying a sort and then a filter (or vice versa) produces a consistent, correct result; the sort is applied to the filtered dataset, not the unfiltered one | `[ ]` | `[ ]` | |
-| CC3 | **Cascading / dependent filters** — when a parent filter changes, dependent child filters are either reset to their default, disabled (with a visual indicator), or kept if their current value is still valid. The resolution strategy matches Step 6 (or Step 4 if Step 6 is silent). | `[ ]` | `[ ]` | |
-| CC4 | **Switch view while filtered** — switching between chart and table view (or between design options) preserves the active filter state and applies it correctly to the new view | `[ ]` | `[ ]` | |
-| CC5 | **Size change while filtered** — resizing the widget preserves the active filter state and re-renders correctly at the new size | `[ ]` | `[ ]` | |
-| CC6 | The chosen conflict-resolution strategy for each case above (reset / disable / keep) is **documented in Step 6** — not decided implicitly in code | `[ ]` | `[ ]` | |
+| CC1 | **Company / organisation change** — if the user switches company/entity context, filters referencing the previous company's data are reset or invalidated gracefully, not left showing stale selections | `[ ]` | N/A | N/A — Account Type is a product-category filter scoped to this widget's own data within the current org context. No global company/entity switcher context applies to W07. |
+| CC2 | **Sort + Filter combination** — applying a sort and then a filter (or vice versa) produces a consistent, correct result; the sort is applied to the filtered dataset, not the unfiltered one | `[ ]` | N/A | N/A — sort order is fixed (Name then Inception Date, not user-changeable per Step 4). No user sort toggle exists, so no sort + filter combination conflict is possible. |
+| CC3 | **Cascading / dependent filters** — when a parent filter changes, dependent child filters are either reset to their default, disabled (with a visual indicator), or kept if their current value is still valid. The resolution strategy matches Step 6 (or Step 4 if Step 6 is silent). | `[ ]` | `[ ]` | Two filters: Account Type and Compare To — independent, no parent-child dependency. Changing Account Type does not invalidate Compare To values; no cascading reset needed. |
+| CC4 | **Switch view while filtered** — switching between chart and table view (or between design options) preserves the active filter state and applies it correctly to the new view | `[ ]` | `[ ]` | Account Type must apply correctly to all three views: Table (filters rows) → Distribution ("All Accounts" groups by type; specific type shows that type's own accounts) → Trend (plots whatever Account Type resolves to). Confirmed consistent in Step 4 since 2026-07-09 rebuild. |
+| CC5 | **Size change while filtered** — resizing the widget preserves the active filter state and re-renders correctly at the new size | `[ ]` | `[ ]` | Step 4 (2026-07-13 fix): KPI and Small now use the same filtered dataset and Compare To calculation as Medium/Large. Filter-tag chips added to Small as part of this fix. Filter state must be preserved across all resize transitions. |
+| CC6 | The chosen conflict-resolution strategy for each case above (reset / disable / keep) is **documented in Step 6** — not decided implicitly in code | `[ ]` | `[ ]` | CC4 conflict-resolution strategy (how each view interprets the Account Type filter) is documented in Step 4 only — not yet in Step 6. Flag as Step 6 gap before Gate 3. |
 
 ---
 
 ### 3h. Data Scale
 
-This state covers both extremes: too little data and too much data.
+This state covers both extremes: too little data and too much data. Real-world scale: Ben Lane interview confirmed "up to 50, sometimes more" accounts per org; real extension funds (e.g. Disciples CEF) have 2,000+ depositor accounts.
 
 | # | Check | Designed | Verified | Notes |
 |---|---|---|---|---|
-| DS1 | **Too few items** (1 or 2 rows/bars/segments) — the widget renders sensibly; a single-bar chart does not look broken; a single-row table does not have excessive whitespace | `[ ]` | `[ ]` | |
-| DS2 | **Too many items** — the widget applies the per-size cap correctly (confirm cap values from Step 6, or Step 4 Size behaviour table if Step 6 is silent) | `[ ]` | `[ ]` | |
-| DS3 | When capped, an **"Others" rollup** or **"+N More"** label is shown so the user knows the list is truncated — not silently cut | `[ ]` | `[ ]` | |
-| DS4 | The **Expanded view shows all items** (no cap) so the user has a path to the full dataset | `[ ]` | `[ ]` | |
-| DS5 | The **KPI / Small** size handles both extremes (1 item and maximum items) without layout breakage | `[ ]` | `[ ]` | |
-| DS6 | Totals and aggregates are computed from the **full untruncated dataset**, not from the capped visible set — a "Top 6 of 24" display must not show a total that covers only the top 6 | `[ ]` | `[ ]` | |
+| DS1 | **Too few items** (1 or 2 rows/bars/segments) — the widget renders sensibly; a single-bar chart does not look broken; a single-row table does not have excessive whitespace | `[ ]` | `[ ]` | Mock data has as few as 2 accounts per type. Distribution with 2 segments and Trend with a 2-type line both render sensibly. KPI is immune (shows a single total). |
+| DS2 | **Too many items** — the widget applies the per-size cap correctly (confirm cap values from Step 6, or Step 4 Size behaviour table if Step 6 is silent) | `[ ]` | `[ ]` | Per-size caps from Step 4: KPI = 1 total value (no list); Small = 3 accounts (Table only); Medium = 5 accounts (Table), full set for Distribution/Trend; Large/Expanded = all accounts + totals. Cap values from Step 4 — not yet in Step 6. |
+| DS3 | When capped, an **"Others" rollup** or **"+N More"** label is shown so the user knows the list is truncated — not silently cut | `[ ]` | `[ ]` | **Gap to flag:** Step 4 specifies Small shows "up to 3 accounts" but does not define a "+N More" overflow label. If 12 accounts exist and only 3 show, the user gets no indication of truncation. Confirm whether an overflow indicator is needed before build. |
+| DS4 | The **Expanded view shows all items** (no cap) so the user has a path to the full dataset | `[ ]` | `[ ]` | Expanded (full-screen): all three views available, no account cap, all accounts shown. Large also shows all accounts + totals row. |
+| DS5 | The **KPI / Small** size handles both extremes (1 item and maximum items) without layout breakage | `[ ]` | `[ ]` | KPI always shows 1 total value — immune to account-count extremes. Small (3-account cap): the total and % Change shown must reflect the full filtered dataset, not just the 3 visible rows. |
+| DS6 | Totals and aggregates are computed from the **full untruncated dataset**, not from the capped visible set — a "Top 6 of 24" display must not show a total that covers only the top 6 | `[ ]` | `[ ]` | Step 4 confirms totals row at Large/Expanded = combined balance across all accounts in the current filter scope. Must be computed from the full untruncated dataset, not from the capped visible rows. |
 
 ---
 
 ### 3i. Extreme Content
 
-This state covers text, number, and value edge cases that can silently break a polished layout.
+This state covers text, number, and value edge cases that can silently break a polished layout. W07-specific constraints: same-name accounts (Account# is the only disambiguator per Step 6 §5.4 Gap 14) and org-locale currency formatting (live bug: £0.00 rendered on US product per Step 6 Gap 12).
 
 | # | Check | Designed | Verified | Notes |
 |---|---|---|---|---|
-| XC1 | **Long names truncate** cleanly with an ellipsis (`…`) — no label overflows its bounding box or obscures a neighbouring element | `[ ]` | `[ ]` | |
-| XC2 | The **full value of a truncated label** is accessible — via a tooltip on hover, or visible in the Expanded view | `[ ]` | `[ ]` | |
-| XC3 | **Numbers stay aligned** — currency amounts, percentages, and counts are right-aligned in tables and do not wrap mid-value | `[ ]` | `[ ]` | |
-| XC4 | **Very large numbers** (e.g. $1,234,567,890) are formatted with appropriate abbreviation (e.g. $1.2B) at small sizes where the full value would overflow | `[ ]` | `[ ]` | |
-| XC5 | **Zero values** render correctly — $0, 0%, or 0 items shows as a valid zero, not a missing bar, a broken chart, or a blank cell | `[ ]` | `[ ]` | |
-| XC6 | **Negative values** render correctly — negative currency or variance values show a minus sign or a distinct colour (confirm treatment from Step 6, or Step 4 if Step 6 is silent), not as a bar in the wrong direction or a garbled number | `[ ]` | `[ ]` | |
-| XC7 | Every extreme content case above also works at **KPI / Small** — the smallest sizes are the most constrained and the most likely to break first | `[ ]` | `[ ]` | |
+| XC1 | **Long names truncate** cleanly with an ellipsis (`…`) — no label overflows its bounding box or obscures a neighbouring element | `[ ]` | `[ ]` | Account names can be long (e.g. "Petty Cash Checking", "Grant Reserve 2024"). At Small (3-column: Name + Balance + % Change), names will need to truncate. At KPI, the title "Total Balance — Checking" must also truncate without overflow. |
+| XC2 | The **full value of a truncated label** is accessible — via a tooltip on hover, or visible in the Expanded view | `[ ]` | `[ ]` | Full account name accessible via hover tooltip. At Expanded, full names visible in the wide table. **W07-specific (Step 6 §5.4 Gap 14):** two accounts can share the same name and are distinguished only by Account# — the Account# column must be retained; hover-only disambiguation is not acceptable (WCAG 2.1 AA constraint). |
+| XC3 | **Numbers stay aligned** — currency amounts, percentages, and counts are right-aligned in tables and do not wrap mid-value | `[ ]` | `[ ]` | Balance, % Change, and totals right-aligned in table. **W07-specific live bug (Step 6 Gap 12):** currency rendered as £0.00 on a US product in the live audit — org-locale formatting must be used, never client/server culture. |
+| XC4 | **Very large numbers** (e.g. $1,234,567,890) are formatted with appropriate abbreviation (e.g. $1.2B) at small sizes where the full value would overflow | `[ ]` | `[ ]` | Total balance in mock = $7,451,630. Real extension funds may reach tens of millions. At KPI/Small the total should abbreviate (e.g. "$7.5M") if the full value doesn't fit. Org-locale currency symbol must be used. |
+| XC5 | **Zero values** render correctly — $0, 0%, or 0 items shows as a valid zero, not a missing bar, a broken chart, or a blank cell | `[ ]` | `[ ]` | An account type with zero balance (accounts exist but no transactions) should show $0.00 — not a missing donut segment, blank bar, or broken row. Distribution donut with a zero-balance segment must render visibly. |
+| XC6 | **Negative values** render correctly — negative currency or variance values show a minus sign or a distinct colour (confirm treatment from Step 6, or Step 4 if Step 6 is silent), not as a bar in the wrong direction or a garbled number | `[ ]` | `[ ]` | % Change (delta vs Compare To) can be negative. Step 4: green = improved vs comparison point, red = declined. Declining-account flag ▼▼▼ (3+ consecutive months) shows in Table view next to account name — threshold needs sign-off before build (tracked in Section 8h). |
+| XC7 | Every extreme content case above also works at **KPI / Small** — the smallest sizes are the most constrained and the most likely to break first | `[ ]` | `[ ]` | KPI tile (0.5-height strip): total balance abbreviation + ▲/▼ delta badge must both fit without wrapping. Negative delta (▼ + red) must be visually distinct from error/empty states. |
 
 ---
 

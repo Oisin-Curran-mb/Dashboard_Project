@@ -25,6 +25,33 @@
 | OI-d2406895 | unreferenced file | Step 2 | Step 2 | 2026-07-24 | Market Research/W16 - Accounts Payable By Due Date.md isn't mentioned in Step 2's own index |
 | OI-883ffc75 | unreferenced file | Step 2 | Step 2 | 2026-07-24 | Market Research/W17 - Gifts Pledges.md isn't mentioned in Step 2's own index |
 
+### Run: 2026-08-26 — Dashboard Container Demo completed
+
+Built `Aditya_Widget_Design/Dashboard Container Demo.html` — a fully self-contained, single-file interactive replica of the Amplify dashboard shell.
+
+**What was built:**
+- Full app shell: sticky nav (Amplify logo · org switcher · icon tray · avatar), breadcrumb, sticky dashboard bar with Find a widget / Refresh / Edit Dashboard controls
+- 12-column CSS grid; Glance = span 3, Explore = span 6, Detail = span 12
+- Widget card chrome: header with title + ↺ refresh + ↗ expand + ⋯ 3-dot menu per card
+- 3-dot dropdown: Refresh, Expand to fullscreen, SIZE switcher (Glance/Explore/Detail with active highlight), Remove widget (red)
+- Shimmer skeleton loading animation on add and refresh
+- Right-side "Find a widget" drawer with live search filter, module groupings, per-widget Add/Added buttons
+- Fullscreen modal for any widget at Detail size
+- Edit Dashboard mode: reveals drag-handle and red ✕ remove button on each card
+- Empty state: shown when grid is empty, hidden when at least one widget is added
+- 16 widgets registered (W01, W02, W03, W04, W05, W06, W07, W08, W09, W10, W11, W13, W14, W15, W16, W17) with full rich renders:
+  - W15 Bank Balances: account table (balance + change)
+  - W01 Budget vs Actual: colour-coded horizontal bar chart with legend
+  - W07 Deposit Accounts: inflow/outflow/net table
+  - W03 Payroll Distributions: pay-type bar chart
+  - W05 Receivable Invoices: ageing table with view toggle
+  - W16 Accounts Payable: vendor/due-date table
+  - W02 Pension Plans, W04 Remittance Pledges, W06 Insurance Billing, W09 Payroll Time Off, W10 Loans, W11 Fixed Assets, W13 Purchasing, W14 Task shortcuts, W17 Gifts & Pledges
+  - W08 My Status: empty state with CTA
+
+**File location:** `Aditya_Widget_Design/Dashboard Container Demo.html` (single file, no external dependencies)
+
+**Verified in browser:** empty state → drawer open → add widget (shimmer → render) → resize (Glance/Explore/Detail) → fullscreen modal → all interactions working with zero JS errors.
 ## Run history
 
 ### Run: 2026-07-24 00:00
