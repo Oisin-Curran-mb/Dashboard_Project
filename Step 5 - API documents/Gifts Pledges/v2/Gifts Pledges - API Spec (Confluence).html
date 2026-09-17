@@ -1,0 +1,1645 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Gifts Pledges - API Spec</title>
+<style>
+body { font-family: -apple-system, Helvetica, Arial, sans-serif; max-width: 900px; margin: 30px auto; line-height: 1.5; color: #172B4D; }
+h1 { font-size: 24px; }
+h2 { font-size: 19px; border-bottom: 1px solid #DFE1E6; padding-bottom: 6px; margin-top: 32px; }
+h3 { font-size: 16px; margin-top: 20px; }
+table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+th, td { border: 1px solid #DFE1E6; padding: 6px 10px; text-align: left; vertical-align: top; }
+th { background: #F4F5F7; }
+code { background: #F4F5F7; padding: 1px 5px; border-radius: 3px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 90%; }
+pre { background: #F4F5F7; padding: 12px; border-radius: 4px; overflow-x: auto; }
+pre code { background: none; padding: 0; }
+.status { background: #FFF0B3; display: inline-block; padding: 3px 10px; border-radius: 3px; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<h1>Gifts Pledges - API Spec</h1>
+<p><span class="status">Status: Done - awaiting sign-off (drafting complete, owner review pending)</span></p>
+<blockquote>
+<p><strong>Read this first - the three load-bearing facts of this contract.</strong>
+1. The Modern API's existing gifts-pledges endpoint returns only <code>{PurposeId, PurposeName, Pledged, Received}</code> per purpose [DOC - Widget_Comparison_Classic / Step 1 research]. Almost everything else the built Final renders is NEW backend work, called out per field below: per-pledge Pledge Due proration, the per-donor pledge drill, the gift-transaction drill, the campaign Goal, and export.
+2. <strong>Received basis conflict, unresolved.</strong> This contract specs Received as pledge-linked gift lines only, per the built Final and the standing owner decision. The Modern API's existing DTOs count ALL posted gift detail for the purpose or campaign, including gifts with no pledge link. The two figures differ whenever unpledged one-off gifts exist. See Still needs sign-off, item 1. Nothing that sums Received may be built before that is settled.
+3. Volume ceilings for campaigns, pledges per campaign, and gifts per pledge are all <code>[TO CONFIRM - backend team]</code>. The BOUNDED verdicts below are conditional on them.</p>
+</blockquote>
+<hr />
+<h2>Overview</h2>
+<p>The widget answers two questions per gift and pledge campaign: how is it tracking against its Goal, and how much of what was pledged is still due. Users are stewardship, finance and leadership staff monitoring campaign health; the deep dive reaches the donor pledges behind a campaign and the individual gift transactions applied to each pledge, and the widget's only action is export. This widget owns the GOAL PROGRESS read of the pledge pair; the exception (behind-pace) framing belongs to Remittance Pledges, whose contract is separate.</p>
+<p>This contract defines five APIs: a bounded campaign summary read fired on render and on every filter change (API 1), a campaign filter lookup (API 2), a paginated per-campaign donor pledge list fired on row expand and on bar click (API 3), a per-pledge gift transaction read fired on pledge expand (API 4), and a view-scoped server-side export (API 5). The decomposition is derived in the API inventory. All five are reads; there is no write anywhere in this widget, deliberately: export is the widget's only action and additional actions must not be invented without a demonstrated user need [DOC - Step 4, standing constraint].</p>
+<p>Terminology: legacy "Pledge Purpose" is the UI's "Campaign". The API keys everything by <code>purposeId</code>.</p>
+<hr />
+<h2>Design → API coverage</h2>
+<table>
+<thead>
+<tr>
+<th>Design element</th>
+<th>Type</th>
+<th>API</th>
+<th>Field(s)</th>
+<th>Provenance</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Glance headline: Total Received</td>
+<td>KPI</td>
+<td>API 1</td>
+<td><code>totals.received</code></td>
+<td>DERIVED (sum of pledge-linked gift lines) [BUILD][DOC - Step 4]</td>
+</tr>
+<tr>
+<td>Glance goal read: "of $X goal" + progress percent + progress bar</td>
+<td>KPI</td>
+<td>API 1</td>
+<td><code>totals.goal</code>, <code>totals.progressPercent</code></td>
+<td>NEW (Goal does not exist in legacy GF data) [BUILD][DOC - Step 4]</td>
+</tr>
+<tr>
+<td>Glance / header status band (thresholds 0.75 and 1.00)</td>
+<td>state</td>
+<td>API 1</td>
+<td><code>totals.progressPercent</code></td>
+<td>Client-side banding of a served number [BUILD]</td>
+</tr>
+<tr>
+<td>Header KPI line (Explore/Detail): received + goal pill</td>
+<td>KPI</td>
+<td>API 1</td>
+<td><code>totals.received</code>, <code>totals.goal</code>, <code>totals.progressPercent</code></td>
+<td>as above</td>
+</tr>
+<tr>
+<td>Campaign filter chip + option list</td>
+<td>filter</td>
+<td>API 2</td>
+<td><code>campaigns[].purposeId</code>, <code>campaigns[].purposeCode</code>, <code>campaigns[].purposeName</code></td>
+<td>STORED GF_Purpose [DOC - Step 1 research]; code column UNVERIFIED (backend team)</td>
+</tr>
+<tr>
+<td>Date range chip ("Gifts from X to Y")</td>
+<td>filter</td>
+<td>none</td>
+<td>client-side display state; only <code>rangeEnd</code> is sent</td>
+<td>[BUILD] - see Filter architecture</td>
+</tr>
+<tr>
+<td>View toggle: Goal Progress / Summary Table</td>
+<td>view</td>
+<td>none</td>
+<td>client-side view over the API 1 response</td>
+<td>[BUILD]</td>
+</tr>
+<tr>
+<td>Goal Progress bar per campaign (label, percent, fill, caption, badge)</td>
+<td>chart series</td>
+<td>API 1</td>
+<td><code>campaigns[].purposeCode</code>, <code>campaigns[].purposeName</code>, <code>campaigns[].received</code>, <code>campaigns[].goal</code>, <code>campaigns[].progressPercent</code></td>
+<td>mixed - see API 1 schema</td>
+</tr>
+<tr>
+<td>Goal Progress bar order (closest to goal first)</td>
+<td>sort order</td>
+<td>none</td>
+<td>client-side sort of the bounded API 1 rows by <code>progressPercent</code> desc</td>
+<td>[BUILD]</td>
+</tr>
+<tr>
+<td>Goal Progress legend: count per status band</td>
+<td>count</td>
+<td>API 1</td>
+<td>derived client-side from <code>campaigns[].progressPercent</code> over the full returned set</td>
+<td>[BUILD]</td>
+</tr>
+<tr>
+<td>Goal Progress legend: "Remaining to goal overall"</td>
+<td>KPI</td>
+<td>API 1</td>
+<td>derived client-side: <code>max(0, totals.goal - totals.received)</code></td>
+<td>[BUILD]</td>
+</tr>
+<tr>
+<td>Summary Table columns: Purpose (Campaign), Pledge Total, Pledge Due, Received, Due Remaining, Percent Due</td>
+<td>table columns</td>
+<td>API 1</td>
+<td><code>campaigns[].purposeCode</code>, <code>purposeName</code>, <code>pledgeTotal</code>, <code>pledgeDue</code>, <code>received</code>, <code>dueRemaining</code>, <code>percentDue</code></td>
+<td>see API 1 schema</td>
+</tr>
+<tr>
+<td>Summary Table row sub-line: "received of goal (pct)"</td>
+<td>table column</td>
+<td>API 1</td>
+<td><code>campaigns[].received</code>, <code>goal</code>, <code>progressPercent</code></td>
+<td>as above</td>
+</tr>
+<tr>
+<td>Summary Table "Closed" badge</td>
+<td>state</td>
+<td>API 1</td>
+<td><code>campaigns[].isClosed</code></td>
+<td>NEW (modern campaign model) [BUILD, Rule 11]</td>
+</tr>
+<tr>
+<td>Summary Table totals row (sums the first four money columns; Percent Due not summed)</td>
+<td>grand total</td>
+<td>API 1</td>
+<td><code>totals.pledgeTotal</code>, <code>totals.pledgeDue</code>, <code>totals.received</code>, <code>totals.dueRemaining</code></td>
+<td>DERIVED server-side over the full filtered set</td>
+</tr>
+<tr>
+<td>Summary Table row order</td>
+<td>sort order</td>
+<td>API 1</td>
+<td>server-returned order, rendered as received</td>
+<td>UNVERIFIED (backend team) - see Where computation lives</td>
+</tr>
+<tr>
+<td>Row expand: donor pledge breakdown (Name, Begin date, End date, Pledge, Received, Due Remaining, Status; row key feeds the pledge expand)</td>
+<td>drill</td>
+<td>API 3</td>
+<td><code>pledges[].pledgeId</code>, <code>pledges[].donorName</code>, <code>beginDate</code>, <code>endDate</code>, <code>pledgeAmount</code>, <code>received</code>, <code>dueRemaining</code>, <code>daysAheadBehind</code></td>
+<td>see API 3 schema</td>
+</tr>
+<tr>
+<td>Donor breakdown pager (20 per page)</td>
+<td>state</td>
+<td>API 3</td>
+<td><code>totalCount</code>, <code>page</code>, <code>pageSize</code></td>
+<td>NEW</td>
+</tr>
+<tr>
+<td>Donor pledge status chip (paid in full / ahead / on track / behind bands)</td>
+<td>state</td>
+<td>API 3</td>
+<td>client-side banding of <code>dueRemaining</code> + <code>daysAheadBehind</code> + <code>pledgeAmount</code></td>
+<td>[BUILD]</td>
+</tr>
+<tr>
+<td>Pledge expand: "Gifts applied to this pledge" (Gift Date, Amount, Reference) + total footer</td>
+<td>drill</td>
+<td>API 4</td>
+<td><code>gifts[].giftDate</code>, <code>gifts[].amount</code>, <code>gifts[].reference</code>, <code>totalReceived</code>, <code>giftCount</code></td>
+<td>see API 4 schema</td>
+</tr>
+<tr>
+<td>Bar click: top-5 most-behind donors modal (campaign summary cells + top-5 list + "Showing N of M" note)</td>
+<td>drill</td>
+<td>API 3</td>
+<td><code>summary.*</code>, <code>pledges[]</code> (with <code>behindOnly=true</code>, <code>pageSize=5</code>), <code>behindCount</code></td>
+<td>see API 3 schema</td>
+</tr>
+<tr>
+<td>Modal footer: "Open in Gifts and Pledges"</td>
+<td>action</td>
+<td>none</td>
+<td>navigation stub; no API allocated - see Still needs sign-off, item 6</td>
+<td>[BUILD, Rule 11][TO CONFIRM - Oisin]</td>
+</tr>
+<tr>
+<td>Header Export (active view)</td>
+<td>action</td>
+<td>API 5</td>
+<td>file response</td>
+<td>NEW</td>
+</tr>
+<tr>
+<td>Donor-breakdown Export (scoped to one campaign)</td>
+<td>action</td>
+<td>API 5</td>
+<td>file response with <code>view=donorPledges&amp;purposeId=</code></td>
+<td>NEW</td>
+</tr>
+<tr>
+<td>Empty state (no campaigns)</td>
+<td>state</td>
+<td>API 1</td>
+<td>empty <code>campaigns[]</code>, zero <code>totals</code></td>
+<td>see State contracts</td>
+</tr>
+<tr>
+<td>Loading / skeleton on filter change</td>
+<td>state</td>
+<td>none</td>
+<td>client behaviour while API 1 is in flight</td>
+<td>[BUILD]</td>
+</tr>
+<tr>
+<td>Refresh icon (all tiers)</td>
+<td>action</td>
+<td>API 1 (+ API 2)</td>
+<td>re-fires the current query</td>
+<td>[BUILD]</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>Tables</h2>
+<table>
+<thead>
+<tr>
+<th>Table / repository</th>
+<th>Fields and members used</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GF_Purpose</code></td>
+<td>Purpose (campaign) list: id, code, name, CompanyID, Active [DOC - Step 1 research]; exact code/name column names UNVERIFIED (backend team)</td>
+</tr>
+<tr>
+<td><code>GF_Pledge</code></td>
+<td>Per-donor pledge rows: PurposeID, amount, begin/end term dates, frequency, installment count, Active. Amount column confirmed as the pledge figure [DOC - Step 1 research]; term/frequency/installment column names UNVERIFIED (backend team)</td>
+</tr>
+<tr>
+<td><code>GF_History</code> / <code>GF_HistoryDetail</code></td>
+<td>Gift lines: Amount, GiftDate, JournalID (posted), UnDoJournalID (void), PurposeID, PledgeID (pledge link) [DOC - Step 1 research]; PledgeID linkage matches the legacy <code>pledge.GFHistoryDetails</code> navigation [DOC - Step 4]</td>
+</tr>
+<tr>
+<td><code>GF_Campaign</code></td>
+<td>The modern campaign Goal model: Goal, HasGoal, IsClosed [DOC - Widget_Comparison_New_Widgets]. How GF_Campaign rows map to GF_Purpose rows is [TO CONFIRM - backend team] - see Still needs sign-off, item 2</td>
+</tr>
+<tr>
+<td><code>CorePerson</code></td>
+<td><code>DisplayNameLastFirst</code> for the donor name in the drill [BUILD]</td>
+</tr>
+</tbody>
+</table>
+<p>No new tables. The work is new queries and new server-side computation against existing tables, plus the Goal join above, whose keying is the one open schema question.</p>
+<p>Core formulas (the statements a developer checks the query against):</p>
+<ul>
+<li><strong>Purpose list:</strong> <code>GF_Purpose WHERE CompanyID = ctx AND Active = true</code>. [DOC - Step 1 research] Legacy additionally shows only purposes with pledge activity [DOC - Widget_Comparison_Classic]; this contract keeps that rule.</li>
+<li><strong>Pledge Total (campaign):</strong> <code>SUM(GF_Pledge.Amount) WHERE PurposeID = purpose AND Active = true</code>. [DOC - Step 1 research]</li>
+<li><strong>Received (pledge):</strong> <code>SUM(GF_HistoryDetail.Amount)</code> over lines <strong>linked to that pledge</strong> (<code>PledgeID = pledge</code>), posted (<code>JournalID != null</code>), not voided (<code>UnDoJournalID = null</code>), <code>GiftDate &lt;= rangeEnd</code>. [DOC - Step 4, owner decision] Unpledged gift lines (<code>PledgeID = null</code>) are excluded - the recorded conflict with the Modern API's all-gifts basis is Still needs sign-off, item 1.</li>
+<li><strong>Received (campaign):</strong> sum of its pledges' Received.</li>
+<li><strong>Pledge Due (pledge):</strong> full pledge once <code>rangeEnd &gt;= EndDate</code>; otherwise per-installment amount times (frequency cycles elapsed from BeginDate to <code>rangeEnd</code>, plus one), capped at the installment count. Frequency cycle table: 1 annual, 2 biennial, 4 quarterly, 6 bi-monthly, 12 monthly, 24 semi-monthly, 26 biweekly, 52 weekly. [BUILD][DOC - Step 4] This is installment proration, NOT the linear day fraction Remittance Pledges uses. The cycle count anchors on <code>rangeEnd</code>, not on today: the shipped legacy code anchors on today, which is a known defect and must not be replicated [BUILD - gpF code comment].</li>
+<li><strong>Pledge Due (campaign):</strong> sum of its pledges' Pledge Due.</li>
+<li><strong>Due Remaining:</strong> <code>pledgeDue - received</code>, returned pre-signed; negative means over-received and is favourable. [DOC - Step 4]</li>
+<li><strong>Percent Due:</strong> <code>dueRemaining / pledgeDue</code>, the share still outstanding; <code>null</code> when <code>pledgeDue = 0</code>. [BUILD][DOC - Step 4 readiness note] The Step 4 doc also still carries an unretired CONFLICT row on this definition - recorded in Still needs sign-off, item 4, not collapsed here.</li>
+<li><strong>Progress:</strong> <code>received / goal</code>; <code>null</code> when there is no goal or <code>goal &lt;= 0</code>. [BUILD]</li>
+<li><strong>Filter applied to every read:</strong> company scope (header) and <code>rangeEnd</code> as the as-of cutoff for Received and for the Pledge Due proration. [BUILD][DOC - Step 4]</li>
+</ul>
+<hr />
+<h2>Old vs. new</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Old (live today)</th>
+<th>New (needed)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Data endpoint</td>
+<td><code>GET /api/dashboard/gifts-pledges/data?dateGiftsThru=</code> returns <code>List&lt;GiftsPledgesRowDto&gt; {PurposeId, PurposeName, Pledged, Received}</code> [DOC - Widget_Comparison_Classic]</td>
+<td>API 1 replaces it: adds <code>pledgeDue</code>, <code>dueRemaining</code>, <code>percentDue</code>, <code>goal</code>, <code>progressPercent</code>, <code>isClosed</code>, a <code>totals</code> block, and a <code>purposeId</code> filter param. Everything added is NEW server work</td>
+</tr>
+<tr>
+<td>Pledge Due / Due Remaining / Percent Due</td>
+<td>Not returned by the legacy repository or the Modern API; computed client-side in the legacy widget [DOC - Step 1 research]</td>
+<td>NEW: computed server-side per pledge and rolled up, per the formulas above</td>
+</tr>
+<tr>
+<td>Received basis</td>
+<td>Modern DTO sums ALL posted gift detail for the purpose; the parallel campaign DTO's TotalRaised likewise counts all posted gifts [DOC - comparison files]</td>
+<td>Changed: pledge-linked lines only. UNRESOLVED conflict - Still needs sign-off, item 1</td>
+</tr>
+<tr>
+<td>Goal</td>
+<td>No Goal field anywhere in legacy GF data [DOC - Step 1 research]</td>
+<td>NEW: Goal/HasGoal/IsClosed served per purpose via the GF_Campaign model; keying [TO CONFIRM - backend team]</td>
+</tr>
+<tr>
+<td>Donor pledge drill</td>
+<td>Does not exist (no drill in the legacy widget) [DOC - Step 1 research]</td>
+<td>NEW: API 3, paginated, fixed most-behind-first order, <code>behindOnly</code> mode for the top-5 modal</td>
+</tr>
+<tr>
+<td>Gift transaction drill</td>
+<td>Does not exist</td>
+<td>NEW: API 4</td>
+</tr>
+<tr>
+<td>Export</td>
+<td>Does not exist</td>
+<td>NEW: API 5, view-scoped server-side file generation</td>
+</tr>
+<tr>
+<td>Date control</td>
+<td>Single <code>dateGiftsThru</code>, defaults to today</td>
+<td><code>rangeEnd</code> is the same as-of cutoff; the range start is client display state and is not sent (see Filter architecture)</td>
+</tr>
+<tr>
+<td>Campaign filter</td>
+<td>Does not exist</td>
+<td>NEW param on API 1 (<code>purposeId</code>) plus the API 2 lookup</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>API inventory</h2>
+<table>
+<thead>
+<tr>
+<th>API</th>
+<th>Purpose</th>
+<th>Trigger (when it fires)</th>
+<th>Cardinality</th>
+<th>R/W</th>
+<th>Cache posture</th>
+<th>Split trigger</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>API 1 - Campaign summary</td>
+<td>Per-campaign goal + pledge figures and the totals block; feeds Glance, both views, the legend and the totals row</td>
+<td>Widget render; campaign or date-range change; refresh</td>
+<td>One row per active purpose with pledge activity (bounded, ceiling [TO CONFIRM - backend team])</td>
+<td>R</td>
+<td>LIVE per request</td>
+<td>Base read</td>
+</tr>
+<tr>
+<td>API 2 - Campaign lookup</td>
+<td>Options for the Campaign filter</td>
+<td>Filter popover open (cacheable across opens); refresh</td>
+<td>Same purpose set as API 1</td>
+<td>R</td>
+<td>TTL 15 min</td>
+<td>Lifetime gap: a rarely-changing option list must not be re-paid on every data query, and the filtered API 1 response cannot carry the full option list</td>
+</tr>
+<tr>
+<td>API 3 - Donor pledge list</td>
+<td>Pledges behind one campaign, paced to <code>rangeEnd</code>; also serves the top-5 most-behind modal via <code>behindOnly</code></td>
+<td>Summary Table row expand; Goal Progress bar click; drill page change</td>
+<td>Unbounded per campaign ([TO CONFIRM - backend team]); paginated</td>
+<td>R</td>
+<td>LIVE per request</td>
+<td>Trigger gap (fires on user action, never on render) + cardinality gap (unbounded list must not ride on the bounded summary)</td>
+</tr>
+<tr>
+<td>API 4 - Pledge gifts</td>
+<td>Gift transactions applied to one pledge</td>
+<td>Pledge row expand inside the drill</td>
+<td>Small per pledge (ceiling [TO CONFIRM - backend team])</td>
+<td>R</td>
+<td>LIVE per request</td>
+<td>Trigger gap + grain gap (per-entity detail keyed by pledge id)</td>
+</tr>
+<tr>
+<td>API 5 - Export</td>
+<td>Server-generated spreadsheet of the active view's data, or of one campaign's donor pledges</td>
+<td>Export button (header or donor breakdown)</td>
+<td>One file</td>
+<td>R</td>
+<td>none (generated per request)</td>
+<td>Conditional weight: heavy file generation only on explicit user action</td>
+</tr>
+</tbody>
+</table>
+<p>Merges considered and closed: API 1 and API 2 stay separate (a filtered summary response cannot feed the option list, and their cache lifetimes differ). The top-5 modal does NOT get its own endpoint: it is API 3 with <code>behindOnly=true&amp;pageSize=5</code>, because both calls answer the same per-campaign pledge question at the same grain, and the modal's summary cells ride in API 3's <code>summary</code> block so the modal can never disagree with the page it opened from. API 4 stays separate from API 3 rather than nesting gifts inside every pledge row: gifts are only needed for the one pledge the user expands, and nesting them would multiply API 3's payload by the gift count for interactions that never happen.</p>
+<hr />
+<h2>Call sequence</h2>
+<table>
+<thead>
+<tr>
+<th>Interaction</th>
+<th>Calls fired</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Initial widget load</td>
+<td>API 1</td>
+<td><code>rangeEnd</code> = today, no <code>purposeId</code>. Glance renders from <code>totals</code> alone</td>
+</tr>
+<tr>
+<td>Open Campaign filter</td>
+<td>API 2</td>
+<td>Served from TTL cache when warm</td>
+</tr>
+<tr>
+<td>Change Campaign filter</td>
+<td>API 1</td>
+<td>With <code>purposeId</code>; expanded rows and drill pages reset client-side</td>
+</tr>
+<tr>
+<td>Change Date range (preset or custom To)</td>
+<td>API 1</td>
+<td>New <code>rangeEnd</code>. A custom From changes only the client-side chip; no call unless To also changed</td>
+</tr>
+<tr>
+<td>Switch view (Goal Progress / Summary Table)</td>
+<td>none</td>
+<td>Client-side view over the held API 1 response</td>
+</tr>
+<tr>
+<td>Expand a Summary Table campaign row</td>
+<td>API 3</td>
+<td><code>page=1&amp;pageSize=20</code>, same <code>rangeEnd</code> as the current API 1 response (the shared asOf anchor)</td>
+</tr>
+<tr>
+<td>Drill page change</td>
+<td>API 3</td>
+<td>Same params, new <code>page</code></td>
+</tr>
+<tr>
+<td>Expand a pledge row</td>
+<td>API 4</td>
+<td>Same <code>rangeEnd</code></td>
+</tr>
+<tr>
+<td>Click a Goal Progress bar (top-5 modal)</td>
+<td>API 3</td>
+<td><code>behindOnly=true&amp;page=1&amp;pageSize=5</code>, same <code>rangeEnd</code>; modal renders <code>summary</code> + <code>pledges</code> + <code>behindCount</code></td>
+</tr>
+<tr>
+<td>Export (header)</td>
+<td>API 5</td>
+<td><code>view=goalProgress</code> or <code>view=summaryTable</code>, current <code>purposeId</code>/<code>rangeEnd</code></td>
+</tr>
+<tr>
+<td>Export (donor breakdown)</td>
+<td>API 5</td>
+<td><code>view=donorPledges&amp;purposeId=</code>, same <code>rangeEnd</code></td>
+</tr>
+<tr>
+<td>Refresh</td>
+<td>API 1 (+ API 2 if the popover is open)</td>
+<td>Re-fires the current query unchanged</td>
+</tr>
+</tbody>
+</table>
+<p>Shared snapshot anchor: <code>rangeEnd</code> is the asOf for every call, passed identically and echoed as <code>asOf</code> in every response. The client passes the <code>asOf</code> echoed by its held API 1 response into APIs 3, 4 and 5, so a drill can never straddle a posting and disagree with the row it expanded from. Residual drift (a gift posted between the two calls, same asOf) is accepted: gift postings are dated, and <code>GiftDate &lt;= rangeEnd</code> makes re-reads deterministic for any past date.</p>
+<hr />
+<h2>Filter architecture</h2>
+<table>
+<thead>
+<tr>
+<th>Filter</th>
+<th>Option source</th>
+<th>Cardinality</th>
+<th>Execution</th>
+<th>Aggregate effect</th>
+<th>Cascade</th>
+<th>"All" wire form</th>
+<th>Round trips</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Campaign</td>
+<td>LOOKUP - API 2 (GF_Purpose, Active)</td>
+<td>Same as campaign ceiling, [TO CONFIRM - backend team]; if over ~200 the lookup becomes searchable server-side</td>
+<td>SERVER - <code>purposeId</code> on API 1</td>
+<td>Yes: <code>totals</code> recompute over the filtered set</td>
+<td>None (options not scoped by date range)</td>
+<td>Omit the param</td>
+<td>1 (API 1)</td>
+</tr>
+<tr>
+<td>Date range preset (This year / Last 30 days / Custom)</td>
+<td>STATIC enum</td>
+<td>3</td>
+<td>SERVER - <code>rangeEnd</code> on APIs 1, 3, 4, 5</td>
+<td>Yes: Received and Pledge Due both re-anchor</td>
+<td>None</td>
+<td>n/a (a <code>rangeEnd</code> is always sent; default today)</td>
+<td>1 (API 1)</td>
+</tr>
+<tr>
+<td>Custom From date</td>
+<td>client date input, capped at today</td>
+<td>n/a</td>
+<td>CLIENT - display state only; it changes the chip text and is never sent, because no figure in the design is windowed by the start date [BUILD]</td>
+<td>No</td>
+<td>None</td>
+<td>n/a</td>
+<td>0</td>
+</tr>
+<tr>
+<td>View toggle</td>
+<td>STATIC enum (2 views)</td>
+<td>2</td>
+<td>CLIENT - both views render from the full API 1 row set already held; the set is bounded (conditional on the campaign ceiling above); no server aggregate changes, since <code>totals</code> describes the same filtered set either way</td>
+<td>No</td>
+<td>None</td>
+<td>n/a</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Combination semantics:</strong> AND, narrowing. Campaign and date range apply to every API together.</li>
+<li><strong>Conflict rule:</strong> a <code>purposeId</code> that is not in the caller's active set makes API 1 return a well-formed empty response (empty <code>campaigns[]</code>, zero <code>totals</code>), not an error - the purpose may legitimately have been deactivated between lookup and query. On APIs 3/4/5 an unknown path or param id is <code>404</code>. A malformed <code>rangeEnd</code> is <code>400</code>. A future <code>rangeEnd</code> is accepted and computed literally (the client input caps at today, so it does not arise from this UI).</li>
+<li><strong>Cascade invalidation:</strong> the Campaign option list does not depend on the date range. If a refreshed API 2 response no longer contains the selected <code>purposeId</code>, the client resets the filter to All Campaigns.</li>
+<li><strong>Empty-result semantics:</strong> any valid filter combination that matches nothing returns the empty-state shape in State contracts - zero response, never an error.</li>
+<li><strong>Blank-value rule:</strong> a pledge with no purpose link cannot exist (PurposeID is the grouping key); gift lines with <code>PledgeID = null</code> are excluded from Received by definition, under every filter value - a blank pledge link never behaves as a wildcard.</li>
+</ul>
+<hr />
+<h2>Volume and performance</h2>
+<table>
+<thead>
+<tr>
+<th>Dataset</th>
+<th>Typical rows</th>
+<th>Worst realistic rows (basis)</th>
+<th>Row width</th>
+<th>Payload at worst</th>
+<th>Verdict</th>
+<th>Server cost model</th>
+<th>Cache posture</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>API 1 <code>campaigns[]</code></td>
+<td>2-6 (live org showed 2 rows [DOC - Step 6 dossier]; build demo seeds 6)</td>
+<td>[TO CONFIRM - backend team] - no cited ceiling on active purposes with pledge activity</td>
+<td>12 fields, ~250 bytes</td>
+<td>~25 KB at 100 purposes</td>
+<td>BOUNDED, conditional on the ceiling; if purposes can exceed ~500, this becomes MUST PAGINATE and the view toggle moves server-side</td>
+<td>N purposes × M pledges per purpose: one indexed pass over GF_Pledge plus an aggregated GF_HistoryDetail join; the proration is arithmetic per pledge row, no per-row subquery</td>
+<td>LIVE</td>
+</tr>
+<tr>
+<td>API 2 <code>campaigns[]</code></td>
+<td>2-6</td>
+<td>same ceiling as above</td>
+<td>4 fields, ~90 bytes</td>
+<td>~9 KB at 100</td>
+<td>BOUNDED, same condition</td>
+<td>Single indexed scan of GF_Purpose</td>
+<td>TTL 15 min</td>
+</tr>
+<tr>
+<td>API 3 <code>pledges[]</code> (per campaign)</td>
+<td>~45 (build seeds 42-54 per campaign)</td>
+<td>[TO CONFIRM - backend team] - a large org's donor count per campaign is unbounded in principle</td>
+<td>8 fields, ~220 bytes</td>
+<td>one page ≤ ~22 KB at max pageSize</td>
+<td>MUST PAGINATE</td>
+<td>Pledge scan for one purpose + aggregated gift-line join, then per-pledge proration; ORDER BY computed <code>dueRemaining</code> desc</td>
+<td>LIVE</td>
+</tr>
+<tr>
+<td>API 4 <code>gifts[]</code> (per pledge)</td>
+<td>1-5 (build)</td>
+<td>~160 by construction of the term model (up to weekly frequency over a 36-month term), plus extras; hard ceiling [TO CONFIRM - backend team]</td>
+<td>3 fields, ~70 bytes</td>
+<td>~12 KB</td>
+<td>BOUNDED, conditional; if real data shows pledges with 1000+ linked lines this paginates</td>
+<td>Single indexed scan of GF_HistoryDetail by PledgeID</td>
+<td>LIVE</td>
+</tr>
+<tr>
+<td>API 5 export</td>
+<td>n/a</td>
+<td>the exported view's dataset (above)</td>
+<td>n/a</td>
+<td>file</td>
+<td>MUST AGGREGATE SERVER-SIDE (the client never holds the rows; the server streams the file)</td>
+<td>Reuses API 1 or API 3's query, streamed to a file</td>
+<td>none</td>
+</tr>
+</tbody>
+</table>
+<p>The build-volume trap applies to API 3 directly: the mock expands, sorts and pages its donor set instantly because it holds 42-54 seeded rows in the browser. That is a property of the fixture. The production set is bounded only by how many donors pledge, so the list paginates and everything below follows.</p>
+<h3>Pagination contract</h3>
+<p>Applies to API 3 (<code>pledges[]</code>); nothing else paginates.</p>
+<ul>
+<li><strong>Params:</strong> <code>page</code> (1-based, default 1), <code>pageSize</code> (default 20, maximum 100 - the default matches the built drill; the maximum is a defaulted value awaiting owner confirmation, Still needs sign-off item 9).</li>
+<li><strong>What paginates:</strong> the <code>pledges[]</code> array only.</li>
+<li><strong>What does not:</strong> <code>summary</code> (all campaign-level figures), <code>totalCount</code> and <code>behindCount</code> all compute over the <strong>full filtered set</strong>, never the page. Switching pages changes no figure outside <code>pledges[]</code>.</li>
+<li><strong>Sort params:</strong> none. <code>sortBy</code>/<code>sortDir</code> are deliberately not offered: the drill's order is fixed at most-behind-first (<code>dueRemaining</code> desc), which is the design's stated reading of the list [BUILD][DOC - Step 4]. What the user loses: they cannot re-sort the drill by name or amount; export (API 5) is the stated path to re-orderable data.</li>
+<li><strong>Deterministic total order:</strong> <code>dueRemaining</code> desc, then <code>pledgeId</code> asc as the unique tiebreaker.</li>
+<li><strong><code>totalCount</code></strong> returned alongside every page (and <code>behindCount</code> for the modal's "Showing N of M" note).</li>
+<li><strong>Past the last page:</strong> empty <code>pledges[]</code>, correct <code>totalCount</code>, correct <code>summary</code>, HTTP 200.</li>
+</ul>
+<hr />
+<h2>Where computation lives</h2>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Server or client</th>
+<th>Basis</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Pledge Due (per pledge and per campaign)</td>
+<td>SERVER</td>
+<td>Installment proration formula in Tables</td>
+<td>Needs every pledge's term, frequency and installment fields; the client never holds the pledge set at summary time</td>
+</tr>
+<tr>
+<td>Received (per pledge and per campaign)</td>
+<td>SERVER</td>
+<td>Pledge-linked gift-line sum</td>
+<td>Spans gift lines never transmitted</td>
+</tr>
+<tr>
+<td>Due Remaining</td>
+<td>SERVER, pre-signed</td>
+<td><code>pledgeDue - received</code></td>
+<td>Delta returned signed; negative is favourable; the client formats, never subtracts</td>
+</tr>
+<tr>
+<td>Percent Due</td>
+<td>SERVER</td>
+<td><code>dueRemaining / pledgeDue</code>; returns <code>null</code> when <code>pledgeDue = 0</code></td>
+<td>Division-by-zero rule owned by the divider; client renders <code>null</code> as "n/a"</td>
+</tr>
+<tr>
+<td><code>progressPercent</code> (per campaign and totals)</td>
+<td>SERVER</td>
+<td><code>received / goal</code>; returns <code>null</code> when there is no goal or <code>goal &lt;= 0</code></td>
+<td>Same rule; client renders <code>null</code> as "n/a" / "no goal set"</td>
+</tr>
+<tr>
+<td><code>totals</code> block</td>
+<td>SERVER</td>
+<td>Sums over the full filtered campaign set</td>
+<td>Must match the rows exactly; served in the same response so it cannot straddle a write</td>
+</tr>
+<tr>
+<td>Remaining to goal overall</td>
+<td>CLIENT</td>
+<td><code>max(0, totals.goal - totals.received)</code></td>
+<td>Pure arithmetic over two served values; the zero floor is part of the design (an over-goal org shows 0 remaining, not a negative)</td>
+</tr>
+<tr>
+<td>Goal status band per campaign and overall (thresholds 0.75 and 1.00 of goal)</td>
+<td>CLIENT</td>
+<td>Bands a served <code>progressPercent</code></td>
+<td>Presentation banding; thresholds are locked in the Step 4 design. The Modern API's own ProgressStatus enum is NOT used - see Still needs sign-off, item 3</td>
+</tr>
+<tr>
+<td>Legend counts per status band</td>
+<td>CLIENT</td>
+<td>Count over the full <code>campaigns[]</code> set held</td>
+<td>Full filtered set is present (BOUNDED); counts never change with client-side bar trimming</td>
+</tr>
+<tr>
+<td>Goal Progress bar order</td>
+<td>CLIENT</td>
+<td>Sort held rows by <code>progressPercent</code> desc</td>
+<td>Bounded set, no aggregate affected</td>
+</tr>
+<tr>
+<td>Summary Table row order</td>
+<td>SERVER</td>
+<td>Deterministic order with <code>purposeId</code> as final tiebreaker; the exact legacy grid ORDER BY it must reproduce is [TO CONFIRM - backend team]</td>
+<td>The client renders rows as received [BUILD]</td>
+</tr>
+<tr>
+<td>Donor pledge status chip</td>
+<td>CLIENT</td>
+<td><code>pledgeAmount &lt;= 0</code> is no-pledge; <code>dueRemaining &lt;= 0</code> is paid-in-full; otherwise day bands over <code>daysAheadBehind</code> (30 or more ahead; within 30 either side; 30-60 behind; over 60 behind)</td>
+<td>Bands pure arithmetic over served values</td>
+</tr>
+<tr>
+<td><code>daysAheadBehind</code></td>
+<td>SERVER, pre-signed</td>
+<td><code>(received/pledgeAmount - pledgeDue/pledgeAmount) × termDays</code>; <code>null</code> when <code>pledgeAmount &lt;= 0</code></td>
+<td>Needs term dates the drill row otherwise would not carry; returned signed so the client never does math</td>
+</tr>
+<tr>
+<td>Drill sort (most behind first)</td>
+<td>SERVER</td>
+<td>Pagination contract</td>
+<td>The set paginates, so ordering is server-side by rule</td>
+</tr>
+<tr>
+<td>Gift panel total</td>
+<td>SERVER (<code>totalReceived</code>)</td>
+<td>Sum over the pledge's returned gift lines</td>
+<td>Served so the client shows a total that provably matches the pledge row's Received</td>
+</tr>
+<tr>
+<td>Pager figures</td>
+<td>SERVER (<code>totalCount</code>, <code>behindCount</code>)</td>
+<td>Full-set counts</td>
+<td>The page alone cannot know them</td>
+</tr>
+</tbody>
+</table>
+<p>Deltas are pre-signed; every server-computed ratio states its zero rule (<code>null</code>); the only presentation thresholds in play (0.75 / 1.00 goal bands, and the drill's day bands) are locked in the Step 4 design and are restated here rather than defaulted silently.</p>
+<hr />
+<h2>API 1: Campaign summary</h2>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/gifts-pledges/summary
+</code></pre>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>rangeEnd</code></td>
+<td>date (ISO <code>yyyy-MM-dd</code>)</td>
+<td>no</td>
+<td>any valid date</td>
+<td>today</td>
+<td>The as-of cutoff: gifts count if <code>GiftDate &lt;= rangeEnd</code>; Pledge Due prorates to this date</td>
+</tr>
+<tr>
+<td><code>purposeId</code></td>
+<td>string (id)</td>
+<td>no</td>
+<td>an active purpose id</td>
+<td>omitted = all campaigns</td>
+<td>Narrows every row and the <code>totals</code> block to one campaign</td>
+</tr>
+</tbody>
+</table>
+<p>Company scope comes from the <code>X-Company-ID</code> context header, as on the existing gifts-pledges endpoint (see Auth and scoping).</p>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/gifts-pledges/summary
+GET /api/dashboard/gifts-pledges/summary?rangeEnd=2026-08-19&amp;purposeId=YOUTHCMP
+</code></pre>
+<p>No URL encoding is needed for these params; ids are opaque tokens and dates are ISO.</p>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>asOf</code></td>
+<td>date</td>
+<td>DERIVED - echo of the <code>rangeEnd</code> param</td>
+<td>The anchor every figure is computed to</td>
+</tr>
+<tr>
+<td><code>campaigns</code></td>
+<td>array</td>
+<td>DERIVED - container, judged via its children</td>
+<td>One row per active purpose with pledge activity, in the server's deterministic order</td>
+</tr>
+<tr>
+<td><code>campaigns[].purposeId</code></td>
+<td>string</td>
+<td>STORED GF_Purpose id column [DOC - Step 1 research]</td>
+<td>Key for APIs 3 and 5</td>
+</tr>
+<tr>
+<td><code>campaigns[].purposeCode</code></td>
+<td>string</td>
+<td>UNVERIFIED (backend team) - the live grid shows a short code beside the name; its GF_Purpose column is unconfirmed</td>
+<td>Display label prefix</td>
+</tr>
+<tr>
+<td><code>campaigns[].purposeName</code></td>
+<td>string</td>
+<td>STORED GF_Purpose name column [DOC - Step 1 research]</td>
+<td>Display label</td>
+</tr>
+<tr>
+<td><code>campaigns[].pledgeTotal</code></td>
+<td>number</td>
+<td>DERIVED <code>SUM(GF_Pledge.Amount)</code> active pledges for the purpose [DOC - Step 1 research]</td>
+<td>Table column</td>
+</tr>
+<tr>
+<td><code>campaigns[].pledgeDue</code></td>
+<td>number</td>
+<td>NEW - server-side installment proration per pledge, summed (formula in Tables) [BUILD][DOC - Step 4]</td>
+<td>Table column; exists in no endpoint today</td>
+</tr>
+<tr>
+<td><code>campaigns[].received</code></td>
+<td>number</td>
+<td>DERIVED - pledge-linked posted unvoided gift lines with <code>GiftDate &lt;= rangeEnd</code> [DOC - Step 4, owner decision]; basis conflict with the Modern API recorded in Still needs sign-off, item 1</td>
+<td>Table column, Glance KPI</td>
+</tr>
+<tr>
+<td><code>campaigns[].dueRemaining</code></td>
+<td>number</td>
+<td>DERIVED <code>pledgeDue - received</code>, pre-signed</td>
+<td>Table column; negative is favourable</td>
+</tr>
+<tr>
+<td><code>campaigns[].percentDue</code></td>
+<td>number or null</td>
+<td>DERIVED <code>dueRemaining / pledgeDue</code>; <code>null</code> when <code>pledgeDue = 0</code></td>
+<td>Table column, as a fraction (0.3333 = 33.33%)</td>
+</tr>
+<tr>
+<td><code>campaigns[].goal</code></td>
+<td>number or null</td>
+<td>NEW - GF_Campaign Goal via the purpose mapping [TO CONFIRM - backend team]; <code>null</code> when HasGoal is false</td>
+<td>Goal read on bars and row sub-line</td>
+</tr>
+<tr>
+<td><code>campaigns[].progressPercent</code></td>
+<td>number or null</td>
+<td>NEW <code>received / goal</code>; <code>null</code> when no goal</td>
+<td>Bar fill, badge banding, row sub-line</td>
+</tr>
+<tr>
+<td><code>campaigns[].isClosed</code></td>
+<td>boolean</td>
+<td>NEW - GF_Campaign IsClosed via the same mapping [TO CONFIRM - backend team]</td>
+<td>"Closed" badge</td>
+</tr>
+<tr>
+<td><code>totals</code></td>
+<td>object</td>
+<td>DERIVED - container, judged via its children</td>
+<td>Over the full filtered set</td>
+</tr>
+<tr>
+<td><code>totals.pledgeTotal</code></td>
+<td>number</td>
+<td>DERIVED sum of rows</td>
+<td>Totals row</td>
+</tr>
+<tr>
+<td><code>totals.pledgeDue</code></td>
+<td>number</td>
+<td>DERIVED sum of rows</td>
+<td>Totals row</td>
+</tr>
+<tr>
+<td><code>totals.received</code></td>
+<td>number</td>
+<td>DERIVED sum of rows</td>
+<td>Totals row, Glance headline</td>
+</tr>
+<tr>
+<td><code>totals.dueRemaining</code></td>
+<td>number</td>
+<td>DERIVED <code>totals.pledgeDue - totals.received</code>, pre-signed</td>
+<td>Totals row</td>
+</tr>
+<tr>
+<td><code>totals.goal</code></td>
+<td>number</td>
+<td>DERIVED sum of row goals (rows with <code>null</code> goal contribute 0)</td>
+<td>Glance goal read</td>
+</tr>
+<tr>
+<td><code>totals.progressPercent</code></td>
+<td>number or null</td>
+<td>DERIVED <code>totals.received / totals.goal</code>; <code>null</code> when <code>totals.goal &lt;= 0</code></td>
+<td>Glance percent and banding</td>
+</tr>
+<tr>
+<td><code>totals.campaignCount</code></td>
+<td>number</td>
+<td>DERIVED count of rows</td>
+<td>Totals row lead-in and Glance sr text</td>
+</tr>
+</tbody>
+</table>
+<h3>Example response</h3>
+<pre><code>{
+  &quot;asOf&quot;: &quot;2026-08-19&quot;,
+  &quot;campaigns&quot;: [
+    { &quot;purposeId&quot;: &quot;FRNKSTOK&quot;, &quot;purposeCode&quot;: &quot;FRNKSTOK&quot;, &quot;purposeName&quot;: &quot;Stoke Sell&quot;, &quot;pledgeTotal&quot;: 1200.00, &quot;pledgeDue&quot;: 1200.00, &quot;received&quot;: 1855.00, &quot;dueRemaining&quot;: -655.00, &quot;percentDue&quot;: -0.5458, &quot;goal&quot;: 1500, &quot;progressPercent&quot;: 1.2367, &quot;isClosed&quot;: true },
+    { &quot;purposeId&quot;: &quot;2020PLED&quot;, &quot;purposeCode&quot;: &quot;2020PLED&quot;, &quot;purposeName&quot;: &quot;2020 Pledge&quot;, &quot;pledgeTotal&quot;: 1000.00, &quot;pledgeDue&quot;: 1000.00, &quot;received&quot;: 96.00, &quot;dueRemaining&quot;: 904.00, &quot;percentDue&quot;: 0.9040, &quot;goal&quot;: 2000, &quot;progressPercent&quot;: 0.0480, &quot;isClosed&quot;: false },
+    { &quot;purposeId&quot;: &quot;BLDGFUND&quot;, &quot;purposeCode&quot;: &quot;BLDGFUND&quot;, &quot;purposeName&quot;: &quot;Building Fund&quot;, &quot;pledgeTotal&quot;: 250000.00, &quot;pledgeDue&quot;: 210000.00, &quot;received&quot;: 205000.00, &quot;dueRemaining&quot;: 5000.00, &quot;percentDue&quot;: 0.0238, &quot;goal&quot;: 240000, &quot;progressPercent&quot;: 0.8542, &quot;isClosed&quot;: false },
+    { &quot;purposeId&quot;: &quot;MISSION26&quot;, &quot;purposeCode&quot;: &quot;MISSION26&quot;, &quot;purposeName&quot;: &quot;Mission Trip 2026&quot;, &quot;pledgeTotal&quot;: 40000.00, &quot;pledgeDue&quot;: 38000.00, &quot;received&quot;: 41000.00, &quot;dueRemaining&quot;: -3000.00, &quot;percentDue&quot;: -0.0789, &quot;goal&quot;: 40000, &quot;progressPercent&quot;: 1.0250, &quot;isClosed&quot;: false },
+    { &quot;purposeId&quot;: &quot;YOUTHCMP&quot;, &quot;purposeCode&quot;: &quot;YOUTHCMP&quot;, &quot;purposeName&quot;: &quot;Youth Camp&quot;, &quot;pledgeTotal&quot;: 18000.00, &quot;pledgeDue&quot;: 9000.00, &quot;received&quot;: 6000.00, &quot;dueRemaining&quot;: 3000.00, &quot;percentDue&quot;: 0.3333, &quot;goal&quot;: 20000, &quot;progressPercent&quot;: 0.3000, &quot;isClosed&quot;: false },
+    { &quot;purposeId&quot;: &quot;ORGANRST&quot;, &quot;purposeCode&quot;: &quot;ORGANRST&quot;, &quot;purposeName&quot;: &quot;Organ Restoration&quot;, &quot;pledgeTotal&quot;: 90000.00, &quot;pledgeDue&quot;: 81000.00, &quot;received&quot;: 72000.00, &quot;dueRemaining&quot;: 9000.00, &quot;percentDue&quot;: 0.1111, &quot;goal&quot;: 96000, &quot;progressPercent&quot;: 0.7500, &quot;isClosed&quot;: false }
+  ],
+  &quot;totals&quot;: { &quot;pledgeTotal&quot;: 400200.00, &quot;pledgeDue&quot;: 340200.00, &quot;received&quot;: 325951.00, &quot;dueRemaining&quot;: 14249.00, &quot;goal&quot;: 399500, &quot;progressPercent&quot;: 0.8159, &quot;campaignCount&quot;: 6 }
+}
+</code></pre>
+<p>Reconciliation: received 1855 + 96 + 205000 + 41000 + 6000 + 72000 = 325951 (totals.received); pledgeDue 1200 + 1000 + 210000 + 38000 + 9000 + 81000 = 340200 (totals.pledgeDue); totals.received + totals.dueRemaining: 325951 + 14249 = 340200; goal 1500 + 2000 + 240000 + 40000 + 20000 + 96000 = 399500; campaignCount 6 matches the 6 rows. The first two rows match the live product's figures for the same purposes.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty (no active purposes with pledge activity)</td>
+<td><code>campaigns: []</code>, <code>totals</code> all zero with <code>progressPercent: null</code>, <code>campaignCount: 0</code>, HTTP 200</td>
+</tr>
+<tr>
+<td>Partial (a campaign has active pledges but no gifts yet)</td>
+<td>The row appears with <code>received: 0</code>; <code>percentDue</code> = 1.0 when due, <code>null</code> when <code>pledgeDue = 0</code></td>
+</tr>
+<tr>
+<td>Not-yet-existing (every pledge term begins after <code>rangeEnd</code>)</td>
+<td>Rows appear with <code>pledgeDue: 0</code>, <code>received: 0</code>, <code>percentDue: null</code></td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td>HTTP 403 with an error body; what the widget then shows is an unresolved product decision (Still needs sign-off, item 5)</td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td>HTTP 503 with an error body; the client keeps the last good response and shows its retry state</td>
+</tr>
+</tbody>
+</table>
+<h2>API 2: Campaign lookup</h2>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/gifts-pledges/campaigns
+</code></pre>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>(none beyond the context header)</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>The list is company-scoped and Active-only; it is not scoped by date range</td>
+</tr>
+</tbody>
+</table>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/gifts-pledges/campaigns
+GET /api/dashboard/gifts-pledges/campaigns    (identical after a filter change; served from TTL cache)
+</code></pre>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>campaigns</code></td>
+<td>array</td>
+<td>DERIVED - container, judged via its children</td>
+<td>Active purposes with pledge activity, same order as API 1</td>
+</tr>
+<tr>
+<td><code>campaigns[].purposeId</code></td>
+<td>string</td>
+<td>STORED GF_Purpose id [DOC - Step 1 research]</td>
+<td>Wire value for <code>purposeId</code> params</td>
+</tr>
+<tr>
+<td><code>campaigns[].purposeCode</code></td>
+<td>string</td>
+<td>UNVERIFIED (backend team)</td>
+<td>Display</td>
+</tr>
+<tr>
+<td><code>campaigns[].purposeName</code></td>
+<td>string</td>
+<td>STORED GF_Purpose name [DOC - Step 1 research]</td>
+<td>Display</td>
+</tr>
+<tr>
+<td><code>campaigns[].isClosed</code></td>
+<td>boolean</td>
+<td>NEW - GF_Campaign mapping [TO CONFIRM - backend team]</td>
+<td>Lets the picker mark closed campaigns</td>
+</tr>
+</tbody>
+</table>
+<h3>Example response</h3>
+<pre><code>{
+  &quot;campaigns&quot;: [
+    { &quot;purposeId&quot;: &quot;FRNKSTOK&quot;, &quot;purposeCode&quot;: &quot;FRNKSTOK&quot;, &quot;purposeName&quot;: &quot;Stoke Sell&quot;, &quot;isClosed&quot;: true },
+    { &quot;purposeId&quot;: &quot;2020PLED&quot;, &quot;purposeCode&quot;: &quot;2020PLED&quot;, &quot;purposeName&quot;: &quot;2020 Pledge&quot;, &quot;isClosed&quot;: false },
+    { &quot;purposeId&quot;: &quot;BLDGFUND&quot;, &quot;purposeCode&quot;: &quot;BLDGFUND&quot;, &quot;purposeName&quot;: &quot;Building Fund&quot;, &quot;isClosed&quot;: false },
+    { &quot;purposeId&quot;: &quot;MISSION26&quot;, &quot;purposeCode&quot;: &quot;MISSION26&quot;, &quot;purposeName&quot;: &quot;Mission Trip 2026&quot;, &quot;isClosed&quot;: false },
+    { &quot;purposeId&quot;: &quot;YOUTHCMP&quot;, &quot;purposeCode&quot;: &quot;YOUTHCMP&quot;, &quot;purposeName&quot;: &quot;Youth Camp&quot;, &quot;isClosed&quot;: false },
+    { &quot;purposeId&quot;: &quot;ORGANRST&quot;, &quot;purposeCode&quot;: &quot;ORGANRST&quot;, &quot;purposeName&quot;: &quot;Organ Restoration&quot;, &quot;isClosed&quot;: false }
+  ]
+}
+</code></pre>
+<p>Reconciliation: 6 options matching API 1's 6 rows; no arithmetic to check in a lookup.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty</td>
+<td><code>campaigns: []</code>, HTTP 200; the client shows only All Campaigns</td>
+</tr>
+<tr>
+<td>Partial</td>
+<td>n/a for a lookup</td>
+</tr>
+<tr>
+<td>Not-yet-existing entity</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td>HTTP 403, as API 1</td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td>HTTP 503; the client keeps the last cached list</td>
+</tr>
+</tbody>
+</table>
+<h2>API 3: Donor pledge list</h2>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/gifts-pledges/campaigns/{purposeId}/pledges
+</code></pre>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>purposeId</code></td>
+<td>string (path)</td>
+<td>yes</td>
+<td>an active purpose id</td>
+<td>none</td>
+<td>The campaign whose pledges are listed; unknown id is 404</td>
+</tr>
+<tr>
+<td><code>rangeEnd</code></td>
+<td>date (ISO)</td>
+<td>no</td>
+<td>any valid date</td>
+<td>today</td>
+<td>Same anchor as API 1; the client passes the <code>asOf</code> echoed by its held API 1 response</td>
+</tr>
+<tr>
+<td><code>page</code></td>
+<td>integer</td>
+<td>no</td>
+<td>&gt;= 1</td>
+<td>1</td>
+<td>1-based page</td>
+</tr>
+<tr>
+<td><code>pageSize</code></td>
+<td>integer</td>
+<td>no</td>
+<td>1-100</td>
+<td>20</td>
+<td>Page length; maximum 100</td>
+</tr>
+<tr>
+<td><code>behindOnly</code></td>
+<td>boolean</td>
+<td>no</td>
+<td>true/false</td>
+<td>false</td>
+<td>true restricts rows to <code>dueRemaining &gt; 0</code> (the top-5 modal calls with <code>behindOnly=true&amp;pageSize=5</code>)</td>
+</tr>
+</tbody>
+</table>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/gifts-pledges/campaigns/YOUTHCMP/pledges?rangeEnd=2026-08-19&amp;page=1&amp;pageSize=20
+GET /api/dashboard/gifts-pledges/campaigns/YOUTHCMP/pledges?rangeEnd=2026-08-19&amp;behindOnly=true&amp;page=1&amp;pageSize=5
+</code></pre>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>asOf</code></td>
+<td>date</td>
+<td>DERIVED - echo of the <code>rangeEnd</code> param</td>
+<td>Anchor</td>
+</tr>
+<tr>
+<td><code>purposeId</code></td>
+<td>string</td>
+<td>DERIVED - echo of the path param</td>
+<td>Key</td>
+</tr>
+<tr>
+<td><code>summary</code></td>
+<td>object</td>
+<td>DERIVED - container, judged via its children</td>
+<td>The campaign's full-set figures, identical in definition to its API 1 row; feeds the modal's summary cells</td>
+</tr>
+<tr>
+<td><code>summary.pledgeTotal</code></td>
+<td>number</td>
+<td>DERIVED as API 1</td>
+<td>Modal cell</td>
+</tr>
+<tr>
+<td><code>summary.pledgeDue</code></td>
+<td>number</td>
+<td>NEW as API 1</td>
+<td>Modal cell</td>
+</tr>
+<tr>
+<td><code>summary.received</code></td>
+<td>number</td>
+<td>DERIVED as API 1</td>
+<td>Modal cell</td>
+</tr>
+<tr>
+<td><code>summary.dueRemaining</code></td>
+<td>number</td>
+<td>DERIVED as API 1, pre-signed</td>
+<td>Modal cell</td>
+</tr>
+<tr>
+<td><code>summary.percentDue</code></td>
+<td>number or null</td>
+<td>DERIVED as API 1</td>
+<td>Modal sr text</td>
+</tr>
+<tr>
+<td><code>summary.goal</code></td>
+<td>number or null</td>
+<td>NEW as API 1</td>
+<td>Modal cell</td>
+</tr>
+<tr>
+<td><code>summary.progressPercent</code></td>
+<td>number or null</td>
+<td>NEW as API 1</td>
+<td>Modal cell and badge banding</td>
+</tr>
+<tr>
+<td><code>summary.isClosed</code></td>
+<td>boolean</td>
+<td>NEW as API 1</td>
+<td>Modal badge</td>
+</tr>
+<tr>
+<td><code>pledges</code></td>
+<td>array</td>
+<td>DERIVED - container, judged via its children</td>
+<td>One row per donor pledge, most behind first, paginated</td>
+</tr>
+<tr>
+<td><code>pledges[].pledgeId</code></td>
+<td>string</td>
+<td>STORED GF_Pledge id [DOC - Step 1 research]</td>
+<td>Key for API 4; sort tiebreaker</td>
+</tr>
+<tr>
+<td><code>pledges[].donorName</code></td>
+<td>string</td>
+<td>STORED CorePerson.DisplayNameLastFirst [BUILD]</td>
+<td>Name column, "Last, First"</td>
+</tr>
+<tr>
+<td><code>pledges[].beginDate</code></td>
+<td>date</td>
+<td>UNVERIFIED (backend team) - GF_Pledge term-begin column name unconfirmed</td>
+<td>Begin date column</td>
+</tr>
+<tr>
+<td><code>pledges[].endDate</code></td>
+<td>date</td>
+<td>UNVERIFIED (backend team) - term-end column name unconfirmed</td>
+<td>End date column</td>
+</tr>
+<tr>
+<td><code>pledges[].pledgeAmount</code></td>
+<td>number</td>
+<td>STORED GF_Pledge.Amount [DOC - Step 1 research]</td>
+<td>Pledge column</td>
+</tr>
+<tr>
+<td><code>pledges[].received</code></td>
+<td>number</td>
+<td>DERIVED - this pledge's linked posted unvoided gift lines with <code>GiftDate &lt;= rangeEnd</code> [DOC - Step 4]</td>
+<td>Received column</td>
+</tr>
+<tr>
+<td><code>pledges[].dueRemaining</code></td>
+<td>number</td>
+<td>NEW - per-pledge proration minus received, pre-signed</td>
+<td>Due Remaining column; primary sort key</td>
+</tr>
+<tr>
+<td><code>pledges[].daysAheadBehind</code></td>
+<td>number or null</td>
+<td>NEW - pre-signed pace delta in days (formula in Where computation lives); <code>null</code> when <code>pledgeAmount &lt;= 0</code></td>
+<td>Status chip banding and day phrase</td>
+</tr>
+<tr>
+<td><code>totalCount</code></td>
+<td>number</td>
+<td>DERIVED full-set count (after <code>behindOnly</code> if set)</td>
+<td>Pager</td>
+</tr>
+<tr>
+<td><code>behindCount</code></td>
+<td>number</td>
+<td>DERIVED full-set count of <code>dueRemaining &gt; 0</code></td>
+<td>Modal note "Showing 5 of N"; served on every call</td>
+</tr>
+<tr>
+<td><code>page</code></td>
+<td>number</td>
+<td>DERIVED - echo of the request param</td>
+<td>Pager</td>
+</tr>
+<tr>
+<td><code>pageSize</code></td>
+<td>number</td>
+<td>DERIVED - echo of the request param</td>
+<td>Pager</td>
+</tr>
+</tbody>
+</table>
+<h3>Example response</h3>
+<pre><code>{
+  &quot;asOf&quot;: &quot;2026-08-19&quot;,
+  &quot;purposeId&quot;: &quot;YOUTHCMP&quot;,
+  &quot;summary&quot;: { &quot;pledgeTotal&quot;: 18000.00, &quot;pledgeDue&quot;: 9000.00, &quot;received&quot;: 6000.00, &quot;dueRemaining&quot;: 3000.00, &quot;percentDue&quot;: 0.3333, &quot;goal&quot;: 20000, &quot;progressPercent&quot;: 0.3000, &quot;isClosed&quot;: false },
+  &quot;pledges&quot;: [
+    { &quot;pledgeId&quot;: &quot;YOUTHCMP-7&quot;, &quot;donorName&quot;: &quot;Whitfield, Dana&quot;, &quot;beginDate&quot;: &quot;2025-03-01&quot;, &quot;endDate&quot;: &quot;2027-02-28&quot;, &quot;pledgeAmount&quot;: 900.00, &quot;received&quot;: 150.00, &quot;dueRemaining&quot;: 400.00, &quot;daysAheadBehind&quot;: -74 },
+    { &quot;pledgeId&quot;: &quot;YOUTHCMP-21&quot;, &quot;donorName&quot;: &quot;Bell, Marcus&quot;, &quot;beginDate&quot;: &quot;2025-06-01&quot;, &quot;endDate&quot;: &quot;2026-05-31&quot;, &quot;pledgeAmount&quot;: 600.00, &quot;received&quot;: 120.00, &quot;dueRemaining&quot;: 280.00, &quot;daysAheadBehind&quot;: -55 }
+  ],
+  &quot;totalCount&quot;: 47,
+  &quot;behindCount&quot;: 12,
+  &quot;page&quot;: 1,
+  &quot;pageSize&quot;: 20
+}
+</code></pre>
+<p>Reconciliation: <code>summary.received</code> + <code>summary.dueRemaining</code>: 6000 + 3000 = 9000, which equals <code>summary.pledgeDue</code>; <code>summary</code> matches API 1's YOUTHCMP row field for field at the same <code>asOf</code> (that identity is the contract, and both are computed over the full pledge set, never the page); the two example rows are page 1 of 47, so page rows deliberately do not sum to the summary.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty (campaign has no pledges)</td>
+<td><code>pledges: []</code>, <code>totalCount: 0</code>, <code>behindCount: 0</code>, <code>summary</code> zeros with <code>percentDue: null</code>, HTTP 200</td>
+</tr>
+<tr>
+<td>Partial (pledges exist, none behind, <code>behindOnly=true</code>)</td>
+<td><code>pledges: []</code>, <code>totalCount: 0</code>, <code>behindCount: 0</code>, full <code>summary</code>; the modal renders its none-behind message</td>
+</tr>
+<tr>
+<td>Not-yet-existing (all terms begin after <code>rangeEnd</code>)</td>
+<td>Rows with <code>dueRemaining &lt;= 0</code> and <code>received: 0</code>; ordering rule unchanged</td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td>HTTP 403, as API 1</td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td>HTTP 503</td>
+</tr>
+</tbody>
+</table>
+<h2>API 4: Pledge gifts</h2>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/gifts-pledges/pledges/{pledgeId}/gifts
+</code></pre>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pledgeId</code></td>
+<td>string (path)</td>
+<td>yes</td>
+<td>a pledge id</td>
+<td>none</td>
+<td>Unknown id is 404</td>
+</tr>
+<tr>
+<td><code>rangeEnd</code></td>
+<td>date (ISO)</td>
+<td>no</td>
+<td>any valid date</td>
+<td>today</td>
+<td>Gifts count if <code>GiftDate &lt;= rangeEnd</code>; same anchor the drill row used</td>
+</tr>
+</tbody>
+</table>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/gifts-pledges/pledges/YOUTHCMP-7/gifts?rangeEnd=2026-08-19
+GET /api/dashboard/gifts-pledges/pledges/YOUTHCMP-7/gifts    (defaults to today)
+</code></pre>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>asOf</code></td>
+<td>date</td>
+<td>DERIVED - echo of the <code>rangeEnd</code> param</td>
+<td>Anchor</td>
+</tr>
+<tr>
+<td><code>pledgeId</code></td>
+<td>string</td>
+<td>DERIVED - echo of the path param</td>
+<td>Key</td>
+</tr>
+<tr>
+<td><code>gifts</code></td>
+<td>array</td>
+<td>DERIVED - container, judged via its children</td>
+<td>Linked posted unvoided gift lines dated on or before <code>rangeEnd</code>, ascending by <code>giftDate</code> then line id</td>
+</tr>
+<tr>
+<td><code>gifts[].giftDate</code></td>
+<td>date</td>
+<td>STORED GF_HistoryDetail GiftDate [DOC - Step 1 research]</td>
+<td>Gift Date column</td>
+</tr>
+<tr>
+<td><code>gifts[].amount</code></td>
+<td>number</td>
+<td>STORED GF_HistoryDetail.Amount [DOC - Step 1 research]</td>
+<td>Amount column</td>
+</tr>
+<tr>
+<td><code>gifts[].reference</code></td>
+<td>string</td>
+<td>UNVERIFIED (backend team) - the drill shows a payment reference (ACH / check number / EFT id); its source column is unconfirmed</td>
+<td>Reference column</td>
+</tr>
+<tr>
+<td><code>totalReceived</code></td>
+<td>number</td>
+<td>DERIVED sum of the returned <code>gifts[].amount</code></td>
+<td>Footer total; must equal the drill row's <code>received</code> at the same <code>asOf</code></td>
+</tr>
+<tr>
+<td><code>giftCount</code></td>
+<td>number</td>
+<td>DERIVED count of rows</td>
+<td>Footer "across N gifts"</td>
+</tr>
+</tbody>
+</table>
+<h3>Example response</h3>
+<pre><code>{
+  &quot;asOf&quot;: &quot;2026-08-19&quot;,
+  &quot;pledgeId&quot;: &quot;YOUTHCMP-7&quot;,
+  &quot;gifts&quot;: [
+    { &quot;giftDate&quot;: &quot;2025-04-12&quot;, &quot;amount&quot;: 50.00, &quot;reference&quot;: &quot;Check #4821&quot; },
+    { &quot;giftDate&quot;: &quot;2025-07-03&quot;, &quot;amount&quot;: 40.00, &quot;reference&quot;: &quot;ACH&quot; },
+    { &quot;giftDate&quot;: &quot;2025-11-20&quot;, &quot;amount&quot;: 60.00, &quot;reference&quot;: &quot;EFT 348112&quot; }
+  ],
+  &quot;totalReceived&quot;: 150.00,
+  &quot;giftCount&quot;: 3
+}
+</code></pre>
+<p>Reconciliation: 50 + 40 + 60 = 150 (totalReceived), which equals the API 3 example's YOUTHCMP-7 <code>received</code> of 150 at the same <code>asOf</code>; giftCount 3 matches the 3 rows.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty (no linked gifts on or before <code>rangeEnd</code>)</td>
+<td><code>gifts: []</code>, <code>totalReceived: 0</code>, <code>giftCount: 0</code>, HTTP 200; the client shows its no-gifts-yet message</td>
+</tr>
+<tr>
+<td>Partial</td>
+<td>n/a - a gift line either qualifies or does not</td>
+</tr>
+<tr>
+<td>Not-yet-existing entity</td>
+<td>Unknown <code>pledgeId</code> is 404</td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td>HTTP 403</td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td>HTTP 503</td>
+</tr>
+</tbody>
+</table>
+<h2>API 5: Export</h2>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/gifts-pledges/export
+</code></pre>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>view</code></td>
+<td>string</td>
+<td>yes</td>
+<td><code>goalProgress</code> · <code>summaryTable</code> · <code>donorPledges</code></td>
+<td>none</td>
+<td>Which dataset the file carries</td>
+</tr>
+<tr>
+<td><code>purposeId</code></td>
+<td>string</td>
+<td>conditional</td>
+<td>an active purpose id</td>
+<td>omitted</td>
+<td>Required when <code>view=donorPledges</code> (that export is scoped to one campaign); optional narrowing otherwise. <code>view=donorPledges</code> without <code>purposeId</code> is 400</td>
+</tr>
+<tr>
+<td><code>rangeEnd</code></td>
+<td>date (ISO)</td>
+<td>no</td>
+<td>any valid date</td>
+<td>today</td>
+<td>Same anchor as the on-screen data being exported</td>
+</tr>
+</tbody>
+</table>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/gifts-pledges/export?view=summaryTable&amp;rangeEnd=2026-08-19
+GET /api/dashboard/gifts-pledges/export?view=donorPledges&amp;purposeId=YOUTHCMP&amp;rangeEnd=2026-08-19
+</code></pre>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>(file body)</td>
+<td>binary</td>
+<td>NEW - server-side file generation reusing API 1's query (<code>goalProgress</code>, <code>summaryTable</code>) or API 3's full unpaginated set (<code>donorPledges</code>)</td>
+<td>A spreadsheet file (<code>Content-Disposition: attachment</code>); the built control names Excel as the target format, which stands as the default pending owner confirmation</td>
+</tr>
+</tbody>
+</table>
+<p>No JSON example: the response is a file. The <code>donorPledges</code> export contains the full pledge set for the campaign, not one page, in the same most-behind-first order.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty dataset</td>
+<td>A well-formed file with headers and no data rows, HTTP 200</td>
+</tr>
+<tr>
+<td>Partial</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td>Not-yet-existing entity</td>
+<td>Unknown <code>purposeId</code> is 404</td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td>HTTP 403</td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td>HTTP 503</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>Auth and scoping</h2>
+<ul>
+<li><strong>Company / tenant scoping:</strong> every query is scoped by the <code>X-Company-ID</code> context header, the same header the existing Modern API gifts-pledges endpoint uses [DOC - Widget_Comparison_Classic]. No response ever mixes companies.</li>
+<li><strong>Permission right:</strong> the widget is read-only, so one read right covers all five APIs. The exact right, and whether it is the Donors and Gifts module entitlement or a finer grant, is [TO CONFIRM - Feargal Phelan]. There is no write right because there is no write.</li>
+<li><strong>What a user without the right sees:</strong> unresolved. The dossier asks for hidden-or-explicit-no-access and the question is Unreviewed (Still needs sign-off, item 5). Until ruled, the server behaviour is fixed (403) and only the client treatment is open.</li>
+<li><strong>Donor names:</strong> API 3 returns donor-identifying data. Whether the drill needs a stricter right than the summary is part of the same entitlement ruling.</li>
+</ul>
+<hr />
+<h2>Edge cases</h2>
+<ol>
+<li>Over-received pledge or campaign: <code>dueRemaining</code> goes negative and <code>percentDue</code> goes negative; both are served signed and rendered as favourable. A campaign's <code>received</code> can exceed its <code>pledgeTotal</code>.</li>
+<li>No goal (<code>HasGoal</code> false or no GF_Campaign mapping): <code>goal</code> and <code>progressPercent</code> are <code>null</code>; the client shows "n/a" / "no goal set" and the no-goal band.</li>
+<li><code>pledgeDue = 0</code> (all terms begin after <code>rangeEnd</code>): <code>percentDue</code> is <code>null</code>, never a division error.</li>
+<li><code>totals.goal = 0</code> across the filtered set: <code>totals.progressPercent</code> is <code>null</code>; Glance shows its no-goal-set headline.</li>
+<li>A purpose with active pledges and zero gifts: row present, <code>received: 0</code>.</li>
+<li>A purpose with gifts but no active pledge rows: excluded by the purpose-list rule (active purposes with pledge activity); whether such orphaned gift purposes should surface at all is part of the Received-basis ruling (Still needs sign-off, item 1).</li>
+<li>Gift lines with <code>PledgeID = null</code>: excluded from every Received figure by definition; they never leak in under any filter.</li>
+<li><code>rangeEnd</code> before every pledge term: rows render with zero due and zero received; the drill still lists pledges, all not-yet-due.</li>
+<li>Pagination past the last page: empty <code>pledges[]</code>, correct <code>totalCount</code>, <code>behindCount</code> and <code>summary</code>, HTTP 200.</li>
+<li><code>behindOnly=true</code> with nothing behind: empty page, <code>behindCount: 0</code>, full <code>summary</code>; the modal shows its none-behind message.</li>
+<li>Pledge deleted or purpose deactivated between calls: API 3/4 return 404 for the stale id; API 1 with a stale <code>purposeId</code> returns the empty shape; the client resets to All Campaigns when the refreshed lookup lacks the selection.</li>
+<li>A closed campaign (<code>isClosed: true</code>): still returned and still counted in <code>totals</code>; the client badges it. Whether closed campaigns should ever be excluded is not in this contract and would be a new param.</li>
+<li>Duplicate <code>dueRemaining</code> values across pledges: the <code>pledgeId</code> tiebreaker keeps pages stable, no skipped or duplicated rows.</li>
+<li>Two pledges from the same donor to the same campaign: two rows, keyed by <code>pledgeId</code>; the drill never merges by donor.</li>
+</ol>
+<hr />
+<h2>Not in scope</h2>
+<ul>
+<li><strong>Any write action.</strong> Export is the widget's only action, a standing design constraint; approve/post/write-off style verbs must not be added without a demonstrated user need.</li>
+<li><strong>Donut by Campaign view.</strong> Retired from the design; no API serves it and <code>received</code> shares need no extra fields.</li>
+<li><strong>Navigation to the Gifts and Pledges module.</strong> The modal's "Open in Gifts and Pledges" control is a stub with no backend ask; if it ships it is a client-side route, not an API (Still needs sign-off, item 6).</li>
+<li><strong>Start-date windowing.</strong> The range start is chip display only; no figure is windowed by it. A Remittance-style windowed-receipts figure would be new work and a new field, currently unrequested for this widget.</li>
+<li><strong>Behind-pace exception framing</strong> (shortfall headline, pace cards): that is the Remittance Pledges contract's territory; this widget owns goal progress.</li>
+<li><strong>Fiscal year filter.</strong> The widget has no fiscal-year dimension.</li>
+<li><strong>User-selectable sort</strong> anywhere: summary order is fixed server-side, bar order is a fixed client sort, the drill order is fixed most-behind-first. Export is the path to re-orderable data.</li>
+<li><strong>A data-freshness timestamp.</strong> Requested in the dossier, Unreviewed, and not yet in the design; if adopted, the <code>asOf</code> echo already carries the anchor and a <code>generatedAt</code> stamp would be the addition.</li>
+</ul>
+<hr />
+<h2>Still needs sign-off</h2>
+<ol>
+<li><strong>Received basis (load-bearing).</strong> Undecided between the built basis (pledge-linked gift lines only, per the standing owner decision recorded in Step 4) and the Modern API's live basis (ALL posted gift detail for the purpose; the parallel campaign DTO's TotalRaised likewise counts all posted gifts) [DOC - both comparison files vs Step 4]. The two disagree whenever unpledged one-off gifts exist. Deciders: project owner (product intent) plus backend team (which query ships). Blocked until then: every <code>received</code>, <code>dueRemaining</code>, <code>percentDue</code>, <code>progressPercent</code> and <code>totals</code> figure - which is to say API 1, API 3, API 4's totals and API 5.</li>
+<li><strong>Goal source and keying.</strong> The Goal lives on the modern <code>GF_Campaign</code> model; the widget keys by <code>GF_Purpose</code>. Whether campaign rows map 1:1 to purposes, what happens when they do not, and where <code>isClosed</code> truly lives are [TO CONFIRM - backend team]. Blocked: <code>goal</code>, <code>progressPercent</code>, <code>isClosed</code> on APIs 1, 2 and 3. The build renders Goal as if real under Rule 11; this spec inherits that posture, not a verified source.</li>
+<li><strong>Goal-met status naming.</strong> The Widget_Comparison_New_Widgets doc records the modern ProgressStatus enum's goal-met value as "red (goal met)", while the build and Step 4 treat goal-met as the positive end of the scale [DOC vs BUILD/DOC]. This contract sidesteps the enum by serving raw <code>progressPercent</code> and banding client-side, but backend must confirm ProgressStatus is genuinely presentation-only and safe to ignore, or the enum's semantics get imported by accident. Decider: backend team. Blocked: nothing in this contract, provided raw numbers ship.</li>
+<li><strong>Percent Due definition, doc-internal inconsistency.</strong> The Step 4 doc simultaneously carries (a) a Data Contract CONFLICT row saying the definition is disputed and blocking, (b) a readiness note declaring it RESOLVED with live numeric proof, and (c) the build computing <code>dueRemaining / pledgeDue</code>. This contract follows the build and the live proof; the doc's CONFLICT row is recorded here, not collapsed. Decider: project owner (reconcile the Step 4 doc). Blocked: nothing technically; the doc must stop disagreeing with itself before sign-off.</li>
+<li><strong>Dossier findings, all Unreviewed</strong> (no reconciliation file exists for this widget): (a) relabel "% Due" to "% Fulfilled" and lead with fulfillment - the build kept Percent Due; (b) a data-as-of timestamp by the refresh control - not built; (c) the live legacy widget renders a fixed pound-sign currency regardless of org locale, a recorded localisation defect - currency/locale rules for the rebuild are unspecified; (d) entitlement/empty behaviour when the module is not adopted. Decider: project owner to status each (Accepted / Rejected / Disputed). Blocked: final column labels, any freshness stamp, the currency formatting rule, and the no-rights client treatment.</li>
+<li><strong>"Open in Gifts and Pledges" vs the export-only constraint.</strong> The modal footer stub predates the export-only ruling and may contradict it [TO CONFIRM - Oisin]. Blocked: nothing in this contract (no API is allocated); the decision only adds or removes a client route.</li>
+<li><strong>Legacy grid row order.</strong> The summary must render in the live product's order; the exact ORDER BY is [TO CONFIRM - backend team]. Blocked: the deterministic-order clause of API 1.</li>
+<li><strong>Volume ceilings.</strong> Campaigns per org, pledges per campaign, gifts per pledge [TO CONFIRM - backend team]. Blocked: the BOUNDED verdicts on APIs 1, 2 and 4; if campaigns exceed ~500 the summary paginates and the view toggle moves server-side.</li>
+<li><strong><code>pageSize</code> maximum of 100 on API 3</strong> is a defaulted value, not an owner decision. Decider: project owner. Blocked: nothing; the default stands until changed.</li>
+<li><strong>GF_Pledge term/frequency/installment column names and semantics</strong> behind the Pledge Due proration are unverified in code [TO CONFIRM - backend team]. Blocked: the proration implementation of APIs 1 and 3 (the formula itself is fixed by the design).</li>
+</ol>
+
+</body>
+</html>

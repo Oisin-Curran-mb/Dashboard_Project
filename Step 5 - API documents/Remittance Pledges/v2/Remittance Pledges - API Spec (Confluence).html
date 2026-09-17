@@ -1,0 +1,1649 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Remittance Pledges - API Spec</title>
+<style>
+body { font-family: -apple-system, Helvetica, Arial, sans-serif; max-width: 900px; margin: 30px auto; line-height: 1.5; color: #172B4D; }
+h1 { font-size: 24px; }
+h2 { font-size: 19px; border-bottom: 1px solid #DFE1E6; padding-bottom: 6px; margin-top: 32px; }
+h3 { font-size: 16px; margin-top: 20px; }
+table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+th, td { border: 1px solid #DFE1E6; padding: 6px 10px; text-align: left; vertical-align: top; }
+th { background: #F4F5F7; }
+code { background: #F4F5F7; padding: 1px 5px; border-radius: 3px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 90%; }
+pre { background: #F4F5F7; padding: 12px; border-radius: 4px; overflow-x: auto; }
+pre code { background: none; padding: 0; }
+.status { background: #FFF0B3; display: inline-block; padding: 3px 10px; border-radius: 3px; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<h1>Remittance Pledges - API Spec</h1>
+<p><span class="status">Status: Done - awaiting sign-off (drafting complete, owner review pending)</span></p>
+<h2>Overview</h2>
+<p>The widget answers one question: which remittance pledges are not arriving as expected, and by how much. It is the exception side of the pledge pair; goal progress belongs to the Gifts and Pledges widget (W17). The card shows a behind-pace money headline, three pace cards (Behind, On track, Ahead) filtering a flat per-activity table, an alternate pacing-bars read of the same rows, and a drill screen per activity listing the individual donor pledges most behind pace, each of which expands to that donor's own payment schedule with the first skipped payment named. One date-range control scopes everything; its end is the pacing anchor and its start frames the window.</p>
+<p>This contract defines four APIs: a bounded per-activity pacing summary fired on render and on every range change (API 1), a paginated per-activity pledge list fired when a drill or the most-behind popup opens (API 2), a per-pledge payment schedule fired when a pledge row expands (API 3), and a server-side export that streams the current pledge view as a file (API 4). Everything the card itself shows runs client-side over API 1's bounded rows; everything under the drill runs server-side because the pledge list paginates.</p>
+<h2>Design → API coverage</h2>
+<table>
+<thead>
+<tr>
+<th>Design element</th>
+<th>Type</th>
+<th>API</th>
+<th>Field(s)</th>
+<th>Provenance</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Behind-pace money headline (Glance and header)</td>
+<td>KPI</td>
+<td>API 1</td>
+<td>client sum of positive per-row <code>shortfall</code></td>
+<td>DERIVED client [BUILD]</td>
+</tr>
+<tr>
+<td>"N of M behind pace" line</td>
+<td>KPI sub-line</td>
+<td>API 1</td>
+<td>client count of rows with <code>shortfall</code> &gt; 0 over rows with <code>hasPledgeInRange</code> true</td>
+<td>DERIVED client [BUILD]</td>
+</tr>
+<tr>
+<td>"$X received in this window" note (Glance, caption, sr-text)</td>
+<td>KPI note</td>
+<td>API 1</td>
+<td>client sum of <code>windowPaid</code></td>
+<td>NEW field, summed client-side [BUILD]</td>
+</tr>
+<tr>
+<td>Pace badge (Behind pace / On track / Paid in full)</td>
+<td>state</td>
+<td>API 1</td>
+<td>client compare of summed <code>paid</code> vs summed <code>expected</code></td>
+<td>DERIVED client [BUILD]</td>
+</tr>
+<tr>
+<td>Receipts window chip ("Receipts from [start] to [end]")</td>
+<td>filter echo</td>
+<td>API 1</td>
+<td><code>rangeStart</code>, <code>rangeEnd</code> (echoed)</td>
+<td>DERIVED echo [BUILD]</td>
+</tr>
+<tr>
+<td>Pace cards Behind / On track / Ahead (count and outstanding money per band)</td>
+<td>filter control</td>
+<td>API 1</td>
+<td>client banding over <code>shortfall</code>, <code>daysAhead</code>, <code>outstanding</code></td>
+<td>DERIVED client [BUILD]</td>
+</tr>
+<tr>
+<td>Table column: Activity</td>
+<td>table column</td>
+<td>API 1</td>
+<td><code>activityId</code>, <code>activityName</code>, <code>sequence</code></td>
+<td>STORED [CODE]</td>
+</tr>
+<tr>
+<td>Table column: Pledge</td>
+<td>table column</td>
+<td>API 1</td>
+<td><code>pledged</code></td>
+<td>STORED aggregate [CODE]</td>
+</tr>
+<tr>
+<td>Table column: Expected</td>
+<td>table column</td>
+<td>API 1</td>
+<td><code>expected</code></td>
+<td>DERIVED [BUILD][DOC]</td>
+</tr>
+<tr>
+<td>Table column: YTD Paid</td>
+<td>table column</td>
+<td>API 1</td>
+<td><code>paid</code></td>
+<td>STORED conditional aggregate [CODE]</td>
+</tr>
+<tr>
+<td>Table column: Outstanding</td>
+<td>table column</td>
+<td>API 1</td>
+<td><code>outstanding</code></td>
+<td>DERIVED [CODE]</td>
+</tr>
+<tr>
+<td>Table column: % Paid</td>
+<td>table column</td>
+<td>API 1</td>
+<td><code>pctPaid</code></td>
+<td>DERIVED [CODE]</td>
+</tr>
+<tr>
+<td>Status chips, bar fill and expected tick (both views)</td>
+<td>state</td>
+<td>API 1</td>
+<td>client banding over <code>daysAhead</code>; tick position from <code>expected</code> over <code>pledged</code></td>
+<td>DERIVED client [BUILD]</td>
+</tr>
+<tr>
+<td>Table caption ("Expected and paid are cumulative to [end], measured over each pledge's own term... % of this term elapsed")</td>
+<td>caption</td>
+<td>API 1</td>
+<td><code>rangeEnd</code> echo, <code>termDays</code>, <code>daysElapsed</code>, client sum of <code>windowPaid</code></td>
+<td>DERIVED [BUILD]</td>
+</tr>
+<tr>
+<td>"Most behind first" sort control</td>
+<td>sort</td>
+<td>API 1</td>
+<td>client sort on <code>daysAhead</code>, no-pledge rows last</td>
+<td>client [BUILD]</td>
+</tr>
+<tr>
+<td>Receipts-only footer line ("N activities with receipts but no pledge term in this window, $X received")</td>
+<td>state</td>
+<td>API 1</td>
+<td>rows with <code>hasPledgeInRange</code> false; count plus client sum of their <code>paid</code></td>
+<td>NEW - blocked, see Still needs sign-off</td>
+</tr>
+<tr>
+<td>Total row (spans every activity in scope, including rows a card filter hides)</td>
+<td>aggregate</td>
+<td>API 1</td>
+<td>client sums of <code>pledged</code>, <code>expected</code>, <code>paid</code>, <code>outstanding</code> over all rows</td>
+<td>DERIVED client [BUILD]</td>
+</tr>
+<tr>
+<td>Empty state ("No remittance pledges yet")</td>
+<td>state</td>
+<td>API 1</td>
+<td>empty <code>activities[]</code></td>
+<td>contract (State contracts)</td>
+</tr>
+<tr>
+<td>Drill summary strip (Total pledge, Expected by now, Paid to date, Outstanding, % Paid, status chip)</td>
+<td>drill</td>
+<td>API 2</td>
+<td><code>summary</code> block</td>
+<td>DERIVED server [BUILD]</td>
+</tr>
+<tr>
+<td>Drill pledge-term line</td>
+<td>drill</td>
+<td>API 2</td>
+<td>summary <code>beginDate</code>, <code>endDate</code></td>
+<td>DERIVED - mixed-term rule open, see Still needs sign-off</td>
+</tr>
+<tr>
+<td>Drill pace note ("About N days behind schedule, $X behind the expected pace")</td>
+<td>drill</td>
+<td>API 2</td>
+<td>client from summary <code>daysAhead</code>, <code>expected</code>, <code>paid</code></td>
+<td>DERIVED client [BUILD]</td>
+</tr>
+<tr>
+<td>Pledge list columns: Name, Begin date, End date, Goal, Paid, Outstanding, pacing status</td>
+<td>drill table</td>
+<td>API 2</td>
+<td><code>pledgeId</code>, <code>donorName</code>, pledge <code>beginDate</code>, <code>endDate</code>, <code>goal</code>, <code>paid</code>, <code>outstanding</code>; status is client banding over <code>shortfall</code>, <code>daysAhead</code>, with <code>expectedByNow</code> in the sr-text</td>
+<td>STORED + DERIVED [CODE][BUILD]</td>
+</tr>
+<tr>
+<td>Pledge pager ("64 pledges, page 1 of 8")</td>
+<td>control</td>
+<td>API 2</td>
+<td><code>totalCount</code>, <code>page</code>, <code>pageSize</code></td>
+<td>DERIVED [BUILD]</td>
+</tr>
+<tr>
+<td>Most-behind popup list and its note ("Showing the 5 furthest behind of N pledges behind pace")</td>
+<td>drill</td>
+<td>API 2</td>
+<td><code>behindOnly</code> call; note from <code>behindPledgeCount</code> and <code>totalCount</code></td>
+<td>DERIVED [BUILD]</td>
+</tr>
+<tr>
+<td>Payment schedule table (Due date, Amount due, Received, Status)</td>
+<td>third drill level</td>
+<td>API 3</td>
+<td><code>dueDate</code>, <code>amountDue</code>, <code>amountApplied</code>, <code>status</code></td>
+<td>DERIVED server [BUILD]</td>
+</tr>
+<tr>
+<td>Schedule header ("pledged $X over [term]", "N of M due payments received", missed flag)</td>
+<td>third drill level</td>
+<td>API 3</td>
+<td><code>donorName</code>, <code>goal</code>, <code>beginDate</code>, <code>endDate</code>, <code>paidCount</code>, <code>dueCount</code>, <code>missedCount</code>, <code>missedAmount</code></td>
+<td>DERIVED server [BUILD]</td>
+</tr>
+<tr>
+<td>Schedule footer ("First skipped payment: [date]... reconcile to $X received")</td>
+<td>third drill level</td>
+<td>API 3</td>
+<td><code>firstMissedDate</code>, <code>paid</code></td>
+<td>DERIVED server [BUILD]</td>
+</tr>
+<tr>
+<td>Schedule cadence basis (instalment count and spacing)</td>
+<td>third drill level</td>
+<td>API 3</td>
+<td><code>pledgeId</code>, <code>frequency</code>, <code>duration</code></td>
+<td>STORED, semantics UNVERIFIED (dev) - see Still needs sign-off</td>
+</tr>
+<tr>
+<td>Export to Excel (drill screen and most-behind popup)</td>
+<td>action</td>
+<td>API 4</td>
+<td>file stream of the current pledge view</td>
+<td>NEW</td>
+</tr>
+<tr>
+<td>Open in Remittance</td>
+<td>action</td>
+<td>none</td>
+<td>client navigation to the Remittance module, no data call</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td>Refresh control</td>
+<td>action</td>
+<td>API 1</td>
+<td>re-fires the load call with the current range; any open drill re-fires its own calls</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td>View toggle (Table / Pacing bars)</td>
+<td>view</td>
+<td>none</td>
+<td>instant client re-render over <code>activities[]</code>, no fetch</td>
+<td>client [BUILD]</td>
+</tr>
+</tbody>
+</table>
+<h2>Tables</h2>
+<table>
+<thead>
+<tr>
+<th>Table / repository</th>
+<th>Fields and members used</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>RM_Activity</code></td>
+<td><code>ActivityID</code> (key), <code>Name</code>, <code>Sequence</code>, <code>CompanyID</code> (scope). Queried via <code>RMActivityRepository</code></td>
+</tr>
+<tr>
+<td><code>RM_Pledge</code></td>
+<td><code>PledgeID</code>, <code>ActivityID</code>, <code>ChurchID</code>, <code>BeginDate</code> (date NOT NULL), <code>EndDate</code> (date NOT NULL), <code>Frequency</code> (int NOT NULL), <code>Duration</code> (int NOT NULL), <code>Active</code></td>
+</tr>
+<tr>
+<td><code>RM_PledgeDetail</code></td>
+<td><code>Pledge</code> (money) - the pledged amount</td>
+</tr>
+<tr>
+<td><code>RM_History</code></td>
+<td><code>HistoryID</code>, <code>HistoryBatchID</code>, <code>ChurchID</code>, <code>CheckDate</code>, <code>CheckNumber</code> (nvarchar(15), free text), <code>Amount</code> (whole-check total, not used for per-activity sums), <code>VoidJournalID</code></td>
+</tr>
+<tr>
+<td><code>RM_HistoryDetail</code></td>
+<td><code>HistoryDetailID</code>, <code>HistoryID</code>, <code>ActivityID</code>, <code>Amount</code> (the per-activity portion of a receipt - this is what gets summed)</td>
+</tr>
+<tr>
+<td><code>RM_HistoryBatch</code></td>
+<td><code>Posted</code>, <code>Online</code>, <code>CompanyID</code></td>
+</tr>
+<tr>
+<td><code>RM_Church</code></td>
+<td><code>PersonID</code> - the join from a pledge's church to its person record</td>
+</tr>
+<tr>
+<td><code>CorePerson</code></td>
+<td><code>DisplayNameLastFirst</code> - the drill's Name column</td>
+</tr>
+<tr>
+<td><code>RM_PledgePercent</code></td>
+<td><code>ActivityID</code>, <code>Percent</code>, <code>StartDate</code> - the org-configured stepped pacing schedule. Read by nothing today; whether it should drive <code>expected</code> is open (Still needs sign-off)</td>
+</tr>
+</tbody>
+</table>
+<p>No new tables and no schema changes are needed. The work is new queries and new derived fields over existing tables, plus one query path that does not exist in any form today (the receipts-only union - see Still needs sign-off).</p>
+<p>Core formulas, quotable in isolation:</p>
+<ul>
+<li><strong>Pledge in scope</strong>: <code>RM_Pledge.BeginDate &lt;= rangeEnd AND RM_Pledge.EndDate &gt;= rangeStart</code> [BUILD][SME: Edward Eoff, 2026-08-10]. The live code tests a single instant, <code>BeginDate &lt;= date &lt;= EndDate</code>, with no <code>Active</code> check [CODE: RMActivityRepository.cs:77]; this contract widens it to window overlap so a pledge whose term ended inside the window stays visible.</li>
+<li><strong>paid</strong> (cumulative): <code>SUM(RM_HistoryDetail.Amount)</code> where <code>RM_HistoryBatch.Posted = 1 AND RM_History.VoidJournalID IS NULL AND RM_History.CheckDate &lt;= rangeEnd</code> [CODE: RMActivityRepository.cs:83]. <strong>No lower bound. Never apply <code>rangeStart</code> to <code>paid</code></strong>: pacing compares a cumulative numerator against a cumulative denominator, and window-bounding the numerator makes every pledge read as catastrophically behind.</li>
+<li><strong>windowPaid</strong>: the same predicate plus <code>RM_History.CheckDate &gt;= rangeStart</code> [BUILD]. Always less than or equal to <code>paid</code>.</li>
+<li><strong>pledged</strong>: <code>SUM(RM_PledgeDetail.Pledge)</code> over in-scope pledges, grouped by <code>ActivityID</code> [CODE: RMActivityRepository.cs:82].</li>
+<li><strong>Per-pledge pacing</strong>: <code>termDays = EndDate - BeginDate</code>; <code>daysElapsed = clamp(rangeEnd - BeginDate, 0, termDays)</code>; <code>expectedByNow = goal * daysElapsed / termDays</code> [BUILD][DOC: Dev backend answer in Step 4 W04]. Paces each pledge on its own term, never on the calendar year.</li>
+<li><strong>Activity expected</strong>: <code>SUM(expectedByNow)</code> over the activity's in-scope pledges [BUILD: the drill reconciles cents-exact to the activity row].</li>
+<li><strong>shortfall</strong>: <code>MAX(0, expected - paid)</code>, per row, pre-signed [BUILD].</li>
+<li><strong>Aggregate shortfall rule</strong>: any total shortfall is <code>SUM(MAX(0, expected - paid))</code> per row, never <code>MAX(0, SUM(expected) - SUM(paid))</code>. Netting lets a pledge running ahead mask one running behind, which defeats an exception widget [DOC: Step 4 W04].</li>
+<li><strong>Filters applied to every read</strong>: company scope on every query; receipts count only when posted and non-void.</li>
+<li><strong>Labelling rule</strong>: the date control is never labelled "fiscal" anything [SME: Edward Eoff, 2026-08-10]. Acceptable: "pledge year to date", "calendar year to date", plain from/to dates.</li>
+</ul>
+<h2>Old vs. new</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Old (live today)</th>
+<th>New (needed)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Endpoint shape</td>
+<td>One control-bound read, <code>RMActivityRepository.GetWidgetData(dateReceiptsThru)</code>, returning per-activity aggregate rows (<code>RMWidgetActivityRecord</code>)</td>
+<td>API 1 re-shaped read over the same tables; APIs 2-4 are new (DERIVED/NEW as marked below)</td>
+</tr>
+<tr>
+<td>Time selection</td>
+<td>Single <code>Date Receipts Thru</code> date</td>
+<td><code>rangeStart</code>/<code>rangeEnd</code> pair; end is the sole pacing anchor, start frames the window (re-shaped read)</td>
+</tr>
+<tr>
+<td>Expected</td>
+<td><code>ROUND((Annual / 12) * month, 2)</code>, a calendar-month step [CODE: RMWidgetActivityRecord.cs:16]</td>
+<td>Per-pledge-term sum: <code>SUM(goal * daysElapsed / termDays)</code> (DERIVED, formula change)</td>
+</tr>
+<tr>
+<td>Pledge scope</td>
+<td><code>BeginDate &lt;= date &lt;= EndDate</code>, single instant, drops ended-but-unpaid pledges</td>
+<td>Window overlap <code>BeginDate &lt;= rangeEnd AND EndDate &gt;= rangeStart</code> (query change)</td>
+</tr>
+<tr>
+<td>Row set</td>
+<td>Activities reached only by walking in-scope pledges; an activity with receipts but no pledge shows nothing [SME: Edward Eoff, 2026-08-10, verified live]</td>
+<td>Union of pledge-backed and receipt-backed activities (NEW query path - blocked, Still needs sign-off)</td>
+</tr>
+<tr>
+<td><code>windowPaid</code></td>
+<td>Does not exist</td>
+<td>NEW conditional aggregate</td>
+</tr>
+<tr>
+<td>Per-activity pledge list</td>
+<td>Does not exist (grid is per-activity only)</td>
+<td>NEW query over existing tables, paginated, server-sorted</td>
+</tr>
+<tr>
+<td>Donor name on the dashboard</td>
+<td>Not surfaced</td>
+<td><code>CorePerson.DisplayNameLastFirst</code> via <code>RM_Pledge.ChurchID</code> and <code>RM_Church.PersonID</code> (NEW read, existing joins)</td>
+</tr>
+<tr>
+<td>Per-pledge payment schedule</td>
+<td>Does not exist</td>
+<td>NEW derived schedule with oldest-first allocation (API 3)</td>
+</tr>
+<tr>
+<td>Export</td>
+<td>Does not exist</td>
+<td>NEW server-side file endpoint (API 4)</td>
+</tr>
+<tr>
+<td>Caching</td>
+<td>File-backed <code>RMWidgetRecord</code>, invalidated on company change</td>
+<td>Live per request; company-change isolation must hold</td>
+</tr>
+</tbody>
+</table>
+<h2>API inventory</h2>
+<table>
+<thead>
+<tr>
+<th>API</th>
+<th>Purpose</th>
+<th>Trigger (when it fires)</th>
+<th>Cardinality</th>
+<th>R/W</th>
+<th>Cache posture</th>
+<th>Split trigger</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>API 1: Activity pacing summary</td>
+<td>Everything on the widget card</td>
+<td>Render, range change, Refresh</td>
+<td>One row per activity in scope (bounded, small)</td>
+<td>R</td>
+<td>LIVE</td>
+<td>Base read; separate from API 2 by cardinality gap (bounded summary vs paginated list)</td>
+</tr>
+<tr>
+<td>API 2: Activity pledge list</td>
+<td>The drill screen and the most-behind popup</td>
+<td>Activity click (drill), bars-row click (popup), pager, range change while open</td>
+<td>Up to ~800 pledges per activity, paginated</td>
+<td>R</td>
+<td>LIVE</td>
+<td>Trigger gap (fires on click, not render) and cardinality gap</td>
+</tr>
+<tr>
+<td>API 3: Pledge payment schedule</td>
+<td>The third drill level: one donor's instalments</td>
+<td>Pledge row expand inside the drill</td>
+<td>One pledge, bounded instalment list</td>
+<td>R</td>
+<td>LIVE</td>
+<td>Trigger gap (per-expand) and grain gap (per-entity detail keyed by <code>pledgeId</code>)</td>
+</tr>
+<tr>
+<td>API 4: Pledge list export</td>
+<td>File of the current pledge view</td>
+<td>Export click in the drill or popup</td>
+<td>Full filtered pledge set for one activity</td>
+<td>R</td>
+<td>Generated per request</td>
+<td>Conditional weight (heavy, only sometimes needed) and trigger gap</td>
+</tr>
+</tbody>
+</table>
+<p>Considered and closed: API 2's summary block could have been dropped in favour of reusing the API 1 row, but the drill must reconcile exactly with figures computed over the full pledge set at the moment it opens, so API 2 returns its own full-set summary and the contract states the two must agree for the same range. APIs 2 and 3 stay separate because a schedule per pledge inside the list response would be an N-times-8 payload for an interaction that usually never happens.</p>
+<h2>Call sequence</h2>
+<table>
+<thead>
+<tr>
+<th>Interaction</th>
+<th>Calls fired</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Initial widget load</td>
+<td>API 1</td>
+<td>Defaults: <code>rangeEnd</code> = today, <code>rangeStart</code> = 1 January of <code>rangeEnd</code>'s year</td>
+</tr>
+<tr>
+<td>Change receipts window (preset or Custom)</td>
+<td>API 1; plus API 2 (and API 3 per open schedule) if a drill is open</td>
+<td>The only fetch-triggering filter. The client passes the same <code>rangeStart</code>/<code>rangeEnd</code> to every call for one screen; that pair is the shared asOf anchor</td>
+</tr>
+<tr>
+<td>Click a pace card (Behind / On track / Ahead)</td>
+<td>none</td>
+<td>Client view over API 1 rows already held</td>
+</tr>
+<tr>
+<td>Sort the activity table / "Most behind first"</td>
+<td>none</td>
+<td>Client sort over bounded rows</td>
+</tr>
+<tr>
+<td>Switch view (Table / Pacing bars)</td>
+<td>none</td>
+<td>Client re-render</td>
+</tr>
+<tr>
+<td>Open drill (Table view activity click)</td>
+<td>API 2</td>
+<td><code>page=1</code>, <code>pageSize=8</code>, <code>behindOnly=false</code></td>
+</tr>
+<tr>
+<td>Open most-behind popup (Pacing bars row click)</td>
+<td>API 2</td>
+<td><code>behindOnly=true</code>, <code>pageSize=5</code>, <code>page=1</code></td>
+</tr>
+<tr>
+<td>Page the pledge list</td>
+<td>API 2</td>
+<td>Same range and sort, new <code>page</code></td>
+</tr>
+<tr>
+<td>Expand a pledge row (payment schedule)</td>
+<td>API 3</td>
+<td><code>rangeEnd</code> matching the open range</td>
+</tr>
+<tr>
+<td>Export (drill or popup)</td>
+<td>API 4</td>
+<td>Scoped to the activity, range and <code>behindOnly</code> state on screen</td>
+</tr>
+<tr>
+<td>Refresh</td>
+<td>API 1; plus API 2 / API 3 re-fired for whatever is open</td>
+<td>Same params as the current state</td>
+</tr>
+</tbody>
+</table>
+<h2>Filter architecture</h2>
+<table>
+<thead>
+<tr>
+<th>Filter</th>
+<th>Option source</th>
+<th>Cardinality</th>
+<th>Execution</th>
+<th>Aggregate effect</th>
+<th>Cascade</th>
+<th>"All" wire form</th>
+<th>Round trips</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Receipts window (This year / Last 30 days / Custom From-To)</td>
+<td>STATIC presets, resolved to two dates client-side</td>
+<td>3 options; Custom is any date pair</td>
+<td>SERVER: <code>rangeStart</code>, <code>rangeEnd</code> on APIs 1, 2, 4; <code>rangeEnd</code> on API 3</td>
+<td>Yes - every figure re-computes</td>
+<td>No</td>
+<td>Omit both params; server defaults apply (<code>rangeEnd</code> = today, <code>rangeStart</code> = 1 Jan of <code>rangeEnd</code>'s year)</td>
+<td>1 (API 1), plus refetch of any open drill</td>
+</tr>
+<tr>
+<td>Pace card band (Behind / On track / Ahead / all)</td>
+<td>DERIVED from the API 1 response</td>
+<td>4 states</td>
+<td>CLIENT - all three conditions hold: the full activity set is in the API 1 response, that set is bounded (see Volume), and no server-computed aggregate is affected because every total the screen shows is client-computed over the full held set (the Total row deliberately spans every activity in scope)</td>
+<td>No</td>
+<td>No</td>
+<td>n/a - never on the wire</td>
+<td>0</td>
+</tr>
+<tr>
+<td><code>behindOnly</code> (most-behind popup)</td>
+<td>STATIC boolean</td>
+<td>2</td>
+<td>SERVER param on APIs 2 and 4 - the pledge set paginates, so its filters are server-side</td>
+<td>Yes - <code>totalCount</code> counts the filtered set (<code>behindPledgeCount</code> always spans the full in-scope set)</td>
+<td>No</td>
+<td><code>behindOnly=false</code> or omitted</td>
+<td>1 (API 2)</td>
+</tr>
+<tr>
+<td>Activity table sort</td>
+<td>STATIC column set</td>
+<td>7 sort keys</td>
+<td>CLIENT - bounded set fully held, no aggregate effect</td>
+<td>No</td>
+<td>No</td>
+<td>n/a</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Combination semantics</strong>: AND, narrowing. The receipts window scopes which pledges exist; the pace card then filters the paced rows client-side. Receipts-only rows are never filtered by a card; they render as the footer line under every card state.</li>
+<li><strong>Conflict rule</strong>: <code>rangeStart &gt; rangeEnd</code> is rejected with a named validation error (<code>INVALID_RANGE</code>), never silently swapped. <code>behindOnly=true</code> with <code>page</code> past the last page of behind pledges returns an empty page with correct counts, not an error.</li>
+<li><strong>Empty-result semantics</strong>: a valid range matching no pledges returns a well-formed response with <code>activities</code> empty (or containing only receipts-only rows once that path exists), never an error. A pace-card band with no members is a client-side empty view over a healthy response.</li>
+<li><strong>Cascade invalidation</strong>: none. No filter's option list depends on another filter's value, and there are no lookup endpoints - both filters are static.</li>
+<li><strong>Blank values</strong>: <code>BeginDate</code> and <code>EndDate</code> are NOT NULL [CODE: RMPledge.cs:162,242], so no pledge can be term-blank; a pledge with a zero amount is a "no pledge" row, included under every card state's footer treatment only when it also has no in-scope term, and otherwise paced with <code>pctPaid</code> null.</li>
+</ul>
+<h2>Volume and performance</h2>
+<table>
+<thead>
+<tr>
+<th>Dataset</th>
+<th>Typical rows</th>
+<th>Worst realistic rows (basis)</th>
+<th>Row width</th>
+<th>Payload at worst</th>
+<th>Verdict</th>
+<th>Server cost model</th>
+<th>Cache posture</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>API 1 <code>activities[]</code></td>
+<td>6 (build demo dataset)</td>
+<td>[TO CONFIRM] (Edward Eoff - activity counts at large conferences; the legacy grid renders the full set unpaginated [CODE: RMPledges.ascx], so the working assumption is a small org-configured list)</td>
+<td>16 fields, ~340 bytes</td>
+<td>Small at any plausible count; re-checked when the ceiling is confirmed</td>
+<td>BOUNDED</td>
+<td>One indexed scan of in-scope pledges grouped by activity, plus the receipts aggregate per activity</td>
+<td>LIVE</td>
+</tr>
+<tr>
+<td>API 2 <code>pledges[]</code></td>
+<td>60-72 per activity (build seed)</td>
+<td>500-800 per activity ([SME: Edward Eoff, 2026-08-10] - reconstructed from a garbled transcript line, [TO CONFIRM] with him before sizing)</td>
+<td>10 fields, ~230 bytes</td>
+<td>~184 KB unpaginated at 800 rows; one 8-row page is ~2 KB</td>
+<td>MUST PAGINATE</td>
+<td>Per request: compute <code>expectedByNow</code> and <code>shortfall</code> for ALL of the activity's in-scope pledges (N pledges times one receipts aggregate each), sort, then slice the page. The full-set compute happens even for one page, because the sort key is derived</td>
+<td>LIVE</td>
+</tr>
+<tr>
+<td>API 3 <code>instalments[]</code></td>
+<td>12 (monthly, one-year term)</td>
+<td>Bounded by definition: <code>RM_Pledge.Duration</code> is the stored instalment count; realistic maximum [TO CONFIRM] (dev - max Duration in production data)</td>
+<td>5 fields, ~90 bytes</td>
+<td>A few KB</td>
+<td>BOUNDED</td>
+<td>One pledge's receipts scan plus an O(Duration) allocation loop</td>
+<td>LIVE</td>
+</tr>
+<tr>
+<td>API 4 export</td>
+<td>One activity's filtered pledge set</td>
+<td>Same 500-800 basis as API 2</td>
+<td>file</td>
+<td>File of up to ~800 rows</td>
+<td>MUST AGGREGATE SERVER-SIDE (the file is built where the full set lives)</td>
+<td>Same full-set compute as API 2, streamed to a file</td>
+<td>Generated per request</td>
+</tr>
+</tbody>
+</table>
+<p>No time series exists in this contract, so there is no N entities times M periods product to state.</p>
+<h3>Pagination contract</h3>
+<ul>
+<li><strong>Params</strong>: <code>page</code> (1-based, default 1), <code>pageSize</code> (default 8, maximum 100).</li>
+<li><strong>What paginates</strong>: API 2's <code>pledges[]</code> only.</li>
+<li><strong>What does not</strong>: <code>summary</code> (pledged, expected, paid, outstanding, pctPaid, daysAhead), <code>totalCount</code> and <code>behindPledgeCount</code> all compute over the <strong>full filtered set</strong>, never the page. Switching pages changes no total, no card, no KPI and no note.</li>
+<li><strong>Sort</strong>: deliberately fixed server-side at <code>shortfall</code> descending; no <code>sortBy</code> / <code>sortDir</code> params are exposed. What the user loses: re-ordering the pledge list by name, date or amount. That mirrors the drill's single purpose (most behind first, later pages progressively healthier); if column sorting is ever wanted it becomes a whitelisted <code>sortBy</code> here.</li>
+<li><strong>Deterministic total order</strong>: <code>shortfall DESC, pledgeId ASC</code>. The unique <code>pledgeId</code> tiebreaker prevents rows duplicating or skipping across pages.</li>
+<li><strong><code>totalCount</code></strong> is returned beside every page (it counts the set after <code>behindOnly</code>).</li>
+<li><strong>Past the last page</strong>: empty <code>pledges[]</code>, correct <code>totalCount</code>, correct <code>summary</code>, HTTP 200.</li>
+</ul>
+<h2>Where computation lives</h2>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Server or client</th>
+<th>Basis</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>expectedByNow</code> per pledge</td>
+<td>SERVER</td>
+<td>pledge term + rangeEnd</td>
+<td>Needs every pledge's dates; drives the server-side sort</td>
+</tr>
+<tr>
+<td>Activity <code>expected</code></td>
+<td>SERVER</td>
+<td>sum of per-pledge <code>expectedByNow</code></td>
+<td>Spans a set the client does not hold</td>
+</tr>
+<tr>
+<td><code>paid</code>, <code>windowPaid</code>, <code>pledged</code>, <code>outstanding</code></td>
+<td>SERVER</td>
+<td>conditional aggregates</td>
+<td>Span receipt rows never transmitted</td>
+</tr>
+<tr>
+<td><code>pctPaid</code></td>
+<td>SERVER</td>
+<td><code>paid / pledged</code></td>
+<td>Returned null when <code>pledged</code> is 0 - the division-by-zero rule, applied server-side, one rule for every consumer</td>
+</tr>
+<tr>
+<td><code>daysAhead</code></td>
+<td>SERVER</td>
+<td><code>(paid / pledged) * termDays - daysElapsed</code></td>
+<td>Returned pre-signed; null when <code>pledged</code> is 0</td>
+</tr>
+<tr>
+<td><code>shortfall</code> per row</td>
+<td>SERVER</td>
+<td><code>MAX(0, expected - paid)</code></td>
+<td>Pre-signed delta; the client never subtracts</td>
+</tr>
+<tr>
+<td>Behind-pace headline, "N of M", Total row, window-received note</td>
+<td>CLIENT</td>
+<td>sums over the full API 1 row set</td>
+<td>Pure arithmetic over values already held; the full set is bounded and present</td>
+</tr>
+<tr>
+<td>Pace-card counts and outstanding-per-band</td>
+<td>CLIENT</td>
+<td>banding over held rows</td>
+<td>Presentation grouping over a bounded set</td>
+</tr>
+<tr>
+<td>Status bands (Behind is <code>shortfall &gt; 0</code>; the day scale is 30 or more days ahead, within 30 days either side on track, 30 to 60 behind, more than 60 behind; paid-in-full and no-pledge special-cased)</td>
+<td>CLIENT</td>
+<td><code>shortfall</code>, <code>daysAhead</code></td>
+<td>Presentation bands are client-side. These thresholds are owner-approved in the locked design [BUILD][DOC: Step 4 W04], not silent defaults. The API returns raw numbers, never a band string</td>
+</tr>
+<tr>
+<td>Activity table sort orders</td>
+<td>CLIENT</td>
+<td>held rows</td>
+<td>Bounded set</td>
+</tr>
+<tr>
+<td>Pledge list order</td>
+<td>SERVER</td>
+<td><code>shortfall DESC, pledgeId ASC</code></td>
+<td>The set paginates</td>
+</tr>
+<tr>
+<td>Pledge pager arithmetic</td>
+<td>CLIENT</td>
+<td><code>totalCount</code>, <code>pageSize</code></td>
+<td>Pure arithmetic</td>
+</tr>
+<tr>
+<td>Instalment schedule, statuses, <code>firstMissedDate</code>, <code>missedCount</code>, <code>missedAmount</code>, <code>paidCount</code>, <code>dueCount</code></td>
+<td>SERVER</td>
+<td>oldest-first allocation</td>
+<td>Needs per-pledge receipts the client never holds; API 1 and API 3 must derive from one shared pacing definition or the drill contradicts its parent row</td>
+</tr>
+<tr>
+<td>Pace note and chip wording</td>
+<td>CLIENT</td>
+<td>returned numbers</td>
+<td>Copy is presentation</td>
+</tr>
+<tr>
+<td><code>pace</code> fraction shown in captions</td>
+<td>CLIENT</td>
+<td><code>daysElapsed / termDays</code></td>
+<td>Pure arithmetic; 0 when <code>termDays</code> is 0 (zero-length terms guard)</td>
+</tr>
+</tbody>
+</table>
+<h2>API 1: Activity pacing summary</h2>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/remittance-pledges/data
+</code></pre>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>rangeStart</code></td>
+<td>date (ISO 8601)</td>
+<td>no</td>
+<td>any date &lt;= <code>rangeEnd</code></td>
+<td>1 January of <code>rangeEnd</code>'s calendar year</td>
+<td>The window opener. Affects exactly two things: <code>windowPaid</code>, and which pledges are in scope via the overlap rule. Never touches pacing</td>
+</tr>
+<tr>
+<td><code>rangeEnd</code></td>
+<td>date (ISO 8601)</td>
+<td>no</td>
+<td>any date</td>
+<td>today (server date)</td>
+<td>The pacing anchor. <code>paid</code> counts check dates on or before it; <code>expected</code> paces to it</td>
+</tr>
+</tbody>
+</table>
+<p>The company/tenant context travels in the standard request context header, not as a query param; every query is scoped by it (see Auth and scoping).</p>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/remittance-pledges/data
+GET /api/dashboard/remittance-pledges/data?rangeStart=2026-01-01&amp;rangeEnd=2026-07-31
+</code></pre>
+<p>Dates are plain ISO and need no URL encoding.</p>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>rangeStart</code></td>
+<td>date</td>
+<td>DERIVED (echo of the resolved param) [BUILD]</td>
+<td>The window start actually applied</td>
+</tr>
+<tr>
+<td><code>rangeEnd</code></td>
+<td>date</td>
+<td>DERIVED (echo) [BUILD]</td>
+<td>The pacing anchor actually applied</td>
+</tr>
+<tr>
+<td><code>activities[]</code></td>
+<td>array</td>
+<td>DERIVED container</td>
+<td>One row per activity in scope</td>
+</tr>
+<tr>
+<td><code>activities[].activityId</code></td>
+<td>guid</td>
+<td>STORED <code>RM_Activity.ActivityID</code> [CODE]</td>
+<td>Stable key (names are org-editable)</td>
+</tr>
+<tr>
+<td><code>activities[].activityName</code></td>
+<td>string</td>
+<td>STORED <code>RM_Activity.Name</code> [CODE]</td>
+<td>Display label</td>
+</tr>
+<tr>
+<td><code>activities[].sequence</code></td>
+<td>int</td>
+<td>STORED <code>RM_Activity.Sequence</code> [CODE]</td>
+<td>Default row order</td>
+</tr>
+<tr>
+<td><code>activities[].hasPledgeInRange</code></td>
+<td>bool</td>
+<td>DERIVED (overlap rule) [BUILD]</td>
+<td>False marks a receipts-only row; all pacing fields are then null/zero. Serving such a row is blocked on the open query-path item (Still needs sign-off)</td>
+</tr>
+<tr>
+<td><code>activities[].pledged</code></td>
+<td>money</td>
+<td>STORED aggregate <code>SUM(RM_PledgeDetail.Pledge)</code> [CODE]</td>
+<td>Total pledged, in-scope pledges only</td>
+</tr>
+<tr>
+<td><code>activities[].expected</code></td>
+<td>money</td>
+<td>DERIVED <code>SUM(expectedByNow)</code> over in-scope pledges [BUILD]</td>
+<td>Cumulative to <code>rangeEnd</code></td>
+</tr>
+<tr>
+<td><code>activities[].paid</code></td>
+<td>money</td>
+<td>STORED conditional aggregate [CODE]</td>
+<td>Cumulative to <code>rangeEnd</code>, no lower bound</td>
+</tr>
+<tr>
+<td><code>activities[].windowPaid</code></td>
+<td>money</td>
+<td>NEW (same predicate plus <code>CheckDate &gt;= rangeStart</code>) [BUILD]</td>
+<td>Receipts inside the window; always &lt;= <code>paid</code></td>
+</tr>
+<tr>
+<td><code>activities[].outstanding</code></td>
+<td>money</td>
+<td>DERIVED <code>MAX(0, pledged - paid)</code> [CODE]</td>
+<td>Remaining over the term</td>
+</tr>
+<tr>
+<td><code>activities[].pctPaid</code></td>
+<td>number or null</td>
+<td>DERIVED <code>paid / pledged</code>, null when <code>pledged</code> = 0 [CODE]</td>
+<td>Fraction, not percent</td>
+</tr>
+<tr>
+<td><code>activities[].shortfall</code></td>
+<td>money</td>
+<td>DERIVED <code>MAX(0, expected - paid)</code> [BUILD]</td>
+<td>Pre-signed; the exception rule (Behind is <code>shortfall</code> &gt; 0)</td>
+</tr>
+<tr>
+<td><code>activities[].daysAhead</code></td>
+<td>number or null</td>
+<td>DERIVED <code>(paid / pledged) * termDays - daysElapsed</code>, null when <code>pledged</code> = 0 [BUILD]</td>
+<td>Raw day figure; the client bands it</td>
+</tr>
+<tr>
+<td><code>activities[].beginDate</code></td>
+<td>date or null</td>
+<td>DERIVED <code>MIN(BeginDate)</code> over in-scope pledges; null on a receipts-only row</td>
+<td>Term line start. Mixed-term display rule is open (Still needs sign-off)</td>
+</tr>
+<tr>
+<td><code>activities[].endDate</code></td>
+<td>date or null</td>
+<td>DERIVED <code>MAX(EndDate)</code> over in-scope pledges; null on a receipts-only row</td>
+<td>Term line end</td>
+</tr>
+<tr>
+<td><code>activities[].termDays</code></td>
+<td>int</td>
+<td>DERIVED <code>endDate - beginDate</code> in days; 0 on a receipts-only row</td>
+<td>Caption arithmetic</td>
+</tr>
+<tr>
+<td><code>activities[].daysElapsed</code></td>
+<td>int</td>
+<td>DERIVED <code>clamp(rangeEnd - beginDate, 0, termDays)</code></td>
+<td>Caption arithmetic</td>
+</tr>
+</tbody>
+</table>
+<h3>Example response</h3>
+<pre><code>{
+  &quot;rangeStart&quot;: &quot;2026-01-01&quot;,
+  &quot;rangeEnd&quot;: &quot;2026-07-31&quot;,
+  &quot;activities&quot;: [
+    { &quot;activityId&quot;: &quot;a1e0c7d2-1111-4a01-9f01-0b1c2d3e4f01&quot;, &quot;activityName&quot;: &quot;General Fund Apportionment&quot;, &quot;sequence&quot;: 1,
+      &quot;hasPledgeInRange&quot;: true, &quot;pledged&quot;: 24000, &quot;expected&quot;: 13912, &quot;paid&quot;: 7200, &quot;windowPaid&quot;: 7200,
+      &quot;outstanding&quot;: 16800, &quot;pctPaid&quot;: 0.3, &quot;shortfall&quot;: 6712, &quot;daysAhead&quot;: -101.8,
+      &quot;beginDate&quot;: &quot;2026-01-01&quot;, &quot;endDate&quot;: &quot;2026-12-31&quot;, &quot;termDays&quot;: 364, &quot;daysElapsed&quot;: 211 },
+    { &quot;activityId&quot;: &quot;a1e0c7d2-4444-4a04-9f04-0b1c2d3e4f04&quot;, &quot;activityName&quot;: &quot;Outreach and Benevolence&quot;, &quot;sequence&quot;: 4,
+      &quot;hasPledgeInRange&quot;: true, &quot;pledged&quot;: 9000, &quot;expected&quot;: 5217, &quot;paid&quot;: 6300, &quot;windowPaid&quot;: 6300,
+      &quot;outstanding&quot;: 2700, &quot;pctPaid&quot;: 0.7, &quot;shortfall&quot;: 0, &quot;daysAhead&quot;: 43.8,
+      &quot;beginDate&quot;: &quot;2026-01-01&quot;, &quot;endDate&quot;: &quot;2026-12-31&quot;, &quot;termDays&quot;: 364, &quot;daysElapsed&quot;: 211 },
+    { &quot;activityId&quot;: &quot;a1e0c7d2-5555-4a05-9f05-0b1c2d3e4f05&quot;, &quot;activityName&quot;: &quot;Capital Campaign Pledge&quot;, &quot;sequence&quot;: 5,
+      &quot;hasPledgeInRange&quot;: true, &quot;pledged&quot;: 30000, &quot;expected&quot;: 10822, &quot;paid&quot;: 11000, &quot;windowPaid&quot;: 4000,
+      &quot;outstanding&quot;: 19000, &quot;pctPaid&quot;: 0.367, &quot;shortfall&quot;: 0, &quot;daysAhead&quot;: 6.5,
+      &quot;beginDate&quot;: &quot;2025-07-01&quot;, &quot;endDate&quot;: &quot;2028-06-30&quot;, &quot;termDays&quot;: 1095, &quot;daysElapsed&quot;: 395 },
+    { &quot;activityId&quot;: &quot;a1e0c7d2-6666-4a06-9f06-0b1c2d3e4f06&quot;, &quot;activityName&quot;: &quot;Youth Ministry Fund&quot;, &quot;sequence&quot;: 6,
+      &quot;hasPledgeInRange&quot;: false, &quot;pledged&quot;: 0, &quot;expected&quot;: 0, &quot;paid&quot;: 500, &quot;windowPaid&quot;: 500,
+      &quot;outstanding&quot;: 0, &quot;pctPaid&quot;: null, &quot;shortfall&quot;: 0, &quot;daysAhead&quot;: null,
+      &quot;beginDate&quot;: null, &quot;endDate&quot;: null, &quot;termDays&quot;: 0, &quot;daysElapsed&quot;: 0 }
+  ]
+}
+</code></pre>
+<p>Reconciliation: row 1 reconciles as paid 7200 + shortfall 6712 = 13912 expected. The behind headline reconciles as the per-row positive shortfalls 6712 + 0 + 0 = 6712 (1 of 3 paced activities behind). Client Total row: pledged 24000 + 9000 + 30000 = 63000; expected 13912 + 5217 + 10822 = 29951; paid 7200 + 6300 + 11000 + 500 = 25000; outstanding 16800 + 2700 + 19000 = 38500; window-received note 7200 + 6300 + 4000 + 500 = 18000. The Youth Ministry row is design intent for the receipts-only mode, which is blocked (Still needs sign-off); until that lands, every returned row has <code>hasPledgeInRange</code> true.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty (org has no in-scope pledges and no receipts)</td>
+<td>200, <code>activities</code> = <code>[]</code>, range echoed. The client renders the empty state</td>
+</tr>
+<tr>
+<td>Partial (some activities have pledges, others only receipts)</td>
+<td>200; pledge-backed rows normal; receipts-only rows per the blocked design intent above (absent until that path exists)</td>
+</tr>
+<tr>
+<td>Not-yet-existing (range entirely before any pledge term)</td>
+<td>200, <code>activities</code> = <code>[]</code> - the overlap rule matches nothing; not an error</td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td>403 with a machine-readable code; body carries no figures. What the widget shell renders is an open product decision (Still needs sign-off)</td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td>503 with a retryable error envelope; the client keeps the last good render and marks it stale</td>
+</tr>
+</tbody>
+</table>
+<h2>API 2: Activity pledge list</h2>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/remittance-pledges/activity/{activityId}/pledges
+</code></pre>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>activityId</code></td>
+<td>guid (path)</td>
+<td>yes</td>
+<td>an <code>RM_Activity.ActivityID</code> in the company</td>
+<td>none (required)</td>
+<td>The activity being drilled</td>
+</tr>
+<tr>
+<td><code>rangeStart</code></td>
+<td>date</td>
+<td>no</td>
+<td>any date &lt;= <code>rangeEnd</code></td>
+<td>1 January of <code>rangeEnd</code>'s year</td>
+<td>Same role as API 1; must match the values the open card used</td>
+</tr>
+<tr>
+<td><code>rangeEnd</code></td>
+<td>date</td>
+<td>no</td>
+<td>any date</td>
+<td>today</td>
+<td>Pacing anchor</td>
+</tr>
+<tr>
+<td><code>behindOnly</code></td>
+<td>bool</td>
+<td>no</td>
+<td>true / false</td>
+<td>false</td>
+<td>True returns only pledges with <code>shortfall</code> &gt; 0 (the most-behind popup)</td>
+</tr>
+<tr>
+<td><code>page</code></td>
+<td>int</td>
+<td>no</td>
+<td>&gt;= 1</td>
+<td>1</td>
+<td>1-based page</td>
+</tr>
+<tr>
+<td><code>pageSize</code></td>
+<td>int</td>
+<td>no</td>
+<td>1 to 100</td>
+<td>8</td>
+<td>Page length; 100 is the hard maximum</td>
+</tr>
+</tbody>
+</table>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/remittance-pledges/activity/a1e0c7d2-1111-4a01-9f01-0b1c2d3e4f01/pledges?rangeStart=2026-01-01&amp;rangeEnd=2026-07-31&amp;page=1&amp;pageSize=8
+GET /api/dashboard/remittance-pledges/activity/a1e0c7d2-1111-4a01-9f01-0b1c2d3e4f01/pledges?rangeStart=2026-01-01&amp;rangeEnd=2026-07-31&amp;behindOnly=true&amp;pageSize=5
+</code></pre>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>activityId</code></td>
+<td>guid</td>
+<td>STORED <code>RM_Activity.ActivityID</code> [CODE]</td>
+<td>Echo</td>
+</tr>
+<tr>
+<td><code>activityName</code></td>
+<td>string</td>
+<td>STORED <code>RM_Activity.Name</code> [CODE]</td>
+<td>Drill title</td>
+</tr>
+<tr>
+<td><code>rangeStart</code></td>
+<td>date</td>
+<td>DERIVED (echo)</td>
+<td>Anchor echo</td>
+</tr>
+<tr>
+<td><code>rangeEnd</code></td>
+<td>date</td>
+<td>DERIVED (echo)</td>
+<td>Anchor echo</td>
+</tr>
+<tr>
+<td><code>page</code></td>
+<td>int</td>
+<td>DERIVED (echo)</td>
+<td>Current page</td>
+</tr>
+<tr>
+<td><code>pageSize</code></td>
+<td>int</td>
+<td>DERIVED (echo)</td>
+<td>Page length applied</td>
+</tr>
+<tr>
+<td><code>totalCount</code></td>
+<td>int</td>
+<td>DERIVED count over the filtered set [BUILD]</td>
+<td>Rows matching <code>behindOnly</code>; powers the pager</td>
+</tr>
+<tr>
+<td><code>behindPledgeCount</code></td>
+<td>int</td>
+<td>DERIVED count of <code>shortfall</code> &gt; 0 over the FULL in-scope set [BUILD]</td>
+<td>Powers the popup note regardless of <code>behindOnly</code></td>
+</tr>
+<tr>
+<td><code>summary</code></td>
+<td>object</td>
+<td>DERIVED container</td>
+<td>Full-set aggregates; never affected by paging</td>
+</tr>
+<tr>
+<td><code>summary.pledged</code></td>
+<td>money</td>
+<td>STORED aggregate [CODE]</td>
+<td>Must equal the API 1 row for the same range</td>
+</tr>
+<tr>
+<td><code>summary.expected</code></td>
+<td>money</td>
+<td>DERIVED <code>SUM(expectedByNow)</code> [BUILD]</td>
+<td>Must equal the API 1 row</td>
+</tr>
+<tr>
+<td><code>summary.paid</code></td>
+<td>money</td>
+<td>STORED conditional aggregate [CODE]</td>
+<td>Must equal the API 1 row</td>
+</tr>
+<tr>
+<td><code>summary.outstanding</code></td>
+<td>money</td>
+<td>DERIVED <code>MAX(0, pledged - paid)</code> [CODE]</td>
+<td>Must equal the API 1 row</td>
+</tr>
+<tr>
+<td><code>summary.pctPaid</code></td>
+<td>number or null</td>
+<td>DERIVED, null when <code>pledged</code> = 0 [CODE]</td>
+<td>Summary strip</td>
+</tr>
+<tr>
+<td><code>summary.daysAhead</code></td>
+<td>number or null</td>
+<td>DERIVED, null when <code>pledged</code> = 0 [BUILD]</td>
+<td>Status chip and pace note</td>
+</tr>
+<tr>
+<td><code>summary.beginDate</code></td>
+<td>date or null</td>
+<td>DERIVED <code>MIN(BeginDate)</code> in scope</td>
+<td>Term line (mixed-term rule open)</td>
+</tr>
+<tr>
+<td><code>summary.endDate</code></td>
+<td>date or null</td>
+<td>DERIVED <code>MAX(EndDate)</code> in scope</td>
+<td>Term line</td>
+</tr>
+<tr>
+<td><code>pledges[]</code></td>
+<td>array</td>
+<td>DERIVED container</td>
+<td>The page, sorted <code>shortfall DESC, pledgeId ASC</code></td>
+</tr>
+<tr>
+<td><code>pledges[].pledgeId</code></td>
+<td>guid</td>
+<td>STORED <code>RM_Pledge.PledgeID</code> [CODE]</td>
+<td>Key; the expand target for API 3</td>
+</tr>
+<tr>
+<td><code>pledges[].donorName</code></td>
+<td>string</td>
+<td>STORED <code>CorePerson.DisplayNameLastFirst</code> via <code>RM_Pledge.ChurchID</code> and <code>RM_Church.PersonID</code> [CODE: legacy screen's Name column]</td>
+<td>"Last, First" person name</td>
+</tr>
+<tr>
+<td><code>pledges[].beginDate</code></td>
+<td>date</td>
+<td>STORED <code>RM_Pledge.BeginDate</code> [CODE]</td>
+<td>This pledge's own term</td>
+</tr>
+<tr>
+<td><code>pledges[].endDate</code></td>
+<td>date</td>
+<td>STORED <code>RM_Pledge.EndDate</code> [CODE]</td>
+<td>This pledge's own term</td>
+</tr>
+<tr>
+<td><code>pledges[].goal</code></td>
+<td>money</td>
+<td>STORED <code>RM_PledgeDetail.Pledge</code> for this pledge [CODE]</td>
+<td>Pledged amount</td>
+</tr>
+<tr>
+<td><code>pledges[].paid</code></td>
+<td>money</td>
+<td>STORED conditional aggregate of this pledge's linked receipts, <code>CheckDate &lt;= rangeEnd</code> [CODE predicate; per-pledge attribution UNVERIFIED (dev) - see Still needs sign-off]</td>
+<td>Cumulative</td>
+</tr>
+<tr>
+<td><code>pledges[].outstanding</code></td>
+<td>money</td>
+<td>DERIVED <code>MAX(0, goal - paid)</code></td>
+<td>Remaining</td>
+</tr>
+<tr>
+<td><code>pledges[].expectedByNow</code></td>
+<td>money</td>
+<td>DERIVED per-pledge pacing formula [BUILD]</td>
+<td>On this pledge's own term</td>
+</tr>
+<tr>
+<td><code>pledges[].shortfall</code></td>
+<td>money</td>
+<td>DERIVED <code>MAX(0, expectedByNow - paid)</code> [BUILD]</td>
+<td>The sort key</td>
+</tr>
+<tr>
+<td><code>pledges[].daysAhead</code></td>
+<td>number or null</td>
+<td>DERIVED, null when <code>goal</code> = 0 [BUILD]</td>
+<td>Client bands the status</td>
+</tr>
+</tbody>
+</table>
+<h3>Example response</h3>
+<pre><code>{
+  &quot;activityId&quot;: &quot;a1e0c7d2-1111-4a01-9f01-0b1c2d3e4f01&quot;,
+  &quot;activityName&quot;: &quot;General Fund Apportionment&quot;,
+  &quot;rangeStart&quot;: &quot;2026-01-01&quot;,
+  &quot;rangeEnd&quot;: &quot;2026-07-31&quot;,
+  &quot;page&quot;: 1,
+  &quot;pageSize&quot;: 8,
+  &quot;totalCount&quot;: 64,
+  &quot;behindPledgeCount&quot;: 38,
+  &quot;summary&quot;: { &quot;pledged&quot;: 24000, &quot;expected&quot;: 13912, &quot;paid&quot;: 7200, &quot;outstanding&quot;: 16800,
+               &quot;pctPaid&quot;: 0.3, &quot;daysAhead&quot;: -101.8, &quot;beginDate&quot;: &quot;2026-01-01&quot;, &quot;endDate&quot;: &quot;2026-12-31&quot; },
+  &quot;pledges&quot;: [
+    { &quot;pledgeId&quot;: &quot;8f3b6c1a-0002-4b02-8c02-1d2e3f4a5b02&quot;, &quot;donorName&quot;: &quot;Bell, Marcus&quot;,
+      &quot;beginDate&quot;: &quot;2026-01-01&quot;, &quot;endDate&quot;: &quot;2026-12-31&quot;, &quot;goal&quot;: 900, &quot;paid&quot;: 150,
+      &quot;outstanding&quot;: 750, &quot;expectedByNow&quot;: 522, &quot;shortfall&quot;: 372, &quot;daysAhead&quot;: -150.3 },
+    { &quot;pledgeId&quot;: &quot;8f3b6c1a-0001-4b01-8c01-1d2e3f4a5b01&quot;, &quot;donorName&quot;: &quot;Whitfield, Dana&quot;,
+      &quot;beginDate&quot;: &quot;2026-01-01&quot;, &quot;endDate&quot;: &quot;2026-12-31&quot;, &quot;goal&quot;: 683, &quot;paid&quot;: 238,
+      &quot;outstanding&quot;: 445, &quot;expectedByNow&quot;: 396, &quot;shortfall&quot;: 158, &quot;daysAhead&quot;: -84.2 }
+  ]
+}
+</code></pre>
+<p>The example page is trimmed to two rows; a real page carries up to <code>pageSize</code>. Reconciliation: the second row reconciles as paid 238 + shortfall 158 = 396 expected by now, and outstanding as paid 238 + outstanding 445 = 683 goal. The <code>summary</code> block spans the full 64-pledge set, not the page, and must equal the API 1 row for the same <code>activityId</code> and range; the pledge goals, paids and outstandings across ALL pages sum to <code>summary.pledged</code>, <code>summary.paid</code> and <code>summary.outstanding</code> respectively.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty (activity has no in-scope pledges)</td>
+<td>200, <code>pledges</code> = <code>[]</code>, <code>totalCount</code> = 0, <code>summary</code> zeros with <code>pctPaid</code> and <code>daysAhead</code> null</td>
+</tr>
+<tr>
+<td><code>behindOnly=true</code> and nothing is behind</td>
+<td>200, <code>pledges</code> = <code>[]</code>, <code>totalCount</code> = 0, <code>behindPledgeCount</code> = 0; the popup renders its none-behind message</td>
+</tr>
+<tr>
+<td>Page past the end</td>
+<td>200, <code>pledges</code> = <code>[]</code>, correct <code>totalCount</code> and <code>summary</code></td>
+</tr>
+<tr>
+<td>Unknown or other-company <code>activityId</code></td>
+<td>404 with a machine-readable code; never another tenant's data</td>
+</tr>
+<tr>
+<td>Permission denied / upstream unavailable</td>
+<td>As API 1</td>
+</tr>
+</tbody>
+</table>
+<h2>API 3: Pledge payment schedule</h2>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/remittance-pledges/pledge/{pledgeId}/schedule
+</code></pre>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pledgeId</code></td>
+<td>guid (path)</td>
+<td>yes</td>
+<td>an <code>RM_Pledge.PledgeID</code> in the company</td>
+<td>none (required)</td>
+<td>The pledge being expanded</td>
+</tr>
+<tr>
+<td><code>rangeEnd</code></td>
+<td>date</td>
+<td>no</td>
+<td>any date</td>
+<td>today</td>
+<td>The as-of date. An instalment due on or before it and still unfunded is missed; after it, upcoming</td>
+</tr>
+</tbody>
+</table>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/remittance-pledges/pledge/8f3b6c1a-0001-4b01-8c01-1d2e3f4a5b01/schedule
+GET /api/dashboard/remittance-pledges/pledge/8f3b6c1a-0001-4b01-8c01-1d2e3f4a5b01/schedule?rangeEnd=2026-07-31
+</code></pre>
+<h3>The allocation algorithm</h3>
+<pre><code>n            = duration                     (instalment count; fallback below when 0)
+amountDue[i] = goal / n                     (the last instalment absorbs the rounding remainder)
+dueDate[i]   = beginDate + i * (12 / frequency) months, clamped to endDate
+
+remaining = paid
+for i in 0..n-1:
+    amountApplied[i] = min(amountDue[i], remaining)
+    remaining       -= amountApplied[i]
+    status[i] = amountApplied[i] &gt;= amountDue[i]   -&gt; &quot;paid&quot;
+              : amountApplied[i] &gt; 0               -&gt; &quot;part&quot;
+              : dueDate[i] &lt;= rangeEnd             -&gt; &quot;missed&quot;
+              : otherwise                          -&gt; &quot;upcoming&quot;
+</code></pre>
+<p>Receipts are applied OLDEST FIRST. That is what makes a gap legible: the earliest unfunded instalment is the skipped payment, and everything after it is unfunded too. Invariant worth asserting in tests: no funded instalment ever appears after an unfunded due one. API 1's <code>expected</code> and this schedule must derive from one shared pacing definition, or the drill contradicts the row it opened from (the linear-vs-stepped question in Still needs sign-off decides that definition).</p>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pledgeId</code></td>
+<td>guid</td>
+<td>STORED <code>RM_Pledge.PledgeID</code> [CODE]</td>
+<td>Echo</td>
+</tr>
+<tr>
+<td><code>donorName</code></td>
+<td>string</td>
+<td>STORED <code>CorePerson.DisplayNameLastFirst</code> [CODE]</td>
+<td>Header</td>
+</tr>
+<tr>
+<td><code>goal</code></td>
+<td>money</td>
+<td>STORED <code>RM_PledgeDetail.Pledge</code> [CODE]</td>
+<td>Header ("pledged $X over...")</td>
+</tr>
+<tr>
+<td><code>beginDate</code></td>
+<td>date</td>
+<td>STORED <code>RM_Pledge.BeginDate</code> [CODE]</td>
+<td>Term</td>
+</tr>
+<tr>
+<td><code>endDate</code></td>
+<td>date</td>
+<td>STORED <code>RM_Pledge.EndDate</code> [CODE]</td>
+<td>Term</td>
+</tr>
+<tr>
+<td><code>frequency</code></td>
+<td>int</td>
+<td>STORED <code>RM_Pledge.Frequency</code> [CODE] - column confirmed, semantics UNVERIFIED (dev): payments-per-year is the working reading, undocumented in code</td>
+<td>Cadence</td>
+</tr>
+<tr>
+<td><code>duration</code></td>
+<td>int</td>
+<td>STORED <code>RM_Pledge.Duration</code> [CODE] - column confirmed, semantics UNVERIFIED (dev)</td>
+<td>Instalment count</td>
+</tr>
+<tr>
+<td><code>paid</code></td>
+<td>money</td>
+<td>STORED conditional aggregate of this pledge's receipts, <code>CheckDate &lt;= rangeEnd</code> [CODE predicate; per-pledge attribution UNVERIFIED (dev)]</td>
+<td>The allocated total</td>
+</tr>
+<tr>
+<td><code>rangeEnd</code></td>
+<td>date</td>
+<td>DERIVED (echo)</td>
+<td>As-of anchor</td>
+</tr>
+<tr>
+<td><code>paidCount</code></td>
+<td>int</td>
+<td>DERIVED (instalments with status paid) [BUILD]</td>
+<td>"N of M due payments received"</td>
+</tr>
+<tr>
+<td><code>dueCount</code></td>
+<td>int</td>
+<td>DERIVED (instalments not upcoming) [BUILD]</td>
+<td>The M</td>
+</tr>
+<tr>
+<td><code>missedCount</code></td>
+<td>int</td>
+<td>DERIVED (instalments with status missed) [BUILD]</td>
+<td>Missed flag</td>
+</tr>
+<tr>
+<td><code>missedAmount</code></td>
+<td>money</td>
+<td>DERIVED (missed amounts plus the unfunded portion of any part) [BUILD]</td>
+<td>Missed flag</td>
+</tr>
+<tr>
+<td><code>firstMissedDate</code></td>
+<td>date or null</td>
+<td>DERIVED (earliest missed due date) [BUILD]</td>
+<td>"First skipped payment"</td>
+</tr>
+<tr>
+<td><code>instalments[]</code></td>
+<td>array</td>
+<td>DERIVED container</td>
+<td>One row per scheduled payment</td>
+</tr>
+<tr>
+<td><code>instalments[].dueDate</code></td>
+<td>date</td>
+<td>DERIVED (algorithm above)</td>
+<td>Schedule column</td>
+</tr>
+<tr>
+<td><code>instalments[].amountDue</code></td>
+<td>money</td>
+<td>DERIVED <code>goal / duration</code>, last absorbs remainder</td>
+<td>Schedule column</td>
+</tr>
+<tr>
+<td><code>instalments[].amountApplied</code></td>
+<td>money</td>
+<td>DERIVED oldest-first allocation</td>
+<td>"Received" column</td>
+</tr>
+<tr>
+<td><code>instalments[].status</code></td>
+<td>string</td>
+<td>DERIVED: <code>paid</code> / <code>part</code> / <code>missed</code> / <code>upcoming</code></td>
+<td>Schedule column</td>
+</tr>
+</tbody>
+</table>
+<h3>Example response</h3>
+<p>Pledge of 683 over 2026-01-01 to 2026-12-31, monthly, 238 received, as of 2026-07-31:</p>
+<pre><code>{
+  &quot;pledgeId&quot;: &quot;8f3b6c1a-0001-4b01-8c01-1d2e3f4a5b01&quot;,
+  &quot;donorName&quot;: &quot;Whitfield, Dana&quot;,
+  &quot;goal&quot;: 683, &quot;beginDate&quot;: &quot;2026-01-01&quot;, &quot;endDate&quot;: &quot;2026-12-31&quot;,
+  &quot;frequency&quot;: 12, &quot;duration&quot;: 12, &quot;paid&quot;: 238, &quot;rangeEnd&quot;: &quot;2026-07-31&quot;,
+  &quot;paidCount&quot;: 4, &quot;dueCount&quot;: 7, &quot;missedCount&quot;: 2, &quot;missedAmount&quot;: 161, &quot;firstMissedDate&quot;: &quot;2026-06-01&quot;,
+  &quot;instalments&quot;: [
+    { &quot;dueDate&quot;: &quot;2026-01-01&quot;, &quot;amountDue&quot;: 57, &quot;amountApplied&quot;: 57, &quot;status&quot;: &quot;paid&quot; },
+    { &quot;dueDate&quot;: &quot;2026-02-01&quot;, &quot;amountDue&quot;: 57, &quot;amountApplied&quot;: 57, &quot;status&quot;: &quot;paid&quot; },
+    { &quot;dueDate&quot;: &quot;2026-03-01&quot;, &quot;amountDue&quot;: 57, &quot;amountApplied&quot;: 57, &quot;status&quot;: &quot;paid&quot; },
+    { &quot;dueDate&quot;: &quot;2026-04-01&quot;, &quot;amountDue&quot;: 57, &quot;amountApplied&quot;: 57, &quot;status&quot;: &quot;paid&quot; },
+    { &quot;dueDate&quot;: &quot;2026-05-01&quot;, &quot;amountDue&quot;: 57, &quot;amountApplied&quot;: 10, &quot;status&quot;: &quot;part&quot; },
+    { &quot;dueDate&quot;: &quot;2026-06-01&quot;, &quot;amountDue&quot;: 57, &quot;amountApplied&quot;: 0, &quot;status&quot;: &quot;missed&quot; },
+    { &quot;dueDate&quot;: &quot;2026-07-01&quot;, &quot;amountDue&quot;: 57, &quot;amountApplied&quot;: 0, &quot;status&quot;: &quot;missed&quot; },
+    { &quot;dueDate&quot;: &quot;2026-08-01&quot;, &quot;amountDue&quot;: 57, &quot;amountApplied&quot;: 0, &quot;status&quot;: &quot;upcoming&quot; },
+    { &quot;dueDate&quot;: &quot;2026-09-01&quot;, &quot;amountDue&quot;: 57, &quot;amountApplied&quot;: 0, &quot;status&quot;: &quot;upcoming&quot; },
+    { &quot;dueDate&quot;: &quot;2026-10-01&quot;, &quot;amountDue&quot;: 57, &quot;amountApplied&quot;: 0, &quot;status&quot;: &quot;upcoming&quot; },
+    { &quot;dueDate&quot;: &quot;2026-11-01&quot;, &quot;amountDue&quot;: 57, &quot;amountApplied&quot;: 0, &quot;status&quot;: &quot;upcoming&quot; },
+    { &quot;dueDate&quot;: &quot;2026-12-01&quot;, &quot;amountDue&quot;: 56, &quot;amountApplied&quot;: 0, &quot;status&quot;: &quot;upcoming&quot; }
+  ]
+}
+</code></pre>
+<p>Reconciliation: applied amounts 57 + 57 + 57 + 57 + 10 = 238, matching <code>paid</code>. Missed money 57 + 57 + 47 = 161 (two missed instalments plus the unfunded part of May), matching <code>missedAmount</code>. Unfunded across the whole schedule 161 + 284 = 445 (missed-plus-part 161 and upcoming 284), matching this pledge's <code>outstanding</code> in API 2. Instalment dues 57 + 57 + 57 + 57 + 57 + 57 + 57 + 57 + 57 + 57 + 57 + 56 = 683, matching <code>goal</code>.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>duration</code> or <code>frequency</code> missing or zero</td>
+<td>200 with a single instalment for the full <code>goal</code> due at <code>endDate</code> - the stated fallback, never a division by zero</td>
+</tr>
+<tr>
+<td>No receipts yet</td>
+<td>200; every due instalment is missed, <code>paid</code> = 0, <code>paidCount</code> = 0</td>
+</tr>
+<tr>
+<td>Over-received (<code>paid</code> &gt; <code>goal</code>)</td>
+<td>200; every instalment paid, the surplus unallocated; the client shows paid in full</td>
+</tr>
+<tr>
+<td>Term ended, still unpaid</td>
+<td>200; every instalment is due, unfunded ones all missed - the case this widget exists to surface</td>
+</tr>
+<tr>
+<td>Unknown or other-company <code>pledgeId</code></td>
+<td>404 with a machine-readable code</td>
+</tr>
+<tr>
+<td>Permission denied / upstream unavailable</td>
+<td>As API 1</td>
+</tr>
+</tbody>
+</table>
+<h2>API 4: Pledge list export</h2>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/remittance-pledges/activity/{activityId}/pledges/export
+</code></pre>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>activityId</code></td>
+<td>guid (path)</td>
+<td>yes</td>
+<td>an <code>RM_Activity.ActivityID</code> in the company</td>
+<td>none (required)</td>
+<td>The activity whose pledge view is exported</td>
+</tr>
+<tr>
+<td><code>rangeStart</code></td>
+<td>date</td>
+<td>no</td>
+<td>any date &lt;= <code>rangeEnd</code></td>
+<td>1 January of <code>rangeEnd</code>'s year</td>
+<td>Same semantics as API 2</td>
+</tr>
+<tr>
+<td><code>rangeEnd</code></td>
+<td>date</td>
+<td>no</td>
+<td>any date</td>
+<td>today</td>
+<td>Same semantics as API 2</td>
+</tr>
+<tr>
+<td><code>behindOnly</code></td>
+<td>bool</td>
+<td>no</td>
+<td>true / false</td>
+<td>false</td>
+<td>Matches the view being exported: false from the drill screen, true from the most-behind popup</td>
+</tr>
+</tbody>
+</table>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/remittance-pledges/activity/a1e0c7d2-1111-4a01-9f01-0b1c2d3e4f01/pledges/export?rangeStart=2026-01-01&amp;rangeEnd=2026-07-31
+GET /api/dashboard/remittance-pledges/activity/a1e0c7d2-1111-4a01-9f01-0b1c2d3e4f01/pledges/export?rangeStart=2026-01-01&amp;rangeEnd=2026-07-31&amp;behindOnly=true
+</code></pre>
+<h3>Response</h3>
+<p>A spreadsheet file stream (content-disposition attachment), not JSON, so there is no response schema table or example body for this API. Columns match the on-screen pledge list (Name, Begin date, End date, Goal, Paid, Outstanding, pacing status), computed over the <strong>full filtered set</strong> server-side - the client cannot build this file because it only ever holds one page. The export matches the view: same activity, same range, same <code>behindOnly</code> state. Whether the popup's export also truncates to the five rows shown, and the exact file format and generation mechanics, are open (Still needs sign-off).</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty filtered set</td>
+<td>A valid file with headers and zero data rows</td>
+</tr>
+<tr>
+<td>Unknown or other-company <code>activityId</code></td>
+<td>404, no file</td>
+</tr>
+<tr>
+<td>Permission denied / upstream unavailable</td>
+<td>As API 1</td>
+</tr>
+</tbody>
+</table>
+<h2>Auth and scoping</h2>
+<ul>
+<li><strong>Company / tenant scoping</strong>: every query is scoped by the caller's company context, exactly as the live read is (<code>CompanyID</code> on <code>RM_Activity</code>, <code>RM_HistoryBatch</code> and the repository queries [CODE]). A company switch must never serve another company's figures; the legacy build enforces this by invalidating its <code>RMWidgetRecord</code> cache on a company change, and the live-per-request posture here must preserve the same isolation. The exact header/claim carrying the company context follows the platform standard [TO CONFIRM: dev].</li>
+<li><strong>Permission right</strong>: the legacy widget is gated by the <code>/Remittance</code> access URI [CODE: RMPledges.ascx.cs:13, <code>DataPanelUri(... AccessUri = "/Remittance")</code>]. The equivalent right name in the modern API is [TO CONFIRM: dev]. All four APIs are read-only; there is no write right.</li>
+<li><strong>Person data</strong>: APIs 2, 3 and 4 return donor display names (<code>CorePerson.DisplayNameLastFirst</code>). Whether the same <code>/Remittance</code> read right suffices for that, or a separate person-data right applies, is [TO CONFIRM: product + dev].</li>
+<li><strong>A user without the right</strong>: sees no data from any of these endpoints (403). Whether the widget is hidden, empty, or shows an entitlement message is an open product decision (Still needs sign-off).</li>
+</ul>
+<h2>Edge cases</h2>
+<ol>
+<li><strong>Zero-pledge activity in scope</strong>: <code>pledged</code> = 0, <code>pctPaid</code> and <code>daysAhead</code> null, <code>shortfall</code> = 0; the client renders a neutral no-pledge treatment. Never a division by zero - the null rules sit server-side.</li>
+<li><strong>Receipts-only activity</strong> (receipts in the window, no overlapping pledge term): design intent is a row with <code>hasPledgeInRange</code> false; not servable today because <code>paid</code> is reached by walking each in-scope pledge's linked receipts, so the mode is blocked (Still needs sign-off).</li>
+<li><strong>Range matching nothing</strong>: well-formed empty response, not an error.</li>
+<li><strong><code>rangeStart</code> after <code>rangeEnd</code></strong>: 400 <code>INVALID_RANGE</code>.</li>
+<li><strong>Range end before a pledge's term</strong>: <code>daysElapsed</code> clamps to 0, <code>expectedByNow</code> = 0, the pledge is not behind.</li>
+<li><strong>Range end after a pledge's term</strong>: <code>daysElapsed</code> clamps to <code>termDays</code>, <code>expectedByNow</code> = <code>goal</code>; if unpaid, the full remainder is shortfall - exactly the ended-but-unpaid case the overlap rule keeps visible.</li>
+<li><strong>Pledge ended before <code>rangeStart</code> and still owing</strong>: excluded by the overlap rule; whether that is intended is an open SME question (Still needs sign-off).</li>
+<li><strong>Voided or unposted receipts</strong>: never counted in <code>paid</code> or <code>windowPaid</code> (<code>Posted = 1 AND VoidJournalID IS NULL</code>).</li>
+<li><strong>One check split across activities</strong>: sums use <code>RM_HistoryDetail.Amount</code> (the per-activity portion), never <code>RM_History.Amount</code> (the whole check).</li>
+<li><strong>Pagination past the end</strong>: empty page, correct <code>totalCount</code> and <code>summary</code>, HTTP 200.</li>
+<li><strong>Two calls straddling a posting</strong>: the <code>rangeStart</code>/<code>rangeEnd</code> pair is the shared anchor for date-bounded figures, so drift between API 1 and API 2 for the same range is possible only from a receipt posted mid-session inside the window. Accepted: the drill is the fresher read, and the next range change or Refresh re-aligns the card. No snapshot token is introduced for this.</li>
+<li><strong>Unknown ids</strong>: 404 with a machine-readable code, scoped so an id from another company behaves as unknown.</li>
+<li><strong>Mixed pledge terms under one activity</strong>: <code>expected</code>, <code>paid</code> and <code>shortfall</code> are well-defined (per-pledge sums); the activity-level <code>beginDate</code>/<code>endDate</code>/<code>termDays</code>/<code>daysElapsed</code>/<code>daysAhead</code> presentation over mixed terms needs the open display rule (Still needs sign-off).</li>
+<li><strong>Duplicate donor names</strong>: names may repeat across and within activities; <code>pledgeId</code> is the identity, never the name.</li>
+</ol>
+<h2>Not in scope</h2>
+<ul>
+<li><strong>Goal-progress framing</strong> (percent of goal, campaign progress): belongs to the Gifts and Pledges widget (W17), which owns that contract.</li>
+<li><strong>A per-activity receipts / payment-history list</strong>: not reachable in the design (a preserved rollback path only), so no receipts-list endpoint is in this contract. If that view returns, its list is <code>RM_HistoryDetail</code> joined to <code>RM_History</code> and <code>RM_HistoryBatch</code> via the <code>GetAllForInquiry</code> shape, and it would re-open the receipts-only query question.</li>
+<li><strong>Month presets, a fiscal-year filter, an activity-type filter</strong>: none exist. The one time control is the range pair, and it is never labelled "fiscal".</li>
+<li><strong>Server-side banding, grouping or band strings</strong>: the API returns raw numbers (<code>shortfall</code>, <code>daysAhead</code>); status bands, band colours and card grouping are client-side presentation.</li>
+<li><strong>Server-side grand totals for the card</strong>: the Total row, headline and counts are client sums over API 1's bounded rows. If a server total is ever added, the per-row summed shortfall rule applies.</li>
+<li><strong>Writes</strong>: nothing here mutates anything. "Open in Remittance" is client navigation.</li>
+<li><strong>Personal data beyond the donor display name</strong>: no addresses, contact details or giving history outside this widget's pledge figures.</li>
+</ul>
+<h2>Still needs sign-off</h2>
+<p>No adjudicated sign-off findings ledger exists for this widget: the Step 6 dossier is a pre-build designer brief with no Accepted/Rejected/Disputed findings, and there is no reconciliation file. The operative open-items ledger is the Step 4 doc's Sign-off Readiness table; the rows below carry it into this contract.</p>
+<ol>
+<li><strong>Receipts-only rows need a query path that does not exist (Step 4 Sign-off Readiness row 7 - OPEN and BLOCKING for that mode).</strong> Edward Eoff verified live [SME: 2026-08-10] that the widget shows nothing without a pledge, because <code>paid</code> is reached by walking each in-scope pledge's linked receipts. Serving an activity with receipts but no overlapping pledge needs the activity list to become a union of pledge-backed and receipt-backed activities - a new capability, not a query tweak. <strong>Who decides</strong>: owner (accept-as-risk and build, or drop the mode). <strong>Blocked until then</strong>: returning any row with <code>hasPledgeInRange</code> false, the receipts-only footer line, and the Youth-Ministry-style row in API 1's example. Everything else in this contract is unaffected.</li>
+<li><strong>Linear-by-days vs stepped expected, load-bearing.</strong> API 3's schedule is stepped by definition; API 1's <code>expected</code> is linear-by-days as designed. The two must share one pacing definition or the drill contradicts its parent row. The org-configured <code>RM_PledgePercent</code> schedule (the only stored pacing schedule in the system, read by nothing today) is a third candidate. <strong>Who decides</strong>: dev + product. <strong>Blocked</strong>: final wording of the <code>expected</code> formula and the schedule's <code>amountDue</code> curve.</li>
+<li><strong><code>Frequency</code> / <code>Duration</code> semantics.</strong> Both columns exist on <code>RM_Pledge</code> [CODE], but their meaning (payments-per-year vs period count) is documented nowhere in the entity or widget code. <strong>Who decides</strong>: dev, from data or the maintainers. <strong>Blocked</strong>: API 3's <code>dueDate</code> spacing and instalment count being treated as real rather than illustrative.</li>
+<li><strong>Per-pledge receipt attribution.</strong> The schedule and <code>pledges[].paid</code> need receipts attributable to a single pledge; the existing queries aggregate at activity level. <strong>Who decides</strong>: dev (confirm the join path from <code>RM_HistoryDetail</code> through pledge or church to one pledge). <strong>Blocked</strong>: API 2's <code>paid</code> per row and API 3's allocation being buildable as specced.</li>
+<li><strong>Pledge volume.</strong> The 500-800 pledges-per-activity figure is reconstructed from a garbled transcript line and must be confirmed before it sizes anything. <strong>Who decides</strong>: Edward Eoff. <strong>Blocked</strong>: the API 2 worst-case verdicts staying honest; pagination stands regardless.</li>
+<li><strong>Worst realistic activity count.</strong> No cited ceiling exists for API 1's row count. <strong>Who decides</strong>: Edward Eoff (or a live query at a large conference). <strong>Blocked</strong>: the BOUNDED verdict's ceiling; the shape does not change.</li>
+<li><strong>Mixed-term activity presentation.</strong> When one activity's pledges carry different terms, the activity-level term line and <code>daysAhead</code> need a stated display rule (the MIN/MAX span in this contract is a working definition, not an approved one). <strong>Who decides</strong>: product + dev. <strong>Blocked</strong>: final semantics of <code>beginDate</code>, <code>endDate</code>, <code>termDays</code>, <code>daysElapsed</code>, <code>daysAhead</code> on APIs 1 and 2.</li>
+<li><strong>Permission right and denied-state UX.</strong> The modern right name, whether donor names need a separate right, and what a user without the right sees. <strong>Who decides</strong>: dev (right name), product (UX). <strong>Blocked</strong>: the Auth and scoping [TO CONFIRM]s and the permission-denied state contract.</li>
+<li><strong>Export mechanics.</strong> File format, generation path, and whether the popup's export truncates to the five rows shown or carries every behind pledge. <strong>Who decides</strong>: dev + product (the export-matches-the-view contract is the constraint). <strong>Blocked</strong>: API 4's response details; its params are stable.</li>
+<li><strong>Ended-before-window unpaid pledges.</strong> The overlap rule still excludes a pledge that ended before <code>rangeStart</code> while owing. <strong>Who decides</strong>: SME (Edward Eoff). <strong>Blocked</strong>: nothing in the contract; a widened rule would only change the in-scope predicate.</li>
+</ol>
+
+</body>
+</html>

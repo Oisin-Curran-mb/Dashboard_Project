@@ -129,3 +129,26 @@ Aging band and days-overdue are computed from due date in the mock data; confirm
 `Dashboard Widget Mockups.html` — `WRENDER[16]` (scaffold + 3 branches), `MOCK_DATA.options[16]`, the three `opt-16-*` cards, shared filter branches. `mock-data.master.js` re-synced for `options[16]` (`series[16]` unchanged). Final Check tab `#fc-widget-16` not edited (known shared-render carryover). Built via `_build/W16/` fragments + `assemble-mock-widget.py`.
 
 **2026-07-23 — Fix pass (same day):** Verify caught two inherited bugs, both resolved and re-verified clean. (1) Option A's Table view was unreachable — the render defaulted to Cards while "AP Table" was named the primary view; fixed so the table renders by default and Cards is the alternate. (2) Options B and C had a dead view-toggle at Small (early `sz==='s'` return before the view check); reordered so the Pie/Table views are reachable at every size, with `sz==='s'` reduced to a row-count cap only.
+
+---
+
+## 2026-08-19 — Final build (build-final-widget, per direct instruction)
+
+**Composition sheet (owner-confirmed):** a 1-to-1 copy of Jo Lopez's Widget Container Demo v2 `ap` block (aging + cash requirements; grounded in her Confluence dossier 7371554882 Part C decisions 11.1/11.3/11.4/11.5), plus ONE owner addition: a due-date horizon picker in the standard v2 chip pattern, unique to this widget.
+
+| Component | Source |
+|---|---|
+| Glance (total payable + overdue/nothing-overdue pill, scope chip) | Jo v2 `apGlance`, 1-to-1 |
+| Explore hero: sortable Vendor/Invoice/Due date/Amount table, aging-band group subheaders with subtotals at "All due dates", vendor search over 6 rows, footer total | Jo v2 `apTable`, 1-to-1 |
+| Detail: two columns, Outstanding invoices + Cash requirements panel (band selector rows with share bars) + Top vendors owed (top 5) | Jo v2 `apFull`/`apPanel`, 1-to-1 |
+| Due-date filter chip + popover (All due dates / By aging / By specific date, searchable over 8 dates), 800ms fetch on filter change only | Jo v2 `apDueChip`/`apPopContent`/`apLoad`, 1-to-1 |
+| Aging band math: overdue = past due, week = 0-7 days, month = 8-30, later = 31+ | Jo v2 `apBandOf` — adopted per direct instruction 2026-08-19, settling Step 4 Sign-off Readiness row 4 |
+| Due-date HORIZON picker chip (All outstanding / Next 7 / 30 / 60 / 90 days; scopes the invoice set; overdue always included; snap-to-total when the due filter is invalidated; fetch semantics) | NEW, per direct instruction 2026-08-19 (standard v2 chip pattern, deliberately not identical to any other widget's picker) |
+| No charts, no timeline, no drill-through | Jo v2 (her redesign removed the pie/timeline); drill-through deliberately not built, Step 4 row 1 stays open with experts/dev |
+| Empty/loading states, overdue red + glyph + text (never colour alone) | Jo v2, 1-to-1 |
+
+**What was built:** additive `opt==='F'` branch in `WRENDER[16]` (prefix `apF`), standalone `APF_` constants (Jo's 12 invoices verbatim, `APF_TODAY` = 2026-07-23 so her band populations reproduce exactly; NOT in `MOCK_DATA`, so `mock-data.master.js` needed no re-sync), scoped CSS under `.apf-root`/`#fc-widget-16`, fc-widget-16 chrome rewritten (design-option switch, Final default, A/B/C reachable), Rule 12 sizing (Glance/Explore/Detail via fc-fmode), `FC_VERSION[16]` = 2.0, KPI headline via `FC_KPI_HEADLINE[16]`. A/B/C branches and cards untouched.
+
+**Verification:** per-widget Node DOM-shim driver (session outputs, `w16_driver.js`): **107 assertions, 0 failures** (band boundary cases, grouped subtotals cross-footed, every due filter and horizon changes output, overdue kept under Next 7 days, both snap cases, sort toggling with tie-break, footer cross-foot, top-5 vendors, empty dataset clean at all three sizes, em/en-dash sweep across all 165 size x filter x horizon renders). `final-check-rules.py --widget 16`: node gate clean; the only HIGHs are the two known Step 4 F9 rows, both owner-settled this session (row 4 resolved by adopting Jo's math; row 1 not built, stays open, no longer blocking).
+
+**Rule 11 caveat (not shown on-screen):** the horizon picker's server-side semantics (due date <= asOf + N days, overdue always included) and the band boundaries are mock-data conventions adopted from Jo's build; the backend must confirm it can derive the same bucketing from `AmountDue`/due date at finalisation.

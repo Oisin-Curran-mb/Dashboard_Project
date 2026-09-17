@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Pension Plans - API Spec</title>
+<style>
+body { font-family: -apple-system, Helvetica, Arial, sans-serif; max-width: 900px; margin: 30px auto; line-height: 1.5; color: #172B4D; }
+h1 { font-size: 24px; }
+h2 { font-size: 19px; border-bottom: 1px solid #DFE1E6; padding-bottom: 6px; margin-top: 32px; }
+h3 { font-size: 16px; margin-top: 20px; }
+table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+th, td { border: 1px solid #DFE1E6; padding: 6px 10px; text-align: left; vertical-align: top; }
+th { background: #F4F5F7; }
+code { background: #F4F5F7; padding: 1px 5px; border-radius: 3px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 90%; }
+pre { background: #F4F5F7; padding: 12px; border-radius: 4px; overflow-x: auto; }
+pre code { background: none; padding: 0; }
+.status { background: #FFF0B3; display: inline-block; padding: 3px 10px; border-radius: 3px; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<h1>Pension Plans - API Spec</h1>
+<p><span class="status">Status: Done - awaiting sign-off (drafting complete, owner review pending)</span></p>
+<h2>Overview</h2>
+<p>The widget answers one question: what is the conference's annual clergy-pension obligation right now, split by pension plan, narrowable to one church district, with a drill into the individual appointees on any plan. The data is a snapshot of the pension appointments active today (person active, plan started, not yet ended); there is no time axis, no window, no grain anywhere in this contract.</p>
+<p>This contract defines three APIs: a district lookup read once per widget lifetime (API 1), a bounded summary read fired on render and on every district change that carries both the per-plan rollup and the per-district cells behind it (API 2), and a per-plan appointee detail read fired only when the user opens the drill (API 3). The justification for exactly three lives in the API inventory. Every total, share and count on screen is client arithmetic over the summary response; the server returns aggregates and rows, never grand totals.</p>
+<h2>Design → API coverage</h2>
+<table>
+<thead>
+<tr>
+<th>Design element</th>
+<th>Type</th>
+<th>API</th>
+<th>Field(s)</th>
+<th>Provenance</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Headline total annual contribution (Glance figure, Explore/Detail header, table footer, pie centre)</td>
+<td>KPI</td>
+<td>API 2</td>
+<td>client sum of <code>amount</code> across <code>plans[]</code></td>
+<td>DERIVED client [BUILD]</td>
+</tr>
+<tr>
+<td>Appointee-count badge beside the headline</td>
+<td>KPI</td>
+<td>API 2</td>
+<td>client sum of <code>appointeeCount</code> across <code>plans[]</code></td>
+<td>NEW (count is not returned by any endpoint today) [BUILD]</td>
+</tr>
+<tr>
+<td>Glance caption "contributed a year across N plans, [district scope]"</td>
+<td>KPI</td>
+<td>API 2</td>
+<td>client count of <code>plans[]</code> rows; scope label is client filter state</td>
+<td>DERIVED client [BUILD]</td>
+</tr>
+<tr>
+<td>District filter chip and its listbox popover options</td>
+<td>filter</td>
+<td>API 1</td>
+<td><code>districtId</code>, <code>name</code></td>
+<td>STORED PB_ControlTable [CODE, Widget_Comparison_Classic.html]</td>
+</tr>
+<tr>
+<td>View toggle (Table / Pie / By district at Explore; two-way Pie / By district at Detail)</td>
+<td>view toggle</td>
+<td>none</td>
+<td>none needed: pure client view state over the held API 2 response; no fetch on toggle</td>
+<td>client state [BUILD]</td>
+</tr>
+<tr>
+<td>Table rows: plan name per row</td>
+<td>table column</td>
+<td>API 2</td>
+<td><code>planId</code>, <code>name</code></td>
+<td>STORED [CODE, Widget_Comparison_Classic.html]</td>
+</tr>
+<tr>
+<td>Table Share bar (Explore) / share percent (Detail)</td>
+<td>table column</td>
+<td>API 2</td>
+<td>client division: row <code>amount</code> over the client total</td>
+<td>DERIVED client [BUILD]</td>
+</tr>
+<tr>
+<td>Table Appointees column</td>
+<td>table column</td>
+<td>API 2</td>
+<td><code>appointeeCount</code></td>
+<td>NEW [BUILD]</td>
+</tr>
+<tr>
+<td>Table Annual amount column, default sort amount descending</td>
+<td>table column</td>
+<td>API 2</td>
+<td><code>amount</code>; sort is a client re-order</td>
+<td>DERIVED SUM(AnnualPlanAmount) [CODE]</td>
+</tr>
+<tr>
+<td>Pie slices, centre total, legend money and percent per plan</td>
+<td>chart series</td>
+<td>API 2</td>
+<td><code>amount</code>, <code>name</code>; percent is a client division</td>
+<td>DERIVED [BUILD]</td>
+</tr>
+<tr>
+<td>By district view: one group per district, one bar per plan, per-bar amount and appointee text, group totals</td>
+<td>chart series</td>
+<td>API 2 + API 1</td>
+<td><code>districts[].districtId</code>, <code>districts[].amount</code>, <code>districts[].appointeeCount</code>; group labels resolved via API 1 <code>name</code>; group totals are client sums</td>
+<td>DERIVED / NEW (per-district cells and counts are a new response shape) [BUILD]</td>
+</tr>
+<tr>
+<td>Drill modal columns: Appointee, Church / organisation, District, Annual amount</td>
+<td>drill</td>
+<td>API 3</td>
+<td><code>Appointee</code>, <code>Charge</code>, <code>DistrictId</code>, <code>AnnualAmount</code></td>
+<td>STORED [CODE, Widget_Comparison_Classic.html]; <code>Charge</code> returns an empty string today, a pre-existing defect</td>
+</tr>
+<tr>
+<td>Drill modal District column display names</td>
+<td>drill</td>
+<td>API 3 + API 1</td>
+<td><code>DistrictId</code> resolved client-side against API 1 <code>districtId</code> / <code>name</code></td>
+<td>DERIVED client</td>
+</tr>
+<tr>
+<td>Drill modal row identity (list keying)</td>
+<td>drill</td>
+<td>API 3</td>
+<td><code>AppointmentPlanId</code></td>
+<td>STORED PB_AppointmentPlan.AppointmentPlanID [CODE]</td>
+</tr>
+<tr>
+<td>Drill modal footer: appointee count and total</td>
+<td>drill</td>
+<td>API 3</td>
+<td>client count of rows and client sum of <code>AnnualAmount</code></td>
+<td>DERIVED client [BUILD]</td>
+</tr>
+<tr>
+<td>Widget menu export of the plan summary; modal Export to Excel of the appointee detail</td>
+<td>action</td>
+<td>undecided</td>
+<td>the row sets are exactly the API 2 and API 3 responses the client already holds; whether files are generated client-side or server-side is in Still needs sign-off</td>
+<td>UNVERIFIED (Oisin Curran)</td>
+</tr>
+<tr>
+<td>Empty state ("No active pension appointments", with a compact Glance variant)</td>
+<td>state</td>
+<td>API 2</td>
+<td>an empty <code>plans[]</code> array is the trigger; no dedicated field</td>
+<td>contract [BUILD]</td>
+</tr>
+<tr>
+<td>Loading state (skeleton on district change)</td>
+<td>state</td>
+<td>none</td>
+<td>none needed: client transition while API 2 is in flight</td>
+<td>client state [BUILD]</td>
+</tr>
+<tr>
+<td>Refresh control</td>
+<td>action</td>
+<td>API 2</td>
+<td>plain re-request of API 2 with the current <code>districtId</code>; API 1 re-fetches only when its cache expires</td>
+<td>contract [BUILD]</td>
+</tr>
+<tr>
+<td>Stale view-state normalisation (an unknown stored view value renders the Table)</td>
+<td>state</td>
+<td>none</td>
+<td>none needed: client state normalisation, no data involved</td>
+<td>client state [BUILD]</td>
+</tr>
+</tbody>
+</table>
+<h2>Tables</h2>
+<table>
+<thead>
+<tr>
+<th>Table / repository</th>
+<th>Fields and members used</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PB_Appointment</code></td>
+<td><code>Active</code>, <code>DateStart</code>, <code>DateEnd</code>, <code>DistrictID</code>: the active-appointment predicate and the district scope [CODE, Widget_Comparison_Classic.html]</td>
+</tr>
+<tr>
+<td><code>PB_AppointmentPlan</code></td>
+<td><code>AppointmentPlanID</code>, <code>PlanID</code>, plan <code>Name</code>, <code>AnnualPlanAmount</code>: the rows grouped, summed and counted [CODE, Widget_Comparison_Classic.html]</td>
+</tr>
+<tr>
+<td><code>PB_ControlTable</code></td>
+<td>District rows (<code>Type=0</code>, <code>CompanyID</code>): the district lookup [CODE, Widget_Comparison_Classic.html]</td>
+</tr>
+<tr>
+<td><code>PBCharge</code></td>
+<td>The appointee's church/organisation name for drill rows (resolved via the CorePerson name; returns an empty string today, a pre-existing defect) [CODE, Widget_Comparison_Classic.html]</td>
+</tr>
+</tbody>
+</table>
+<p>No new tables and no schema changes are needed: the contract is new queries against existing tables. API 2 is one new query shape (the same rows the legacy grid already reads, grouped by plan and by plan-plus-district in a single read, with a <code>COUNT(*)</code> added). API 1 and API 3 are the existing reads.</p>
+<p>Core formulas and always-applied filters, each quotable in isolation:</p>
+<ul>
+<li><strong>Active-appointment predicate, applied to every read of appointment rows:</strong> <code>Active = true AND DateStart &lt;= today AND (DateEnd IS NULL OR DateEnd &gt;= today)</code>. Both boundary comparisons are inclusive. Confirmed identical in legacy and modern code. [CODE, Widget_Comparison_Classic.html]</li>
+<li><strong>Amount per plan:</strong> <code>SUM(PB_AppointmentPlan.AnnualPlanAmount)</code> grouped by <code>PlanID</code> and <code>Name</code>, over active appointments in scope. [CODE, Widget_Comparison_Classic.html]</li>
+<li><strong>Appointee count per plan:</strong> <code>COUNT(*)</code> over the exact same rows summed into the amount. Counts are plan-assignment rows, not distinct persons: a person on two plans counts once per plan. [BUILD, matching the built Final's row-based counting; distinct-person counting is in Still needs sign-off]</li>
+<li><strong>Per-district cell:</strong> the same SUM and COUNT additionally grouped by <code>PB_Appointment.DistrictID</code>. [DOC, Step 1 - Dashboard Research/02 - Pension Plans.md]</li>
+<li><strong>District scoping:</strong> the district filter is applied only when a district is chosen (<code>if districtID != Guid.Empty</code> in the legacy source); with no district the query has no district WHERE at all, so rows with a null <code>DistrictID</code> are included under "All Districts" and excluded by any specific district value. A blank district never behaves as a wildcard. [CODE, Pending Questions - Codebase Findings, PensionPlans.ascx.cs gridPlans_NeedDataSource lines 116-121 and Details lines 60-63]</li>
+<li><strong>District lookup:</strong> <code>PB_ControlTable WHERE Type = 0 AND CompanyID = ctx</code>. [CODE, Widget_Comparison_Classic.html]</li>
+</ul>
+<h2>Old vs. new</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Old (live today)</th>
+<th>New (needed)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Summary read</td>
+<td><code>GET /api/dashboard/pension-plans/grid?districtId={guid}</code> returns <code>List&lt;PensionPlanGridRowDto&gt;</code> <code>{PlanId, Name, Amount}</code>: plan rollup only, one scope per call, no counts, no district cells [CODE]</td>
+<td><strong>NEW</strong>: API 2 (<code>/summary</code>) returns the plan rollup plus <code>appointeeCount</code> per plan plus the per-district cells in one response, so one consistent read funds the table, pie, By district view and KPI. Same tables, one new query shape</td>
+</tr>
+<tr>
+<td>Chart read</td>
+<td><code>GET /api/dashboard/pension-plans/chart?districtId={guid}</code> returns <code>{Name, Amount}</code> [CODE]</td>
+<td>Not called by this widget: every view renders from the API 2 response. The endpoint is out of this contract (see Not in scope)</td>
+</tr>
+<tr>
+<td>Appointee counts</td>
+<td>Amounts only, in both codebases [CODE]</td>
+<td><strong>NEW</strong>: <code>appointeeCount</code> per plan and per district cell, a <code>COUNT(*)</code> over rows already being summed</td>
+</tr>
+<tr>
+<td>District x plan matrix (By district view)</td>
+<td>Nothing returns it; per-district amounts exist only as separate one-district grid calls [CODE]</td>
+<td><strong>DERIVED, reshaped</strong>: <code>districts[]</code> cells inside each API 2 plan row; the aggregation exists today, the shape is new</td>
+</tr>
+<tr>
+<td>Appointee drill</td>
+<td><code>GET /api/dashboard/pension-plans/{planId}/details?districtId={guid}</code> returns <code>List&lt;PensionPlanDetailDto&gt;</code> <code>{AppointmentPlanId, Appointee, Charge, AnnualAmount, DistrictId}</code> [CODE]</td>
+<td>Unchanged shape (API 3). The one backend item is populating <code>Charge</code>, which returns an empty string today: a pre-existing defect fix, not new schema</td>
+</tr>
+<tr>
+<td>District lookup</td>
+<td><code>GET /api/dashboard/pension-plans/filters</code>, server prepends an "All Districts" entry [CODE]</td>
+<td>Same read; the response carries real district rows only and the client renders the "All Districts" option. "All" is expressed on the wire by omitting <code>districtId</code></td>
+</tr>
+<tr>
+<td>Totals and KPI</td>
+<td>No total objects anywhere [CODE]</td>
+<td>Still none: every total, share and count on screen is a client sum or division over the API 2 response</td>
+</tr>
+<tr>
+<td>District preference</td>
+<td>Legacy saves the user's last <code>DistrictID</code> per user [CODE, Widget_Comparison_Classic.html]</td>
+<td>Not in the modern API; client-managed unless decided otherwise (Still needs sign-off)</td>
+</tr>
+<tr>
+<td>Export</td>
+<td>Legacy generates Excel of the appointee detail only, via <code>Page.ExportToExcel</code> [CODE, PensionPlans.buttonExportExcel_Click]; no modern export endpoints exist</td>
+<td>Undecided: client-side generation from held JSON versus new server endpoints (Still needs sign-off). <strong>UNVERIFIED</strong> either way</td>
+</tr>
+</tbody>
+</table>
+<h2>API inventory</h2>
+<table>
+<thead>
+<tr>
+<th>API</th>
+<th>Purpose</th>
+<th>Trigger (when it fires)</th>
+<th>Cardinality</th>
+<th>R/W</th>
+<th>Cache posture</th>
+<th>Split trigger</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>API 1: District lookup</td>
+<td>The district filter options, and the id-to-name map for drill rows and By district group labels</td>
+<td>Widget render, once; re-fetched only on cache expiry</td>
+<td>3 rows live [LIVE 2026-07-23, beta1 dossier]; ceiling [TO CONFIRM] (Marvin)</td>
+<td>R</td>
+<td>TTL (org-configured control list; 1 hour suggested, dev team to set)</td>
+<td>Lifetime gap: rarely-changing config versus live data</td>
+</tr>
+<tr>
+<td>API 2: Pension summary</td>
+<td>The single dataset behind every view: per-plan rollup with counts, plus per-district cells</td>
+<td>Widget render, and every district change (the widget's only filter fetch); Refresh re-fires it</td>
+<td>Bounded: plans x districts, both org-configured (5 plans x 3 districts live [LIVE 2026-07-23, beta1 dossier])</td>
+<td>R</td>
+<td>LIVE per request</td>
+<td>Base read; separate from API 1 by lifetime gap and from API 3 by trigger and grain gap</td>
+</tr>
+<tr>
+<td>API 3: Appointee detail</td>
+<td>The drill modal rows for one plan, optionally scoped to one district</td>
+<td>Only when the user opens the drill (table row, pie legend entry, or a By district bar)</td>
+<td>Active appointments on one plan; typical single digits [BUILD]; ceiling [TO CONFIRM] (Marvin)</td>
+<td>R</td>
+<td>LIVE per request</td>
+<td>Trigger gap (fires on click, never on render) and grain gap (per-entity rows versus aggregates)</td>
+</tr>
+</tbody>
+</table>
+<p>Merges considered, closed: API 1 and API 2 always fire together at first render and could be one call, but they are kept separate because the lookup is shared-lifetime config cacheable across renders while the summary is live, and the popover, drill and By district labels all reuse the lookup without re-paying for data. A per-district fan-out over the existing grid endpoint could assemble API 2's matrix with zero backend work; it is rejected because N near-simultaneous calls can straddle a write and disagree with their own merged total, a partial fan-out failure has no clean rendering, and the call count is bounded only by an unconfirmed org config value.</p>
+<h2>Call sequence</h2>
+<table>
+<thead>
+<tr>
+<th>Interaction</th>
+<th>Calls fired</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Initial widget load</td>
+<td>API 1 + API 2 (parallel)</td>
+<td>API 2 without <code>districtId</code> = All Districts. Every size (Glance, Explore, Detail) renders from the same response</td>
+</tr>
+<tr>
+<td>Change district (the chip)</td>
+<td>API 2 with <code>districtId</code></td>
+<td>The widget's only filter fetch; the client shows its loading transition while in flight. API 1 is not re-fired</td>
+</tr>
+<tr>
+<td>Switch view (Table / Pie / By district) or change sort</td>
+<td>none</td>
+<td>Client re-render over the held API 2 response</td>
+</tr>
+<tr>
+<td>Open drill (table row or pie legend entry)</td>
+<td>API 3 with <code>planId</code> and the widget's current <code>districtId</code></td>
+<td>The active district filter carries into the drill</td>
+</tr>
+<tr>
+<td>Open drill from a By district bar</td>
+<td>API 3 with <code>planId</code> and that bar's own <code>districtId</code></td>
+<td>The bar drills to that plan AND that district, regardless of the widget filter</td>
+</tr>
+<tr>
+<td>Close drill</td>
+<td>none</td>
+<td>Client only</td>
+</tr>
+<tr>
+<td>Submit action (summary export, detail export)</td>
+<td>none today</td>
+<td>Export generation is undecided (Still needs sign-off); the row sets are the held API 2 / API 3 responses</td>
+</tr>
+<tr>
+<td>Refresh</td>
+<td>API 2 (current <code>districtId</code>); API 1 only if its TTL expired</td>
+<td>A plain re-request; there is no server-side cache to invalidate</td>
+</tr>
+</tbody>
+</table>
+<p>Consistency across calls: there is no shared asOf anchor in this contract. API 2 and API 3 evaluate the active-appointment predicate at their own request moments, so a drill opened while an appointment changes can disagree with the summary row by one appointee. Accepted: the widget is an as-of-now snapshot, the drill is a fresh read by design, and the existing endpoints carry no snapshot reproduction to anchor to. The dossier's request for a visible "data as of" signal is in Still needs sign-off.</p>
+<h2>Filter architecture</h2>
+<table>
+<thead>
+<tr>
+<th>Filter</th>
+<th>Option source</th>
+<th>Cardinality</th>
+<th>Execution</th>
+<th>Aggregate effect</th>
+<th>Cascade</th>
+<th>"All" wire form</th>
+<th>Round trips</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>District (chip + listbox popover)</td>
+<td>LOOKUP: API 1 (<code>PB_ControlTable WHERE Type=0</code>)</td>
+<td>3 live [LIVE 2026-07-23, beta1 dossier]; org-configured, ceiling [TO CONFIRM] (Marvin)</td>
+<td>SERVER: <code>districtId</code> on API 2, carried onto API 3</td>
+<td>Yes: every amount, count, share and cell re-scopes</td>
+<td>None (single filter)</td>
+<td>Omit the param entirely; the server applies the district WHERE only when a district is sent [CODE, Pending Questions - Codebase Findings]</td>
+<td>1 (one API 2 call per change)</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Combination semantics:</strong> the widget has exactly one filter. The only combining that occurs is on API 3, where <code>planId</code> AND <code>districtId</code> narrow together (AND semantics, both narrowing).</li>
+<li><strong>Conflict rule:</strong> a <code>planId</code> and <code>districtId</code> pair that matches no active appointment is a legitimate scope, not an error: API 3 returns an empty list and the modal renders its own empty message. An unknown or stale <code>districtId</code> (a district deleted since the lookup was fetched) matches no rows and yields a well-formed empty summary (<code>plans: []</code>), never an error; the client then refetches API 1 and clears the stale selection to All Districts.</li>
+<li><strong>Blank values:</strong> appointment rows with a null <code>DistrictID</code> are included under "All Districts" (no WHERE is applied) and excluded by any specific district value. A blank never behaves as a wildcard. Whether null-district rows exist in production data is [TO CONFIRM] (Oisin Curran).</li>
+<li><strong>Cascade invalidation:</strong> not applicable; there is no dependent filter.</li>
+<li><strong>Empty-result semantics:</strong> any valid scope that matches nothing returns <code>{ "plans": [] }</code> on API 2 and <code>[]</code> on API 3; the client renders the purposeful empty state. Field-by-field zero shapes are in each API's State contracts.</li>
+<li><strong>Lookup endpoint:</strong> the LOOKUP source is API 1 in this contract's own inventory, not an external shared endpoint.</li>
+</ul>
+<h2>Volume and performance</h2>
+<table>
+<thead>
+<tr>
+<th>Dataset</th>
+<th>Typical rows</th>
+<th>Worst realistic rows (basis)</th>
+<th>Row width</th>
+<th>Payload at worst</th>
+<th>Verdict</th>
+<th>Server cost model</th>
+<th>Cache posture</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>API 1 districts</td>
+<td>3 [LIVE 2026-07-23, beta1 dossier]</td>
+<td>[TO CONFIRM] (Marvin): org-configured control list, expected small</td>
+<td>2 fields, ~80 bytes</td>
+<td>A few KB even at an implausible hundred districts</td>
+<td>BOUNDED (config-defined lookup)</td>
+<td>Single indexed scan of <code>PB_ControlTable</code> by CompanyID + Type</td>
+<td>TTL</td>
+</tr>
+<tr>
+<td>API 2 summary</td>
+<td>5 plan rows x 3 district cells [LIVE 2026-07-23, beta1 dossier; the built Final's dataset matches]</td>
+<td>[TO CONFIRM] (Marvin): plans and districts are both org-configured dimensions, so the row count is plans x districts, not per-appointment</td>
+<td>~4 fields per plan + 3 per cell, ~350 bytes per plan row</td>
+<td>Tens of KB at any plausible config</td>
+<td>BOUNDED (aggregate over config-defined dimensions, never per-appointment rows)</td>
+<td>Single indexed scan of active <code>PB_Appointment</code> join <code>PB_AppointmentPlan</code>, one GROUP BY plan + district; rollup derived from the same pass</td>
+<td>LIVE</td>
+</tr>
+<tr>
+<td>API 3 details</td>
+<td>1-3 rows per plan [BUILD: 10 appointees across 5 plans]</td>
+<td>[TO CONFIRM] (Marvin): active appointments on the largest plan at the largest conference. The build's 10 rows are a demo figure, not a ceiling</td>
+<td>5 fields, ~150 bytes</td>
+<td>~150 KB even at 1,000 rows, but that figure is unconfirmed</td>
+<td>BOUNDED, conditional on the [TO CONFIRM] ceiling: treated as a bounded roster (active clergy assignments, not transactions). If Marvin's confirmed ceiling is materially above ~1,000 rows this verdict flips and API 3 must gain the full server-side paging contract before build</td>
+<td>Single indexed scan filtered by plan (+ district), join to the charge name</td>
+<td>LIVE</td>
+</tr>
+</tbody>
+</table>
+<p>There is no time series anywhere in this contract, so there is no N x M entities-times-points product to compute.</p>
+<h3>Pagination contract</h3>
+<p>Nothing in this contract paginates: all three datasets are bounded reads (API 3 conditionally, per the [TO CONFIRM] above), so there are no page, pageSize, sortBy, sortDir or totalCount parameters. If API 3's confirmed ceiling forces MUST PAGINATE, this section must be written before build.</p>
+<h2>Where computation lives</h2>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Server or client</th>
+<th>Basis</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Plan amount (<code>amount</code>)</td>
+<td>SERVER</td>
+<td>SUM over appointment rows the client never holds</td>
+<td>Framework rule: spans data not transmitted</td>
+</tr>
+<tr>
+<td>Plan appointee count (<code>appointeeCount</code>)</td>
+<td>SERVER</td>
+<td>COUNT over the same rows</td>
+<td>Same</td>
+</tr>
+<tr>
+<td>Per-district cell amount and count</td>
+<td>SERVER</td>
+<td>Same aggregation grouped by district</td>
+<td>Same</td>
+</tr>
+<tr>
+<td>Headline total annual contribution</td>
+<td>CLIENT</td>
+<td>Sum of <code>plans[].amount</code>, all present and bounded</td>
+<td>Pure arithmetic over held values; the table footer, pie centre and Glance figure agree by construction because they sum the same rows</td>
+</tr>
+<tr>
+<td>Total appointee count (badge, table footer)</td>
+<td>CLIENT</td>
+<td>Sum of <code>plans[].appointeeCount</code></td>
+<td>Same</td>
+</tr>
+<tr>
+<td>Plan count (caption)</td>
+<td>CLIENT</td>
+<td>Length of <code>plans[]</code></td>
+<td>Same</td>
+</tr>
+<tr>
+<td>Share percent per plan (table share column, pie legend)</td>
+<td>CLIENT</td>
+<td>Row <code>amount</code> divided by the client total</td>
+<td>Pure arithmetic. Division-by-zero rule: a zero or empty total renders the empty state, and any share computed against a non-positive total displays as 0%, never NaN or an error</td>
+</tr>
+<tr>
+<td>By district group totals</td>
+<td>CLIENT</td>
+<td>Sum of that district's cells</td>
+<td>Pure arithmetic over held values</td>
+</tr>
+<tr>
+<td>Table sort order</td>
+<td>CLIENT</td>
+<td>Re-order of the bounded plan rows</td>
+<td>Bounded set fully held</td>
+</tr>
+<tr>
+<td>Drill footer count and total</td>
+<td>CLIENT</td>
+<td>Count and sum of the API 3 rows</td>
+<td>Bounded set fully held</td>
+</tr>
+<tr>
+<td>District display names (drill column, group labels)</td>
+<td>CLIENT</td>
+<td>Join <code>DistrictId</code> to the API 1 list</td>
+<td>Both lists held</td>
+</tr>
+<tr>
+<td>Presentation (plan dot ramp, share bar rendering, empty/loading visuals)</td>
+<td>CLIENT</td>
+<td>Client presentation over raw numbers</td>
+<td>The API returns raw numbers only; no thresholds exist on this widget, so there is no unapproved-threshold open item</td>
+</tr>
+</tbody>
+</table>
+<p>There are no server-computed percentages and no deltas anywhere in this contract, so no server division-by-zero rule and no pre-signing rule is needed; the client's zero rule is stated above. Client arithmetic must be decimal-safe: the summary legitimately carries cent splits (3,518.66 + 3,518.65 = 7,037.31) that binary floating point mis-sums. [BUILD] + [DOC, Step 4 - Widget Final Design/W02 - Pension Plans.md]</p>
+<h2>API 1: District lookup</h2>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/pension-plans/filters
+</code></pre>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>(none)</td>
+<td>n/a</td>
+<td>n/a</td>
+<td>n/a</td>
+<td>n/a</td>
+<td>No query parameters; company context comes from the <code>X-Company-ID</code> header (see Auth and scoping)</td>
+</tr>
+</tbody>
+</table>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/pension-plans/filters
+GET /api/dashboard/pension-plans/filters   (identical after a district change; the client re-uses its cached copy instead)
+</code></pre>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>districts[]</code></td>
+<td>array</td>
+<td>DERIVED container; provenance sits on its nested fields</td>
+<td>One entry per district configured for the company; real districts only, no "All Districts" row (the client renders that option)</td>
+</tr>
+<tr>
+<td><code>districts[].districtId</code></td>
+<td>guid</td>
+<td>STORED PB_ControlTable key [CODE, Widget_Comparison_Classic.html; exact column name UNVERIFIED (Oisin Curran)]</td>
+<td>The value sent back as <code>districtId</code> on API 2 and API 3</td>
+</tr>
+<tr>
+<td><code>districts[].name</code></td>
+<td>string</td>
+<td>STORED PB_ControlTable district name [CODE, Widget_Comparison_Classic.html; exact column name UNVERIFIED (Oisin Curran)]</td>
+<td>Display name for the popover, drill District column and By district group labels</td>
+</tr>
+</tbody>
+</table>
+<h3>Example response</h3>
+<pre><code>{
+  &quot;districts&quot;: [
+    { &quot;districtId&quot;: &quot;7d9e4c1a-2b5f-4e8a-9c3d-1f6b8a2e4d70&quot;, &quot;name&quot;: &quot;District 1&quot; },
+    { &quot;districtId&quot;: &quot;3b8f2d6c-9a1e-4f7b-8d2c-5e9a3c7f1b42&quot;, &quot;name&quot;: &quot;District 2&quot; },
+    { &quot;districtId&quot;: &quot;9c4a7e2f-1d6b-4a9e-b3f8-2c5d7e9a4f16&quot;, &quot;name&quot;: &quot;District 3&quot; }
+  ]
+}
+</code></pre>
+<p>Reconciliation: 3 rows, matching the 3 district groups in API 2's all-districts example below; every <code>districtId</code> appearing in an API 2 cell or an API 3 row resolves against this list.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty (no districts configured)</td>
+<td><code>{ "districts": [] }</code>; the chip renders with only the "All Districts" option</td>
+</tr>
+<tr>
+<td>Partial</td>
+<td>Not applicable: no time span exists to be partial over</td>
+</tr>
+<tr>
+<td>Not-yet-existing entity</td>
+<td>Not applicable: the call takes no entity id</td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td>Same behaviour as the other two APIs; the single answer is [TO CONFIRM] (Oisin Curran), see Auth and scoping</td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td>Standard 5xx; the client shows its error state and does not render a partial widget</td>
+</tr>
+</tbody>
+</table>
+<h2>API 2: Pension summary</h2>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/pension-plans/summary?districtId={guid}
+</code></pre>
+<p>The single dataset behind the table, pie, By district view, KPI headline and every total. Replaces the widget's use of the existing grid endpoint (see Old vs. new).</p>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>districtId</code></td>
+<td>guid</td>
+<td>no</td>
+<td>any <code>districtId</code> from API 1</td>
+<td>omitted (= All Districts)</td>
+<td>Scopes every amount, count and cell to one district. Omitting the parameter applies no district WHERE at all, so null-district rows are included [CODE, Pending Questions - Codebase Findings]</td>
+</tr>
+</tbody>
+</table>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/pension-plans/summary
+GET /api/dashboard/pension-plans/summary?districtId=3b8f2d6c-9a1e-4f7b-8d2c-5e9a3c7f1b42
+</code></pre>
+<p>No URL encoding is needed: the only parameter is a guid.</p>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>plans[]</code></td>
+<td>array</td>
+<td>DERIVED container; provenance sits on its nested fields</td>
+<td>One entry per plan with at least one active appointment in scope; plans with none are omitted, never zero-filled</td>
+</tr>
+<tr>
+<td><code>plans[].planId</code></td>
+<td>guid</td>
+<td>STORED PB_AppointmentPlan.PlanID [CODE, Widget_Comparison_Classic.html]</td>
+<td>Grouping key and the drill key for API 3</td>
+</tr>
+<tr>
+<td><code>plans[].name</code></td>
+<td>string</td>
+<td>STORED PB_AppointmentPlan Name [CODE, Widget_Comparison_Classic.html]</td>
+<td>Org-configured display name (e.g. CRSP-DC, CPP); data, not an enum</td>
+</tr>
+<tr>
+<td><code>plans[].amount</code></td>
+<td>number</td>
+<td>DERIVED SUM(PB_AppointmentPlan.AnnualPlanAmount) over active appointments in scope [CODE, Widget_Comparison_Classic.html]</td>
+<td>Annual contribution for the plan; plain decimal, no currency formatting</td>
+</tr>
+<tr>
+<td><code>plans[].appointeeCount</code></td>
+<td>int</td>
+<td>NEW: COUNT(*) over the exact same rows summed into <code>amount</code> [BUILD requires it; no endpoint returns counts today per Widget_Comparison_Classic.html]</td>
+<td>Plan-assignment rows, not distinct persons</td>
+</tr>
+<tr>
+<td><code>plans[].districts[]</code></td>
+<td>array</td>
+<td>DERIVED container; provenance sits on its nested fields</td>
+<td>The plan's per-district cells; only districts where this plan has active appointments appear. Scoped calls return the one matching cell</td>
+</tr>
+<tr>
+<td><code>plans[].districts[].districtId</code></td>
+<td>guid</td>
+<td>STORED PB_Appointment.DistrictID [CODE, Widget_Comparison_Classic.html]</td>
+<td>Resolved to a name via API 1</td>
+</tr>
+<tr>
+<td><code>plans[].districts[].amount</code></td>
+<td>number</td>
+<td>DERIVED: the same SUM additionally grouped by district [DOC, Step 1 research doc formulas; the shape is NEW]</td>
+<td>Cell amount for the By district view</td>
+</tr>
+<tr>
+<td><code>plans[].districts[].appointeeCount</code></td>
+<td>int</td>
+<td>NEW: the same COUNT additionally grouped by district</td>
+<td>Cell count, surfaced as text on each bar</td>
+</tr>
+</tbody>
+</table>
+<h3>Example response</h3>
+<p>All-districts call. Figures are the built Final's demo dataset, shaped like production; the shapes and the reconciliation are the contract, not the amounts. [BUILD]</p>
+<pre><code>{
+  &quot;plans&quot;: [
+    { &quot;planId&quot;: &quot;a1f3c5e7-2b4d-4f6a-8c9e-0d1f2a3b4c5d&quot;, &quot;name&quot;: &quot;Employee Before Tax-UMPIP&quot;, &quot;amount&quot;: 24000.00, &quot;appointeeCount&quot;: 3,
+      &quot;districts&quot;: [
+        { &quot;districtId&quot;: &quot;7d9e4c1a-2b5f-4e8a-9c3d-1f6b8a2e4d70&quot;, &quot;amount&quot;: 12000.00, &quot;appointeeCount&quot;: 1 },
+        { &quot;districtId&quot;: &quot;3b8f2d6c-9a1e-4f7b-8d2c-5e9a3c7f1b42&quot;, &quot;amount&quot;: 6000.00, &quot;appointeeCount&quot;: 1 },
+        { &quot;districtId&quot;: &quot;9c4a7e2f-1d6b-4a9e-b3f8-2c5d7e9a4f16&quot;, &quot;amount&quot;: 6000.00, &quot;appointeeCount&quot;: 1 }
+      ] },
+    { &quot;planId&quot;: &quot;b2e4d6f8-3c5a-4a7b-9d0e-1f2a3b4c5d6e&quot;, &quot;name&quot;: &quot;CRSP-DB-%&quot;, &quot;amount&quot;: 7532.56, &quot;appointeeCount&quot;: 2,
+      &quot;districts&quot;: [
+        { &quot;districtId&quot;: &quot;7d9e4c1a-2b5f-4e8a-9c3d-1f6b8a2e4d70&quot;, &quot;amount&quot;: 4532.56, &quot;appointeeCount&quot;: 1 },
+        { &quot;districtId&quot;: &quot;9c4a7e2f-1d6b-4a9e-b3f8-2c5d7e9a4f16&quot;, &quot;amount&quot;: 3000.00, &quot;appointeeCount&quot;: 1 }
+      ] },
+    { &quot;planId&quot;: &quot;c3d5e7f9-4b6a-4b8c-a0e1-2f3a4b5c6d7e&quot;, &quot;name&quot;: &quot;CRSP-DC&quot;, &quot;amount&quot;: 7037.31, &quot;appointeeCount&quot;: 2,
+      &quot;districts&quot;: [
+        { &quot;districtId&quot;: &quot;3b8f2d6c-9a1e-4f7b-8d2c-5e9a3c7f1b42&quot;, &quot;amount&quot;: 3518.66, &quot;appointeeCount&quot;: 1 },
+        { &quot;districtId&quot;: &quot;9c4a7e2f-1d6b-4a9e-b3f8-2c5d7e9a4f16&quot;, &quot;amount&quot;: 3518.65, &quot;appointeeCount&quot;: 1 }
+      ] },
+    { &quot;planId&quot;: &quot;d4c6f8a0-5e7b-4c9d-b1f2-3a4b5c6d7e8f&quot;, &quot;name&quot;: &quot;CPP&quot;, &quot;amount&quot;: 6682.56, &quot;appointeeCount&quot;: 2,
+      &quot;districts&quot;: [
+        { &quot;districtId&quot;: &quot;7d9e4c1a-2b5f-4e8a-9c3d-1f6b8a2e4d70&quot;, &quot;amount&quot;: 3341.28, &quot;appointeeCount&quot;: 1 },
+        { &quot;districtId&quot;: &quot;3b8f2d6c-9a1e-4f7b-8d2c-5e9a3c7f1b42&quot;, &quot;amount&quot;: 3341.28, &quot;appointeeCount&quot;: 1 }
+      ] },
+    { &quot;planId&quot;: &quot;e5b7a9c1-6f8d-4dea-82e3-4b5c6d7e8f90&quot;, &quot;name&quot;: &quot;Flat CRSP-DB&quot;, &quot;amount&quot;: 3000.00, &quot;appointeeCount&quot;: 1,
+      &quot;districts&quot;: [
+        { &quot;districtId&quot;: &quot;7d9e4c1a-2b5f-4e8a-9c3d-1f6b8a2e4d70&quot;, &quot;amount&quot;: 3000.00, &quot;appointeeCount&quot;: 1 }
+      ] }
+  ]
+}
+</code></pre>
+<p>Reconciliation: plan amounts 24000.00 + 7532.56 + 7037.31 + 6682.56 + 3000.00 = 48252.43, which is the client's headline total; appointee counts 3 + 2 + 2 + 2 + 1 = 10, the badge figure; each plan's cells sum to its own row (CRSP-DC: 3518.66 + 3518.65 = 7037.31, the deliberate cent split); the By district group totals 22873.84 + 12859.94 + 12518.65 = 48252.43 reconcile to the same headline; and API 3's UMPIP example below sums to this response's UMPIP row.</p>
+<p>District-scoped call (<code>districtId</code> = District 2):</p>
+<pre><code>{
+  &quot;plans&quot;: [
+    { &quot;planId&quot;: &quot;a1f3c5e7-2b4d-4f6a-8c9e-0d1f2a3b4c5d&quot;, &quot;name&quot;: &quot;Employee Before Tax-UMPIP&quot;, &quot;amount&quot;: 6000.00, &quot;appointeeCount&quot;: 1,
+      &quot;districts&quot;: [ { &quot;districtId&quot;: &quot;3b8f2d6c-9a1e-4f7b-8d2c-5e9a3c7f1b42&quot;, &quot;amount&quot;: 6000.00, &quot;appointeeCount&quot;: 1 } ] },
+    { &quot;planId&quot;: &quot;c3d5e7f9-4b6a-4b8c-a0e1-2f3a4b5c6d7e&quot;, &quot;name&quot;: &quot;CRSP-DC&quot;, &quot;amount&quot;: 3518.66, &quot;appointeeCount&quot;: 1,
+      &quot;districts&quot;: [ { &quot;districtId&quot;: &quot;3b8f2d6c-9a1e-4f7b-8d2c-5e9a3c7f1b42&quot;, &quot;amount&quot;: 3518.66, &quot;appointeeCount&quot;: 1 } ] },
+    { &quot;planId&quot;: &quot;d4c6f8a0-5e7b-4c9d-b1f2-3a4b5c6d7e8f&quot;, &quot;name&quot;: &quot;CPP&quot;, &quot;amount&quot;: 3341.28, &quot;appointeeCount&quot;: 1,
+      &quot;districts&quot;: [ { &quot;districtId&quot;: &quot;3b8f2d6c-9a1e-4f7b-8d2c-5e9a3c7f1b42&quot;, &quot;amount&quot;: 3341.28, &quot;appointeeCount&quot;: 1 } ] }
+  ]
+}
+</code></pre>
+<p>Reconciliation: 6000.00 + 3518.66 + 3341.28 = 12859.94, the District 2 group total in the all-districts example; counts 1 + 1 + 1 = 3.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty (no active appointments in scope)</td>
+<td><code>{ "plans": [] }</code>, HTTP 200; the client renders "No active pension appointments" (with the compact Glance variant). Never an error</td>
+</tr>
+<tr>
+<td>Partial</td>
+<td>Not applicable: no time span exists to be partial over; a scope is either matched or empty</td>
+</tr>
+<tr>
+<td>Not-yet-existing entity</td>
+<td>An unknown or deleted <code>districtId</code> matches no rows and returns <code>{ "plans": [] }</code>; the client refetches API 1 and resets to All Districts</td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td>[TO CONFIRM] (Oisin Curran): explicit 403 recommended over an empty 200 that reads as "no pension data"; see Auth and scoping</td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td>Standard 5xx; the client shows its error state, never a partial or stale render</td>
+</tr>
+</tbody>
+</table>
+<h2>API 3: Appointee detail</h2>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/pension-plans/{planId}/details?districtId={guid}
+</code></pre>
+<p>The existing details endpoint, shape unchanged. [CODE, Widget_Comparison_Classic.html]</p>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>planId</code></td>
+<td>guid</td>
+<td>yes (path)</td>
+<td>any <code>planId</code> from an API 2 response</td>
+<td>none</td>
+<td>The plan being drilled</td>
+</tr>
+<tr>
+<td><code>districtId</code></td>
+<td>guid</td>
+<td>no</td>
+<td>any <code>districtId</code> from API 1</td>
+<td>omitted (= all districts)</td>
+<td>The widget's active filter carries in here; a By district bar sends its own district instead</td>
+</tr>
+</tbody>
+</table>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/pension-plans/a1f3c5e7-2b4d-4f6a-8c9e-0d1f2a3b4c5d/details
+GET /api/dashboard/pension-plans/a1f3c5e7-2b4d-4f6a-8c9e-0d1f2a3b4c5d/details?districtId=7d9e4c1a-2b5f-4e8a-9c3d-1f6b8a2e4d70
+</code></pre>
+<h3>Response schema</h3>
+<p>The existing <code>List&lt;PensionPlanDetailDto&gt;</code>, property names as they exist in the modern codebase. [CODE, Widget_Comparison_Classic.html]</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>AppointmentPlanId</code></td>
+<td>guid</td>
+<td>STORED PB_AppointmentPlan.AppointmentPlanID [CODE]</td>
+<td>The row's stable key; used for list keying, not displayed</td>
+</tr>
+<tr>
+<td><code>Appointee</code></td>
+<td>string</td>
+<td>STORED via the appointment's person record [CODE]</td>
+<td>The appointee's display name</td>
+</tr>
+<tr>
+<td><code>Charge</code></td>
+<td>string</td>
+<td>STORED via PBCharge CorePerson name [CODE]; returns an empty string today, a pre-existing defect</td>
+<td>The church/organisation column; the client treats <code>""</code> as not available until the defect is fixed</td>
+</tr>
+<tr>
+<td><code>AnnualAmount</code></td>
+<td>number</td>
+<td>STORED PB_AppointmentPlan.AnnualPlanAmount [CODE]</td>
+<td>The appointment's annual contribution</td>
+</tr>
+<tr>
+<td><code>DistrictId</code></td>
+<td>guid</td>
+<td>STORED PB_Appointment.DistrictID [CODE]</td>
+<td>Resolved to a display name client-side via API 1</td>
+</tr>
+</tbody>
+</table>
+<h3>Example response</h3>
+<p>UMPIP, all districts. <code>Charge</code> is shown as it actually returns today. [CODE, Widget_Comparison_Classic.html]</p>
+<pre><code>[
+  { &quot;AppointmentPlanId&quot;: &quot;f6a8b0c2-7e9d-4eab-93f4-5c6d7e8f9a01&quot;, &quot;Appointee&quot;: &quot;Rev. Jonathan Pierce&quot;, &quot;Charge&quot;: &quot;&quot;, &quot;AnnualAmount&quot;: 12000.00, &quot;DistrictId&quot;: &quot;7d9e4c1a-2b5f-4e8a-9c3d-1f6b8a2e4d70&quot; },
+  { &quot;AppointmentPlanId&quot;: &quot;a7b9c1d3-8f0e-4fbc-a4f5-6d7e8f9a0b12&quot;, &quot;Appointee&quot;: &quot;Rev. Naomi Adler&quot;, &quot;Charge&quot;: &quot;&quot;, &quot;AnnualAmount&quot;: 6000.00, &quot;DistrictId&quot;: &quot;3b8f2d6c-9a1e-4f7b-8d2c-5e9a3c7f1b42&quot; },
+  { &quot;AppointmentPlanId&quot;: &quot;b8c0d2e4-9a1f-4acd-b5f6-7e8f9a0b1c23&quot;, &quot;Appointee&quot;: &quot;Rev. Caleb Monroe&quot;, &quot;Charge&quot;: &quot;&quot;, &quot;AnnualAmount&quot;: 6000.00, &quot;DistrictId&quot;: &quot;9c4a7e2f-1d6b-4a9e-b3f8-2c5d7e9a4f16&quot; }
+]
+</code></pre>
+<p>Reconciliation: the client footer sums 12000.00 + 6000.00 + 6000.00 = 24000.00 across 3 rows, matching API 2's UMPIP row (<code>amount</code> 24000.00, <code>appointeeCount</code> 3).</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty (valid plan, no active appointees in the requested scope)</td>
+<td><code>[]</code>, HTTP 200; the modal renders its "No appointees on this plan" message. Never an error</td>
+</tr>
+<tr>
+<td>Partial</td>
+<td>Not applicable: no time span exists to be partial over</td>
+</tr>
+<tr>
+<td>Not-yet-existing entity (unknown <code>planId</code>)</td>
+<td><code>[]</code>, matching today's behaviour; the client only ever sends ids taken from API 2 responses, so this arises only from a stale drill</td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td>[TO CONFIRM] (Oisin Curran), same single answer as the other APIs; see Auth and scoping</td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td>Standard 5xx; the modal shows an error state rather than an empty roster</td>
+</tr>
+</tbody>
+</table>
+<h2>Auth and scoping</h2>
+<ul>
+<li><strong>Company / tenant scoping:</strong> every call carries the <code>X-Company-ID</code> context header, and every query is scoped by it. [CODE, Widget_Comparison_Classic.html]</li>
+<li><strong>Permission right:</strong> the gate is the <code>/PensionBilling</code> <strong>Inquiry</strong> right, not a right named after the modern module field <code>PensionBenefits</code>. In the legacy product the widget is omitted from the picker and its body is hidden for an unentitled user. [CODE, Pending Questions - Codebase Findings, DataPanelControl.cs lines 154-165 and 185-192]</li>
+<li><strong>Unentitled behaviour in the modern API:</strong> [TO CONFIRM] (Oisin Curran, product decision). Recommendation carried in Still needs sign-off: an explicit 403 on all three APIs, so an entitlement problem never renders as "no pension data".</li>
+<li><strong>Writes:</strong> there are none; the whole contract is read-only, so no separate write right exists.</li>
+</ul>
+<h2>Edge cases</h2>
+<ol>
+<li><strong>Org with no active appointments:</strong> API 2 returns <code>{ "plans": [] }</code>; the empty state renders. Not an error.</li>
+<li><strong>District with no active appointments:</strong> the scoped API 2 call returns <code>{ "plans": [] }</code>; same empty state, scoped caption.</li>
+<li><strong>Plan active in only some districts:</strong> the plan row's <code>districts[]</code> simply lacks the other cells; the client renders missing cells as absent bars, and zero-filled cells are never sent.</li>
+<li><strong>Boundary dates:</strong> an appointment starting today or ending today is ACTIVE; both comparisons in the predicate are inclusive. [CODE, Widget_Comparison_Classic.html]</li>
+<li><strong>Null <code>DistrictID</code> on an appointment:</strong> included under All Districts (no WHERE applied), excluded by every specific district. Such a row is drillable only at the All Districts scope, where its drill row's <code>DistrictId</code> resolves to no API 1 entry and displays as blank. Existence in production data is [TO CONFIRM] (Oisin Curran).</li>
+<li><strong>Duplicate plan display names:</strong> rows are keyed by <code>planId</code>; two plans sharing a display name stay separate rows in every view, and the client must never merge by <code>name</code>.</li>
+<li><strong>Appointee on two plans:</strong> counts are plan-assignment rows, so the person appears once per plan and the badge total counts them twice. Matches the built Final's counting; the distinct-person question is in Still needs sign-off.</li>
+<li><strong>Cent splits:</strong> amounts are exact decimals end to end (money types, never floats), and client sums must be decimal-safe (3,518.66 + 3,518.65 = 7,037.31).</li>
+<li><strong>Unknown or stale <code>districtId</code> / <code>planId</code>:</strong> empty result, never an error; the client refetches API 1 and drops a stale district selection.</li>
+<li><strong>Drill straddling a write:</strong> API 3 re-evaluates the predicate at its own request moment, so its rows can differ from the summary by an appointment changed in between; accepted for a snapshot widget, stated in Call sequence.</li>
+<li><strong><code>Charge</code> empty string:</strong> until the pre-existing PBCharge defect is fixed, <code>Charge</code> is <code>""</code> and the Church / organisation column renders as not available; no schema change is involved.</li>
+</ol>
+<h2>Not in scope</h2>
+<ul>
+<li><strong>The existing chart endpoint</strong> (<code>/api/dashboard/pension-plans/chart</code>): this widget never calls it; every view renders from API 2. Whether it is retired product-wide is a backend housekeeping decision outside this contract.</li>
+<li><strong>The existing grid endpoint</strong> as this widget's read: replaced by API 2 for this widget. Other consumers, if any, are unaffected by this contract.</li>
+<li><strong>No Time Window Module:</strong> no <code>window</code>, <code>grain</code> or <code>asOf</code> parameters, no buckets, no partial flags. Stated as scope, not an omission: the widget is an as-of-now snapshot.</li>
+<li><strong>No plan-type categorisation:</strong> no Defined Benefit / Defined Contribution / 403(b) field exists in either codebase; grouping is by org-configured plan, and a category dimension would be new schema, not a new query.</li>
+<li><strong>No billing/payment status:</strong> connecting the obligation to whether it is billed and paid is a cross-widget idea from the dossier, not part of this contract.</li>
+<li><strong>Export file generation:</strong> the exported row sets are defined by the API 2 and API 3 responses; whether files are generated client-side or by new server endpoints is undecided (Still needs sign-off).</li>
+<li><strong>The Pension Billing deep link:</strong> confirmed needed, still has no target page; frontend navigation with nothing for this API.</li>
+<li><strong>Currency and locale formatting:</strong> the API returns plain numbers; the live-audit pound-symbol-on-US-data defect is client localisation, listed so nobody specs a currency field to fix it.</li>
+<li><strong>No server-side totals, envelopes or timestamps:</strong> totals are client sums by design; a response timestamp is an open dossier ask, not a granted field.</li>
+</ul>
+<h2>Still needs sign-off</h2>
+<p>Sign-off dossier status: the widget's Step 6 dossier (Confluence page 7371030531) has no reconciliation file, so <strong>every dossier finding is Unreviewed</strong>; none has been Accepted, Rejected or Disputed. Per the sign-off rules this blocks final approval of the parts they touch. The items below name what is undecided, who decides, and what is blocked.</p>
+<ol>
+<li><strong>Dossier statuses (Unreviewed):</strong> the flags touching this contract are the "data as of" timestamp ask, the export-scope fix, the entitlement/empty behaviour question, and the billing/payment phase idea. Decider: Oisin Curran. Blocked: removing this spec's DRAFT status.</li>
+<li><strong>Worst realistic volumes:</strong> ceilings for districts per org, plans per org, and active appointments on the largest plan. Decider/source: Marvin (SME). Blocked: confirming the three BOUNDED verdicts; if the API 3 ceiling is materially above ~1,000 rows, API 3 must gain the full pagination contract before build.</li>
+<li><strong>Unentitled behaviour:</strong> explicit 403 (recommended) versus empty 200 versus hidden widget, one consistent answer across all three APIs. Decider: Oisin Curran with the dev team. Blocked: the Permission denied row of every State contract.</li>
+<li><strong>Export generation:</strong> client-side files from held JSON (zero backend) versus new server export endpoints. Decider: Oisin Curran with the dev team. Blocked: both export actions remain stubs.</li>
+<li><strong><code>Charge</code> defect fix:</strong> populating the existing field (via the PBCharge CorePerson name) so the drill's Church / organisation column stops rendering blank. Decider: backend team scheduling. Blocked: nothing in this contract; the field is already in the shape.</li>
+<li><strong>District preference persistence:</strong> legacy saves the user's last district per user; the modern API has no equivalent. Decider: Oisin Curran. Blocked: nothing; client-managed state is the working assumption.</li>
+<li><strong>Appointee count basis:</strong> plan-assignment rows (as specced, matching the build) versus distinct persons. Decider: Oisin Curran. Blocked: nothing; the specced basis ships unless overruled.</li>
+<li><strong>"Data as of" signal:</strong> whether responses gain a server timestamp and the widget surfaces it beside Refresh. Decider: Oisin Curran. Blocked: nothing; the contract currently defines no timestamp field.</li>
+<li><strong>Pension Billing deep-link target:</strong> carried from the design doc's open item; needs a page/URL. Decider: Oisin Curran with product. Blocked: frontend navigation only; nothing in this API.</li>
+</ol>
+
+</body>
+</html>

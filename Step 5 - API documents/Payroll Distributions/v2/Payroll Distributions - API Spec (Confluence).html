@@ -1,0 +1,1356 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Payroll Distributions - API Spec</title>
+<style>
+body { font-family: -apple-system, Helvetica, Arial, sans-serif; max-width: 900px; margin: 30px auto; line-height: 1.5; color: #172B4D; }
+h1 { font-size: 24px; }
+h2 { font-size: 19px; border-bottom: 1px solid #DFE1E6; padding-bottom: 6px; margin-top: 32px; }
+h3 { font-size: 16px; margin-top: 20px; }
+table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+th, td { border: 1px solid #DFE1E6; padding: 6px 10px; text-align: left; vertical-align: top; }
+th { background: #F4F5F7; }
+code { background: #F4F5F7; padding: 1px 5px; border-radius: 3px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 90%; }
+pre { background: #F4F5F7; padding: 12px; border-radius: 4px; overflow-x: auto; }
+pre code { background: none; padding: 0; }
+.status { background: #FFF0B3; display: inline-block; padding: 3px 10px; border-radius: 3px; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<h1>Payroll Distributions - API Spec</h1>
+<p><span class="status">Status: Done - awaiting sign-off (drafting complete, owner review pending)</span></p>
+<h2>Overview</h2>
+<p>The widget answers one question: where did payroll go for the chosen time span? It shows total cash payroll paid over a selected window, grouped by the org's own compensation-distribution labels, filterable by a single pay type, viewable as a sortable table or a donut chart, with a nested in-widget drill from a distribution to the employees paid in it and from an employee to that person's pay types. Access to the employee level is limited to users with payroll permission; everyone else sees distribution and pay-type totals only.</p>
+<p>This contract defines four APIs: a distribution lookup fired once for the filter chip (API 1), a bounded summary read at distribution-by-pay-type grain fired on render and on every period change (API 2), a paginated, permission-gated employee list fired when a distribution is drilled into (API 3), and a server-side export that streams a file over the full filtered set (API 4). The pay-type filter and every view, sort and rollup of the summary run client-side over API 2's bounded rows; everything touching the employee list runs server-side because that list paginates.</p>
+<h2>Design → API coverage</h2>
+<table>
+<thead>
+<tr>
+<th>Design element</th>
+<th>Type</th>
+<th>API</th>
+<th>Field(s)</th>
+<th>Provenance</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Glance headline (total payroll paid)</td>
+<td>KPI</td>
+<td>API 2</td>
+<td>client sum of <code>rows[].amount</code></td>
+<td>DERIVED client [BUILD]</td>
+</tr>
+<tr>
+<td>Header total + context line</td>
+<td>KPI / state</td>
+<td>API 2 (API 3 when a distribution is drilled)</td>
+<td>client sum of <code>rows[].amount</code>; drill scope uses <code>totalAmount</code></td>
+<td>DERIVED client [BUILD]</td>
+</tr>
+<tr>
+<td>Period chip (presets + custom dates)</td>
+<td>filter</td>
+<td>API 2, 3, 4</td>
+<td><code>window.from</code>, <code>window.to</code> echo the resolved span</td>
+<td>DERIVED server [BUILD]</td>
+</tr>
+<tr>
+<td>Distribution chip option list</td>
+<td>filter</td>
+<td>API 1</td>
+<td><code>distributions[].distributionId</code>, <code>distributions[].name</code></td>
+<td>STORED [CODE]</td>
+</tr>
+<tr>
+<td>Pay type chip option list</td>
+<td>filter</td>
+<td>API 2</td>
+<td>derived client-side from <code>rows[].subType</code>, <code>rows[].subTypeName</code> where amount &gt; 0</td>
+<td>STORED + DERIVED client [BUILD]</td>
+</tr>
+<tr>
+<td>Table: Distribution column</td>
+<td>table column</td>
+<td>API 2</td>
+<td><code>rows[].distributionName</code></td>
+<td>STORED [CODE]</td>
+</tr>
+<tr>
+<td>Table: Amount column</td>
+<td>table column</td>
+<td>API 2</td>
+<td>client rollup of <code>rows[].amount</code> by distribution</td>
+<td>DERIVED client [BUILD]</td>
+</tr>
+<tr>
+<td>Table: % of total column</td>
+<td>table column</td>
+<td>API 2</td>
+<td>client division, distribution amount over grand total</td>
+<td>DERIVED client [BUILD]</td>
+</tr>
+<tr>
+<td>Table sort headers (Distribution / Amount)</td>
+<td>interaction</td>
+<td>API 2</td>
+<td>client re-order of the bounded row set</td>
+<td>DERIVED client [BUILD]</td>
+</tr>
+<tr>
+<td>Donut chart (arcs, legend, center total)</td>
+<td>chart series</td>
+<td>API 2</td>
+<td><code>rows[].distributionName</code>, client rollups of <code>rows[].amount</code></td>
+<td>DERIVED client [BUILD]</td>
+</tr>
+<tr>
+<td>Drill: employee rows (name, total pay)</td>
+<td>drill</td>
+<td>API 3</td>
+<td><code>employees[].employeeName</code>, <code>employees[].totalAmount</code></td>
+<td>UNVERIFIED columns, see schema [DOC]</td>
+</tr>
+<tr>
+<td>Drill: row identity / expand key</td>
+<td>drill</td>
+<td>API 3</td>
+<td><code>employees[].employeeId</code></td>
+<td>UNVERIFIED, see schema [DOC]</td>
+</tr>
+<tr>
+<td>Drill: employee pay-type leaf (name, share of pay, amount)</td>
+<td>drill</td>
+<td>API 3</td>
+<td><code>employees[].payTypes[]</code> (<code>subType</code>, <code>subTypeName</code>, <code>amount</code>); share is a client division</td>
+<td>STORED + DERIVED [CODE] [DOC]</td>
+</tr>
+<tr>
+<td>Drill caption (employee count, distribution total)</td>
+<td>state</td>
+<td>API 3</td>
+<td><code>totalCount</code>, <code>totalAmount</code></td>
+<td>DERIVED server [BUILD]</td>
+</tr>
+<tr>
+<td>Drill sort headers (Employee / Total pay)</td>
+<td>interaction</td>
+<td>API 3</td>
+<td><code>sortBy</code> + <code>sortDir</code> params (paginated list, server sort)</td>
+<td>DERIVED server</td>
+</tr>
+<tr>
+<td>Pay-type fallback table (viewer without payroll permission picks a distribution)</td>
+<td>state</td>
+<td>API 2</td>
+<td>client filter of <code>rows[]</code> to that <code>distributionId</code></td>
+<td>DERIVED client [BUILD]</td>
+</tr>
+<tr>
+<td>Empty state: "No payroll runs in this range"</td>
+<td>state</td>
+<td>API 2</td>
+<td>empty <code>rows[]</code></td>
+<td>DERIVED client [BUILD]</td>
+</tr>
+<tr>
+<td>Empty state: "Nothing matches these filters"</td>
+<td>state</td>
+<td>API 2 / API 3</td>
+<td>zero client-filtered rows, or empty <code>employees[]</code> with <code>totalCount</code> 0</td>
+<td>DERIVED client [BUILD]</td>
+</tr>
+<tr>
+<td>Export to Excel button (caption row) and card-menu CSV / Excel / PDF exports</td>
+<td>action</td>
+<td>API 4</td>
+<td>file stream, no JSON fields</td>
+<td>NEW</td>
+</tr>
+<tr>
+<td>Refresh</td>
+<td>action</td>
+<td>API 2 (+ API 3 for any open drill)</td>
+<td>same fields, fresh <code>asOf</code></td>
+<td>DERIVED [BUILD]</td>
+</tr>
+</tbody>
+</table>
+<p>Every response field below appears in a row above or in the ignore set of request echoes (<code>asOf</code>, <code>page</code>, <code>pageSize</code>). The drill's share-of-pay bars and the % of total column are client-side derivations and appear in <em>Where computation lives</em>.</p>
+<h2>Tables</h2>
+<table>
+<thead>
+<tr>
+<th>Table / repository</th>
+<th>Fields and members used</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PR_HistoryCompensation</code></td>
+<td><code>HistoryCompensationID</code> (row id), <code>HistoryID</code> (joins to <code>PR_History</code>), <code>CompensationDistributionID</code> (joins to <code>PR_CompensationDistribution</code>), <code>Amount</code>, <code>SubType</code> (pay-type code 1-10). <code>Hours</code>, <code>Rate</code>, <code>PayCycle</code>, <code>EmployeeCompensationID</code>, <code>WorkersCompID</code>, <code>ProjectID</code> exist on the same rows and are NOT read by this contract</td>
+</tr>
+<tr>
+<td><code>PR_CompensationDistribution</code></td>
+<td><code>CompensationDistributionID</code>, <code>Name</code> (the org-defined distribution label)</td>
+</tr>
+<tr>
+<td><code>PR_History</code></td>
+<td><code>CheckDate</code> (window filter), <code>CheckType</code>, <code>VoidJournalID</code>, <code>CompanyID</code> (scoping), and its link to the employee record for API 3</td>
+</tr>
+<tr>
+<td><code>PR_Employee</code></td>
+<td>The person behind each check, for API 3 only: key column and display-name column [TO CONFIRM] (backend dev; the join itself is evidenced in the Pay Type Breakdown Analysis proof file)</td>
+</tr>
+<tr>
+<td><code>PR_Company</code></td>
+<td>Org-configured pay-type labels for SubType 6-9 (<code>VacationLongName</code>/<code>VacationShortName</code>, <code>SickLongName</code>/<code>SickShortName</code>, <code>PersonalLongName</code>/<code>PersonalShortName</code>, <code>MiscLongName</code>/<code>MiscShortName</code>), resolved server-side</td>
+</tr>
+</tbody>
+</table>
+<p>No new tables and no schema changes: everything in this contract is new queries against existing tables and columns, per the Pay Type Breakdown Analysis proof file in this widget's folder.</p>
+<p>Core formulas and filters, quotable in isolation:</p>
+<ul>
+<li><strong>Row filter on every read:</strong> <code>PR_History WHERE CompanyID = ctx AND CheckDate BETWEEN from AND to AND VoidJournalID IS NULL AND CheckType &lt;&gt; 2</code>. [CODE] (legacy <code>PayrollDistributions.Search()</code>, mirrored by the modern data endpoint per <code>Widget_Comparison_Classic.html</code>)</li>
+<li><strong>Summary grain:</strong> <code>SUM(PR_HistoryCompensation.Amount) GROUP BY CompensationDistributionID, SubType</code> over the filtered checks. The distribution grouping is the live query today [CODE]; adding <code>SubType</code> to the GROUP BY is a query change over the same rows, no schema change [DOC] (proof file, levels 2 and 4 are the same table).</li>
+<li><strong>Employee grain (API 3):</strong> the same filtered rows for one <code>CompensationDistributionID</code>, grouped by employee, with a nested <code>SUM(Amount) GROUP BY SubType</code> per employee. NEW query; the joins are evidenced [DOC] (proof file, level 3).</li>
+<li><strong>Pay-type display names:</strong> codes 1-5 and 10 are fixed; codes 6-9 resolve server-side from <code>PR_Company</code> via <code>PRHistoryCompensation.GetSubTypeName</code> / <code>GetSubTypeNameLong</code>. [CODE] (<code>Shelby.Data\EntityClassExtensions\PRHistoryCompensation.cs</code>)</li>
+<li><strong>Non-cash compensation is excluded</strong> everywhere: benefit items flow through <code>PR_HistoryNonCash</code> and never enter distribution totals. [DOC] (proof file, Additional Findings)</li>
+</ul>
+<h2>Old vs. new</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Old (live today)</th>
+<th>New (needed)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Data endpoint</td>
+<td><code>GET /api/dashboard/payroll-distributions/data?startDate&amp;endDate</code> returns a bare flat list <code>{Name, Amount}</code>, one row per distribution [CODE]</td>
+<td>Same path. <code>window</code>/<code>from</code>/<code>to</code>/<code>asOf</code> replace the raw date pair; the response gains an envelope (<code>asOf</code> + resolved <code>window</code> + <code>rows[]</code>) and the rows move to distribution-by-pay-type grain with <code>distributionId</code> and <code>subType</code>/<code>subTypeName</code> added. Re-shaped read over existing columns (STORED + DERIVED)</td>
+</tr>
+<tr>
+<td>Stable row key</td>
+<td>None: rows carry only the org-editable <code>Name</code></td>
+<td><code>distributionId</code> (<code>CompensationDistributionID</code>) exposed on every row. STORED, new exposure</td>
+</tr>
+<tr>
+<td>Pay-type dimension</td>
+<td><code>SubType</code> is an unread column on the same rows</td>
+<td>Read and grouped. STORED, query change only</td>
+</tr>
+<tr>
+<td>Filter option list</td>
+<td>None (no filter exists)</td>
+<td>NEW <code>filters</code> endpoint returning the org's distribution list, matching the <code>/filters</code> pattern the other dashboard widgets already use [CODE]</td>
+</tr>
+<tr>
+<td>Employee drill</td>
+<td>None</td>
+<td>NEW paginated endpoint, one distribution's employees with per-employee pay-type rollups, permission-gated</td>
+</tr>
+<tr>
+<td>Export</td>
+<td>Legacy exported Excel in-page; the modern API has no export endpoint [CODE]</td>
+<td>NEW export endpoint streaming CSV / Excel / PDF over the full filtered set</td>
+</tr>
+<tr>
+<td>Sort</td>
+<td>Fixed <code>ORDER BY Name</code> [CODE]</td>
+<td>Distribution table: client-side re-order (bounded set). Employee list: server-side <code>sortBy</code>/<code>sortDir</code> (paginated set). NEW params on API 3 only</td>
+</tr>
+<tr>
+<td>Comparison</td>
+<td>None</td>
+<td>Still none. Sign-off finding F3 rejected prior-period comparison for this widget: no <code>prior</code>, <code>diffAmount</code> or <code>diffPct</code> fields exist anywhere in this contract</td>
+</tr>
+</tbody>
+</table>
+<h2>API inventory</h2>
+<table>
+<thead>
+<tr>
+<th>API</th>
+<th>Purpose</th>
+<th>Trigger (when it fires)</th>
+<th>Cardinality</th>
+<th>R/W</th>
+<th>Cache posture</th>
+<th>Split trigger</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>API 1: distribution filter options</td>
+<td>Option list for the Distribution chip</td>
+<td>Widget render, once per session</td>
+<td>One row per org distribution, [TO CONFIRM] ceiling (Feargal)</td>
+<td>R</td>
+<td>TTL (dev to set; staleness shows only as a just-added distribution missing until refresh)</td>
+<td>Lifetime gap: a rarely-changing lookup vs live payroll data; also the codebase's established <code>/filters</code> pattern</td>
+</tr>
+<tr>
+<td>API 2: distribution summary</td>
+<td>Distribution-by-pay-type amounts for the window; feeds every non-drill element</td>
+<td>Render, period change, refresh</td>
+<td>Bounded: distributions x at most 10 SubType codes</td>
+<td>R</td>
+<td>LIVE per request (the legacy widget is explicitly uncached [CODE])</td>
+<td>Base read. Cardinality gap vs API 3: the summary must never pay for the employee list</td>
+</tr>
+<tr>
+<td>API 3: employees in a distribution</td>
+<td>Paginated employee rows with per-employee pay-type rollups</td>
+<td>User expands a distribution row or picks one on the Distribution chip (payroll-permission holders only)</td>
+<td>Unbounded page stream, [TO CONFIRM] worst case (Feargal)</td>
+<td>R</td>
+<td>LIVE per request</td>
+<td>Trigger gap (fires on drill, not render) + cardinality gap (unbounded list) + conditional weight (permission-gated, most sessions never fire it)</td>
+</tr>
+<tr>
+<td>API 4: export</td>
+<td>Streams CSV / Excel / PDF of what the filters resolve to, over the full filtered set</td>
+<td>User clicks Export to Excel or a card-menu export item</td>
+<td>One file</td>
+<td>R</td>
+<td>LIVE per request</td>
+<td>Trigger gap + conditional weight: a heavy file build on explicit user action only. Server-side because the client never holds the full employee set once API 3 paginates</td>
+</tr>
+</tbody>
+</table>
+<p>Merges considered and closed: API 1 and API 2 always fire together on first render and could be one call, but the lookup is shared-shape, cacheable and org-stable while the data is live, so the lifetime gap wins and they stay separate. API 3 is not a variant of API 2 because a summary consumer must never pay for employee rows it cannot see without the payroll right.</p>
+<h2>Call sequence</h2>
+<table>
+<thead>
+<tr>
+<th>Interaction</th>
+<th>Calls fired</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Initial widget load</td>
+<td>API 1 + API 2</td>
+<td>Fired together; API 2's echoed <code>asOf</code> becomes the anchor the client passes to every later call in this view</td>
+</tr>
+<tr>
+<td>Change Period (preset or custom dates)</td>
+<td>API 2; plus API 3 for any open drill</td>
+<td>Same <code>asOf</code> anchor; both calls carry the identical window params so the drill total still cross-foots to its summary row</td>
+</tr>
+<tr>
+<td>Change Distribution chip to one distribution</td>
+<td>API 3 (payroll-permission holders); no call otherwise</td>
+<td>Without the right, the client filters API 2's rows to that distribution's pay types. Open drill carets are cleared on any filter change</td>
+</tr>
+<tr>
+<td>Change Distribution chip back to All</td>
+<td>none</td>
+<td>Client re-render over API 2's rows, already held</td>
+</tr>
+<tr>
+<td>Change Pay type chip</td>
+<td>none</td>
+<td>Client re-aggregation of API 2's rows; open drills are closed, so no API 3 refetch. The next drill open carries <code>ptSubType</code></td>
+</tr>
+<tr>
+<td>Switch view (Table / Chart)</td>
+<td>none</td>
+<td>Client re-render of the same rows</td>
+</tr>
+<tr>
+<td>Expand a distribution row (nested drill)</td>
+<td>API 3, page 1</td>
+<td>Permission-gated; an unauthorised viewer's rows are inert and no call path exists</td>
+</tr>
+<tr>
+<td>Expand an employee row</td>
+<td>none</td>
+<td>That person's <code>payTypes[]</code> is already in the API 3 row</td>
+</tr>
+<tr>
+<td>Sort the employee list / change its page</td>
+<td>API 3</td>
+<td><code>sortBy</code>/<code>sortDir</code>/<code>page</code>: server-side, the list paginates</td>
+</tr>
+<tr>
+<td>Sort the distribution table</td>
+<td>none</td>
+<td>Client re-order of the bounded summary rows</td>
+</tr>
+<tr>
+<td>Export</td>
+<td>API 4</td>
+<td>Carries the same window, distribution and pay-type params the view resolves to, plus <code>format</code></td>
+</tr>
+<tr>
+<td>Refresh</td>
+<td>API 2 with a fresh <code>asOf</code>; plus API 3 for any open drill</td>
+<td>The new echoed <code>asOf</code> replaces the anchor everywhere at once, so the header and an open drill can never straddle a payroll posting</td>
+</tr>
+</tbody>
+</table>
+<p>Shared snapshot anchor: API 2 and API 3 must reconcile on screen (a distribution's summary amount vs the sum of its employees). Both take <code>asOf</code>, both echo it, and the client passes API 2's echoed value to every API 3 and API 4 call rendered beside it.</p>
+<h2>Filter architecture</h2>
+<table>
+<thead>
+<tr>
+<th>Filter</th>
+<th>Option source</th>
+<th>Cardinality</th>
+<th>Execution</th>
+<th>Aggregate effect</th>
+<th>Cascade</th>
+<th>"All" wire form</th>
+<th>Round trips</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Period</td>
+<td>STATIC enum: <code>this_month</code>, <code>this_period</code>, <code>this_quarter</code>, <code>this_year</code>, <code>all_time</code>, plus <code>custom</code> with <code>from</code>/<code>to</code> dates</td>
+<td>6</td>
+<td>SERVER: <code>window</code> (+ <code>from</code>/<code>to</code> when custom, <code>asOf</code> anchor)</td>
+<td>Yes: every figure on screen</td>
+<td>No</td>
+<td>None: a window is always sent; <code>all_time</code> is the no-lower-bound value</td>
+<td>1 (API 2), +1 per open drill (API 3)</td>
+</tr>
+<tr>
+<td>Distribution</td>
+<td>LOOKUP: API 1 (<code>PR_CompensationDistribution</code> for the company)</td>
+<td>Demo dataset 8; real ceiling [TO CONFIRM] (Feargal)</td>
+<td>SERVER for one distribution: <code>distributionId</code> path param on API 3. CLIENT for All: the full summary set is already present in API 2's response and bounded (see Volume)</td>
+<td>One distribution: yes, the header total becomes API 3's <code>totalAmount</code>. Back to All: no, API 2 carries no server-computed aggregates to disagree with</td>
+<td>No: the option list does not depend on other filters and may include distributions with no data in the window (selecting one yields a well-formed empty drill)</td>
+<td>Omit <code>distributionId</code> entirely; the summary is always the full set</td>
+<td>1 (API 3) into a distribution; 0 back to All</td>
+</tr>
+<tr>
+<td>Pay type</td>
+<td>DERIVED from API 2's response: only <code>subType</code> values with amount &gt; 0 in the window are offered</td>
+<td>At most 10, fixed by definition (SubType codes 1-10)</td>
+<td>CLIENT over API 2: full set already present, bounded by definition at 10 codes per distribution, and no server-computed aggregate is affected because API 2 returns no totals. SERVER on API 3: <code>ptSubType</code>, because that list paginates</td>
+<td>Summary view: no server aggregate exists to change. Drill: yes, <code>totalAmount</code>/<code>totalCount</code> recompute server-side under the filter</td>
+<td>Yes, on Period: the option list is re-derived from each new API 2 response, so a stale selection can survive a period change; the client resets a selection whose <code>subType</code> vanishes from the new response to All</td>
+<td>Omit <code>ptSubType</code></td>
+<td>0 (open drills are closed on change; the next drill open carries the param)</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Combination semantics:</strong> AND, narrowing, across all three filters. No pair is OR and none are mutually exclusive.</li>
+<li><strong>Conflict rule:</strong> a <code>distributionId</code> that does not belong to the company returns HTTP 404 with the error body below, never another company's data. <code>ptSubType</code> outside 1-10 is HTTP 400. <code>window=custom</code> requires both <code>from</code> and <code>to</code>; a date pair sent with any other window value is HTTP 400 (never silently ignored); <code>from</code> greater than <code>to</code> is HTTP 400, never silently swapped.</li>
+<li><strong>Overlapping value spaces:</strong> a valid Distribution + Pay type pair can legitimately match nothing (a distribution that never pays that type in the window). That is a well-formed empty result (<code>employees</code> empty, <code>totalCount</code> 0, <code>totalAmount</code> 0), not an error; the client renders its "Nothing matches these filters" state.</li>
+<li><strong>Blank values:</strong> <code>CompensationDistributionID</code> rows whose distribution record was deleted are dropped by the inner join today [CODE], so "All distributions" does not include them; that silent drop is flagged in <em>Still needs sign-off</em>, not silently accepted. Whether <code>SubType</code> can be null or zero on real rows is [TO CONFIRM] (backend dev); if it can, such lines must be returned under an explicit "Unclassified" code, never treated as matching a specific pay-type filter.</li>
+<li><strong>Cascade invalidation:</strong> only the Pay type list cascades (from the Period, via the response). Rule above: a selection absent from the new response resets to All client-side.</li>
+</ul>
+<p>Error body convention, matching the Budget Compared to Actual spec:</p>
+<pre><code>{
+  &quot;error&quot;: &quot;invalidCustomRange&quot;,
+  &quot;message&quot;: &quot;window=custom requires both from and to, with from &lt;= to&quot;
+}
+</code></pre>
+<h2>Volume and performance</h2>
+<table>
+<thead>
+<tr>
+<th>Dataset</th>
+<th>Typical rows</th>
+<th>Worst realistic rows (basis)</th>
+<th>Row width</th>
+<th>Payload at worst</th>
+<th>Verdict</th>
+<th>Server cost model</th>
+<th>Cache posture</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>API 1 distribution list</td>
+<td>8 (build demo dataset)</td>
+<td>[TO CONFIRM] (Feargal): an org-defined lookup; the legacy widget loads the full set today with no cap [CODE]</td>
+<td>2 fields, ~80 B</td>
+<td>Tens of KB at most</td>
+<td>BOUNDED</td>
+<td>Single indexed scan of <code>PR_CompensationDistribution</code> by <code>CompanyID</code></td>
+<td>TTL (dev to set); the response <code>asOf</code> is not carried here, staleness only delays a new label</td>
+</tr>
+<tr>
+<td>API 2 summary rows</td>
+<td>~40 (build demo dataset: 8 distributions x 4-6 pay types each)</td>
+<td>Distribution ceiling [TO CONFIRM] (Feargal) x at most 10 SubType codes, fixed by definition; at 100 distributions that is 1,000 rows</td>
+<td>5 fields, ~120 B</td>
+<td>~120 KB at 1,000 rows</td>
+<td>BOUNDED</td>
+<td>One scan of <code>PR_HistoryCompensation</code> joined to <code>PR_History</code> filtered by <code>CompanyID</code> + <code>CheckDate</code> range, GROUP BY distribution + SubType</td>
+<td>LIVE per request, matching the legacy widget's explicit no-caching behaviour [CODE]</td>
+</tr>
+<tr>
+<td>API 3 employee page</td>
+<td>3-7 employees per distribution (build demo dataset, a fixture property, not a ceiling)</td>
+<td>[TO CONFIRM] (Feargal): all employees paid in one distribution in the window at the largest org</td>
+<td>~5 fields + up to 10 nested pay-type rows, ~400 B</td>
+<td>~80 KB per page at the 200 maximum</td>
+<td>MUST PAGINATE</td>
+<td>Same filtered scan restricted to one <code>CompensationDistributionID</code>, GROUP BY employee with a nested SubType rollup; one query, no per-row subqueries</td>
+<td>LIVE per request</td>
+</tr>
+<tr>
+<td>API 4 export</td>
+<td>One file over the current scope</td>
+<td>The full filtered set behind the current view, unpaginated; same [TO CONFIRM] ceilings as above</td>
+<td>n/a (file)</td>
+<td>File download, streamed</td>
+<td>MUST AGGREGATE SERVER-SIDE</td>
+<td>The API 2 or API 3 query without pagination, plus file rendering; PDF rendering is the heavy path and is priced by the dev team</td>
+<td>LIVE per request</td>
+</tr>
+</tbody>
+</table>
+<p>The built Final performs every drill, sort and rollup instantly client-side because its demo dataset is small and its employee rows are generated in the page; that is a property of the fixture. The pay-type axis is bounded by definition (10 codes) so it stays client-side; the employee axis is bounded only by org size, so it moves to the server, and this contract says so instead of mirroring the mock.</p>
+<h3>Pagination contract</h3>
+<p>Applies to API 3's <code>employees[]</code> array; nothing else paginates.</p>
+<ul>
+<li><strong>Params:</strong> <code>page</code> (1-based, default 1) and <code>pageSize</code> (default 50, maximum 200; requests above the maximum are clamped, not errored).</li>
+<li><strong>What paginates:</strong> exactly the <code>employees[]</code> array.</li>
+<li><strong>What does not:</strong> <code>totalAmount</code> and <code>totalCount</code> compute over the full filtered set, never the page. Switching pages changes no total, no caption figure, no chart and no header number.</li>
+<li><strong>Sort params:</strong> <code>sortBy</code> whitelist is <code>totalAmount</code> and <code>employeeName</code>; <code>sortDir</code> is <code>asc</code> or <code>desc</code>; default <code>totalAmount</code> + <code>desc</code>, matching the built table's default order.</li>
+<li><strong>Deterministic total order:</strong> every sort ends in <code>employeeId</code> ascending as the unique tiebreaker, so pages never skip or duplicate an employee.</li>
+<li><strong><code>totalCount</code></strong> is returned beside every page, with <code>page</code> and <code>pageSize</code> echoed.</li>
+<li><strong>Past the last page:</strong> empty <code>employees[]</code>, correct <code>totalCount</code> and <code>totalAmount</code>, HTTP 200, not an error.</li>
+</ul>
+<h2>Where computation lives</h2>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Server or client</th>
+<th>Basis</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Grand total (header, Glance, donut center)</td>
+<td>Client</td>
+<td>Sum over API 2 <code>rows[].amount</code></td>
+<td>Pure arithmetic over a bounded set the client fully holds</td>
+</tr>
+<tr>
+<td>Per-distribution amount (table rows, donut arcs)</td>
+<td>Client</td>
+<td>Rollup of API 2 rows by <code>distributionId</code></td>
+<td>Same bounded set</td>
+</tr>
+<tr>
+<td>% of total per distribution row and donut legend share</td>
+<td>Client</td>
+<td>Distribution amount over grand total</td>
+<td>Pure division over values already present; a zero grand total renders as 0 (the empty state shows instead, since zero rows are never sent)</td>
+</tr>
+<tr>
+<td>Pay-type filter application on the summary</td>
+<td>Client</td>
+<td>Restrict the rollups to one <code>subType</code></td>
+<td>Bounded by definition (10 codes); no server aggregate exists to disagree with</td>
+</tr>
+<tr>
+<td>Pay-type option list</td>
+<td>Client</td>
+<td>Distinct <code>subType</code> with amount &gt; 0 in API 2's rows</td>
+<td>Derivation from the held response</td>
+</tr>
+<tr>
+<td>Distribution table sort</td>
+<td>Client</td>
+<td>Re-order of the bounded rows</td>
+<td>Full set present</td>
+</tr>
+<tr>
+<td>Drill <code>totalAmount</code> and <code>totalCount</code></td>
+<td>Server</td>
+<td>Full filtered employee set</td>
+<td>The client only ever holds one page</td>
+</tr>
+<tr>
+<td>Employee list order</td>
+<td>Server</td>
+<td><code>sortBy</code>/<code>sortDir</code> + <code>employeeId</code> tiebreaker</td>
+<td>Paginated set; client-side sort of a page would be a defect</td>
+</tr>
+<tr>
+<td>Employee share-of-pay per pay-type leaf</td>
+<td>Client</td>
+<td><code>payTypes[].amount</code> over that employee's <code>totalAmount</code></td>
+<td>Both values sit in the same row; a zero denominator renders 0</td>
+</tr>
+<tr>
+<td>Captions and context line text</td>
+<td>Client</td>
+<td>String assembly from held values</td>
+<td>Presentation</td>
+</tr>
+<tr>
+<td>Window resolution (preset to concrete dates)</td>
+<td>Server</td>
+<td><code>window</code> + <code>asOf</code> to <code>window.from</code>/<code>window.to</code></td>
+<td>One authority for what "this_quarter" means; the client renders the echo</td>
+</tr>
+<tr>
+<td>Deltas / comparison values</td>
+<td>Neither server nor client</td>
+<td>None exist</td>
+<td>Sign-off finding F3 rejected comparison for this widget</td>
+</tr>
+</tbody>
+</table>
+<p>No API in this contract returns a server-computed percentage, so no server division-by-zero rule is needed; every percentage is a client division with a stated render-0 rule. No deltas exist to pre-sign. No presentation thresholds exist awaiting approval.</p>
+<h2>API 1: distribution filter options</h2>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/payroll-distributions/filters
+</code></pre>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>(none)</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>The list is scoped entirely by the company context header</td>
+</tr>
+</tbody>
+</table>
+<p>Company scoping: the <code>X-Company-ID</code> header, as on every dashboard endpoint.</p>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/payroll-distributions/filters
+GET /api/dashboard/payroll-distributions/filters   (identical; there is nothing to vary but the company header)
+</code></pre>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>distributions[]</code></td>
+<td>array</td>
+<td>STORED <code>PR_CompensationDistribution</code> [CODE]</td>
+<td>One entry per distribution defined by the org, name-ascending</td>
+</tr>
+<tr>
+<td><code>distributions[].distributionId</code></td>
+<td>guid</td>
+<td>STORED <code>PR_CompensationDistribution.CompensationDistributionID</code> [CODE]</td>
+<td>Stable key; the drill and export param</td>
+</tr>
+<tr>
+<td><code>distributions[].name</code></td>
+<td>string</td>
+<td>STORED <code>PR_CompensationDistribution.Name</code> [CODE]</td>
+<td>Org-defined free-text label (live-verified examples: "AA Aid", "Administration Staff")</td>
+</tr>
+</tbody>
+</table>
+<h3>Example response</h3>
+<pre><code>{
+  &quot;distributions&quot;: [
+    { &quot;distributionId&quot;: &quot;1a7c3e59-4b2d-4f8a-9e6c-0d3f5a7b9c1e&quot;, &quot;name&quot;: &quot;AA Aid&quot; },
+    { &quot;distributionId&quot;: &quot;6f2a9c41-8b3d-4e7a-9c1f-2d5b8e0a3f74&quot;, &quot;name&quot;: &quot;Administration Staff&quot; },
+    { &quot;distributionId&quot;: &quot;3c5e7a90-1d2f-4b6c-8a4e-9f0b2c4d6e81&quot;, &quot;name&quot;: &quot;Facilities&quot; },
+    { &quot;distributionId&quot;: &quot;8d0f2b46-3a5c-4d7e-b1f9-4c6e8a0b2d53&quot;, &quot;name&quot;: &quot;Pastoral Staff&quot; }
+  ]
+}
+</code></pre>
+<p>The list carries no figures, so there is no arithmetic to prove; the ids here are the same ids used in the API 2 and API 3 examples below.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty (org has no distributions)</td>
+<td><code>{ "distributions": [] }</code>, HTTP 200; the chip renders with only "All distributions"</td>
+</tr>
+<tr>
+<td>Partial</td>
+<td>Not applicable: the list has no time dimension</td>
+</tr>
+<tr>
+<td>Not-yet-existing entity</td>
+<td>Not applicable: no id is passed in</td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td>HTTP 403 with the error body convention; the widget itself is not offered to users without the payroll module read right</td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td>HTTP 503 with the error body convention; the client keeps the last-rendered list and shows its error banner</td>
+</tr>
+</tbody>
+</table>
+<h2>API 2: distribution summary</h2>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/payroll-distributions/data
+</code></pre>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>window</code></td>
+<td>enum</td>
+<td>yes</td>
+<td><code>this_month</code>, <code>this_period</code>, <code>this_quarter</code>, <code>this_year</code>, <code>all_time</code>, <code>custom</code></td>
+<td>none; the built default selection is <code>this_month</code></td>
+<td><code>this_month</code> = calendar month containing <code>asOf</code>, to <code>asOf</code>. <code>this_period</code> = the org's current fiscal period, [TO CONFIRM] (Feargal; payroll has no fiscal-period concept in code, only <code>CheckDate</code> [CODE]). <code>this_quarter</code> = rolling, the 3 months back from <code>asOf</code>. <code>this_year</code> = rolling, the 12 months back from <code>asOf</code>. <code>all_time</code> = no lower bound, everything through <code>asOf</code>. <code>custom</code> = the <code>from</code>/<code>to</code> pair</td>
+</tr>
+<tr>
+<td><code>from</code></td>
+<td>date</td>
+<td>only when <code>window=custom</code></td>
+<td>any valid date</td>
+<td>none</td>
+<td>Inclusive range start; rejected with HTTP 400 when sent with any other window</td>
+</tr>
+<tr>
+<td><code>to</code></td>
+<td>date</td>
+<td>only when <code>window=custom</code></td>
+<td>any valid date, <code>&gt;= from</code></td>
+<td>none</td>
+<td>Inclusive range end; same rejection rule</td>
+</tr>
+<tr>
+<td><code>asOf</code></td>
+<td>date</td>
+<td>no</td>
+<td>any valid date</td>
+<td>today (server date)</td>
+<td>Anchors the five preset windows and is echoed back; ignored when <code>window=custom</code>. A historical <code>asOf</code> reproduces a past reading exactly</td>
+</tr>
+</tbody>
+</table>
+<p>Company scoping: the <code>X-Company-ID</code> header. Row selection is <code>PR_History.CheckDate</code> inside the resolved window, with the consistency filters in <em>Tables</em> always applied.</p>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/payroll-distributions/data?window=this_month&amp;asOf=2026-07-27
+GET /api/dashboard/payroll-distributions/data?window=custom&amp;from=2025-07-01&amp;to=2026-06-30
+</code></pre>
+<p>No URL-encoding is needed: every value is an enum token, a date, or a guid.</p>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>asOf</code></td>
+<td>date</td>
+<td>DERIVED (request echo, server-defaulted)</td>
+<td>The anchor this response was computed at; the client passes it to API 3 and API 4</td>
+</tr>
+<tr>
+<td><code>window</code></td>
+<td>object</td>
+<td>DERIVED (server window resolution)</td>
+<td>The concrete span the enum resolved to</td>
+</tr>
+<tr>
+<td><code>window.from</code></td>
+<td>date</td>
+<td>DERIVED as above</td>
+<td>Inclusive resolved start</td>
+</tr>
+<tr>
+<td><code>window.to</code></td>
+<td>date</td>
+<td>DERIVED as above</td>
+<td>Inclusive resolved end</td>
+</tr>
+<tr>
+<td><code>rows[]</code></td>
+<td>array</td>
+<td>DERIVED (container; provenance sits on its child rows)</td>
+<td>One row per distribution + pay type pair with a non-zero sum; zero rows are never sent</td>
+</tr>
+<tr>
+<td><code>rows[].distributionId</code></td>
+<td>guid</td>
+<td>STORED <code>PR_HistoryCompensation.CompensationDistributionID</code> [CODE]</td>
+<td>Stable key; names are org-editable</td>
+</tr>
+<tr>
+<td><code>rows[].distributionName</code></td>
+<td>string</td>
+<td>STORED <code>PR_CompensationDistribution.Name</code> [CODE]</td>
+<td>Resolved at query time, so history reports under the current label</td>
+</tr>
+<tr>
+<td><code>rows[].subType</code></td>
+<td>int</td>
+<td>STORED <code>PR_HistoryCompensation.SubType</code> [CODE]</td>
+<td>Pay-type code 1-10</td>
+</tr>
+<tr>
+<td><code>rows[].subTypeName</code></td>
+<td>string</td>
+<td>DERIVED server, <code>GetSubTypeNameLong</code> over <code>PR_Company</code> labels [CODE]</td>
+<td>Display name; codes 6-9 are org-configured, the client never hardcodes them</td>
+</tr>
+<tr>
+<td><code>rows[].amount</code></td>
+<td>number</td>
+<td>DERIVED <code>SUM(PR_HistoryCompensation.Amount)</code> [CODE]</td>
+<td>Sum for that distribution + pay type in the window</td>
+</tr>
+</tbody>
+</table>
+<h3>Example response</h3>
+<pre><code>{
+  &quot;asOf&quot;: &quot;2026-07-27&quot;,
+  &quot;window&quot;: { &quot;from&quot;: &quot;2026-07-01&quot;, &quot;to&quot;: &quot;2026-07-27&quot; },
+  &quot;rows&quot;: [
+    { &quot;distributionId&quot;: &quot;1a7c3e59-4b2d-4f8a-9e6c-0d3f5a7b9c1e&quot;, &quot;distributionName&quot;: &quot;AA Aid&quot;, &quot;subType&quot;: 1, &quot;subTypeName&quot;: &quot;Regular&quot;, &quot;amount&quot;: 560.00 },
+    { &quot;distributionId&quot;: &quot;6f2a9c41-8b3d-4e7a-9c1f-2d5b8e0a3f74&quot;, &quot;distributionName&quot;: &quot;Administration Staff&quot;, &quot;subType&quot;: 1, &quot;subTypeName&quot;: &quot;Regular&quot;, &quot;amount&quot;: 4199.27 },
+    { &quot;distributionId&quot;: &quot;6f2a9c41-8b3d-4e7a-9c1f-2d5b8e0a3f74&quot;, &quot;distributionName&quot;: &quot;Administration Staff&quot;, &quot;subType&quot;: 2, &quot;subTypeName&quot;: &quot;OverTime&quot;, &quot;amount&quot;: 174.00 },
+    { &quot;distributionId&quot;: &quot;6f2a9c41-8b3d-4e7a-9c1f-2d5b8e0a3f74&quot;, &quot;distributionName&quot;: &quot;Administration Staff&quot;, &quot;subType&quot;: 6, &quot;subTypeName&quot;: &quot;Vacation&quot;, &quot;amount&quot;: 157.36 },
+    { &quot;distributionId&quot;: &quot;3c5e7a90-1d2f-4b6c-8a4e-9f0b2c4d6e81&quot;, &quot;distributionName&quot;: &quot;Facilities&quot;, &quot;subType&quot;: 1, &quot;subTypeName&quot;: &quot;Regular&quot;, &quot;amount&quot;: 1843.75 },
+    { &quot;distributionId&quot;: &quot;3c5e7a90-1d2f-4b6c-8a4e-9f0b2c4d6e81&quot;, &quot;distributionName&quot;: &quot;Facilities&quot;, &quot;subType&quot;: 2, &quot;subTypeName&quot;: &quot;OverTime&quot;, &quot;amount&quot;: 275.00 }
+  ]
+}
+</code></pre>
+<p>Reconciliation: 4,199.27 + 174.00 + 157.36 = 4,530.63 (the Administration Staff distribution total the client rolls up, matching the proof file's live figure) and 1,843.75 + 275.00 = 2,118.75 (Facilities); grand total 560.00 + 4,530.63 + 2,118.75 = 7,209.38, the header, Glance and donut-center number.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty (no checks in the window)</td>
+<td><code>{ "asOf": ..., "window": ..., "rows": [] }</code>, HTTP 200; the client renders "No payroll runs in this range" with the chips still live</td>
+</tr>
+<tr>
+<td>Partial (window extends past the data)</td>
+<td>Normal response over whatever checks exist; no flag, by design: a short history is not an error</td>
+</tr>
+<tr>
+<td>Not-yet-existing entity</td>
+<td>Not applicable: no id is passed in</td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td>HTTP 403 with the error body convention; the widget is not offered to users without the payroll module read right, so this only arises on a revoked session</td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td>HTTP 503 with the error body convention; the client shows its error banner and keeps the chips live</td>
+</tr>
+</tbody>
+</table>
+<h2>API 3: employees in a distribution</h2>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/payroll-distributions/{distributionId}/employees
+</code></pre>
+<p>Requires the payroll permission right (see <em>Auth and scoping</em>). This endpoint is the production replacement for the mock's in-page employee generation: the built drill derives employees deterministically from totals because a fixture has no people in it; production reads the real rows this response defines.</p>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>window</code></td>
+<td>enum</td>
+<td>yes</td>
+<td>as API 2</td>
+<td>none; the client passes its current period selection</td>
+<td>Identical semantics and validation to API 2</td>
+</tr>
+<tr>
+<td><code>from</code></td>
+<td>date</td>
+<td>only when <code>window=custom</code></td>
+<td>any valid date</td>
+<td>none</td>
+<td>As API 2</td>
+</tr>
+<tr>
+<td><code>to</code></td>
+<td>date</td>
+<td>only when <code>window=custom</code></td>
+<td>any valid date, <code>&gt;= from</code></td>
+<td>none</td>
+<td>As API 2</td>
+</tr>
+<tr>
+<td><code>asOf</code></td>
+<td>date</td>
+<td>no</td>
+<td>any valid date</td>
+<td>today (server date)</td>
+<td>The client passes API 2's echoed value so the two responses cannot straddle a posting</td>
+</tr>
+<tr>
+<td><code>ptSubType</code></td>
+<td>int</td>
+<td>no</td>
+<td>1-10</td>
+<td>omitted (all pay types)</td>
+<td>Restricts the nested <code>payTypes[]</code> rows and every total to one pay type; employees with nothing left are excluded</td>
+</tr>
+<tr>
+<td><code>page</code></td>
+<td>int</td>
+<td>no</td>
+<td><code>&gt;= 1</code></td>
+<td>1</td>
+<td>1-based page over <code>employees[]</code></td>
+</tr>
+<tr>
+<td><code>pageSize</code></td>
+<td>int</td>
+<td>no</td>
+<td>1-200</td>
+<td>50</td>
+<td>Clamped at 200</td>
+</tr>
+<tr>
+<td><code>sortBy</code></td>
+<td>enum</td>
+<td>no</td>
+<td><code>totalAmount</code>, <code>employeeName</code></td>
+<td><code>totalAmount</code></td>
+<td>Whitelisted sort field; always tiebroken by <code>employeeId</code> ascending</td>
+</tr>
+<tr>
+<td><code>sortDir</code></td>
+<td>enum</td>
+<td>no</td>
+<td><code>asc</code>, <code>desc</code></td>
+<td><code>desc</code></td>
+<td>Applies to <code>sortBy</code></td>
+</tr>
+</tbody>
+</table>
+<p>Company scoping: the <code>X-Company-ID</code> header. The <code>{distributionId}</code> path segment must belong to that company or the call is HTTP 404.</p>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/payroll-distributions/6f2a9c41-8b3d-4e7a-9c1f-2d5b8e0a3f74/employees?window=this_month&amp;asOf=2026-07-27&amp;page=1&amp;pageSize=50&amp;sortBy=totalAmount&amp;sortDir=desc
+GET /api/dashboard/payroll-distributions/6f2a9c41-8b3d-4e7a-9c1f-2d5b8e0a3f74/employees?window=this_month&amp;asOf=2026-07-27&amp;ptSubType=2
+</code></pre>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>asOf</code></td>
+<td>date</td>
+<td>DERIVED (request echo)</td>
+<td>Must equal the API 2 echo rendered beside it</td>
+</tr>
+<tr>
+<td><code>window</code></td>
+<td>object</td>
+<td>DERIVED (server window resolution)</td>
+<td>As API 2</td>
+</tr>
+<tr>
+<td><code>window.from</code></td>
+<td>date</td>
+<td>DERIVED as above</td>
+<td>Inclusive resolved start</td>
+</tr>
+<tr>
+<td><code>window.to</code></td>
+<td>date</td>
+<td>DERIVED as above</td>
+<td>Inclusive resolved end</td>
+</tr>
+<tr>
+<td><code>distributionId</code></td>
+<td>guid</td>
+<td>STORED <code>PR_CompensationDistribution.CompensationDistributionID</code> [CODE]</td>
+<td>Echo of the path segment</td>
+</tr>
+<tr>
+<td><code>distributionName</code></td>
+<td>string</td>
+<td>STORED <code>PR_CompensationDistribution.Name</code> [CODE]</td>
+<td>Current label</td>
+</tr>
+<tr>
+<td><code>totalAmount</code></td>
+<td>number</td>
+<td>DERIVED <code>SUM(Amount)</code> over the FULL filtered employee set [DOC]</td>
+<td>Never the page. Cross-foots to the client rollup of API 2's rows for this distribution under the same window, pay-type filter and <code>asOf</code></td>
+</tr>
+<tr>
+<td><code>totalCount</code></td>
+<td>int</td>
+<td>DERIVED count over the full filtered set</td>
+<td>Employee count for the caption and the pager</td>
+</tr>
+<tr>
+<td><code>page</code></td>
+<td>int</td>
+<td>DERIVED (request echo)</td>
+<td>1-based</td>
+</tr>
+<tr>
+<td><code>pageSize</code></td>
+<td>int</td>
+<td>DERIVED (request echo, clamped)</td>
+<td>Effective page size</td>
+</tr>
+<tr>
+<td><code>employees[]</code></td>
+<td>array</td>
+<td>DERIVED (container; provenance sits on its child rows)</td>
+<td>One page of employees, ordered per <code>sortBy</code>/<code>sortDir</code> + <code>employeeId</code></td>
+</tr>
+<tr>
+<td><code>employees[].employeeId</code></td>
+<td>guid</td>
+<td>UNVERIFIED (backend dev to confirm the <code>PR_Employee</code> key column) [DOC]</td>
+<td>Stable row key and pagination tiebreaker</td>
+</tr>
+<tr>
+<td><code>employees[].employeeName</code></td>
+<td>string</td>
+<td>UNVERIFIED (backend dev to confirm the display-name column behind the proof file's <code>PR_Employee</code> join) [DOC]</td>
+<td>Last-comma-first display name</td>
+</tr>
+<tr>
+<td><code>employees[].totalAmount</code></td>
+<td>number</td>
+<td>DERIVED <code>SUM(Amount)</code> for that employee in this distribution and window [DOC]</td>
+<td>Under <code>ptSubType</code>, only that pay type's lines are summed</td>
+</tr>
+<tr>
+<td><code>employees[].payTypes[]</code></td>
+<td>array</td>
+<td>DERIVED (container; provenance sits on its child rows)</td>
+<td>That person's pay-type rollup; at most 10 entries, filtered by <code>ptSubType</code> when sent</td>
+</tr>
+<tr>
+<td><code>employees[].payTypes[].subType</code></td>
+<td>int</td>
+<td>STORED <code>PR_HistoryCompensation.SubType</code> [CODE]</td>
+<td>Pay-type code</td>
+</tr>
+<tr>
+<td><code>employees[].payTypes[].subTypeName</code></td>
+<td>string</td>
+<td>DERIVED server, <code>GetSubTypeNameLong</code> [CODE]</td>
+<td>Display name, org labels resolved</td>
+</tr>
+<tr>
+<td><code>employees[].payTypes[].amount</code></td>
+<td>number</td>
+<td>DERIVED <code>SUM(Amount)</code> [DOC]</td>
+<td>Sums exactly to the employee's <code>totalAmount</code></td>
+</tr>
+</tbody>
+</table>
+<h3>Example response</h3>
+<pre><code>{
+  &quot;asOf&quot;: &quot;2026-07-27&quot;,
+  &quot;window&quot;: { &quot;from&quot;: &quot;2026-07-01&quot;, &quot;to&quot;: &quot;2026-07-27&quot; },
+  &quot;distributionId&quot;: &quot;6f2a9c41-8b3d-4e7a-9c1f-2d5b8e0a3f74&quot;,
+  &quot;distributionName&quot;: &quot;Administration Staff&quot;,
+  &quot;totalAmount&quot;: 4530.63,
+  &quot;totalCount&quot;: 3,
+  &quot;page&quot;: 1,
+  &quot;pageSize&quot;: 50,
+  &quot;employees&quot;: [
+    {
+      &quot;employeeId&quot;: &quot;9b1e5d73-2c4a-4f6b-8d0e-1a3c5e7f9b2d&quot;,
+      &quot;employeeName&quot;: &quot;Aarons, Mike&quot;,
+      &quot;totalAmount&quot;: 2084.00,
+      &quot;payTypes&quot;: [
+        { &quot;subType&quot;: 1, &quot;subTypeName&quot;: &quot;Regular&quot;, &quot;amount&quot;: 1984.00 },
+        { &quot;subType&quot;: 6, &quot;subTypeName&quot;: &quot;Vacation&quot;, &quot;amount&quot;: 100.00 }
+      ]
+    },
+    {
+      &quot;employeeId&quot;: &quot;4e8a2c60-7d1f-4b3e-9a5c-6f0d2b4e8a1c&quot;,
+      &quot;employeeName&quot;: &quot;Smith, Jane&quot;,
+      &quot;totalAmount&quot;: 1501.00,
+      &quot;payTypes&quot;: [
+        { &quot;subType&quot;: 1, &quot;subTypeName&quot;: &quot;Regular&quot;, &quot;amount&quot;: 1327.00 },
+        { &quot;subType&quot;: 2, &quot;subTypeName&quot;: &quot;OverTime&quot;, &quot;amount&quot;: 174.00 }
+      ]
+    },
+    {
+      &quot;employeeId&quot;: &quot;7c3f9e15-8b2d-4a6c-b0e4-2d5f7a9c1e3b&quot;,
+      &quot;employeeName&quot;: &quot;Brown, Tom&quot;,
+      &quot;totalAmount&quot;: 945.63,
+      &quot;payTypes&quot;: [
+        { &quot;subType&quot;: 1, &quot;subTypeName&quot;: &quot;Regular&quot;, &quot;amount&quot;: 888.27 },
+        { &quot;subType&quot;: 6, &quot;subTypeName&quot;: &quot;Vacation&quot;, &quot;amount&quot;: 57.36 }
+      ]
+    }
+  ]
+}
+</code></pre>
+<p>Reconciliation: 2,084.00 + 1,501.00 + 945.63 = 4,530.63, so the employees sum to <code>totalAmount</code>, which itself matches API 2's Administration Staff rows for the same window and <code>asOf</code>: 4,199.27 + 174.00 + 157.36 = 4,530.63. Per pay type across employees: 1,984.00 + 1,327.00 + 888.27 = 4,199.27 (Regular) and 100.00 + 57.36 = 157.36 (Vacation), each matching its API 2 row; OverTime is Smith's single 174.00 line, matching its API 2 row.</p>
+<p>The second example request (<code>ptSubType=2</code>) returns only Smith, Jane with <code>totalAmount</code> 174.00, one <code>payTypes[]</code> entry (OverTime, 174.00), <code>totalCount</code> 1, and the same window echo: a pay-type filter changes amounts and membership everywhere, server-side, because this list paginates.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty (no employee paid in this distribution in the window, or none left under <code>ptSubType</code>)</td>
+<td><code>employees</code> empty, <code>totalCount</code> 0, <code>totalAmount</code> 0, HTTP 200; the client renders "Nothing matches these filters" naming the combination</td>
+</tr>
+<tr>
+<td>Partial (window extends past the data)</td>
+<td>Normal response over the checks that exist</td>
+</tr>
+<tr>
+<td>Not-yet-existing entity (unknown or foreign <code>distributionId</code>)</td>
+<td>HTTP 404 with the error body convention; the client treats it as a vanished drill and returns to All distributions</td>
+</tr>
+<tr>
+<td>Permission denied (no payroll permission right)</td>
+<td>HTTP 403 with the error body convention. The client never calls this endpoint for such users: distribution rows render inert with no drill affordance, and a chosen distribution falls back to its pay-type rows from API 2</td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td>HTTP 503 with the error body convention; the drill panel shows the error, the summary above it stays rendered</td>
+</tr>
+</tbody>
+</table>
+<h2>API 4: export</h2>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/payroll-distributions/export
+</code></pre>
+<p>Streams a file (<code>Content-Disposition: attachment</code>); there is no JSON response schema. The file's rows are whatever the parameters resolve to, over the FULL filtered set, never a page: with no <code>distributionId</code>, one row per distribution with its pay-type amounts; with a <code>distributionId</code> and the payroll permission right, that distribution's employees with their pay-type rollups (the API 3 set, unpaginated); with a <code>distributionId</code> and no payroll right, that distribution's pay-type totals only. The served scope is decided server-side from the caller's rights, so a crafted request cannot widen it.</p>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>format</code></td>
+<td>enum</td>
+<td>no</td>
+<td><code>csv</code>, <code>xlsx</code>, <code>pdf</code></td>
+<td><code>xlsx</code></td>
+<td>The caption-row button sends <code>xlsx</code>; the card-menu items send their own format</td>
+</tr>
+<tr>
+<td><code>window</code></td>
+<td>enum</td>
+<td>yes</td>
+<td>as API 2</td>
+<td>none; the client passes its current period selection</td>
+<td>Identical semantics and validation to API 2</td>
+</tr>
+<tr>
+<td><code>from</code></td>
+<td>date</td>
+<td>only when <code>window=custom</code></td>
+<td>any valid date</td>
+<td>none</td>
+<td>As API 2</td>
+</tr>
+<tr>
+<td><code>to</code></td>
+<td>date</td>
+<td>only when <code>window=custom</code></td>
+<td>any valid date, <code>&gt;= from</code></td>
+<td>none</td>
+<td>As API 2</td>
+</tr>
+<tr>
+<td><code>asOf</code></td>
+<td>date</td>
+<td>no</td>
+<td>any valid date</td>
+<td>today (server date)</td>
+<td>The client passes API 2's echoed value so the file matches the screen</td>
+</tr>
+<tr>
+<td><code>distributionId</code></td>
+<td>guid</td>
+<td>no</td>
+<td>a company distribution id</td>
+<td>omitted (all distributions)</td>
+<td>Scopes the file as described above</td>
+</tr>
+<tr>
+<td><code>ptSubType</code></td>
+<td>int</td>
+<td>no</td>
+<td>1-10</td>
+<td>omitted (all pay types)</td>
+<td>Restricts the file's pay-type columns and totals</td>
+</tr>
+</tbody>
+</table>
+<p>Company scoping: the <code>X-Company-ID</code> header.</p>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/payroll-distributions/export?format=xlsx&amp;window=this_month&amp;asOf=2026-07-27
+GET /api/dashboard/payroll-distributions/export?format=csv&amp;window=this_month&amp;asOf=2026-07-27&amp;distributionId=6f2a9c41-8b3d-4e7a-9c1f-2d5b8e0a3f74&amp;ptSubType=2
+</code></pre>
+<h3>Response schema</h3>
+<p>No JSON schema: the response is a file stream. Column content mirrors the API 2 and API 3 schemas above, with the same provenance; the file carries the resolved window and <code>asOf</code> in its header rows so a saved file is self-describing.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty (nothing matches)</td>
+<td>A valid file with header rows and zero data rows, HTTP 200</td>
+</tr>
+<tr>
+<td>Partial</td>
+<td>A valid file over the checks that exist</td>
+</tr>
+<tr>
+<td>Not-yet-existing entity (unknown <code>distributionId</code>)</td>
+<td>HTTP 404 with the error body convention, no file</td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td>Never a 403 for the totals scope (any widget viewer may export what they can see); an employee-scope request without the payroll right is served the pay-type-totals file for that distribution instead, mirroring what that viewer's screen shows</td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td>HTTP 503 with the error body convention, no partial file</td>
+</tr>
+</tbody>
+</table>
+<h2>Auth and scoping</h2>
+<ul>
+<li><strong>Company / tenant scoping:</strong> every endpoint reads the <code>X-Company-ID</code> context header, and every query is scoped by <code>CompanyID</code> under it. [CODE] (the modern dashboard convention per <code>Widget_Comparison_Classic.html</code>)</li>
+<li><strong>Widget read right:</strong> the legacy widget is gated by the <code>/Payroll</code> access URI at Inquiry level [CODE]; the modern equivalent right for APIs 1, 2 and 4 is [TO CONFIRM] (backend dev). A user without it does not see the widget at all (the legacy pattern hides ungated widgets from the picker and hides the body if placed [CODE]).</li>
+<li><strong>Employee-level right (APIs 3, and API 4's employee scope):</strong> access to per-person pay is limited to users with payroll permission [SME] (Feargal, 2026-08-25 call). The exact right name / URI and level are [TO CONFIRM] (Feargal + backend dev). A reader without it gets HTTP 403 from API 3, never sees a drill affordance, and their exports contain totals only.</li>
+<li><strong>No writes:</strong> every API in this contract is read-only; there is no write right to define.</li>
+</ul>
+<h2>Edge cases</h2>
+<ol>
+<li><strong>Empty window:</strong> zero checks in range returns an empty <code>rows[]</code> (API 2) with HTTP 200; the client's grand total is 0 and the empty state renders with the chips live.</li>
+<li><strong>Filter pair matching nothing:</strong> a distribution that never pays the filtered pay type in the window is a well-formed zero response, not an error (see Filter architecture).</li>
+<li><strong>Distribution renamed:</strong> <code>distributionName</code> resolves at query time, so history reports under the current label; clients key on <code>distributionId</code> only.</li>
+<li><strong>Distribution deleted:</strong> today's inner join silently drops those compensation rows [CODE]; the money was really paid, so this is an open sign-off item, not a specced behaviour.</li>
+<li><strong>Pay types with no lines:</strong> no row is sent (API 2) and no <code>payTypes[]</code> entry appears (API 3); the client never renders zero-amount pay-type rows.</li>
+<li><strong>Three-paycheck months:</strong> weekly and bi-weekly cycles give some calendar months an extra check; the window reports what was actually paid, and no comparison field exists to misread it (F3).</li>
+<li><strong>Custom range spanning years:</strong> no special handling; selection is by <code>CheckDate</code> inside the inclusive pair.</li>
+<li><strong>Reversed custom pair:</strong> HTTP 400, never silently swapped.</li>
+<li><strong>Unknown or foreign <code>distributionId</code>:</strong> HTTP 404 on APIs 3 and 4 (the id is the resource); the summary never takes one.</li>
+<li><strong>Invalid <code>ptSubType</code>:</strong> outside 1-10 is HTTP 400.</li>
+<li><strong>Page past the end:</strong> empty <code>employees[]</code> with correct <code>totalCount</code> and <code>totalAmount</code>, HTTP 200.</li>
+<li><strong>Employee paid in several distributions:</strong> they appear in each distribution's API 3 list with only that distribution's lines; the same person's rows in two drills do not sum to their org-wide pay, by design.</li>
+<li><strong>Employee hired or terminated mid-window:</strong> no special handling; their checks dated inside the window are simply present.</li>
+<li><strong>Null or zero <code>SubType</code> on real rows:</strong> [TO CONFIRM] (backend dev); if possible, such lines return under an explicit "Unclassified" code rather than vanishing or matching a filter.</li>
+<li><strong>Stale <code>asOf</code> after a payroll posting:</strong> a refresh fetches API 2 with a fresh <code>asOf</code> and re-anchors any open drill; two calls rendered together always carry the same <code>asOf</code>, so a posting between them cannot produce a header that disagrees with its drill.</li>
+</ol>
+<h2>Not in scope</h2>
+<ul>
+<li><strong>No comparison, ever.</strong> No prior-period figures, no <code>prior</code>, <code>diffAmount</code> or <code>diffPct</code> fields, no trend or delta elements. Sign-off finding F3 rejected comparison for this widget; the built Final contains no comparison view and this contract is a boundary, not an omission. If comparison is ever revisited, F3's own condition applies: the three-paycheck-month effect makes equal-basis alignment mandatory.</li>
+<li><strong>No grain and no buckets.</strong> The window is scope-only aggregation: one flat result per request, never a time series.</li>
+<li><strong>No hours and no rates.</strong> <code>Hours</code> and <code>Rate</code> are evidenced available on the same rows (proof file) but the built design displays amounts only, so they are not returned anywhere.</li>
+<li><strong>No per-check detail.</strong> API 3 aggregates per employee over the window; check dates, check numbers and per-check lines are not returned.</li>
+<li><strong>No flat cross-org employee list.</strong> Employees are reachable only through their own distribution; the build deliberately removed the route to an org-wide per-person list and this contract does not recreate it.</li>
+<li><strong>No link out to the Payroll History module.</strong> The drill stays inside the widget (sign-off finding F8's recommendation, which the built design follows); no deep-link contract is needed.</li>
+<li><strong>No Department dimension.</strong> No department field exists on or via <code>PR_History</code>/<code>PR_HistoryCompensation</code> [CODE]; the grouping is the org-defined distribution labels.</li>
+<li><strong>No project or workers-comp breakdowns.</strong> <code>ProjectID</code> and <code>WorkersCompID</code> exist on the rows; nothing in the built Final needs them.</li>
+<li><strong>No recurring-schedule flags or per-distribution period modes.</strong> Cut from the design (sign-off finding F2, aligned); no backend surface.</li>
+<li><strong>No per-user preference persistence.</strong> The widget's filter state is session-local; nothing here writes <code>SSUserTenantPreference</code>.</li>
+<li><strong>No server-computed totals or percentages on the summary.</strong> Grand total, per-distribution rollups and shares are client arithmetic over API 2's bounded rows.</li>
+</ul>
+<h2>Still needs sign-off</h2>
+<ul>
+<li><strong><code>this_period</code> semantics.</strong> Payroll has no fiscal-period concept in code (only <code>CheckDate</code>) [CODE], while the shared window picker treats <code>this_period</code> as the org's fiscal period. Decide: resolve it from the GL fiscal calendar, or drop the preset for this widget. Who: Feargal + the project owner. Blocked: the server's window-resolution rule for that one preset; the other five are fully specified.</li>
+<li><strong>Payroll permission right, exact name and level.</strong> Feargal stated the employee level is restricted to users with payroll permission [SME]; the concrete right / URI / access level for APIs 3 and 4's employee scope is unconfirmed. Who: Feargal + backend dev. Blocked: the auth gate wiring on API 3 and API 4's scope resolution; the shapes themselves are settled.</li>
+<li><strong><code>PR_Employee</code> key and display-name columns.</strong> The employee join is evidenced (proof file) but the exact columns behind <code>employeeId</code> and <code>employeeName</code> are unconfirmed. Who: backend dev. Blocked: two schema cells marked UNVERIFIED; nothing structural.</li>
+<li><strong>Distribution count ceiling.</strong> The volume verdicts assume a config-lookup-sized distribution list; the realistic ceiling at the largest org is uncited. Who: Feargal. Blocked: confirmation of API 2's BOUNDED verdict; if orgs run to thousands of distributions, API 2 needs a pagination pass.</li>
+<li><strong>Worst-case employees per distribution.</strong> Uncited; drives API 3's <code>pageSize</code> tuning and the export's cost envelope. Who: Feargal. Blocked: nothing structural (the endpoint paginates regardless).</li>
+<li><strong>Orphaned <code>CompensationDistributionID</code> rows.</strong> Today's inner join silently drops compensation lines whose distribution was deleted [CODE]; the money was really paid. Confirm intended, or return them under a placeholder label. Who: project owner + backend dev. Blocked: the "All distributions" total's completeness guarantee.</li>
+<li><strong>Null / zero <code>SubType</code> on real rows.</strong> Whether the column is guaranteed 1-10; drives edge case 14. Who: backend dev. Blocked: the "Unclassified" fallback's necessity.</li>
+<li><strong>PDF export rendering.</strong> CSV and Excel are flat row dumps; PDF needs layout work whose cost only the dev team can price. Decide whether PDF ships in the first cut or the menu item is dropped until it does. Who: dev team lead. Blocked: API 4's <code>format=pdf</code> value only.</li>
+<li><strong>Reconciliation file statuses.</strong> The Step 6 reconciliation file still lists findings 2 (F3, comparison), 3 (F8, in-widget drill) and 4 (F6, amount-descending default) as open items; the built design and this contract match all three findings' outcomes. Who: project owner, to update the statuses in <code>Step 6 - Sign off document/Payroll Distrubution/Reconciliation - Payroll Distributions.md</code>. Blocked: nothing in this contract; the flag is so the dossier and the contract cannot be read as disagreeing.</li>
+<li><strong>Parallel sign-off-aligned spec.</strong> A second Payroll Distributions API spec exists in the widget's Step 6 folder, written against the sign-off dossier before the current build existed. Decide whether it is retired or reconciled into this contract. Who: project owner. Blocked: nothing in this contract; the flag prevents two contracts circulating.</li>
+</ul>
+
+</body>
+</html>

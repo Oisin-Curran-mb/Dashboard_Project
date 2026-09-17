@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Budget Compared to Actual - API Spec</title>
+<style>
+body { font-family: -apple-system, Helvetica, Arial, sans-serif; max-width: 900px; margin: 30px auto; line-height: 1.5; color: #172B4D; }
+h1 { font-size: 24px; }
+h2 { font-size: 19px; border-bottom: 1px solid #DFE1E6; padding-bottom: 6px; margin-top: 32px; }
+h3 { font-size: 16px; margin-top: 20px; }
+table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+th, td { border: 1px solid #DFE1E6; padding: 6px 10px; text-align: left; vertical-align: top; }
+th { background: #F4F5F7; }
+code { background: #F4F5F7; padding: 1px 5px; border-radius: 3px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 90%; }
+pre { background: #F4F5F7; padding: 12px; border-radius: 4px; overflow-x: auto; }
+pre code { background: none; padding: 0; }
+.status { background: #FFF0B3; display: inline-block; padding: 3px 10px; border-radius: 3px; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<h1>Budget Compared to Actual - API Spec</h1>
+<p><span class="status">Status: Done - awaiting sign-off (drafting complete, owner review pending)</span></p>
+<h2>Overview</h2>
+<p>The widget answers one question: is the organisation's income or spending ahead of or behind its budget, for a chosen scope, over a chosen slice of time? The scope is Income accounts, Expense accounts, or one Special Report Line; time selection follows the Time Window Module contract (<code>window</code> + <code>grain</code> + <code>asOf</code>), whose authority for all time logic is <code>Step 3 - Mock_Work/Widget_Specs/Time Window Module.md</code>. The headline is the signed dollar variance over the window's posted buckets, with a percent of budget as support; favourability direction flips by account type and is a client presentation over the returned sign.</p>
+<p>This contract defines three APIs: a bounded data read fired on render and on every scope, window, grain, or asOf change (API 1); and two rarely-changing special-report lookups fired only when the report dialog opens (API 2 report list, API 3 lines within a report). The justification lives in the API inventory below. No API writes anything.</p>
+<h2>Design → API coverage (required)</h2>
+<table>
+<thead>
+<tr>
+<th>Design element</th>
+<th>Type</th>
+<th>API</th>
+<th>Field(s)</th>
+<th>Provenance</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Headline signed dollar variance</td>
+<td>KPI</td>
+<td>API 1</td>
+<td><code>total.variance</code></td>
+<td>DERIVED server-side, pre-signed</td>
+</tr>
+<tr>
+<td>Headline quiet percent of budget</td>
+<td>KPI</td>
+<td>API 1</td>
+<td><code>total.variancePercent</code></td>
+<td>DERIVED server-side, null when budget is 0</td>
+</tr>
+<tr>
+<td>Favourability pill (Favourable / Unfavourable / neutral over-under for a mixed line)</td>
+<td>state</td>
+<td>API 1</td>
+<td><code>total.variance</code>, <code>lineType</code>, <code>accountType</code></td>
+<td>Client derivation: sign of the returned variance, direction flipped by account type</td>
+</tr>
+<tr>
+<td>Headline explanation text behind the info control</td>
+<td>state</td>
+<td>API 1</td>
+<td><code>total.budget</code>, <code>total.actual</code></td>
+<td>Client-composed sentence over returned figures</td>
+</tr>
+<tr>
+<td>Scope switch (Income accounts / Expense accounts / Special report)</td>
+<td>filter</td>
+<td>API 1</td>
+<td><code>accountType</code></td>
+<td>Request param, echoed</td>
+</tr>
+<tr>
+<td>Special-report context line under the headline</td>
+<td>state</td>
+<td>API 2, API 3</td>
+<td><code>reports[].name</code>, <code>lines[].name</code></td>
+<td>Client echo of the applied selection</td>
+</tr>
+<tr>
+<td>Window picker (five windows)</td>
+<td>filter</td>
+<td>API 1</td>
+<td><code>window</code></td>
+<td>Request param, echoed</td>
+</tr>
+<tr>
+<td>Grain toggle with unavailable grains disabled</td>
+<td>filter</td>
+<td>API 1</td>
+<td><code>grain</code></td>
+<td>Request param, echoed; availability matrix client-side, validation server-side</td>
+</tr>
+<tr>
+<td>Bar view, budget and actual series per bucket</td>
+<td>chart series</td>
+<td>API 1</td>
+<td><code>buckets[].budget</code>, <code>buckets[].actual</code></td>
+<td>DERIVED sums, see Tables</td>
+</tr>
+<tr>
+<td>Signed per-bucket variance row under the bars</td>
+<td>chart series</td>
+<td>API 1</td>
+<td><code>buckets[].budget</code>, <code>buckets[].actual</code></td>
+<td>Client subtraction of two returned values</td>
+</tr>
+<tr>
+<td>Bucket axis labels</td>
+<td>chart</td>
+<td>API 1</td>
+<td><code>buckets[].start</code>, <code>buckets[].end</code></td>
+<td>Client formats by grain</td>
+</tr>
+<tr>
+<td>Bar and line point readout card (Budget, Actual, Variance, partial note)</td>
+<td>state</td>
+<td>API 1</td>
+<td><code>buckets[].budget</code>, <code>buckets[].actual</code>, <code>buckets[].partial</code></td>
+<td>Client render of returned bucket</td>
+</tr>
+<tr>
+<td>Line view trend, and its fewer-than-two-points guard</td>
+<td>chart series / state</td>
+<td>API 1</td>
+<td><code>buckets[]</code></td>
+<td>Client; guard is a rule over the returned array length</td>
+</tr>
+<tr>
+<td>Table view rows (Period / Budget / Actual / Variance)</td>
+<td>table column</td>
+<td>API 1</td>
+<td><code>buckets[].start</code>, <code>buckets[].end</code>, <code>buckets[].budget</code>, <code>buckets[].actual</code></td>
+<td>Client; per-row variance is client arithmetic</td>
+</tr>
+<tr>
+<td>Table sorting on every header</td>
+<td>interaction</td>
+<td>API 1</td>
+<td><code>buckets[]</code></td>
+<td>Client, over a bounded set (31 rows maximum)</td>
+</tr>
+<tr>
+<td>"Total, posted so far" footer</td>
+<td>KPI</td>
+<td>API 1</td>
+<td><code>buckets[].budget</code>, <code>buckets[].actual</code></td>
+<td>Client sum over posted buckets; must reconcile with <code>total</code></td>
+</tr>
+<tr>
+<td>Partial bucket marker</td>
+<td>state</td>
+<td>API 1</td>
+<td><code>buckets[].partial</code></td>
+<td>Server flag; the client cannot know posting state</td>
+</tr>
+<tr>
+<td>No-budget empty state with its set-up action</td>
+<td>state</td>
+<td>API 1</td>
+<td><code>buckets[].budget</code></td>
+<td>Client rule: no bucket has budget greater than 0</td>
+</tr>
+<tr>
+<td>Sub-period budget basis caption</td>
+<td>state</td>
+<td>API 1</td>
+<td><code>budgetDerived</code></td>
+<td>Server reports how sub-period budgets were produced</td>
+</tr>
+<tr>
+<td>Report dropdown in the special-report dialog (name plus line count)</td>
+<td>filter</td>
+<td>API 2</td>
+<td><code>reports[].id</code>, <code>reports[].name</code>, <code>reports[].lineCount</code></td>
+<td>See API 2 schema</td>
+</tr>
+<tr>
+<td>Line dropdown in the special-report dialog (name plus account-type tag, and the preview sentence)</td>
+<td>filter</td>
+<td>API 3</td>
+<td><code>lines[].id</code>, <code>lines[].name</code>, <code>lines[].type</code></td>
+<td>See API 3 schema</td>
+</tr>
+<tr>
+<td>Apply gating and dialog prefill</td>
+<td>interaction</td>
+<td>none</td>
+<td>Client-side dialog state only, no field</td>
+<td>Client</td>
+</tr>
+<tr>
+<td>Two independent panels at the Detail tier, each with its own grain</td>
+<td>view</td>
+<td>API 1</td>
+<td>One API 1 call per panel grain, shared <code>asOf</code></td>
+<td>Same schema per call</td>
+</tr>
+<tr>
+<td>Glance caption naming the window</td>
+<td>state</td>
+<td>API 1</td>
+<td><code>window</code></td>
+<td>Client label from the echo</td>
+</tr>
+<tr>
+<td>Loading skeleton</td>
+<td>state</td>
+<td>none</td>
+<td>Client-side presentation only, no field</td>
+<td>Client</td>
+</tr>
+<tr>
+<td>Refresh control</td>
+<td>action</td>
+<td>API 1</td>
+<td>Re-fires the active API 1 call(s) with a fresh <code>asOf</code>; same fields as initial load</td>
+<td>n/a</td>
+</tr>
+</tbody>
+</table>
+<p>Every response field below appears in at least one row above; the request echoes (<code>asOf</code>, <code>generatedAt</code>) exist for reconciliation and caching, not for display.</p>
+<h2>Tables (required)</h2>
+<table>
+<thead>
+<tr>
+<th>Table / repository</th>
+<th>Fields and members used</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GLSummary</code></td>
+<td><code>Amount</code> (posted actuals per account and period)</td>
+</tr>
+<tr>
+<td><code>GLBudgetDetail</code></td>
+<td><code>Budget</code> per account and period; original-budget filter via <code>GLBudget.RevisionStartingPeriodID</code></td>
+</tr>
+<tr>
+<td><code>GLPeriod</code></td>
+<td><code>Period</code>, <code>YearID</code>; periods named <code>"Audit"</code> excluded</td>
+</tr>
+<tr>
+<td><code>GLYear</code></td>
+<td><code>BeginDate</code>, <code>CompanyID</code> (per-company fiscal calendars)</td>
+</tr>
+<tr>
+<td><code>GLAccount</code></td>
+<td><code>AccountNumber</code>, <code>StatementType</code> (<code>I</code> / <code>E</code>), <code>MasterAccountID</code></td>
+</tr>
+<tr>
+<td><code>GLSpecialReport</code></td>
+<td><code>SpecialReportID</code>, <code>Name</code>, <code>CompanyID</code>, <code>HasLines</code></td>
+</tr>
+<tr>
+<td><code>GLSpecialReportLine</code></td>
+<td><code>SpecialReportLineID</code>, <code>SpecialReportID</code>, <code>LineNumber</code>, <code>Name</code>, <code>ReverseSign</code>, low/high <code>AccountNumber</code> range</td>
+</tr>
+<tr>
+<td><code>GLJournalDetail</code></td>
+<td><code>DetailDate</code>, <code>Amount</code> (transaction grain, the only source for day and week actuals)</td>
+</tr>
+<tr>
+<td><code>SSUserTenantPreferenceRepository</code></td>
+<td>Legacy per-user preference store (<code>UserPreferences.WidgetBudgetComparedToActual</code>); not used by this contract, see Still needs sign-off</td>
+</tr>
+</tbody>
+</table>
+<p>No new tables and no schema changes are needed. Month, period, quarter, and year buckets are new queries against the same tables the legacy and modern widgets already read. Day and week buckets are genuinely new backend work against <code>GLJournalDetail</code>, because <code>GLSummary</code> is period grain and <code>GLBudgetDetail</code> holds nothing below period grain.</p>
+<p>Core formulas and standing filters, each quotable in isolation:</p>
+<ul>
+<li><strong>Actual</strong> = <code>SUM(GLSummary.Amount)</code> per bucket, times the sign multiplier. [CODE, <code>BudgetComparedToActual.ascx.cs</code> LoadRecords, via <code>Widget_Comparison_Classic.html</code>]</li>
+<li><strong>Budget</strong> = <code>SUM(GLBudgetDetail.Budget)</code> per bucket, times the sign multiplier, where <code>GLBudget.RevisionStartingPeriodID</code> is null. Only the original budget is ever compared; revision rows are excluded. [CODE, LoadRecords]</li>
+<li><strong>Sign multiplier</strong>: Income accounts times -1, Expense accounts times +1; a Special Report Line uses its own <code>ReverseSign</code> flag instead. Amounts arrive already sign-adjusted; the client never sign-corrects. [CODE, confirmed matching in both codebases per <code>Widget_Comparison_Classic.html</code>]</li>
+<li><strong>Periods included</strong>: <code>GLPeriod</code> rows for the fiscal year(s) the window touches, ordered by <code>Period</code>, excluding any period named <code>"Audit"</code>. [CODE]</li>
+<li><strong>Special Report Line account set</strong>: accounts whose <code>AccountNumber</code> falls within the line's configured low/high range (<code>ReportHelpers.SpecialReportAccounts</code>). [CODE]</li>
+<li><strong>Master-company rollup</strong>: when <code>CompanyNumber</code> is 0, child accounts join via <code>GLAccount.MasterAccountID</code>. Present in legacy; the modern data endpoint returns an empty list for master companies today and must reinstate this join. [CODE, LoadRecords; the modern gap is recorded in <code>Widget_Comparison_Classic.html</code>]</li>
+<li><strong>Day and week actuals</strong>: <code>GLJournalDetail.DetailDate</code> is <code>date NOT NULL</code> with <code>Amount</code>, so transaction-level day/week actuals are available; no code does this today. [CODE, <code>Pending Questions - Codebase Findings</code> Q2]</li>
+<li><strong>Cross-fiscal-year budgets</strong>: no existing code fetches budget rows across two fiscal years; the rolling windows require it. NEW. [CODE, Q3]</li>
+<li><strong>Fiscal calendars are per company</strong>: <code>GLYear.BeginDate</code> sets each org's year start; never assume a July or January boundary. [CODE, Q4]</li>
+</ul>
+<h2>Old vs. new (required)</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Old (live today)</th>
+<th>New (needed)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Data endpoint</td>
+<td><code>GET /api/dashboard/budget-vs-actual/data?accountType={0\|1\|2}&amp;specialReportLineId={guid}</code> returns <code>List&lt;BudgetVsActualPeriodDto&gt;</code> <code>{PeriodId, Period, DisplayValue, Actual, Budget, ActualYTD, BudgetYTD}</code>: monthly rows for one fiscal year</td>
+<td>Same path; adds <code>window</code>, <code>grain</code>, <code>asOf</code>; response becomes <code>total</code> plus <code>buckets[]</code>. NEW query shape over existing tables</td>
+</tr>
+<tr>
+<td>Fiscal year selection</td>
+<td><code>X-Year-ID</code> header required</td>
+<td>Header dropped; the fiscal year(s) derive from <code>window</code> + <code>asOf</code> + the org's own <code>GLPeriod</code> calendar. NEW derivation</td>
+</tr>
+<tr>
+<td>Rolling windows</td>
+<td>None; every read is single-fiscal-year</td>
+<td><code>this_quarter</code> and <code>this_year</code> roll back from <code>asOf</code> and can cross the fiscal-year seam; budget lookup spans two fiscal years in one request. NEW</td>
+</tr>
+<tr>
+<td>Sub-period grains</td>
+<td>None; <code>GLSummary</code> is period grain</td>
+<td>Day and week actuals from <code>GLJournalDetail</code>; sub-period budgets DERIVED, reported via <code>budgetDerived</code>. NEW backend work</td>
+</tr>
+<tr>
+<td>Window totals and variance</td>
+<td>None; <code>ActualYTD</code> / <code>BudgetYTD</code> cumulative columns, variance left to the caller</td>
+<td><code>total</code> object (<code>budget</code>, <code>actual</code>, <code>variance</code>, <code>variancePercent</code>) computed over posted buckets. NEW, DERIVED</td>
+</tr>
+<tr>
+<td>Cumulative series</td>
+<td><code>ActualYTD</code> / <code>BudgetYTD</code> returned on every row</td>
+<td>Dropped: no view in the design consumes a cumulative series</td>
+</tr>
+<tr>
+<td>Report list</td>
+<td><code>GET /api/dashboard/budget-vs-actual/filters</code> returns <code>BudgetVsActualFiltersDto {SpecialReports: List&lt;DropDownItem&gt;}</code></td>
+<td>Same endpoint, plus <code>lineCount</code> per report. NEW field</td>
+</tr>
+<tr>
+<td>Line list</td>
+<td><code>GET /api/dashboard/budget-vs-actual/special-report-lines?specialReportId={guid}</code> returns <code>List&lt;DropDownItem&gt;</code> ordered by <code>LineNumber</code></td>
+<td>Same endpoint, plus <code>type</code> per line (income / expense / mixed, classified from the line's account range). NEW, DERIVED</td>
+</tr>
+<tr>
+<td>Master company</td>
+<td>Modern returns an empty list for <code>CompanyNumber=0</code>; legacy joins <code>MasterAccountID</code></td>
+<td>Must fix: reinstate the join so consolidated orgs return combined figures. Restores existing legacy behaviour, STORED reads</td>
+</tr>
+<tr>
+<td>Preference persistence</td>
+<td>Legacy saves each user's scope per company; modern does not</td>
+<td>Not in this contract; client-managed state, listed in Still needs sign-off</td>
+</tr>
+<tr>
+<td>Excel export</td>
+<td>Legacy generates XLSX in-page; modern has no endpoint</td>
+<td>Not in this contract; the built design has no export control</td>
+</tr>
+</tbody>
+</table>
+<h2>API inventory (required)</h2>
+<table>
+<thead>
+<tr>
+<th>API</th>
+<th>Purpose</th>
+<th>Trigger (when it fires)</th>
+<th>Cardinality</th>
+<th>R/W</th>
+<th>Cache posture</th>
+<th>Split trigger</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>API 1: budget-vs-actual data</td>
+<td>Buckets plus window totals for one scope, window, grain, asOf</td>
+<td>Widget render; every scope, window, grain, or asOf change; special-report Apply; refresh; one call per panel at the Detail tier</td>
+<td>1 to 31 buckets plus one <code>total</code> object</td>
+<td>R</td>
+<td>LIVE per request</td>
+<td>Baseline data read; grain gap and trigger gap against the two lookups</td>
+</tr>
+<tr>
+<td>API 2: special report list</td>
+<td>Report names for step one of the report dialog</td>
+<td>Dialog open</td>
+<td>Customer-created list, ceiling [TO CONFIRM] (Feargal)</td>
+<td>R</td>
+<td>TTL, minutes-scale; changes rarely</td>
+<td>Lifetime gap (rarely-changing lookup vs live data) and trigger gap (fires on dialog open, never on render)</td>
+</tr>
+<tr>
+<td>API 3: special report lines</td>
+<td>Lines within one chosen report, for step two of the dialog</td>
+<td>Report chosen in the dialog; dialog open when a report is already applied (prefill)</td>
+<td>2 to 4 per report [BUILD]; ceiling [TO CONFIRM] (Feargal)</td>
+<td>R</td>
+<td>TTL, minutes-scale</td>
+<td>Cascade lookup: takes <code>specialReportId</code> as a param; lifetime gap and trigger gap</td>
+</tr>
+</tbody>
+</table>
+<p>Considered and settled: API 2 and API 3 stay separate rather than merging into one nested payload because API 3 is a cascade keyed by the chosen report and API 2 must render before any report is chosen; both already exist as separate endpoints, and merging would fetch every org report's lines for a dialog that usually needs one report's. API 1 stays one endpoint across all windows and grains (the Time Window Module contract) because every combination returns the same bucket shape; splitting per grain would multiply endpoints with no cardinality, lifetime, or grain gap between them.</p>
+<h2>Call sequence (required)</h2>
+<table>
+<thead>
+<tr>
+<th>Interaction</th>
+<th>Calls fired</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Initial widget load</td>
+<td>API 1</td>
+<td>Defaults: <code>accountType=0</code>, <code>window=this_fiscal_year</code>, <code>grain</code> omitted (server resolves month), <code>asOf</code> omitted (today)</td>
+</tr>
+<tr>
+<td>Change scope to Income or Expense</td>
+<td>API 1</td>
+<td>One round trip</td>
+</tr>
+<tr>
+<td>Open the special-report dialog</td>
+<td>API 2; plus API 3 when a report is already applied</td>
+<td>Prefill; no data call yet</td>
+</tr>
+<tr>
+<td>Change the report inside the dialog</td>
+<td>API 3</td>
+<td>Pending line selection cleared client-side</td>
+</tr>
+<tr>
+<td>Apply the special report</td>
+<td>API 1 with <code>accountType=2</code> and <code>specialReportLineId</code></td>
+<td>Apply is disabled until both report and line are chosen, so an incomplete pair can never reach the wire</td>
+</tr>
+<tr>
+<td>Change window</td>
+<td>API 1</td>
+<td>An invalid grain snaps client-side to the new window's smallest available grain before the call</td>
+</tr>
+<tr>
+<td>Change grain</td>
+<td>API 1</td>
+<td>Window unchanged</td>
+</tr>
+<tr>
+<td>Switch view (Bar / Line / Table)</td>
+<td>none</td>
+<td>Client re-render over the held response</td>
+</tr>
+<tr>
+<td>Sort the table</td>
+<td>none</td>
+<td>Client re-order of the held buckets</td>
+</tr>
+<tr>
+<td>Change one panel's grain at the Detail tier</td>
+<td>API 1 for that panel only</td>
+<td>The two panels share scope, window, and <code>asOf</code>; each holds its own grain's response</td>
+</tr>
+<tr>
+<td>Refresh</td>
+<td>API 1 (both panel calls at the Detail tier)</td>
+<td>Fresh <code>asOf</code></td>
+</tr>
+</tbody>
+</table>
+<p>Shared snapshot anchor: at the Detail tier the two panel calls pass the same <code>asOf</code> and both responses echo it. The echoes matching is the consistency proof; on a mismatch the client re-issues both calls. A single-panel tier needs no anchor beyond its own echo.</p>
+<h2>Filter architecture (required)</h2>
+<table>
+<thead>
+<tr>
+<th>Filter</th>
+<th>Option source</th>
+<th>Cardinality</th>
+<th>Execution</th>
+<th>Aggregate effect</th>
+<th>Cascade</th>
+<th>"All" wire form</th>
+<th>Round trips</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Scope</td>
+<td>STATIC enum: <code>0</code> Income accounts, <code>1</code> Expense accounts, <code>2</code> Special report line</td>
+<td>3</td>
+<td>SERVER <code>accountType</code></td>
+<td>Yes: every figure re-queries</td>
+<td>Choosing Special report requires the report-then-line dialog before any data call</td>
+<td>No "All" state exists; the scope is always exactly one of the three</td>
+<td>1 (API 1)</td>
+</tr>
+<tr>
+<td>Report name (dialog step one)</td>
+<td>LOOKUP API 2: <code>GLSpecialReport</code> where <code>HasLines</code> is true, ordered by <code>Name</code></td>
+<td>Customer-created; [TO CONFIRM] (Feargal)</td>
+<td>SERVER, indirectly: only the resulting <code>specialReportLineId</code> is ever a data param</td>
+<td>Yes, once applied</td>
+<td>Line list depends on it; changing the report clears the pending line, never keeps a stale one</td>
+<td>n/a: there is no all-reports data read</td>
+<td>1 (API 3 when it changes)</td>
+</tr>
+<tr>
+<td>Report line (dialog step two)</td>
+<td>LOOKUP API 3: <code>GLSpecialReportLine</code> within the chosen report, ordered by <code>LineNumber</code></td>
+<td>2 to 4 per report [BUILD]; ceiling [TO CONFIRM] (Feargal)</td>
+<td>SERVER <code>specialReportLineId</code></td>
+<td>Yes</td>
+<td>Depends on report name (see above)</td>
+<td>n/a: a line is mandatory when the scope is Special report</td>
+<td>1 (API 1 on Apply)</td>
+</tr>
+<tr>
+<td>Window</td>
+<td>STATIC enum: <code>this_month</code>, <code>this_period</code>, <code>this_quarter</code>, <code>this_year</code>, <code>this_fiscal_year</code></td>
+<td>5</td>
+<td>SERVER <code>window</code></td>
+<td>Yes: <code>total</code> recomputes over the new window</td>
+<td>Constrains grain availability (the 2-to-31 law)</td>
+<td>n/a: a window is always selected; the default is <code>this_fiscal_year</code></td>
+<td>1 (API 1)</td>
+</tr>
+<tr>
+<td>Grain</td>
+<td>STATIC enum: <code>day</code>, <code>week</code>, <code>month</code>, <code>period</code>, <code>quarter</code>, <code>year</code>, gated per window by the availability matrix</td>
+<td>6</td>
+<td>SERVER <code>grain</code></td>
+<td>Yes: sub-period grains change the budget basis (<code>budgetDerived</code>)</td>
+<td>Depends on window; an omitted grain resolves server-side to the window's smallest available grain</td>
+<td>Omitting the param is the only "default" form; there is no all-grains read</td>
+<td>1 (API 1)</td>
+</tr>
+<tr>
+<td>View (Bar / Line / Table)</td>
+<td>STATIC: bar, line, table</td>
+<td>3</td>
+<td>CLIENT: the full set is already present in the held response, provably bounded at 31 buckets by the availability law, and switching it changes no server-computed aggregate</td>
+<td>No</td>
+<td>No</td>
+<td>n/a</td>
+<td>0</td>
+</tr>
+<tr>
+<td>Table sort</td>
+<td>STATIC: four columns, two directions</td>
+<td>8</td>
+<td>CLIENT: same three conditions; a re-order of at most 31 held rows touching no aggregate</td>
+<td>No</td>
+<td>No</td>
+<td>n/a</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Combination semantics:</strong> AND across all filters; exactly one scope, one window, one grain per call. No pair is OR and no pair is mutually exclusive beyond the availability matrix.</li>
+<li><strong>Conflict rules:</strong> <code>specialReportLineId</code> present with <code>accountType</code> 0 or 1, or <code>accountType=2</code> with no <code>specialReportLineId</code>, is rejected with HTTP 400 <code>invalidParams</code>; nothing is silently ignored and no param takes precedence. A grain invalid for the window is rejected with HTTP 400 <code>invalidGrain</code> listing <code>allowedGrains</code>; the server never substitutes a grain silently.</li>
+<li><strong>Cascade invalidation:</strong> the line list is keyed by <code>specialReportId</code>; when the report changes, the pending line is cleared to unselected and Apply stays disabled until a new line is chosen.</li>
+<li><strong>Empty results:</strong> a valid combination matching nothing (for example a line whose account range holds no accounts) returns a well-formed zero response, not an error: <code>buckets[]</code> present with <code>budget</code> 0 or null and <code>actual</code> null, <code>total.actual</code> 0, <code>total.variance</code> and <code>total.variancePercent</code> null.</li>
+<li><strong>Blank values:</strong> no filterable field is free-text or nullable here, so no blank-row wildcard rule is needed; scope, window, and grain are always exactly one enum value each.</li>
+<li><strong>Lookup endpoints:</strong> both lookups are the pre-existing filters and special-report-lines endpoints, extended with one field each (see Old vs. new); they appear in the API inventory as API 2 and API 3.</li>
+</ul>
+<h2>Volume and performance (required)</h2>
+<table>
+<thead>
+<tr>
+<th>Dataset</th>
+<th>Typical rows</th>
+<th>Worst realistic rows (basis)</th>
+<th>Row width</th>
+<th>Payload at worst</th>
+<th>Verdict</th>
+<th>Server cost model</th>
+<th>Cache posture</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>API 1 <code>buckets[]</code></td>
+<td>12 (month grain on the fiscal-year window) [BUILD]</td>
+<td>31: the 2-to-31 availability law caps every window and grain pairing; day grain on a 31-day month is the ceiling [DOC, Time Window Module]</td>
+<td>5 fields, about 90 bytes</td>
+<td>About 3 KB</td>
+<td>BOUNDED</td>
+<td>Month and coarser: indexed aggregate over <code>GLSummary</code> joined to <code>GLPeriod</code>, one or two fiscal years of budget rows. Day and week: a transaction scan over <code>GLJournalDetail</code> rows inside the window across the scoped accounts; the multiplier is journal lines in window, not buckets</td>
+<td>LIVE per request</td>
+</tr>
+<tr>
+<td>API 2 reports</td>
+<td>Single digits at the demo org [BUILD]</td>
+<td>[TO CONFIRM] (Feargal): customer-created, no ceiling known</td>
+<td>3 fields, about 60 bytes</td>
+<td>Unknown until the ceiling is confirmed</td>
+<td>BOUNDED, assumed; flips to a searchable server-side lookup if the confirmed ceiling passes about 200</td>
+<td>Single indexed scan of <code>GLSpecialReport</code> by <code>CompanyID</code>, <code>HasLines</code> true</td>
+<td>TTL, minutes-scale</td>
+</tr>
+<tr>
+<td>API 3 lines in one report</td>
+<td>2 to 4 [BUILD]</td>
+<td>[TO CONFIRM] (Feargal)</td>
+<td>3 fields, about 60 bytes</td>
+<td>Small</td>
+<td>BOUNDED, assumed, same condition as API 2</td>
+<td>Indexed scan by <code>SpecialReportID</code>, plus one classification pass over <code>GLAccount.StatementType</code> in each line's range to derive <code>type</code></td>
+<td>TTL, minutes-scale</td>
+</tr>
+</tbody>
+</table>
+<p>The bucket series is one entity (the scope aggregate) by up to 31 points, so the N by M product is at most 1 by 31 per request; there is no per-entity series and no fan-out. The build re-renders grain changes instantly because the mock holds synthetic daily data client-side; that is a fixture property. In production a grain change is a server re-query, because sub-period actuals are transaction-level queries and sub-period budgets are a server derivation, and this contract says so plainly rather than mirroring the build.</p>
+<h3>Pagination contract</h3>
+<p>Nothing paginates: every dataset verdict above is BOUNDED, so no pagination, server-side sort, or <code>totalCount</code> machinery applies to this contract.</p>
+<h2>Where computation lives (required)</h2>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Server or client</th>
+<th>Basis</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Sign normalisation (Income times -1, Expense times +1, <code>ReverseSign</code> on a special line)</td>
+<td>Server</td>
+<td>Existing convention [CODE]</td>
+<td>The client never sign-corrects raw GL amounts</td>
+</tr>
+<tr>
+<td>Bucketing to the requested grain, including quarter and year rollups keyed to each month's own fiscal year</td>
+<td>Server</td>
+<td><code>buckets[]</code></td>
+<td>Needs the org's <code>GLPeriod</code> calendar and cross-year keys the client does not hold</td>
+</tr>
+<tr>
+<td><code>total.budget</code> and <code>total.actual</code> over posted buckets</td>
+<td>Server</td>
+<td><code>total</code></td>
+<td>One authority for the headline; the posted-only basis is a rule, not client improvisation</td>
+</tr>
+<tr>
+<td><code>total.variance</code></td>
+<td>Server</td>
+<td>Pre-signed delta, <code>total.actual - total.budget</code></td>
+<td>Returned signed; the client formats and never subtracts across the wire</td>
+</tr>
+<tr>
+<td><code>total.variancePercent</code></td>
+<td>Server</td>
+<td>Null when <code>total.budget</code> is 0</td>
+<td>The divider owns the division-by-zero rule: null, never 0 or an error</td>
+</tr>
+<tr>
+<td>Per-bucket variance</td>
+<td>Client</td>
+<td><code>buckets[].budget</code>, <code>buckets[].actual</code></td>
+<td>Pure arithmetic over two values in the same returned object</td>
+</tr>
+<tr>
+<td>Favourability direction (over budget reads favourable on income, unfavourable on expense; a mixed line is neutral)</td>
+<td>Client</td>
+<td><code>accountType</code>, <code>lineType</code></td>
+<td>Presentation banding over the returned sign; the flip is a display rule</td>
+</tr>
+<tr>
+<td>"Total, posted so far" footer</td>
+<td>Client</td>
+<td>Posted buckets</td>
+<td>The full bounded set is present; must equal <code>total</code> when the grain covers the window</td>
+</tr>
+<tr>
+<td>Table sort order</td>
+<td>Client</td>
+<td>Bounded set, 31 rows maximum</td>
+<td>No aggregate is affected</td>
+</tr>
+<tr>
+<td>Grain availability matrix</td>
+<td>Client and server, duplicated</td>
+<td>The 2-to-31 law [DOC, Time Window Module]</td>
+<td>Client disables, server rejects; the two rules must never disagree</td>
+</tr>
+<tr>
+<td><code>partial</code> flag</td>
+<td>Server</td>
+<td>Window edges plus posting state</td>
+<td>The client cannot know posting state</td>
+</tr>
+<tr>
+<td>Sub-period budget figures (pace line or proration)</td>
+<td>Server</td>
+<td><code>budgetDerived</code></td>
+<td>The derivation choice is server work and is reported honestly in the response</td>
+</tr>
+<tr>
+<td>No-budget state trigger</td>
+<td>Client</td>
+<td>Every bucket's <code>budget</code> is 0 or null</td>
+<td>A rule over the held set</td>
+</tr>
+<tr>
+<td>Trend guard (fewer than two points)</td>
+<td>Client</td>
+<td><code>buckets[]</code> length</td>
+<td>Presentation rule</td>
+</tr>
+</tbody>
+</table>
+<p>Deltas come back pre-signed. The only server-computed percentage is <code>total.variancePercent</code>, and its division-by-zero rule is stated above. No numeric presentation threshold exists beyond the sign of the variance, so nothing is waiting on a threshold approval.</p>
+<h2>API 1: budget-vs-actual data (required)</h2>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/budget-vs-actual/data
+</code></pre>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>accountType</code></td>
+<td>int enum</td>
+<td>yes</td>
+<td><code>0</code> | <code>1</code> | <code>2</code></td>
+<td>none</td>
+<td><code>0</code> Income accounts, <code>1</code> Expense accounts, <code>2</code> Special report line</td>
+</tr>
+<tr>
+<td><code>specialReportLineId</code></td>
+<td>guid</td>
+<td>only when <code>accountType=2</code></td>
+<td>any line id from API 3</td>
+<td>none</td>
+<td>The one Special Report Line to read; forbidden with <code>accountType</code> 0 or 1</td>
+</tr>
+<tr>
+<td><code>window</code></td>
+<td>string enum</td>
+<td>yes</td>
+<td><code>this_month</code> | <code>this_period</code> | <code>this_quarter</code> | <code>this_year</code> | <code>this_fiscal_year</code></td>
+<td>none</td>
+<td><code>this_quarter</code> and <code>this_year</code> are rolling, anchored to <code>asOf</code>; the others are the current calendar month, current fiscal period, and fiscal year to date</td>
+</tr>
+<tr>
+<td><code>grain</code></td>
+<td>string enum</td>
+<td>no</td>
+<td><code>day</code> | <code>week</code> | <code>month</code> | <code>period</code> | <code>quarter</code> | <code>year</code></td>
+<td>the window's smallest available grain</td>
+<td>Validated per window by the 2-to-31 rule with the module's two summary exceptions; invalid combinations are rejected, never substituted</td>
+</tr>
+<tr>
+<td><code>asOf</code></td>
+<td>date</td>
+<td>no</td>
+<td>any valid date</td>
+<td>today, server date</td>
+<td>Anchors the rolling windows and the posted-total basis; a historical <code>asOf</code> reproduces that past report exactly</td>
+</tr>
+</tbody>
+</table>
+<p>The company context header is <code>X-Company-ID</code> (see Auth and scoping). There is no fiscal-year header: the server derives the fiscal year(s) from <code>window</code> + <code>asOf</code> + the org's own <code>GLPeriod</code> calendar.</p>
+<p>The omitted-grain default is a contract rule, not a convenience: the server resolves it to the window's smallest available grain (day, day, week, month, month for the five windows in order), and the client's snap-on-window-change behaviour assumes exactly this rule, so the two must never disagree. [DOC, Time Window Module]</p>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/budget-vs-actual/data?accountType=0&amp;window=this_fiscal_year&amp;grain=month&amp;asOf=2026-09-02
+GET /api/dashboard/budget-vs-actual/data?accountType=2&amp;specialReportLineId=3fa85f64-5717-4562-b3fc-2c963f66afa6&amp;window=this_month&amp;grain=week&amp;asOf=2026-08-31
+</code></pre>
+<p>Guids and dates contain no characters needing URL encoding; if a future param ever does, encode it.</p>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>accountType</code></td>
+<td>int</td>
+<td>DERIVED, request echo [BUILD]</td>
+<td>Echo of the request</td>
+</tr>
+<tr>
+<td><code>window</code></td>
+<td>string</td>
+<td>DERIVED, request echo [BUILD]</td>
+<td>Echo of the resolved window</td>
+</tr>
+<tr>
+<td><code>grain</code></td>
+<td>string</td>
+<td>DERIVED, server-resolved echo [DOC, Time Window Module]</td>
+<td>The resolved grain, meaningful when the request omitted it</td>
+</tr>
+<tr>
+<td><code>asOf</code></td>
+<td>date</td>
+<td>DERIVED, server-resolved echo [DOC, Time Window Module]</td>
+<td>The resolved anchor; the Detail tier's consistency proof</td>
+</tr>
+<tr>
+<td><code>generatedAt</code></td>
+<td>datetime, UTC</td>
+<td>NEW server stamp [DOC, template convention]</td>
+<td>Generation time</td>
+</tr>
+<tr>
+<td><code>budgetDerived</code></td>
+<td>string</td>
+<td>NEW [DOC, Time Window Module]</td>
+<td>Present only when <code>grain</code> is <code>day</code> or <code>week</code>: <code>"paceLine"</code> (recommended), <code>"prorated"</code>, or <code>"native"</code>. How sub-period budget figures were produced</td>
+</tr>
+<tr>
+<td><code>lineType</code></td>
+<td>string</td>
+<td>NEW, DERIVED: all accounts in the line's range <code>StatementType=I</code> is <code>"income"</code>, all <code>E</code> is <code>"expense"</code>, otherwise <code>"mixed"</code> [CODE, <code>GLAccount.StatementType</code>]</td>
+<td>Present only when <code>accountType=2</code>; drives the favourability flip and the neutral treatment of mixed lines</td>
+</tr>
+<tr>
+<td><code>total</code></td>
+<td>object</td>
+<td>DERIVED, see leaves</td>
+<td>Window totals over posted buckets only</td>
+</tr>
+<tr>
+<td><code>total.budget</code></td>
+<td>number</td>
+<td>DERIVED: <code>SUM(GLBudgetDetail.Budget)</code> over buckets with posted actuals, original rows only, sign-adjusted [CODE formulas; posted-only basis per the built Final]</td>
+<td>The budget the posted actuals are compared against; at sub-period grains with <code>budgetDerived: "paceLine"</code> it is the budget pace at <code>asOf</code></td>
+</tr>
+<tr>
+<td><code>total.actual</code></td>
+<td>number</td>
+<td>DERIVED: <code>SUM(GLSummary.Amount)</code> over posted buckets, sign-adjusted [CODE]</td>
+<td>Sum of posted actuals in the window</td>
+</tr>
+<tr>
+<td><code>total.variance</code></td>
+<td>number or null</td>
+<td>NEW, DERIVED: <code>total.actual - total.budget</code>, signed [BUILD headline formula]</td>
+<td>Null when no bucket has posted actuals</td>
+</tr>
+<tr>
+<td><code>total.variancePercent</code></td>
+<td>number or null</td>
+<td>NEW, DERIVED: <code>total.variance / total.budget * 100</code>, one decimal [BUILD]</td>
+<td>Null when <code>total.budget</code> is 0 or <code>total.variance</code> is null</td>
+</tr>
+<tr>
+<td><code>buckets[]</code></td>
+<td>array</td>
+<td>DERIVED, see leaves</td>
+<td>Always chronological; one entry per grain unit in the window</td>
+</tr>
+<tr>
+<td><code>buckets[].start</code></td>
+<td>date</td>
+<td>DERIVED from <code>GLPeriod</code> boundaries or calendar math per grain [CODE, <code>GLPeriod</code>]</td>
+<td>Inclusive range start</td>
+</tr>
+<tr>
+<td><code>buckets[].end</code></td>
+<td>date</td>
+<td>DERIVED, as above</td>
+<td>Inclusive range end</td>
+</tr>
+<tr>
+<td><code>buckets[].budget</code></td>
+<td>number</td>
+<td>DERIVED: <code>SUM(GLBudgetDetail.Budget)</code> per bucket at period grain and coarser [CODE]; NEW derivation per <code>budgetDerived</code> at day and week</td>
+<td>The bucket's budget figure</td>
+</tr>
+<tr>
+<td><code>buckets[].actual</code></td>
+<td>number or null</td>
+<td>DERIVED: <code>SUM(GLSummary.Amount)</code> per bucket [CODE]; NEW at day and week via <code>GLJournalDetail</code> [CODE, Q2]</td>
+<td>Null for unposted buckets, never 0: null means nothing posted yet</td>
+</tr>
+<tr>
+<td><code>buckets[].partial</code></td>
+<td>boolean</td>
+<td>NEW flag: bucket cut by a window edge, or in progress at <code>asOf</code></td>
+<td>The client marks these visually</td>
+</tr>
+</tbody>
+</table>
+<h3>Example response</h3>
+<p>Fiscal-year window at month grain for a calendar-aligned org; fiscal calendars vary per org, so buckets always follow the org's own <code>GLPeriod</code> calendar. The two unposted months carry null actuals and sit outside <code>total</code>.</p>
+<pre><code>{
+  &quot;accountType&quot;: 0,
+  &quot;window&quot;: &quot;this_fiscal_year&quot;,
+  &quot;grain&quot;: &quot;month&quot;,
+  &quot;asOf&quot;: &quot;2026-09-02&quot;,
+  &quot;generatedAt&quot;: &quot;2026-09-02T09:00:00Z&quot;,
+  &quot;total&quot;: {
+    &quot;budget&quot;: 312000,
+    &quot;actual&quot;: 317900,
+    &quot;variance&quot;: 5900,
+    &quot;variancePercent&quot;: 1.9
+  },
+  &quot;buckets&quot;: [
+    { &quot;start&quot;: &quot;2026-01-01&quot;, &quot;end&quot;: &quot;2026-01-31&quot;, &quot;budget&quot;: 42000, &quot;actual&quot;: 44200, &quot;partial&quot;: false },
+    { &quot;start&quot;: &quot;2026-02-01&quot;, &quot;end&quot;: &quot;2026-02-28&quot;, &quot;budget&quot;: 42000, &quot;actual&quot;: 40100, &quot;partial&quot;: false },
+    { &quot;start&quot;: &quot;2026-03-01&quot;, &quot;end&quot;: &quot;2026-03-31&quot;, &quot;budget&quot;: 44000, &quot;actual&quot;: 47300, &quot;partial&quot;: false },
+    { &quot;start&quot;: &quot;2026-04-01&quot;, &quot;end&quot;: &quot;2026-04-30&quot;, &quot;budget&quot;: 44000, &quot;actual&quot;: 41800, &quot;partial&quot;: false },
+    { &quot;start&quot;: &quot;2026-05-01&quot;, &quot;end&quot;: &quot;2026-05-31&quot;, &quot;budget&quot;: 46000, &quot;actual&quot;: 48900, &quot;partial&quot;: false },
+    { &quot;start&quot;: &quot;2026-06-01&quot;, &quot;end&quot;: &quot;2026-06-30&quot;, &quot;budget&quot;: 46000, &quot;actual&quot;: 43500, &quot;partial&quot;: false },
+    { &quot;start&quot;: &quot;2026-07-01&quot;, &quot;end&quot;: &quot;2026-07-31&quot;, &quot;budget&quot;: 48000, &quot;actual&quot;: 52100, &quot;partial&quot;: false },
+    { &quot;start&quot;: &quot;2026-08-01&quot;, &quot;end&quot;: &quot;2026-08-31&quot;, &quot;budget&quot;: 48000, &quot;actual&quot;: null, &quot;partial&quot;: false },
+    { &quot;start&quot;: &quot;2026-09-01&quot;, &quot;end&quot;: &quot;2026-09-30&quot;, &quot;budget&quot;: 50000, &quot;actual&quot;: null, &quot;partial&quot;: true }
+  ]
+}
+</code></pre>
+<p>Reconciliation: posted budgets 42000 + 42000 + 44000 + 44000 + 46000 + 46000 + 48000 = 312000, matching <code>total.budget</code>; posted actuals 44200 + 40100 + 47300 + 41800 + 48900 + 43500 + 52100 = 317900, matching <code>total.actual</code>; and 312000 + 5900 = 317900, so <code>total.variance</code> is 5900 and <code>total.variancePercent</code> is 1.9 (5900 over 312000, one decimal). The August and September budgets (48000 and 50000) are deliberately outside <code>total</code>, which is the posted-only basis the headline and the posted-so-far footer both use.</p>
+<p>A second shape, showing the conditional fields: a special report line (expense) on the month window at week grain, <code>asOf</code> at month end. <code>budgetDerived</code> reports the pace-line basis and <code>lineType</code> drives the favourability flip.</p>
+<pre><code>{
+  &quot;accountType&quot;: 2,
+  &quot;window&quot;: &quot;this_month&quot;,
+  &quot;grain&quot;: &quot;week&quot;,
+  &quot;asOf&quot;: &quot;2026-08-31&quot;,
+  &quot;generatedAt&quot;: &quot;2026-08-31T18:00:00Z&quot;,
+  &quot;budgetDerived&quot;: &quot;paceLine&quot;,
+  &quot;lineType&quot;: &quot;expense&quot;,
+  &quot;total&quot;: {
+    &quot;budget&quot;: 28000,
+    &quot;actual&quot;: 27600,
+    &quot;variance&quot;: -400,
+    &quot;variancePercent&quot;: -1.4
+  },
+  &quot;buckets&quot;: [
+    { &quot;start&quot;: &quot;2026-08-01&quot;, &quot;end&quot;: &quot;2026-08-02&quot;, &quot;budget&quot;: 1806, &quot;actual&quot;: 1750, &quot;partial&quot;: true },
+    { &quot;start&quot;: &quot;2026-08-03&quot;, &quot;end&quot;: &quot;2026-08-09&quot;, &quot;budget&quot;: 6323, &quot;actual&quot;: 6100, &quot;partial&quot;: false },
+    { &quot;start&quot;: &quot;2026-08-10&quot;, &quot;end&quot;: &quot;2026-08-16&quot;, &quot;budget&quot;: 6323, &quot;actual&quot;: 6420, &quot;partial&quot;: false },
+    { &quot;start&quot;: &quot;2026-08-17&quot;, &quot;end&quot;: &quot;2026-08-23&quot;, &quot;budget&quot;: 6323, &quot;actual&quot;: 6180, &quot;partial&quot;: false },
+    { &quot;start&quot;: &quot;2026-08-24&quot;, &quot;end&quot;: &quot;2026-08-30&quot;, &quot;budget&quot;: 6322, &quot;actual&quot;: 6300, &quot;partial&quot;: false },
+    { &quot;start&quot;: &quot;2026-08-31&quot;, &quot;end&quot;: &quot;2026-08-31&quot;, &quot;budget&quot;: 903, &quot;actual&quot;: 850, &quot;partial&quot;: true }
+  ]
+}
+</code></pre>
+<p>Reconciliation: week budgets 1806 + 6323 + 6323 + 6323 + 6322 + 903 = 28000, matching <code>total.budget</code>; week actuals 1750 + 6100 + 6420 + 6180 + 6300 + 850 = 27600, matching <code>total.actual</code>; and 27600 + 400 = 28000, so <code>total.variance</code> is -400 (actual minus budget, signed) and <code>total.variancePercent</code> is -1.4. On an expense line the client reads -400 as under budget and therefore favourable; the server never bakes favourability into the sign.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty (scope matches no data)</td>
+<td>200 with <code>buckets[]</code> for the window, every <code>actual</code> null, <code>total.actual</code> 0, <code>total.variance</code> and <code>total.variancePercent</code> null. Not an error</td>
+</tr>
+<tr>
+<td>No budget entered</td>
+<td>200 with real actuals and <code>budget</code> 0 (or null where genuinely absent) on every bucket; never a fabricated figure that reads as fully over budget. The client renders its set-up state from this</td>
+</tr>
+<tr>
+<td>Partial (window extends past posted data)</td>
+<td>200; unposted buckets carry <code>actual</code> null, in-progress buckets carry <code>partial</code> true, <code>total</code> spans posted buckets only</td>
+</tr>
+<tr>
+<td>Not-yet-existing entity (window predates the org's GL data)</td>
+<td>200 with whatever <code>GLPeriod</code> rows exist; a window touching no periods returns an empty <code>buckets[]</code> and a null-variance <code>total</code></td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td>403 with an error body; final user-facing treatment is a product decision, see Still needs sign-off</td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td>503 with an error body; the client keeps the last held response and its <code>generatedAt</code> stamp</td>
+</tr>
+</tbody>
+</table>
+<h2>API 2: special report list (required)</h2>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/budget-vs-actual/filters
+</code></pre>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>(none)</td>
+<td>n/a</td>
+<td>n/a</td>
+<td>n/a</td>
+<td>n/a</td>
+<td>The list is scoped entirely by the <code>X-Company-ID</code> header</td>
+</tr>
+</tbody>
+</table>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/budget-vs-actual/filters
+GET /api/dashboard/budget-vs-actual/filters   (identical call after a report is created; TTL cache refreshes)
+</code></pre>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>reports[]</code></td>
+<td>array</td>
+<td>STORED source, see leaves</td>
+<td>Reports with <code>HasLines</code> true, ordered by <code>Name</code> [CODE]</td>
+</tr>
+<tr>
+<td><code>reports[].id</code></td>
+<td>guid</td>
+<td>STORED <code>GLSpecialReport.SpecialReportID</code> [CODE]</td>
+<td>Report id</td>
+</tr>
+<tr>
+<td><code>reports[].name</code></td>
+<td>string</td>
+<td>STORED <code>GLSpecialReport.Name</code> [CODE]</td>
+<td>Customer-created report title</td>
+</tr>
+<tr>
+<td><code>reports[].lineCount</code></td>
+<td>int</td>
+<td>NEW, DERIVED: <code>COUNT(GLSpecialReportLine)</code> per report</td>
+<td>Shown beside the report name in the dialog</td>
+</tr>
+</tbody>
+</table>
+<h3>Example response</h3>
+<pre><code>{
+  &quot;reports&quot;: [
+    { &quot;id&quot;: &quot;8c1f7a20-33e2-4b7e-9f5a-1a2b3c4d5e6f&quot;, &quot;name&quot;: &quot;Building &amp; Facilities&quot;, &quot;lineCount&quot;: 3 },
+    { &quot;id&quot;: &quot;3fa85f64-5717-4562-b3fc-2c963f66afa6&quot;, &quot;name&quot;: &quot;Statement of Activities&quot;, &quot;lineCount&quot;: 4 }
+  ]
+}
+</code></pre>
+<p>Reconciliation: 2 report rows returned; each row's <code>lineCount</code> must equal the row count API 3 returns for that report id, so 3 + 4 = 7 lines exist across the two reports and API 3 must account for exactly 7 across both ids.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty (org has no special reports)</td>
+<td>200 with <code>reports: []</code>; the dialog renders with an empty report dropdown, not an error</td>
+</tr>
+<tr>
+<td>Partial</td>
+<td>n/a: the list has no partial condition</td>
+</tr>
+<tr>
+<td>Not-yet-existing entity</td>
+<td>n/a: the list is company-scoped only</td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td>403; the Special report scope is additionally gated, see Auth and scoping</td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td>503; the dialog shows a retry state</td>
+</tr>
+</tbody>
+</table>
+<h2>API 3: special report lines (required)</h2>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/budget-vs-actual/special-report-lines
+</code></pre>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>specialReportId</code></td>
+<td>guid</td>
+<td>yes</td>
+<td>any report id from API 2</td>
+<td>none</td>
+<td>The report whose lines to list; unknown ids return a 404-style error</td>
+</tr>
+</tbody>
+</table>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/budget-vs-actual/special-report-lines?specialReportId=3fa85f64-5717-4562-b3fc-2c963f66afa6
+GET /api/dashboard/budget-vs-actual/special-report-lines?specialReportId=8c1f7a20-33e2-4b7e-9f5a-1a2b3c4d5e6f
+</code></pre>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>lines[]</code></td>
+<td>array</td>
+<td>STORED source, see leaves</td>
+<td>Lines within the report, ordered by <code>LineNumber</code> [CODE]</td>
+</tr>
+<tr>
+<td><code>lines[].id</code></td>
+<td>guid</td>
+<td>STORED <code>GLSpecialReportLine.SpecialReportLineID</code> [CODE]</td>
+<td>Line id; the value API 1 takes as <code>specialReportLineId</code></td>
+</tr>
+<tr>
+<td><code>lines[].name</code></td>
+<td>string</td>
+<td>STORED <code>GLSpecialReportLine.Name</code> [CODE]</td>
+<td>Customer-created line description</td>
+</tr>
+<tr>
+<td><code>lines[].type</code></td>
+<td>string</td>
+<td>NEW, DERIVED: classified from <code>GLAccount.StatementType</code> over the line's low/high <code>AccountNumber</code> range; all <code>I</code> is <code>"income"</code>, all <code>E</code> is <code>"expense"</code>, otherwise <code>"mixed"</code> [CODE for the range mechanism]</td>
+<td>Drives the dialog's type tag, the preview sentence, and the favourability flip before Apply</td>
+</tr>
+</tbody>
+</table>
+<h3>Example response</h3>
+<pre><code>{
+  &quot;lines&quot;: [
+    { &quot;id&quot;: &quot;b2a4c6d8-1111-4222-8333-944455566677&quot;, &quot;name&quot;: &quot;Contributions &amp; offerings&quot;, &quot;type&quot;: &quot;income&quot; },
+    { &quot;id&quot;: &quot;c3b5d7e9-2222-4333-8444-a55566677788&quot;, &quot;name&quot;: &quot;Salaries &amp; wages&quot;, &quot;type&quot;: &quot;expense&quot; },
+    { &quot;id&quot;: &quot;d4c6e8f0-3333-4444-8555-b66677788899&quot;, &quot;name&quot;: &quot;Net change in assets&quot;, &quot;type&quot;: &quot;mixed&quot; }
+  ]
+}
+</code></pre>
+<p>Reconciliation: 1 + 1 + 1 = 3 lines returned for this report, and the matching API 2 row's <code>lineCount</code> for this report id must also read 3 whenever the two responses are compared.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty (report has no lines)</td>
+<td>200 with <code>lines: []</code>; reports with <code>HasLines</code> false never appear in API 2, so this arises only from concurrent edits</td>
+</tr>
+<tr>
+<td>Partial</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td>Not-yet-existing entity (unknown or deleted <code>specialReportId</code>)</td>
+<td>404-style error naming the id, <code>unknownSpecialReport</code>; not an empty list, so a stale saved id is distinguishable from a genuinely empty report</td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td>403, same gate as API 2</td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td>503; the dialog shows a retry state</td>
+</tr>
+</tbody>
+</table>
+<h2>Auth and scoping (required)</h2>
+<ul>
+<li><strong>Company / tenant scoping:</strong> every request carries <code>X-Company-ID</code> and every query is scoped by it. The legacy <code>X-Year-ID</code> header is not part of this contract; fiscal years derive from <code>window</code> + <code>asOf</code> + <code>GLPeriod</code>.</li>
+<li><strong>Permission right, read:</strong> the legacy widget is gated by the <code>/GeneralLedger</code> uri at Inquiry level, and the Special report scope is additionally gated by <code>/GeneralLedger/Reports/SpecialReports</code> at Inquiry [CODE, <code>Widget_Comparison_Classic.html</code>]. This contract carries both: API 1 with <code>accountType</code> 0 or 1 needs the General Ledger right; <code>accountType=2</code>, API 2, and API 3 also need the Special Reports right. The modern permission mapping is [TO CONFIRM] (Feargal).</li>
+<li><strong>Write:</strong> none exists in this contract.</li>
+<li><strong>A user without the General Ledger right:</strong> the legacy dashboard hides the widget entirely. Whether the replatform hides it, shows an empty card, or shows an error is a product decision, listed in Still needs sign-off. A user with the GL right but not the Special Reports right sees the Income and Expense scopes only.</li>
+</ul>
+<h2>Edge cases (required)</h2>
+<ol>
+<li>Valid scope matching no data: well-formed zero response per the state contract, never an error.</li>
+<li>No budget entered anywhere in the window: honest <code>budget</code> 0 or null with real actuals; the API must never fabricate a comparison.</li>
+<li>Unposted buckets: <code>actual</code> null, never 0; <code>total</code> sums posted buckets only.</li>
+<li><code>asOf</code> in a prior fiscal year: windows, fiscal-year resolution, and the posted basis all compute from <code>asOf</code>, reproducing the past report exactly.</li>
+<li><code>asOf</code> in the future, or before any GL data exists: validation semantics undecided, see Still needs sign-off; recommended is HTTP 400 <code>invalidAsOf</code>.</li>
+<li>Rolling window crossing the fiscal-year seam: budget lookup spans two fiscal years in one request; quarter and year buckets key each month to its own fiscal year; the seam is per org, never a fixed month.</li>
+<li>Master company (<code>CompanyNumber</code> 0): combined child figures via the <code>MasterAccountID</code> join; a consolidated org with no linked children returns the normal empty shape.</li>
+<li>Special report line deleted between requests: API 1 returns a 404-style <code>unknownSpecialReportLine</code> error naming the id; never a silent empty payload, so a stale saved selection is distinguishable from an empty line.</li>
+<li>Line whose account range matches no accounts: well-formed zero response, not an error.</li>
+<li>Conflicting params (<code>specialReportLineId</code> with <code>accountType</code> 0 or 1; <code>accountType=2</code> without a line id): HTTP 400 <code>invalidParams</code>; no precedence, no silent ignoring.</li>
+<li><code>total.budget</code> 0 with posted actuals: <code>total.variancePercent</code> null; the variance dollar figure still returns.</li>
+<li>Periods named <code>"Audit"</code>: excluded from every bucketing and every window.</li>
+<li>Orgs with 13 or more periods, or non-month periods: period grain follows the org's real <code>GLPeriod</code> rows, so bucket counts can exceed 12; behaviour of the availability matrix on such calendars is [TO CONFIRM] (Feargal).</li>
+<li>Entity created mid-window: buckets before the first <code>GLPeriod</code> row simply do not exist; the response starts at the org's first real period.</li>
+</ol>
+<h2>Not in scope (required)</h2>
+<ul>
+<li>Drill-through to GL account or transaction detail: not built anywhere in the design; there is no target page. Account-level drilldown may be revisited during UAT as a later phase.</li>
+<li>An Excel or CSV export endpoint: the built design has no export control. The legacy in-page export is not carried; building a modern equivalent is a separate decision.</li>
+<li>Per-user preference persistence: scope and line selection are client-managed state in this contract; regaining server persistence is listed in Still needs sign-off as a product decision.</li>
+<li>Per-account or per-transaction rows: bucket aggregates only, even where day and week actuals query transactions underneath.</li>
+<li>Revised budgets: the comparison is always against the original budget (<code>RevisionStartingPeriodID</code> null), by design; no revised-budget view exists.</li>
+<li>Budget setup: the empty state's action navigates to the General Ledger module; no write belongs to this contract.</li>
+<li>A cumulative (year-to-date running) series: the legacy <code>ActualYTD</code> and <code>BudgetYTD</code> columns have no consumer in this design and are not returned.</li>
+</ul>
+<h2>Still needs sign-off (required)</h2>
+<ol>
+<li><strong>Day and week actuals posture.</strong> The data exists at transaction grain (<code>GLJournalDetail.DetailDate</code> [CODE]); undecided is live transaction querying vs a day-grain rollup, and its cost at scale. Decider: Feargal / dev team. Blocks: shipping the day and week grains.</li>
+<li><strong>Sub-period budget derivation.</strong> <code>"paceLine"</code> (recommended) vs <code>"prorated"</code> vs <code>"native"</code>; the response reports the choice via <code>budgetDerived</code>. Decider: dev team. Blocks: day and week budget figures and the <code>total.budget</code> basis at those grains.</li>
+<li><strong>Master-company aggregation detail.</strong> The <code>MasterAccountID</code> join is an agreed must-fix; the exact dedupe and aggregation rule across child accounts needs a dev answer. Decider: dev team. Blocks: consolidated orgs.</li>
+<li><strong>Which line kinds API 3 offers.</strong> Whether subtotal, heading, computed, or balance-sheet lines appear in the dropdown, and whether balance-sheet lines carry budgets at all (an open dossier question). Decider: Oisin Curran plus dev. Blocks: the API 3 filter rule and the mixed-line guardrail wording.</li>
+<li><strong>Unentitled-user treatment.</strong> Hidden widget vs empty card vs error, for a user without the General Ledger right. Decider: Oisin Curran. Blocks: the final permission-denied state contract.</li>
+<li><strong>User preference persistence.</strong> Legacy remembered each user's scope per company; decide whether the modern API regains this or client-managed state is permanent. Decider: Oisin Curran. Blocks nothing in this contract; changes a future one.</li>
+<li><strong>Rounding, currency, and locale rules.</strong> Amounts here are plain numbers; display formatting rules are unspecified and a known dossier flag touches localisation defects. Decider: Oisin Curran. Blocks: response formatting guidance only.</li>
+<li><strong><code>asOf</code> validation semantics.</strong> Calendar-month blocks vs day-precise offsets for the rolling walk-back; future dates; dates before any GL data. Decider: dev team. Blocks: rolling-window edge behaviour.</li>
+<li><strong>Volume ceilings for special reports and lines.</strong> [TO CONFIRM] (Feargal). Conditions the two assumed BOUNDED verdicts and the plain-dropdown treatment of both lookups.</li>
+<li><strong>Dossier findings F1 to F9 are all Unreviewed.</strong> No reconciliation file exists for this widget and no finding has been assigned a status, so none is honoured or overruled here. The ones touching this contract's data shapes: F3 (week grain, item 1 above), F7 (surfacing the original-budget-only basis to users), F8 (localisation, item 7), F9 (Selected-scope guardrails, item 4). Decider: Oisin Curran assigns statuses; the spec picks no side.</li>
+<li><strong>Line Description source, formal closure.</strong> The question is answered in code: the line dropdown is <code>GLSpecialReportLine.Name</code>, a customer-created list managed in the Special Reports module, and the owner has ruled it closed. Listed only so the still-open review checkbox can be formally ticked. Decider: Oisin Curran.</li>
+</ol>
+
+</body>
+</html>

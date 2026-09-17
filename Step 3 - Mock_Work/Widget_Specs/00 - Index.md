@@ -30,12 +30,12 @@ Each session should pick **one widget** and work through it:
 | # | Widget | Module | Status | Spec Doc | Research Doc |
 |---|--------|--------|--------|----------|--------------|
 | 01 | Budget Compared to Actual | Finance | ✅ Resolved | [W01](W01-Budget-Compared-to-Actual.md) | [Research](../../Step%201%20-%20Dashboard%20Research/01%20-%20Budget%20Compared%20to%20Actual.md) |
-| 02 | Pension Plans | Finance | 🔵 Improvement needed | [W02](W02-Pension-Plans.md) | [Research](../../Step%201%20-%20Dashboard%20Research/02%20-%20Pension%20Plans.md) |
+| 02 | Pension Plans | Finance | ✅ Resolved | [W02](W02-Pension-Plans.md) | [Research](../../Step%201%20-%20Dashboard%20Research/02%20-%20Pension%20Plans.md) |
 | 03 | Payroll Distributions | Payroll | ✅ Resolved | [W03](W03-Payroll-Distributions.md) | [Research](../../Step%201%20-%20Dashboard%20Research/03%20-%20Payroll%20Distributions.md) |
-| 04 | Remittance Pledges | Finance | 🔵 Improvement needed | [W04](W04-Remittance-Pledges.md) | [Research](../../Step%201%20-%20Dashboard%20Research/04%20-%20Remittance%20Pledges.md) |
-| 05 | Receivable Invoices Outstanding | Finance | 🔴 Critical fix | [W05](W05-Receivable-Invoices-Outstanding.md) | [Research](../../Step%201%20-%20Dashboard%20Research/05%20-%20Receivable%20Invoices%20Outstanding.md) |
-| 06 | Insurance Billing Plans | HR | 🔵 Improvement needed | [W06](W06-Insurance-Billing-Plans.md) | [Research](../../Step%201%20-%20Dashboard%20Research/06%20-%20Insurance%20Billing%20Plans.md) |
-| 07 | Deposit Accounts | Finance | ⚠️ Baseline only, options speculative | [W07](W07-Deposit-Accounts.md) | [Research](../../Step%201%20-%20Dashboard%20Research/07%20-%20Deposit%20Accounts.md) |
+| 04 | Remittance Pledges | Finance | ✅ Resolved | [W04](W04-Remittance-Pledges.md) | [Research](../../Step%201%20-%20Dashboard%20Research/04%20-%20Remittance%20Pledges.md) |
+| 05 | Receivable Invoices Outstanding | Finance | ✅ Resolved | [W05](W05-Receivable-Invoices-Outstanding.md) | [Research](../../Step%201%20-%20Dashboard%20Research/05%20-%20Receivable%20Invoices%20Outstanding.md) |
+| 06 | Insurance Billing Plans | HR | ✅ Resolved | [W06](W06-Insurance-Billing-Plans.md) | [Research](../../Step%201%20-%20Dashboard%20Research/06%20-%20Insurance%20Billing%20Plans.md) |
+| 07 | Deposit Accounts | Finance | ✅ Resolved | [W07](W07-Deposit-Accounts.md) | [Research](../../Step%201%20-%20Dashboard%20Research/07%20-%20Deposit%20Accounts.md) |
 | 08 | My Status | Other | ⏸️ Deferred | [W08](W08-My-Status.md) | [Research](../../Step%201%20-%20Dashboard%20Research/08%20-%20My%20Status.md) |
 | 09 | Payroll Scheduled Time Off | Payroll | ✅ Resolved | [W09](W09-Payroll-Scheduled-Time-Off.md) | [Research](../../Step%201%20-%20Dashboard%20Research/09%20-%20Payroll%20Scheduled%20Time%20Off.md) |
 | 10 | Loans With Balance Due | Finance | 🔵 Improvement needed | [W10](W10-Loans-With-Balance-Due.md) | [Research](../../Step%201%20-%20Dashboard%20Research/10%20-%20Loans%20With%20Balance%20Due.md) |
@@ -47,7 +47,7 @@ Each session should pick **one widget** and work through it:
 | 16 | Accounts Payable by Due Date | Finance | 🔵 Improvement needed | [W16](W16-Accounts-Payable-By-Due-Date.md) | [Research](../../Step%201%20-%20Dashboard%20Research/16%20-%20Accounts%20Payable%20By%20Due%20Date.md) |
 | 17 | Gifts & Pledges | Finance | 🔵 Improvement needed | [W17](W17-Gifts-Pledges.md) | [Research](../../Step%201%20-%20Dashboard%20Research/17%20-%20Gifts%20Pledges.md) |
 
-⚠️ **Caveat:** this Status column was carried over from the old INDEX and has not been individually re-verified against `Step 4 - Widget Final Design/` for all 17 widgets in this pass — several widgets already show `🟢 Final design — locked` there (e.g. W01, W07, W10, W15). Treat `Step 4 - Widget Final Design/` as the more current source for whether a widget is actually locked; this table needs a full re-check as a follow-up.
+⚠️ **Caveat:** **W01-W07 were re-verified on 2026-08-04** — all seven have built Finals and are Complete through Step 5, so their rows above read ✅ Resolved. The remaining rows (W08-W17) were carried over from the old INDEX and have **not** been individually re-verified against `Step 4 - Widget Final Design/` in this pass. Treat `Step 4 - Widget Final Design/` as the more current source for whether one of those is actually locked; those rows still need a full re-check as a follow-up.
 
 ## Status Key
 | Badge | Meaning |

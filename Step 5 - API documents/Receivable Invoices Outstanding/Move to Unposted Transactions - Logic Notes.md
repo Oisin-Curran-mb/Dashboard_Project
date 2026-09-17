@@ -12,6 +12,10 @@ In the W05 Final, the aging table drills into a per-bucket detail modal ("Receiv
 
 That inline note is a **developer-intent signal**, not finished copy or a finished workflow. It says: the invoices the user ticked are meant to be moved into the system's unposted-transactions queue so processing can begin. This doc is where that intent gets turned into concrete backend questions.
 
+## 1b. Decision update (2026-08-05, owner)
+
+Confirm does **not** stage the invoices to an entry screen. It **creates** the transaction through a process that reaches into the posting subsystem, and the underlying capability already exists in the code (Payment Processing / ARPayment is the likely mechanism). What still has to be added is that process wiring, and the exact target queue / transaction type is not specifiable yet, so the widget keeps only the intent label and models no transaction type. The questions below stay open for the dev/SME to pin the exact type and destination queue.
+
 ## 2. What "unposted transactions" means in this system (grounded)
 
 This is not a new concept invented for the widget. The posting lifecycle is already all over the legacy system:

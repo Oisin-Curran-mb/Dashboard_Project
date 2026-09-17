@@ -1,5 +1,41 @@
 # Purpose Document: Remittance Pledges
 
+> **[CORRECTIONS — 2026-09-14, from a direct read of `RMActivityRepository.GetWidgetData`
+> and confirmed against live data]**
+>
+> Three of the formulas recorded below are wrong. The original text is left in place
+> underneath, unedited, per this project's convention. Corrections, in order of how much
+> they matter:
+>
+> 1. **There is no `Active` filter.** Section 2's table says `RM_PledgeDetail` counts
+>    "only rows where the parent `RM_Pledge.Active = true`". The live code applies **no
+>    `Active` check at all** — the only pledge-side filter is the term test. Confirmed in
+>    live data on 2026-09-14: a pledge for 1 Saint Michael Church with `Active` **unticked**
+>    still appears in the widget. The Step 5 legacy-behaviour pass repeats this error; the
+>    Step 5 v2 API spec has it right.
+>
+> 2. **`YTD Paid` is not grouped by `ActivityID`.** Section 2 records it as
+>    `SUM(RM_HistoryDetail.Amount) GROUP BY ActivityID`. The code instead walks
+>    `RM_PledgeDetail → RMHistoryDetails`, so it counts **only receipts linked to a pledge
+>    detail**. Receipts posted against an activity with no pledge link — the "nonpledge
+>    details" case, which the reports name explicitly — are **silently excluded** from this
+>    figure. So this widget's "YTD Paid" is less than what the activity actually received.
+>
+> 3. **`YTD Expected` is not `Annual × PercentOfYear`.** Section 2 gives that formula; the
+>    code is `ROUND((Annual / 12) × ReceiptsThru.Month, 2)` — a whole-month step, not a day
+>    proportion. The two figures on that screen are computed on **different bases and do not
+>    agree**: at 1 Sep 2019 the header read "Percent of year completed 66.85%" (day-of-year,
+>    244/365) while the column showed $750 against a $1,000 Annual, which is 75% (month 9 of
+>    12). Both verified in live data. The Step 5 legacy-behaviour pass already corrected this.
+>
+> **Also worth recording, and not mentioned below at all:** `Annual` is the **full pledge
+> term**, not a year. A three-year pledge contributes all three years, so the "Annual" label
+> is a misnomer for any multi-year pledge. And the pledge-scope test is a **single instant**
+> (`BeginDate <= thru <= EndDate`), so a pledge whose term has ended disappears from the
+> widget entirely, taking any unpaid balance with it — observed live: an organisation with
+> $1,250 outstanding showed "No records to display" on a 2026 date because its only pledge
+> ran in 2019.
+
 > This is a **Purpose document** — Step 1 in the dashboard project lifecycle. Its job is to capture what currently exists, so that Feedback, Design, and Development can be based on documented reality rather than assumptions. It is written for all readers, not just technical ones.
 
 **Date:** 2026-07-06

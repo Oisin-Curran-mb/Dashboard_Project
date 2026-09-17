@@ -1,0 +1,1442 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Fixed Asset Values - API Spec</title>
+<style>
+body { font-family: -apple-system, Helvetica, Arial, sans-serif; max-width: 900px; margin: 30px auto; line-height: 1.5; color: #172B4D; }
+h1 { font-size: 24px; }
+h2 { font-size: 19px; border-bottom: 1px solid #DFE1E6; padding-bottom: 6px; margin-top: 32px; }
+h3 { font-size: 16px; margin-top: 20px; }
+table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+th, td { border: 1px solid #DFE1E6; padding: 6px 10px; text-align: left; vertical-align: top; }
+th { background: #F4F5F7; }
+code { background: #F4F5F7; padding: 1px 5px; border-radius: 3px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 90%; }
+pre { background: #F4F5F7; padding: 12px; border-radius: 4px; overflow-x: auto; }
+pre code { background: none; padding: 0; }
+.status { background: #FFF0B3; display: inline-block; padding: 3px 10px; border-radius: 3px; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<h1>Fixed Asset Values - API Spec</h1>
+<p><span class="status">Status: Done - awaiting sign-off (drafting complete, owner review pending)</span></p>
+<hr />
+<h2>Overview</h2>
+<p>Fixed Asset Values shows the financial values of the organisation's fixed assets, broken down by a user-chosen grouping dimension. The user picks how assets are grouped (Class, Building, Room, or one of three account dimensions), which specific group to inspect, and which of five financial measures to plot; the widget renders either a donut of the selected measure across groups or a paged table of the individual assets inside the selected group. It is view-only: no drill-through, no row or arc click, no write against asset data.</p>
+<p>This contract defines <strong>five APIs</strong>: a one-row organisation summary fired at the compact tier, a per-group totals read that feeds both the Specific Group list and the donut, a paginated server-sorted asset grid with full-group totals, and a read/write pair for the persisted filter selections. The count is derived from the decomposition triggers in the API inventory. The grid's pagination, sorting and totals, the summary, the group asset counts, and any Modern API preference persistence are all backend work that does not exist today.</p>
+<p>Framework verdicts, stated once and justified in their own sections:</p>
+<ul>
+<li><strong>Filter execution.</strong> Group By and Specific Group are SERVER params. Financial Measure is the one CLIENT filter, legitimate because the group-totals response carries all five measure totals per group.</li>
+<li><strong>Volume.</strong> The asset grid is <code>MUST PAGINATE</code>; no source states a ceiling on assets per group, so the work is server-side by rule. Group counts per dimension carry a <code>[TO CONFIRM]</code> ceiling.</li>
+<li><strong>Decomposition.</strong> Five APIs, each citing a trigger. One merge was taken: the group name list and the chart totals are a single read, because they must describe the same population.</li>
+<li><strong>Computation.</strong> Every total, count and derived money value is server-side. The client derives donut shares, the zero-group exclusion, and display shortening, and nothing else.</li>
+</ul>
+<p><strong>Data caveat, applying to every figure in the examples below:</strong> the build's asset register is illustrative mock data. Nothing in it has been verified against Shelby's real fixed-asset tables, and the feasibility of serving six groupable dimensions, a dependent group list, and five money measures per asset is unconfirmed [TO CONFIRM - backend team]. See Still needs sign-off.</p>
+<hr />
+<h2>Design → API coverage</h2>
+<table>
+<thead>
+<tr>
+<th>Design element</th>
+<th>Type</th>
+<th>API</th>
+<th>Field(s)</th>
+<th>Provenance</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Compact-tier headline figure, Total Net Value org-wide</td>
+<td>KPI</td>
+<td>API 1</td>
+<td><code>totalNetValue</code></td>
+<td>DERIVED SUM of per-asset Net Value over all <code>FA_Asset</code> rows in company scope; the org-wide summation itself is stated in no source [TO CONFIRM - owner]</td>
+</tr>
+<tr>
+<td>Compact-tier asset-count pill</td>
+<td>KPI</td>
+<td>API 1</td>
+<td><code>assetCount</code></td>
+<td>DERIVED COUNT of <code>FA_Asset</code> in company scope [BUILD]</td>
+</tr>
+<tr>
+<td>Group By menu, six dimensions</td>
+<td>Filter</td>
+<td>API 2, API 3</td>
+<td><code>valueType</code> request param, echoed as <code>valueType</code>; option list is a client-side static enum of six values</td>
+<td>STATIC enum [DOC Widget_Comparison_Classic.html, type-options is a static array today]</td>
+</tr>
+<tr>
+<td>Specific Group menu, dependent on Group By</td>
+<td>Filter</td>
+<td>API 2</td>
+<td><code>groups[].groupId</code>, <code>groups[].name</code></td>
+<td>STORED distinct group values from <code>FA_Asset</code> for the selected dimension; exact grouping columns UNVERIFIED (backend team)</td>
+</tr>
+<tr>
+<td>Financial Measure menu, five measures</td>
+<td>Filter</td>
+<td>none (client selection over API 2 data)</td>
+<td>client state; option list is a static enum of five values</td>
+<td>STATIC enum [DOC Widget_Comparison_Classic.html, dollar-options is a static array today]</td>
+</tr>
+<tr>
+<td>View toggle, Asset Detail / Donut</td>
+<td>View</td>
+<td>none</td>
+<td>client state, switches which API renders; no field</td>
+<td>DERIVED client state [BUILD]</td>
+</tr>
+<tr>
+<td>Donut arcs and legend rows</td>
+<td>Chart series</td>
+<td>API 2</td>
+<td><code>groups[].capitalizedValue</code>, <code>groups[].cost</code>, <code>groups[].depreciableValue</code>, <code>groups[].accumulatedDepreciation</code>, <code>groups[].netValue</code> (the selected measure is read client-side)</td>
+<td>DERIVED per-group SUM of the measure over <code>FA_Asset</code> and <code>FA_AssetDepreciation</code> [DOC Step 1 research]</td>
+</tr>
+<tr>
+<td>Donut arc and legend text, per-group asset count</td>
+<td>Chart series</td>
+<td>API 2</td>
+<td><code>groups[].assetCount</code></td>
+<td>DERIVED per-group COUNT; NEW, no existing response carries a count [BUILD]</td>
+</tr>
+<tr>
+<td>Donut centre total</td>
+<td>KPI</td>
+<td>API 2</td>
+<td>client SUM over <code>groups[]</code> selected-measure values</td>
+<td>DERIVED client arithmetic over held values [BUILD]</td>
+</tr>
+<tr>
+<td>Zero-group exclusion note under the donut</td>
+<td>State</td>
+<td>API 2</td>
+<td>client filter over <code>groups[]</code> where the selected measure totals zero; excluded names listed</td>
+<td>DERIVED client view over held values [BUILD, per Step 1 rule]</td>
+</tr>
+<tr>
+<td>"not assigned" group, selectable, listed last</td>
+<td>Filter value</td>
+<td>API 2</td>
+<td><code>groups[].groupId</code> sentinel, <code>groups[].name</code> = "not assigned"</td>
+<td>DERIVED grouping of blank values [DOC Step 1 research]; sentinel wire form [TO CONFIRM - backend team]</td>
+</tr>
+<tr>
+<td>Table column Tag #</td>
+<td>Table column</td>
+<td>API 3</td>
+<td><code>rows[].tagNumber</code></td>
+<td>STORED FA_Asset tag number [DOC Widget_Comparison_Classic.html]</td>
+</tr>
+<tr>
+<td>Table column Name</td>
+<td>Table column</td>
+<td>API 3</td>
+<td><code>rows[].name</code></td>
+<td>STORED FA_Asset name [DOC Widget_Comparison_Classic.html]</td>
+</tr>
+<tr>
+<td>Table columns, five measures in fixed canonical order</td>
+<td>Table column</td>
+<td>API 3</td>
+<td><code>rows[].capitalizedValue</code>, <code>rows[].cost</code>, <code>rows[].depreciableValue</code>, <code>rows[].accumulatedDepreciation</code>, <code>rows[].netValue</code></td>
+<td>STORED and DERIVED, formulas in Tables below [DOC Step 1 research]</td>
+</tr>
+<tr>
+<td>Totals row, asset count and column total per measure over the whole group</td>
+<td>Table row</td>
+<td>API 3</td>
+<td><code>totals</code>, <code>totalCount</code></td>
+<td>DERIVED SUM and COUNT over the full filtered group, never the page; NEW [BUILD, owner instruction]</td>
+</tr>
+<tr>
+<td>Column sort, all seven columns</td>
+<td>Interaction</td>
+<td>API 3</td>
+<td><code>sortBy</code>, <code>sortDir</code> request params</td>
+<td>NEW, server-side sort does not exist on the current grid endpoint [BUILD]</td>
+</tr>
+<tr>
+<td>Pager, Previous / Next with row range</td>
+<td>Interaction</td>
+<td>API 3</td>
+<td><code>totalCount</code>, <code>pageIndex</code>, <code>pageCount</code></td>
+<td>NEW [BUILD]</td>
+</tr>
+<tr>
+<td>Zero-Net row marker</td>
+<td>State</td>
+<td>API 3</td>
+<td>client band over <code>rows[].netValue</code> = 0</td>
+<td>DERIVED client presentation [BUILD]</td>
+</tr>
+<tr>
+<td>Persisted selections across sessions</td>
+<td>State</td>
+<td>API 4, API 5</td>
+<td><code>groupBy</code>, <code>groupId</code>, <code>measure</code></td>
+<td>NEW on the Modern API; legacy stores them in <code>SSUserTenantPreferenceRepository</code> [DOC Step 1 research]</td>
+</tr>
+<tr>
+<td>Download at Explore and Detail, full-precision figures</td>
+<td>Action</td>
+<td>none yet</td>
+<td>no field; the scope and mechanism of the download are undecided</td>
+<td>Gap, blocking open item, see Still needs sign-off</td>
+</tr>
+<tr>
+<td>Empty state, org has no assets</td>
+<td>State</td>
+<td>API 1, API 2, API 3</td>
+<td>zero responses per the State contracts tables</td>
+<td>DERIVED [BUILD]</td>
+</tr>
+<tr>
+<td>Unimplemented-dimension placeholder</td>
+<td>State</td>
+<td>API 2</td>
+<td>empty <code>groups[]</code> array</td>
+<td>DERIVED, matches what the Modern API returns today for the three account dimensions [DOC Step 1 research]</td>
+</tr>
+<tr>
+<td>Refresh icon, every tier</td>
+<td>Action</td>
+<td>API 1 or API 2 + API 3</td>
+<td>re-fires the calls for the current tier and view; no field</td>
+<td>DERIVED client behaviour [BUILD]</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>Tables</h2>
+<table>
+<thead>
+<tr>
+<th>Table / repository</th>
+<th>Fields and members used</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>FA_Asset</code></td>
+<td>Tag number, name, capitalized value, cost, salvage value, CompanyID, and the class / building / room / asset-account / accumulated-depreciation-account / expense-account grouping columns. Exact column names for the grouping columns are UNVERIFIED (backend team)</td>
+</tr>
+<tr>
+<td><code>FA_AssetDepreciation</code></td>
+<td>AssetID, Depreciation, Tax flag. Book depreciation only; tax depreciation rows are excluded by definition</td>
+</tr>
+<tr>
+<td><code>SSUserTenantPreferenceRepository</code></td>
+<td>Key <code>UserPreferences.WidgetFixedAssets</code>, the legacy store for the three persisted selections</td>
+</tr>
+</tbody>
+</table>
+<p>No new tables and no schema changes are needed: this contract is new queries and new response shapes against existing tables, plus a Modern API path to the existing preference store.</p>
+<p>Core formulas, each quotable in isolation:</p>
+<ul>
+<li><strong>Capitalized Value</strong> and <strong>Cost</strong> are direct fields on <code>FA_Asset</code>, not derived. [DOC Step 1 research]</li>
+<li><strong>Depreciable Value</strong> = <code>Cost - SalvageValue</code>, computed, not a stored field. [DOC Step 1 research]</li>
+<li><strong>Accumulated Depreciation</strong> = <code>SUM(FA_AssetDepreciation.Depreciation) WHERE NOT Tax</code>, grouped by AssetID. The NOT-Tax condition is part of the definition, not an optimisation. [DOC Step 1 research]</li>
+<li><strong>Net Value</strong> = <code>DepreciableValue - AccumulatedDepreciation</code>. The base is Depreciable Value, not Cost. A query using Cost as the base is wrong. [DOC Step 1 research, recorded there as a correction to its own earlier wording]</li>
+<li><strong>Scope filter on every read:</strong> <code>FA_Asset WHERE CompanyID = ctx</code>, the company taken from the <code>X-Company-ID</code> header. [DOC Widget_Comparison_Classic.html]</li>
+<li><strong>Blank grouping values:</strong> an asset whose selected grouping column is blank belongs to the "not assigned" group, a real selectable group listed last. A blank never behaves as a wildcard. [DOC Step 1 research]</li>
+<li><strong>Per-asset salvage value is never served.</strong> The server consumes it inside Depreciable Value; no response in this contract carries it, and no existing endpoint exposes it either. [DOC Widget_Comparison_Classic.html]</li>
+</ul>
+<hr />
+<h2>Old vs. new</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Old (live today)</th>
+<th>New (needed)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Grid read</td>
+<td><code>GET /api/dashboard/fixed-assets/grid?valueType&amp;valueId&amp;dollarType</code> returns the full unpaged, unsorted <code>FixedAssetsGridRowDto</code> list with no totals</td>
+<td>NEW: <code>page</code>, <code>pageSize</code>, <code>sortBy</code>, <code>sortDir</code> params; <code>totalCount</code>, <code>totals</code>, <code>pageIndex</code>, <code>pageCount</code> in the response</td>
+</tr>
+<tr>
+<td>Grid measure handling</td>
+<td><code>dollarType</code> param; legacy also reordered columns around the selected measure</td>
+<td>Param dropped: all five measures are served per row and the table's column order is fixed; the measure selection has no effect on this API (re-shaped existing read)</td>
+</tr>
+<tr>
+<td>Group list and chart</td>
+<td>Two endpoints: <code>/values</code> returns <code>{Id,Name}</code> pairs; <code>/chart</code> returns per-group value fields with zero-total groups excluded server-side</td>
+<td>NEW re-shape: one groups read returning every group including zero-total ones, plus <code>assetCount</code> per group, so the client can name the excluded groups and show counts</td>
+</tr>
+<tr>
+<td>Organisation summary</td>
+<td>Nothing serves an org-wide Net Value total or asset count</td>
+<td>NEW: one-row summary read</td>
+</tr>
+<tr>
+<td>Preference persistence</td>
+<td>Legacy stores the three selections in <code>SSUserTenantPreferenceRepository</code>; the Modern API persists nothing, client-managed only</td>
+<td>NEW: Modern API read/write pair against the existing store</td>
+</tr>
+<tr>
+<td>Account dimensions</td>
+<td><code>GetFixedAssetsValuesAsync()</code> implements Class/Building/Room only; the three account dimensions return an empty list from an unimplemented switch case</td>
+<td>Unchanged in this contract; an empty <code>groups[]</code> is the specified response until the backend decision in Still needs sign-off is made</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>API inventory</h2>
+<table>
+<thead>
+<tr>
+<th>API</th>
+<th>Purpose</th>
+<th>Trigger (when it fires)</th>
+<th>Cardinality</th>
+<th>R/W</th>
+<th>Cache posture</th>
+<th>Split trigger</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>API 1 - Organisation summary</td>
+<td>Total Net Value and asset count, org-wide, ignoring every selection</td>
+<td>Widget render at the compact tier; refresh</td>
+<td>1 row</td>
+<td>R</td>
+<td>LIVE per request</td>
+<td>Grain gap (org snapshot vs per-group vs per-asset) and conditional weight (the wide tiers never need it)</td>
+</tr>
+<tr>
+<td>API 2 - Group totals</td>
+<td>Every group in the selected dimension with its asset count and all five measure totals; feeds the Specific Group menu and the donut</td>
+<td>Widget render at Explore/Detail; Group By change; refresh</td>
+<td>One row per group in the dimension</td>
+<td>R</td>
+<td>LIVE per request</td>
+<td>Cardinality gap against API 3 (bounded group list vs per-asset rows)</td>
+</tr>
+<tr>
+<td>API 3 - Asset grid</td>
+<td>One page of assets in the selected group, server-sorted, with full-group totals</td>
+<td>Asset Detail view render; Specific Group change; sort; page; refresh</td>
+<td>Unbounded per-asset rows, paged</td>
+<td>R</td>
+<td>LIVE per request</td>
+<td>Grain gap (per-asset detail vs group totals) and trigger gap (fires only when the table view renders)</td>
+</tr>
+<tr>
+<td>API 4 - Preferences read</td>
+<td>The user's saved Group By / Specific Group / Financial Measure selections</td>
+<td>Widget render at Explore/Detail, before API 2</td>
+<td>1 row</td>
+<td>R</td>
+<td>LIVE per request</td>
+<td>Lifetime gap (changes only when the user changes it) and read vs write</td>
+</tr>
+<tr>
+<td>API 5 - Preferences write</td>
+<td>Persist the three selections</td>
+<td>Any of the three selections changes</td>
+<td>1 row</td>
+<td>W</td>
+<td>Not cached</td>
+<td>Read vs write, always separate</td>
+</tr>
+</tbody>
+</table>
+<p>Merges considered, concluded:</p>
+<ul>
+<li>The group <strong>name list</strong> and the group <strong>chart totals</strong> are one API. They always fire together, describe the same population, and splitting them would let the menu and the donut disagree about which groups exist.</li>
+<li>The summary is <strong>not</strong> folded into the groups read: the compact tier must not pay for a per-group breakdown, and the wide tiers do not render the summary figure.</li>
+<li>The grid is <strong>not</strong> folded into the groups read: per-asset rows are unbounded and paged; group totals are not.</li>
+</ul>
+<hr />
+<h2>Call sequence</h2>
+<table>
+<thead>
+<tr>
+<th>Interaction</th>
+<th>Calls fired</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Initial widget load, compact tier</td>
+<td>API 1</td>
+<td>Nothing else; the compact tier has no controls</td>
+</tr>
+<tr>
+<td>Initial widget load, Explore/Detail</td>
+<td>API 4, then API 2 (valueType from the saved selection), then API 3 (the built default view is the Asset Detail table; the default group is the first in API 2's list when no saved group is valid)</td>
+<td>The default view is a contested decision, see Still needs sign-off; if Donut wins, the API 3 call drops out of this row</td>
+</tr>
+<tr>
+<td>Change filter Group By</td>
+<td>API 2 with the new <code>valueType</code>; API 3 if the table view is active (Specific Group resets to the first group, page 1); API 5</td>
+<td>The old group value cannot exist in the new dimension, so it is cleared, never sent</td>
+</tr>
+<tr>
+<td>Change filter Specific Group</td>
+<td>API 3 with the new <code>valueId</code>, page 1, if the table view is active; API 5</td>
+<td>The donut ignores the Specific Group selection; no API 2 call</td>
+</tr>
+<tr>
+<td>Change filter Financial Measure</td>
+<td>API 5 only</td>
+<td>The donut re-plots client-side from API 2 data already held; the table serves all five measures so nothing refetches</td>
+</tr>
+<tr>
+<td>Switch view to Donut</td>
+<td>none</td>
+<td>API 2 data is already held from load or the last Group By change</td>
+</tr>
+<tr>
+<td>Switch view to Asset Detail</td>
+<td>API 3</td>
+<td>Current group, current sort, page 1</td>
+</tr>
+<tr>
+<td>Sort a column</td>
+<td>API 3 with the new <code>sortBy</code>/<code>sortDir</code>, page 1</td>
+<td>Sort is a server request, never a browser operation</td>
+</tr>
+<tr>
+<td>Page Previous / Next</td>
+<td>API 3 with the new <code>page</code></td>
+<td>Totals and donut never change with the page</td>
+</tr>
+<tr>
+<td>Download</td>
+<td>none yet</td>
+<td>Scope and mechanism undecided, see Still needs sign-off</td>
+</tr>
+<tr>
+<td>Refresh</td>
+<td>Compact tier: API 1. Explore/Detail: API 2, plus API 3 if the table view is active</td>
+<td>Re-fires with the current selections</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Snapshot anchor:</strong> every read response echoes an <code>asOf</code> server timestamp. The calls take no shared snapshot param: API 2 and API 3 render one view at a time, and the totals row belongs to API 3 alone, so a write landing between two calls can only make the group list and the grid drift until the next interaction refetches. That drift is accepted; the refresh control is the recovery. Any figure that must reconcile on one screen comes from a single call.</p>
+<hr />
+<h2>Filter architecture</h2>
+<table>
+<thead>
+<tr>
+<th>Filter</th>
+<th>Option source</th>
+<th>Cardinality</th>
+<th>Execution</th>
+<th>Aggregate effect</th>
+<th>Cascade</th>
+<th>"All" wire form</th>
+<th>Round trips</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Group By</td>
+<td>STATIC enum: Class, Building, Room, Asset Account, Accumulated Depreciation Account, Expense Account (the last three return no groups on the Modern API today)</td>
+<td>6, fixed</td>
+<td>SERVER, param <code>valueType</code> on API 2 and API 3</td>
+<td>Yes: every group total, grid row set and grid total changes</td>
+<td>Resets Specific Group; its option list is rebuilt from API 2</td>
+<td>No "All": a dimension is always selected; the param is always sent</td>
+<td>1 (API 2) or 2 (plus API 3 in table view), plus the API 5 write</td>
+</tr>
+<tr>
+<td>Specific Group</td>
+<td>LOOKUP: <code>groups[]</code> from API 2, dependent on Group By</td>
+<td>Varies by dimension; Class is small, Room and the account dimensions have no stated ceiling [TO CONFIRM - backend team]</td>
+<td>SERVER, param <code>valueId</code> on API 3</td>
+<td>Yes: the grid rows, <code>totalCount</code> and <code>totals</code> all change. The donut is unaffected, it always spans all groups</td>
+<td>Depends on Group By; a value that is stale after a Group By change is cleared client-side and never sent</td>
+<td>No "All": the table always shows exactly one group; the param is always sent</td>
+<td>1 (API 3), plus the API 5 write</td>
+</tr>
+<tr>
+<td>Financial Measure</td>
+<td>STATIC enum: Capitalized Value, Cost, Depreciable Value, Accumulated Depreciation, Net Value</td>
+<td>5, fixed</td>
+<td>CLIENT: the full set it operates on (all five totals per group) is already present in the API 2 response, that set is bounded by the group count of the dimension, and re-plotting changes no server-computed aggregate because all five are served</td>
+<td>No server aggregate changes; the donut re-plots from held values</td>
+<td>None</td>
+<td>No "All": one measure is always selected</td>
+<td>0, plus the API 5 write</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Combination semantics:</strong> AND, narrowing, in a fixed hierarchy: <code>valueType</code> chooses the dimension, <code>valueId</code> chooses one group inside it, and the measure selects among values already returned. No pair is OR and no pair is mutually exclusive.</li>
+<li><strong>Conflict rule:</strong> a <code>valueId</code> that does not identify a group within the requested <code>valueType</code> (a stale saved preference, a group deleted mid-session) is not an error: API 3 returns a well-formed zero response, <code>totalCount</code> 0, every <code>totals</code> member 0, empty <code>rows</code>. The client then falls back to the first group in API 2's list. A syntactically invalid <code>valueType</code> or a non-whitelisted <code>sortBy</code> is rejected with HTTP 400 and a named error code, because those are client defects, not data states.</li>
+<li><strong>Empty-result semantics:</strong> a valid combination matching nothing returns the well-formed zero shape above, never an error.</li>
+<li><strong>Cascade invalidation:</strong> Specific Group's options depend on Group By. On a Group By change the client clears the group selection and selects the first group of the new list; the stale value is never sent to the server.</li>
+<li><strong>Blank values:</strong> assets with a blank grouping column fall into the "not assigned" group. Selecting "not assigned" returns exactly those assets; selecting any named group excludes them. A blank is never a wildcard.</li>
+<li><strong>Lookup endpoint:</strong> the Specific Group lookup is API 2 in this contract, not a separate endpoint. The two static enums ship in the client; the existing type-options and dollar-options endpoints are declared out of contract as pre-existing and unused.</li>
+</ul>
+<hr />
+<h2>Volume and performance</h2>
+<table>
+<thead>
+<tr>
+<th>Dataset</th>
+<th>Typical rows</th>
+<th>Worst realistic rows (basis)</th>
+<th>Row width</th>
+<th>Payload at worst</th>
+<th>Verdict</th>
+<th>Server cost model</th>
+<th>Cache posture</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>API 1 summary</td>
+<td>1</td>
+<td>1 (fixed shape by definition)</td>
+<td>3 fields, ~60 bytes</td>
+<td>Under 1 KB</td>
+<td>BOUNDED</td>
+<td>One aggregate scan of <code>FA_Asset</code> in company scope, joined to a grouped SUM over <code>FA_AssetDepreciation</code></td>
+<td>LIVE</td>
+</tr>
+<tr>
+<td>API 2 groups</td>
+<td>3 to 8 per dimension in the demo register, a typical figure only</td>
+<td>No stated ceiling for Room or the account dimensions [TO CONFIRM - backend team]</td>
+<td>8 fields, ~180 bytes</td>
+<td>~18 KB at 100 groups</td>
+<td>BOUNDED by the distinct-group count of one dimension, subject to the [TO CONFIRM] ceiling; if a dimension proves unbounded this read moves to a paged or top-N shape</td>
+<td>One grouped scan of <code>FA_Asset</code> in company scope joined to per-asset depreciation SUMs, G groups out of N assets</td>
+<td>LIVE</td>
+</tr>
+<tr>
+<td>API 3 grid rows</td>
+<td>5 to 20 per group in the demo register, a typical figure only</td>
+<td>No source states assets-per-group at a large org [TO CONFIRM - backend team]</td>
+<td>8 fields, ~200 bytes</td>
+<td>One page: ~20 KB at the maximum <code>pageSize</code></td>
+<td>MUST PAGINATE</td>
+<td>Filtered indexed scan of <code>FA_Asset</code> for one group, ORDER BY a whitelisted column, offset-fetch for the page, plus one aggregate pass over the same filtered set for <code>totals</code> and <code>totalCount</code>. The per-asset Accumulated Depreciation is a grouped join to <code>FA_AssetDepreciation</code>, N-assets-in-group multiplier</td>
+<td>LIVE</td>
+</tr>
+<tr>
+<td>API 4 / API 5 preferences</td>
+<td>1</td>
+<td>1 (one row per user per company by definition)</td>
+<td>3 fields, ~80 bytes</td>
+<td>Under 1 KB</td>
+<td>BOUNDED</td>
+<td>Single keyed read or upsert against the preference store</td>
+<td>LIVE</td>
+</tr>
+</tbody>
+</table>
+<p>No dataset here is a time series; there is no N × M product to state, and no time axis anywhere in the widget.</p>
+<p>The build's register is small enough that every operation looks instant client-side. That is a property of the fixture. The set of assets in a group is bounded only by how many assets an organisation owns, which is exactly the kind of bound Framework 2 rejects, so the grid's sort, paging and totals are server work by rule, not by choice.</p>
+<h3>Pagination contract</h3>
+<ul>
+<li><strong>Params:</strong> <code>page</code>, 1-based; <code>pageSize</code> default 10 [BUILD, owner instruction], maximum 100 (contract rule so the param cannot re-create the unbounded fetch).</li>
+<li><strong>What paginates:</strong> <code>rows[]</code> in API 3, and nothing else anywhere in the contract.</li>
+<li><strong>What does not:</strong> <code>totals</code> (all five measures) and <code>totalCount</code> compute over the <strong>full filtered set</strong>, never the page. The donut (API 2) never pages at all. Switching pages changes no total, no chart, no KPI.</li>
+<li><strong>Sort params:</strong> <code>sortBy</code> whitelist: <code>tagNumber</code>, <code>name</code>, <code>capitalizedValue</code>, <code>cost</code>, <code>depreciableValue</code>, <code>accumulatedDepreciation</code>, <code>netValue</code>. <code>sortDir</code>: <code>asc</code> or <code>desc</code>. A non-whitelisted <code>sortBy</code> is HTTP 400.</li>
+<li><strong>Deterministic total order:</strong> every sort ends <code>... , tagNumber ASC, assetId ASC</code>. <code>assetId</code> is the unique tiebreaker; tag-number uniqueness is not guaranteed by any source [TO CONFIRM - backend team], so the id terminates the order regardless.</li>
+<li><strong><code>totalCount</code></strong> is returned alongside every page, with <code>pageIndex</code> and <code>pageCount</code>, so the client renders the pager without a second call.</li>
+<li><strong>Past the last page:</strong> a <code>page</code> value beyond the end is clamped to the last page; the response carries the served <code>pageIndex</code>, correct <code>totalCount</code>, correct <code>totals</code>, and is never an error. A shrinking result set therefore cannot strand the client on an empty page.</li>
+</ul>
+<hr />
+<h2>Where computation lives</h2>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Server or client</th>
+<th>Basis</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Org-wide Total Net Value</td>
+<td>Server</td>
+<td>API 1</td>
+<td>Spans every asset; the client never holds them all</td>
+</tr>
+<tr>
+<td>Org-wide asset count</td>
+<td>Server</td>
+<td>API 1</td>
+<td>Same population</td>
+</tr>
+<tr>
+<td>Per-group measure totals, all five</td>
+<td>Server</td>
+<td>API 2</td>
+<td>Span whole groups; the client holds no asset rows outside the current grid page</td>
+</tr>
+<tr>
+<td>Per-group asset count</td>
+<td>Server</td>
+<td>API 2</td>
+<td>Same</td>
+</tr>
+<tr>
+<td>Group list ordering, alphabetical with "not assigned" last</td>
+<td>Server</td>
+<td>API 2</td>
+<td>One ordering shared by every consumer, so the menu and the donut cannot disagree</td>
+</tr>
+<tr>
+<td>Per-row Depreciable Value, Accumulated Depreciation, Net Value</td>
+<td>Server</td>
+<td>API 3</td>
+<td>Defined formulas over stored data the client does not hold (salvage value and depreciation rows are never transmitted)</td>
+</tr>
+<tr>
+<td>Grid totals row, five sums and the asset count</td>
+<td>Server</td>
+<td>API 3</td>
+<td>Computed over the full filtered group; a page-local total would be a wrong number on screen</td>
+</tr>
+<tr>
+<td>Grid sort order</td>
+<td>Server</td>
+<td>API 3</td>
+<td>The client holds one page and cannot order a set it does not have</td>
+</tr>
+<tr>
+<td>Pager arithmetic, "x to y of z"</td>
+<td>Client</td>
+<td><code>pageIndex</code>, <code>totalCount</code></td>
+<td>Pure arithmetic over values in the response</td>
+</tr>
+<tr>
+<td>Donut share per group</td>
+<td>Client</td>
+<td>API 2</td>
+<td>Pure arithmetic over held per-group totals. No percentage is server-computed in this contract, so no server division-by-zero rule is needed; when the charted total is zero the client renders the empty-chart state and divides by nothing, and a null never enters the math</td>
+</tr>
+<tr>
+<td>Donut centre total</td>
+<td>Client</td>
+<td>API 2</td>
+<td>SUM over held values; equals the sum over all groups because excluded groups total zero</td>
+</tr>
+<tr>
+<td>Zero-group exclusion and the note naming them</td>
+<td>Client</td>
+<td>API 2</td>
+<td>A view over the full held group set; the excluded names stay in the DOM as text</td>
+</tr>
+<tr>
+<td>Arc ordering, largest share first, and the amethyst ramp assignment</td>
+<td>Client</td>
+<td>API 2</td>
+<td>Presentation over a held bounded set</td>
+</tr>
+<tr>
+<td>Zero-Net row marker</td>
+<td>Client</td>
+<td>API 3</td>
+<td>Presentation band over <code>rows[].netValue</code> = 0; the threshold is exact zero, not a configurable band, so nothing awaits approval</td>
+</tr>
+<tr>
+<td>Display shortening to $1.2M style, with the exact figure in <code>title</code> and <code>aria-label</code></td>
+<td>Client</td>
+<td>any response</td>
+<td>Presentation; the wire always carries full precision</td>
+</tr>
+</tbody>
+</table>
+<p>No deltas exist anywhere in this widget: it has no comparison, trend or time axis, so nothing is pre-signed because nothing is a delta.</p>
+<hr />
+<h2>API 1: Organisation summary</h2>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/fixed-assets/summary
+</code></pre>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>none</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>The summary takes no parameters; it ignores every widget selection by design</td>
+</tr>
+</tbody>
+</table>
+<p>Context header: <code>X-Company-ID</code>, required on every call in this contract; scopes every query to <code>FA_Asset.CompanyID</code>.</p>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/fixed-assets/summary
+GET /api/dashboard/fixed-assets/summary   (identical after any filter change: the summary never varies with selections)
+</code></pre>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>totalNetValue</code></td>
+<td>number</td>
+<td>DERIVED SUM over all assets of <code>(Cost - SalvageValue) - BookAccumulatedDepreciation</code>; the org-wide summation is stated in no source [TO CONFIRM - owner]</td>
+<td>Total Net Value across all fixed assets, org-wide, full precision</td>
+</tr>
+<tr>
+<td><code>assetCount</code></td>
+<td>integer</td>
+<td>DERIVED COUNT of <code>FA_Asset</code> in company scope [BUILD]</td>
+<td>Number of asset records behind the figure</td>
+</tr>
+<tr>
+<td><code>asOf</code></td>
+<td>string (ISO 8601)</td>
+<td>NEW server timestamp</td>
+<td>When the server computed the figure</td>
+</tr>
+</tbody>
+</table>
+<h3>Example response</h3>
+<pre><code>{
+  &quot;totalNetValue&quot;: 5634400.00,
+  &quot;assetCount&quot;: 25,
+  &quot;asOf&quot;: &quot;2026-09-07T14:05:00Z&quot;
+}
+</code></pre>
+<p>Reconciliation: 5000000 + 380000 + 250000 + 4400 = 5634400, so <code>totalNetValue</code> equals the sum of API 2's per-group <code>netValue</code> over any single dimension, and 8 + 13 + 3 + 1 = 25 asset counts likewise; the two APIs must agree when no write lands between them.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty (org has no fixed assets)</td>
+<td><code>{"totalNetValue": 0, "assetCount": 0, "asOf": "..."}</code>, HTTP 200</td>
+</tr>
+<tr>
+<td>Partial</td>
+<td>Not applicable: there is no requested span; the read is a point-in-time snapshot</td>
+</tr>
+<tr>
+<td>Not-yet-existing entity</td>
+<td>Not applicable: no entity id is requested</td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td>HTTP 403 with the standard dashboard error body; what the widget renders is undesigned, see Still needs sign-off</td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td>HTTP 503 with the standard dashboard error body; the widget's error frame is undesigned, see Still needs sign-off</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>API 2: Group totals</h2>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/fixed-assets/groups
+</code></pre>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>valueType</code></td>
+<td>string</td>
+<td>yes</td>
+<td><code>Class</code>, <code>Building</code>, <code>Room</code>, <code>AssetAccount</code>, <code>AccumDepAccount</code>, <code>ExpenseAccount</code></td>
+<td>none, always sent</td>
+<td>The grouping dimension. The three account values return an empty <code>groups</code> array on the Modern API today</td>
+</tr>
+</tbody>
+</table>
+<p>Context header: <code>X-Company-ID</code>, as API 1.</p>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/fixed-assets/groups?valueType=Class
+GET /api/dashboard/fixed-assets/groups?valueType=Room   (a higher-cardinality dimension, same shape)
+</code></pre>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>valueType</code></td>
+<td>string</td>
+<td>DERIVED echo of the request param</td>
+<td>The dimension this list describes</td>
+</tr>
+<tr>
+<td><code>groups[]</code></td>
+<td>array</td>
+<td>DERIVED grouping of <code>FA_Asset</code> by the selected dimension, ordered alphabetically with "not assigned" last</td>
+<td>Every group in the dimension, including groups whose totals are zero</td>
+</tr>
+<tr>
+<td><code>groups[].groupId</code></td>
+<td>string (guid)</td>
+<td>STORED group identity; the exact source column per dimension is UNVERIFIED (backend team), and the sentinel for "not assigned" is [TO CONFIRM - backend team]</td>
+<td>Identity the client sends back as <code>valueId</code></td>
+</tr>
+<tr>
+<td><code>groups[].name</code></td>
+<td>string</td>
+<td>STORED group display name; source per dimension UNVERIFIED (backend team)</td>
+<td>Display name; <code>"not assigned"</code> for the blank group</td>
+</tr>
+<tr>
+<td><code>groups[].assetCount</code></td>
+<td>integer</td>
+<td>DERIVED per-group COUNT; NEW [BUILD]</td>
+<td>Assets in the group</td>
+</tr>
+<tr>
+<td><code>groups[].capitalizedValue</code></td>
+<td>number</td>
+<td>DERIVED SUM(<code>FA_Asset</code> capitalized value) per group [DOC Step 1 research]</td>
+<td>Group total, full precision</td>
+</tr>
+<tr>
+<td><code>groups[].cost</code></td>
+<td>number</td>
+<td>DERIVED SUM(<code>FA_Asset</code> cost) per group [DOC Step 1 research]</td>
+<td>Group total</td>
+</tr>
+<tr>
+<td><code>groups[].depreciableValue</code></td>
+<td>number</td>
+<td>DERIVED SUM(<code>Cost - SalvageValue</code>) per group [DOC Step 1 research]</td>
+<td>Group total</td>
+</tr>
+<tr>
+<td><code>groups[].accumulatedDepreciation</code></td>
+<td>number</td>
+<td>DERIVED SUM(<code>FA_AssetDepreciation.Depreciation</code> WHERE NOT Tax) per group [DOC Step 1 research]</td>
+<td>Group total, book depreciation only</td>
+</tr>
+<tr>
+<td><code>groups[].netValue</code></td>
+<td>number</td>
+<td>DERIVED <code>depreciableValue - accumulatedDepreciation</code> per group [DOC Step 1 research]</td>
+<td>Group total</td>
+</tr>
+<tr>
+<td><code>asOf</code></td>
+<td>string (ISO 8601)</td>
+<td>NEW server timestamp</td>
+<td>When the server computed the list</td>
+</tr>
+</tbody>
+</table>
+<h3>Example response</h3>
+<pre><code>{
+  &quot;valueType&quot;: &quot;Class&quot;,
+  &quot;groups&quot;: [
+    { &quot;groupId&quot;: &quot;6f1d2a30-9c1e-4b7a-8f21-0a1b2c3d4e01&quot;, &quot;name&quot;: &quot;Audio Visual&quot;, &quot;assetCount&quot;: 13, &quot;capitalizedValue&quot;: 741601.00, &quot;cost&quot;: 762100.00, &quot;depreciableValue&quot;: 742635.00, &quot;accumulatedDepreciation&quot;: 362635.00, &quot;netValue&quot;: 380000.00 },
+    { &quot;groupId&quot;: &quot;6f1d2a30-9c1e-4b7a-8f21-0a1b2c3d4e02&quot;, &quot;name&quot;: &quot;Buildings&quot;, &quot;assetCount&quot;: 8, &quot;capitalizedValue&quot;: 9100000.00, &quot;cost&quot;: 9447400.00, &quot;depreciableValue&quot;: 9174600.00, &quot;accumulatedDepreciation&quot;: 4174600.00, &quot;netValue&quot;: 5000000.00 },
+    { &quot;groupId&quot;: &quot;6f1d2a30-9c1e-4b7a-8f21-0a1b2c3d4e03&quot;, &quot;name&quot;: &quot;Vehicles&quot;, &quot;assetCount&quot;: 3, &quot;capitalizedValue&quot;: 387331.00, &quot;cost&quot;: 401950.00, &quot;depreciableValue&quot;: 384145.00, &quot;accumulatedDepreciation&quot;: 134145.00, &quot;netValue&quot;: 250000.00 },
+    { &quot;groupId&quot;: &quot;00000000-0000-0000-0000-000000000000&quot;, &quot;name&quot;: &quot;not assigned&quot;, &quot;assetCount&quot;: 1, &quot;capitalizedValue&quot;: 5400.00, &quot;cost&quot;: 5600.00, &quot;depreciableValue&quot;: 5600.00, &quot;accumulatedDepreciation&quot;: 1200.00, &quot;netValue&quot;: 4400.00 }
+  ],
+  &quot;asOf&quot;: &quot;2026-09-07T14:05:00Z&quot;
+}
+</code></pre>
+<p>Reconciliation: netValue 380000 + 5000000 + 250000 + 4400 = 5634400 matches API 1's <code>totalNetValue</code>, and assetCount 13 + 8 + 3 + 1 = 25 matches API 1's <code>assetCount</code>; within each group, depreciableValue minus accumulatedDepreciation equals netValue, for Vehicles 250000 from 384145 and 134145.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty (org has no fixed assets)</td>
+<td><code>{"valueType": "Class", "groups": [], "asOf": "..."}</code>, HTTP 200; the client renders the no-assets state</td>
+</tr>
+<tr>
+<td>Unimplemented dimension (the three account values today)</td>
+<td>Same empty-array shape, HTTP 200; the client renders the "No groups returned" placeholder and keeps the filter controls live</td>
+</tr>
+<tr>
+<td>Partial (some groups total zero for a measure)</td>
+<td>Zero-total groups are present in <code>groups[]</code> with their real zeroes; the client excludes them from the chart and names them in the note</td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td>HTTP 403, standard error body; widget rendering undesigned, see Still needs sign-off</td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td>HTTP 503, standard error body</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>API 3: Asset grid</h2>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/fixed-assets/grid
+</code></pre>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>valueType</code></td>
+<td>string</td>
+<td>yes</td>
+<td>as API 2</td>
+<td>none, always sent</td>
+<td>The grouping dimension</td>
+</tr>
+<tr>
+<td><code>valueId</code></td>
+<td>string (guid)</td>
+<td>yes</td>
+<td>a <code>groupId</code> from API 2 for the same <code>valueType</code></td>
+<td>none, always sent</td>
+<td>The specific group whose assets are listed</td>
+</tr>
+<tr>
+<td><code>sortBy</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>tagNumber</code>, <code>name</code>, <code>capitalizedValue</code>, <code>cost</code>, <code>depreciableValue</code>, <code>accumulatedDepreciation</code>, <code>netValue</code></td>
+<td><code>tagNumber</code></td>
+<td>Whitelisted sort column; anything else is HTTP 400. The default is a proposed decision, see Still needs sign-off</td>
+</tr>
+<tr>
+<td><code>sortDir</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>asc</code>, <code>desc</code></td>
+<td><code>asc</code></td>
+<td>Sort direction; the order always ends <code>tagNumber ASC, assetId ASC</code> as tiebreakers</td>
+</tr>
+<tr>
+<td><code>page</code></td>
+<td>integer</td>
+<td>no</td>
+<td>1 or greater</td>
+<td>1</td>
+<td>1-based page; values past the end are clamped to the last page</td>
+</tr>
+<tr>
+<td><code>pageSize</code></td>
+<td>integer</td>
+<td>no</td>
+<td>1 to 100</td>
+<td>10</td>
+<td>Rows per page; the maximum is a hard cap</td>
+</tr>
+</tbody>
+</table>
+<p>Context header: <code>X-Company-ID</code>, as API 1.</p>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/fixed-assets/grid?valueType=Class&amp;valueId=6f1d2a30-9c1e-4b7a-8f21-0a1b2c3d4e03
+GET /api/dashboard/fixed-assets/grid?valueType=Class&amp;valueId=6f1d2a30-9c1e-4b7a-8f21-0a1b2c3d4e03&amp;sortBy=netValue&amp;sortDir=desc&amp;page=1&amp;pageSize=10
+</code></pre>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>rows[]</code></td>
+<td>array</td>
+<td>DERIVED: the requested page only, already ordered by the server</td>
+<td>At most <code>pageSize</code> assets</td>
+</tr>
+<tr>
+<td><code>rows[].assetId</code></td>
+<td>string (guid)</td>
+<td>STORED <code>FA_Asset</code> identity [DOC Widget_Comparison_Classic.html]</td>
+<td>Unique asset id; the final sort tiebreaker</td>
+</tr>
+<tr>
+<td><code>rows[].tagNumber</code></td>
+<td>string</td>
+<td>STORED <code>FA_Asset</code> tag number [DOC Widget_Comparison_Classic.html]</td>
+<td>Tag # column</td>
+</tr>
+<tr>
+<td><code>rows[].name</code></td>
+<td>string</td>
+<td>STORED <code>FA_Asset</code> name [DOC Widget_Comparison_Classic.html]</td>
+<td>Name column</td>
+</tr>
+<tr>
+<td><code>rows[].capitalizedValue</code></td>
+<td>number</td>
+<td>STORED <code>FA_Asset</code> capitalized value [DOC Step 1 research]</td>
+<td>Full precision</td>
+</tr>
+<tr>
+<td><code>rows[].cost</code></td>
+<td>number</td>
+<td>STORED <code>FA_Asset</code> cost [DOC Step 1 research]</td>
+<td>Full precision</td>
+</tr>
+<tr>
+<td><code>rows[].depreciableValue</code></td>
+<td>number</td>
+<td>DERIVED <code>Cost - SalvageValue</code>, computed server-side [DOC Step 1 research]</td>
+<td>Salvage value itself is never served</td>
+</tr>
+<tr>
+<td><code>rows[].accumulatedDepreciation</code></td>
+<td>number</td>
+<td>DERIVED SUM(<code>FA_AssetDepreciation.Depreciation</code> WHERE NOT Tax) for the asset [DOC Step 1 research]</td>
+<td>Book depreciation only</td>
+</tr>
+<tr>
+<td><code>rows[].netValue</code></td>
+<td>number</td>
+<td>DERIVED <code>depreciableValue - accumulatedDepreciation</code> [DOC Step 1 research]</td>
+<td>Basis for the zero-Net row marker</td>
+</tr>
+<tr>
+<td><code>totalCount</code></td>
+<td>integer</td>
+<td>DERIVED COUNT over the whole filtered group; NEW [BUILD]</td>
+<td>Size of the full set, not the page</td>
+</tr>
+<tr>
+<td><code>totals</code></td>
+<td>object</td>
+<td>DERIVED; NEW [BUILD, owner instruction]</td>
+<td>Per-measure totals over the whole filtered group, never the page</td>
+</tr>
+<tr>
+<td><code>totals.capitalizedValue</code></td>
+<td>number</td>
+<td>DERIVED SUM over the full filtered set</td>
+<td>Totals-row cell</td>
+</tr>
+<tr>
+<td><code>totals.cost</code></td>
+<td>number</td>
+<td>DERIVED SUM over the full filtered set</td>
+<td>Totals-row cell</td>
+</tr>
+<tr>
+<td><code>totals.depreciableValue</code></td>
+<td>number</td>
+<td>DERIVED SUM over the full filtered set</td>
+<td>Totals-row cell</td>
+</tr>
+<tr>
+<td><code>totals.accumulatedDepreciation</code></td>
+<td>number</td>
+<td>DERIVED SUM over the full filtered set</td>
+<td>Totals-row cell</td>
+</tr>
+<tr>
+<td><code>totals.netValue</code></td>
+<td>number</td>
+<td>DERIVED SUM over the full filtered set</td>
+<td>Totals-row cell</td>
+</tr>
+<tr>
+<td><code>pageIndex</code></td>
+<td>integer</td>
+<td>NEW: the clamped page actually served, 1-based</td>
+<td>Echo for the pager</td>
+</tr>
+<tr>
+<td><code>pageCount</code></td>
+<td>integer</td>
+<td>NEW: <code>ceil(totalCount / pageSize)</code>, minimum 1</td>
+<td>Pager bound</td>
+</tr>
+<tr>
+<td><code>asOf</code></td>
+<td>string (ISO 8601)</td>
+<td>NEW server timestamp</td>
+<td>When the server ran the query</td>
+</tr>
+</tbody>
+</table>
+<h3>Example response</h3>
+<pre><code>{
+  &quot;rows&quot;: [
+    { &quot;assetId&quot;: &quot;9a0b1c2d-0001-4a4a-9b9b-111111111111&quot;, &quot;tagNumber&quot;: &quot;FA-1021&quot;, &quot;name&quot;: &quot;Passenger Van&quot;, &quot;capitalizedValue&quot;: 120000.00, &quot;cost&quot;: 125000.00, &quot;depreciableValue&quot;: 121000.00, &quot;accumulatedDepreciation&quot;: 21000.00, &quot;netValue&quot;: 100000.00 },
+    { &quot;assetId&quot;: &quot;9a0b1c2d-0002-4a4a-9b9b-222222222222&quot;, &quot;tagNumber&quot;: &quot;FA-1023&quot;, &quot;name&quot;: &quot;Maintenance Truck&quot;, &quot;capitalizedValue&quot;: 140000.00, &quot;cost&quot;: 145000.00, &quot;depreciableValue&quot;: 141500.00, &quot;accumulatedDepreciation&quot;: 51500.00, &quot;netValue&quot;: 90000.00 },
+    { &quot;assetId&quot;: &quot;9a0b1c2d-0003-4a4a-9b9b-333333333333&quot;, &quot;tagNumber&quot;: &quot;FA-1025&quot;, &quot;name&quot;: &quot;Minibus&quot;, &quot;capitalizedValue&quot;: 127331.00, &quot;cost&quot;: 131950.00, &quot;depreciableValue&quot;: 121645.00, &quot;accumulatedDepreciation&quot;: 61645.00, &quot;netValue&quot;: 60000.00 }
+  ],
+  &quot;totalCount&quot;: 3,
+  &quot;totals&quot;: {
+    &quot;capitalizedValue&quot;: 387331.00,
+    &quot;cost&quot;: 401950.00,
+    &quot;depreciableValue&quot;: 384145.00,
+    &quot;accumulatedDepreciation&quot;: 134145.00,
+    &quot;netValue&quot;: 250000.00
+  },
+  &quot;pageIndex&quot;: 1,
+  &quot;pageCount&quot;: 1,
+  &quot;asOf&quot;: &quot;2026-09-07T14:05:00Z&quot;
+}
+</code></pre>
+<p>Reconciliation: netValue 100000 + 90000 + 60000 = 250000 equals <code>totals.netValue</code>, cost 125000 + 145000 + 131950 = 401950 equals <code>totals.cost</code>, and capitalizedValue 120000 + 140000 + 127331 = 387331 equals <code>totals.capitalizedValue</code>; this group fits one page so the page sums to the totals, but on a multi-page group the totals still cover the full filtered set while <code>rows</code> holds one page. <code>totals.netValue</code> and <code>totalCount</code> here match API 2's Vehicles group figures.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty (the group has no assets, or <code>valueId</code> is stale for the <code>valueType</code>)</td>
+<td><code>rows</code> empty, <code>totalCount</code> 0, every <code>totals</code> member 0, <code>pageIndex</code> 1, <code>pageCount</code> 1, HTTP 200</td>
+</tr>
+<tr>
+<td>Partial</td>
+<td>Not applicable: no requested span exists; the read is a point-in-time snapshot of one group</td>
+</tr>
+<tr>
+<td>Not-yet-existing entity (unknown <code>valueId</code>)</td>
+<td>Same well-formed zero shape as Empty, HTTP 200; a stale saved preference is an everyday state, not a fault</td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td>HTTP 403, standard error body; widget rendering undesigned, see Still needs sign-off</td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td>HTTP 503, standard error body</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>API 4: Preferences read</h2>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/fixed-assets/preferences
+</code></pre>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>none</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>The user and company come from the auth context and the <code>X-Company-ID</code> header</td>
+</tr>
+</tbody>
+</table>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/fixed-assets/preferences
+GET /api/dashboard/fixed-assets/preferences   (identical on every load; there is no variant call)
+</code></pre>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>groupBy</code></td>
+<td>string</td>
+<td>NEW read of <code>SSUserTenantPreferenceRepository</code> key <code>UserPreferences.WidgetFixedAssets</code>; the Modern API has no preference read today [DOC Step 1 research], and whether a shared dashboard preference service should carry this instead is [TO CONFIRM - backend team]</td>
+<td>Saved Group By dimension, or <code>Class</code> when nothing is saved</td>
+</tr>
+<tr>
+<td><code>groupId</code></td>
+<td>string (guid) or null</td>
+<td>NEW, same store</td>
+<td>Saved Specific Group; null when nothing is saved, and the client falls back to the first group in API 2's list</td>
+</tr>
+<tr>
+<td><code>measure</code></td>
+<td>string</td>
+<td>NEW, same store</td>
+<td>Saved Financial Measure, or <code>NetValue</code> when nothing is saved</td>
+</tr>
+</tbody>
+</table>
+<h3>Example response</h3>
+<pre><code>{
+  &quot;groupBy&quot;: &quot;Class&quot;,
+  &quot;groupId&quot;: &quot;6f1d2a30-9c1e-4b7a-8f21-0a1b2c3d4e03&quot;,
+  &quot;measure&quot;: &quot;NetValue&quot;
+}
+</code></pre>
+<p>There is no arithmetic to prove in this response; the three values are opaque selections echoed from the store.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty (nothing saved yet, first use)</td>
+<td><code>{"groupBy": "Class", "groupId": null, "measure": "NetValue"}</code>, HTTP 200; the defaults are the built defaults</td>
+</tr>
+<tr>
+<td>Partial (a saved <code>groupId</code> is stale for the saved <code>groupBy</code>)</td>
+<td>Returned as stored; API 3's zero-shape conflict rule and the client fallback handle it</td>
+</tr>
+<tr>
+<td>Not-yet-existing entity</td>
+<td>Not applicable: the resource always exists conceptually, empty means defaults</td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td>HTTP 403; a user who can see the widget can always read their own preferences, so this arises only with no widget access at all</td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td>HTTP 503, standard error body</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>API 5: Preferences write</h2>
+<h3>Endpoint</h3>
+<pre><code>PUT /api/dashboard/fixed-assets/preferences
+</code></pre>
+<h3>Parameters</h3>
+<p>Body, JSON, all three members required so the stored state is always complete:</p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>groupBy</code></td>
+<td>string</td>
+<td>yes</td>
+<td>the six dimension values, as API 2's <code>valueType</code></td>
+<td>none, always sent</td>
+<td>Dimension to save</td>
+</tr>
+<tr>
+<td><code>groupId</code></td>
+<td>string (guid) or null</td>
+<td>yes</td>
+<td>a <code>groupId</code> from API 2, or null</td>
+<td>none, always sent</td>
+<td>Group to save; null means "first group of the dimension"</td>
+</tr>
+<tr>
+<td><code>measure</code></td>
+<td>string</td>
+<td>yes</td>
+<td><code>CapitalizedValue</code>, <code>Cost</code>, <code>DepreciableValue</code>, <code>AccumulatedDepreciation</code>, <code>NetValue</code></td>
+<td>none, always sent</td>
+<td>Measure to save</td>
+</tr>
+</tbody>
+</table>
+<h3>Example requests</h3>
+<pre><code>PUT /api/dashboard/fixed-assets/preferences   body: {&quot;groupBy&quot;: &quot;Building&quot;, &quot;groupId&quot;: null, &quot;measure&quot;: &quot;Cost&quot;}
+PUT /api/dashboard/fixed-assets/preferences   body: {&quot;groupBy&quot;: &quot;Class&quot;, &quot;groupId&quot;: &quot;6f1d2a30-9c1e-4b7a-8f21-0a1b2c3d4e03&quot;, &quot;measure&quot;: &quot;NetValue&quot;}
+</code></pre>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>groupBy</code></td>
+<td>string</td>
+<td>NEW upsert into the same store as API 4</td>
+<td>Echo of the saved state</td>
+</tr>
+<tr>
+<td><code>groupId</code></td>
+<td>string (guid) or null</td>
+<td>NEW, same store</td>
+<td>Echo</td>
+</tr>
+<tr>
+<td><code>measure</code></td>
+<td>string</td>
+<td>NEW, same store</td>
+<td>Echo</td>
+</tr>
+</tbody>
+</table>
+<h3>Example response</h3>
+<pre><code>{
+  &quot;groupBy&quot;: &quot;Class&quot;,
+  &quot;groupId&quot;: &quot;6f1d2a30-9c1e-4b7a-8f21-0a1b2c3d4e03&quot;,
+  &quot;measure&quot;: &quot;NetValue&quot;
+}
+</code></pre>
+<p>There is no arithmetic to prove in this response; the write echoes the state it stored. The write is idempotent by construction: it stores desired state, so repeating it is harmless.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty</td>
+<td>Not applicable: the body is always complete; a missing member is HTTP 400 with a named validation error</td>
+</tr>
+<tr>
+<td>Partial</td>
+<td>Not applicable, as above</td>
+</tr>
+<tr>
+<td>Not-yet-existing entity</td>
+<td>First write creates the row; same 200 echo</td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td>HTTP 403; a read-only dashboard user can still save view preferences unless the platform rules otherwise [TO CONFIRM - backend team]</td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td>HTTP 503; the client keeps its in-memory selections for the session and retries on the next change</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>Auth and scoping</h2>
+<ul>
+<li><strong>Company / tenant scoping:</strong> every call carries the <code>X-Company-ID</code> header, and every query is scoped <code>FA_Asset.CompanyID = ctx</code> [DOC Widget_Comparison_Classic.html]. The preference store is additionally scoped to the authenticated user, per company, matching the legacy per-company key behaviour.</li>
+<li><strong>Permission right:</strong> the legacy widget is gated by the Fixed Assets module entitlement behind <code>AccessUri /FixedAssets</code>. The exact Modern API right name is UNVERIFIED (backend team) [TO CONFIRM - backend team].</li>
+<li><strong>What a user without the right sees:</strong> undesigned. The build renders an explicit unspecified-state frame, which is a stand-in, not a design. This is a product decision listed in Still needs sign-off. There is no separate write right: APIs 1 to 4 are reads, and API 5 writes only the user's own view preferences.</li>
+</ul>
+<hr />
+<h2>Edge cases</h2>
+<ol>
+<li>Org has no fixed assets: API 1 returns zeroes, API 2 returns an empty <code>groups[]</code>, API 3 the zero shape; all HTTP 200.</li>
+<li>Unimplemented dimension selected (the three account values today): API 2 returns an empty <code>groups[]</code>; the client renders the placeholder and keeps the controls live so the user can pick a working dimension.</li>
+<li>Stale or unknown <code>valueId</code> (saved preference, or a group deleted mid-session): API 3 returns the well-formed zero shape; the client falls back to the first group.</li>
+<li>Page past the end, including a set that shrank between calls: clamped to the last page, correct <code>totalCount</code> and <code>totals</code>, never an error.</li>
+<li>Non-whitelisted <code>sortBy</code>, unknown <code>valueType</code>, or <code>pageSize</code> outside 1 to 100: HTTP 400 with a named validation error; these are client defects, not data states.</li>
+<li>Duplicate tag numbers: permitted until proven otherwise [TO CONFIRM - backend team]; the sort order ends in <code>assetId</code>, so paging is deterministic regardless.</li>
+<li>Negative values (salvage above cost, or depreciation exceeding depreciable value): served as real signed numbers; the client plots donut shares by absolute value and shows signed figures in text [BUILD]. No source states whether the data allows this [TO CONFIRM - backend team].</li>
+<li>Every group totals zero for the selected measure: the donut renders its empty-chart state client-side; API 2's response is unchanged, all groups present with zeroes.</li>
+<li>Asset with a blank grouping value: belongs to "not assigned", which is returned as a real group, listed last; a blank never widens any selection.</li>
+<li>Assets acquired or disposed mid-session: no time axis exists, so each call simply reflects the store at its <code>asOf</code>; the accepted drift between API 2 and API 3 is recovered by the next interaction or refresh.</li>
+</ol>
+<hr />
+<h2>Not in scope</h2>
+<ul>
+<li>Any write against asset data: the widget is view-only; the only write is the user's own view preferences.</li>
+<li>Drill-through, row click, arc click, or navigation away: none exists in the design.</li>
+<li>Any time, fiscal-year or date-range filter: the figures are current book values; no time axis exists anywhere in the widget.</li>
+<li>A depreciation schedule or value-over-time series: open product question, not in this contract.</li>
+<li>A percent-depreciated measure or replacement-planning signal: raised in the sign-off dossier, unreviewed, not in this contract.</li>
+<li>A Depreciation Method filter: nothing in the real data supports it.</li>
+<li>A server-side export endpoint: the download's scope and mechanism are undecided; when decided, an export API gets added to this contract rather than being improvised client-side.</li>
+<li>The existing type-options and dollar-options endpoints: pre-existing static arrays, unused by this contract; the two enums ship in the client.</li>
+<li>Currency and locale formatting rules: the wire carries plain numbers; localisation behaviour is unspecified in every source and is tracked in the sign-off dossier items.</li>
+</ul>
+<hr />
+<h2>Still needs sign-off</h2>
+<ol>
+<li><strong>Default view.</strong> The amended build-requirements handoff says the Donut is the default; the built Final opens on the Asset Detail table. This contract specs the built behaviour, so the initial Explore/Detail load fires API 3. Decider: owner. Blocked until then: the initial-load call sequence; if Donut wins, the API 3 call drops from initial load.</li>
+<li><strong>The paged, server-sorted, totalled grid contract is new backend work, unscoped.</strong> Today's grid endpoint returns the full unpaged list with no totals; nothing anywhere serves <code>totalCount</code>, <code>totals</code>, sort params or paging, and no per-asset salvage value is exposed (nor needed, since the server computes Depreciable Value). Decider: backend team, not yet named. Blocked: API 3 build estimation.</li>
+<li><strong>Backend feasibility of the whole read model.</strong> Six groupable dimensions, a dependent group list, and five money measures per asset have never been verified against Shelby's real fixed-asset tables; every register figure in this spec's examples is illustrative mock data. Decider: backend team. Blocked: confidence in APIs 2 and 3 beyond their shapes.</li>
+<li><strong>The three account dimensions.</strong> <code>GetFixedAssetsValuesAsync()</code> returns an empty list for AssetAccount, AccumDepAccount and ExpenseAccount. Either the backend implements them or the product drops them from the menu. Deciders: backend team and owner. Blocked: whether API 2's enum keeps six values.</li>
+<li><strong>Preference persistence mechanism.</strong> The Modern API persists nothing today; this contract's APIs 4 and 5 assume a widget-scoped pair against the legacy store. A shared dashboard preference service may be the right home instead. Decider: backend team. Blocked: APIs 4 and 5 routing, not their payload shape.</li>
+<li><strong>Org-wide Total Net Value summation.</strong> No source spells out the compact-tier figure's math; this contract states SUM of per-asset Net Value over company scope as the natural reading. Decider: owner. Blocked: API 1 sign-off.</li>
+<li><strong>Default sort, Tag # ascending.</strong> Proposed, never confirmed against the old design. Decider: owner. Blocked: the <code>sortBy</code> default only.</li>
+<li><strong>Undesigned widget states.</strong> No-rights, loading, error and stale behaviours have no design; the 403/503 rows above state wire shapes only. Decider: design. Blocked: client rendering, not the API shapes.</li>
+<li><strong>Download scope and mechanism.</strong> The control exists at Explore and Detail and carries full-precision figures, but whether it exports the page, the group or the whole register, and whether server-side, is undecided. Decider: owner. Blocked: a possible sixth API.</li>
+<li><strong>Volume ceilings.</strong> Groups per dimension and assets per group have no cited worst-case anywhere. Decider: backend team, via a live query. Blocked: the BOUNDED verdict on API 2 (a truly unbounded dimension would force a top-N or paged shape).</li>
+<li><strong>Sign-off dossier flags, all Unreviewed.</strong> Jo's dossier raises seven flags with no owner-assigned status: a richer compact-tier figure set, per-group comparison and chart-form preference, a percent-depreciated measure, the fate of the legacy "None" grouping option versus the built "not assigned" group, a hardcoded-currency localisation defect verified live, values-as-text and empty-state expectations, and open questions on backing tables and useful-life data. Decider: owner assigns Accepted / Rejected / Disputed per flag. Blocked: the parts each flag touches, most directly API 1's field set and API 2's group naming.</li>
+<li><strong>Widget purpose and depreciation-curve questions.</strong> Whether the widget tracks total value or flags assets needing attention, and whether a value-over-time curve belongs on it, are open product questions. Decider: product. Blocked: nothing in this contract, but an attention-flagging answer would add fields to API 3.</li>
+</ol>
+
+</body>
+</html>

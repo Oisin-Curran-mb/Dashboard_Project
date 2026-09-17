@@ -6,24 +6,53 @@
 
 | ID | Category | Widget | Step | First flagged | Detail |
 |---|---|---|---|---|---|
-| OI-b2706b46 | deviation (negative) | Payroll Distributions | Step 5 | 2026-07-24 | Step 5 - API documents/Payroll Distributions/Payroll Distributions - API Spec.md still has the DRAFT line but the Step 5 index tracker status says "✅ Complete". |
-| OI-a3eef181 | deviation (positive) | (Empty Slot) | Step 4 | 2026-07-24 | Dashboard Tracker.xlsx Step 4 column says "Not Started" but Step 4 index's Tracker status column says "➖ N/A" - these should always match since one is synced from the other. |
-| OI-9b0b5bac | unreferenced file | Step 2 | Step 2 | 2026-07-24 | Market Research/W01 - Budget Compared to Actual.md isn't mentioned in Step 2's own index |
-| OI-46f78deb | unreferenced file | Step 2 | Step 2 | 2026-07-24 | Market Research/W02 - Pension Plans.md isn't mentioned in Step 2's own index |
-| OI-c0ed84cd | unreferenced file | Step 2 | Step 2 | 2026-07-24 | Market Research/W03 - Payroll Distributions.md isn't mentioned in Step 2's own index |
-| OI-f0c18b6f | unreferenced file | Step 2 | Step 2 | 2026-07-24 | Market Research/W04 - Remittance Pledges.md isn't mentioned in Step 2's own index |
-| OI-3fea5ecc | unreferenced file | Step 2 | Step 2 | 2026-07-24 | Market Research/W05 - Receivable Invoices Outstanding.md isn't mentioned in Step 2's own index |
-| OI-269bf2e6 | unreferenced file | Step 2 | Step 2 | 2026-07-24 | Market Research/W06 - Insurance Billing Plans.md isn't mentioned in Step 2's own index |
-| OI-1e0bc1ab | unreferenced file | Step 2 | Step 2 | 2026-07-24 | Market Research/W07 - Deposit Accounts.md isn't mentioned in Step 2's own index |
-| OI-b60d3744 | unreferenced file | Step 2 | Step 2 | 2026-07-24 | Market Research/W08 - My Status.md isn't mentioned in Step 2's own index |
-| OI-19ba84f0 | unreferenced file | Step 2 | Step 2 | 2026-07-24 | Market Research/W09 - Payroll Scheduled Time Off.md isn't mentioned in Step 2's own index |
-| OI-5d153966 | unreferenced file | Step 2 | Step 2 | 2026-07-24 | Market Research/W10 - Loans With Balance Due.md isn't mentioned in Step 2's own index |
-| OI-2ccfaa60 | unreferenced file | Step 2 | Step 2 | 2026-07-24 | Market Research/W11 - Fixed Asset Values.md isn't mentioned in Step 2's own index |
-| OI-c3585659 | unreferenced file | Step 2 | Step 2 | 2026-07-24 | Market Research/W13 - Purchasing Management.md isn't mentioned in Step 2's own index |
-| OI-2bf73cc8 | unreferenced file | Step 2 | Step 2 | 2026-07-24 | Market Research/W14 - Main Content Tasks.md isn't mentioned in Step 2's own index |
-| OI-618ab52d | unreferenced file | Step 2 | Step 2 | 2026-07-24 | Market Research/W15 - Bank Balances.md isn't mentioned in Step 2's own index |
-| OI-d2406895 | unreferenced file | Step 2 | Step 2 | 2026-07-24 | Market Research/W16 - Accounts Payable By Due Date.md isn't mentioned in Step 2's own index |
-| OI-883ffc75 | unreferenced file | Step 2 | Step 2 | 2026-07-24 | Market Research/W17 - Gifts Pledges.md isn't mentioned in Step 2's own index |
+| OI-4567bc4b | deviation (negative) | Tooling | Step 5 | 2026-09-07 | scan_state.py is blind to the v2/ layout: it reads only '<Widget>/<Widget> - API Spec.md', so for W09-W17 it sees NO Step 5 spec at all despite lint-clean v2 pairs on disk. The tracker-keeper will misreport Step 5 forever until its scanner learns the v2/ path. Tooling fix needed, not applied. |
+| OI-5ee63f5d | deviation (negative) | Payroll Distributions | Step 6 | 2026-09-07 | Reconciliation file statuses for findings 2/3/4 still read 'Not actioned' although the 09-02 audit found build+doc already satisfy them in effect. Statuses are yours to move; nothing touched. |
+| OI-1f98a2a6 | deviation (negative) | Sign-off coverage | Step 6 | 2026-09-07 | Five widgets have Jo dossiers but NO reconciliation file (W02, W11, W15, W16, W17), so every flag in them is permanently Unreviewed. Standing open item. |
+| OI-7e39fabe | unreferenced file | Step 2 | Step 2 | 2026-09-07 | Feargal Call - Action List (2026-08-25).md isn't mentioned in Step 2's own index |
+| OI-42c8a51f | unreferenced file | Step 3 | Step 3 | 2026-09-07 | BACKUP-W15-pre-rebuild-2026-09-03.html isn't mentioned in Step 3's own index |
+| OI-d04315f1 | unreferenced file | Step 3 | Step 3 | 2026-09-07 | Calendar Redesign Preview.html isn't mentioned in Step 3's own index |
+| OI-1e7c8780 | unreferenced file | Step 3 | Step 3 | 2026-09-07 | Dashboard Widget Mockups.BACKUP-W03-v2.2-20260830-011935.html isn't mentioned in Step 3's own index |
+| OI-51aed2eb | unreferenced file | Step 3 | Step 3 | 2026-09-07 | Dashboard Widget Mockups.BACKUP-W03-v2.3-20260830-013919.html isn't mentioned in Step 3's own index |
+| OI-060f99e1 | unreferenced file | Step 3 | Step 3 | 2026-09-07 | Dashboard Widget Mockups.BACKUP-W03-v2.4-20260830-015209.html isn't mentioned in Step 3's own index |
+| OI-e842ba63 | unreferenced file | Step 3 | Step 3 | 2026-09-07 | Dashboard Widget Mockups.BACKUP-W03-v2.5-20260830-020339.html isn't mentioned in Step 3's own index |
+| OI-70af90bc | unreferenced file | Step 3 | Step 3 | 2026-09-07 | Dashboard Widget Mockups.BACKUP-W03-v2.6-20260830-022014.html isn't mentioned in Step 3's own index |
+| OI-51ad8161 | unreferenced file | Step 3 | Step 3 | 2026-09-07 | Dashboard Widget Mockups.BACKUP-W05-v2.1-20260830-031156.html isn't mentioned in Step 3's own index |
+| OI-f668f43a | unreferenced file | Step 3 | Step 3 | 2026-09-07 | Dashboard Widget Mockups.BACKUP-W05-v2.2-20260830-031620.html isn't mentioned in Step 3's own index |
+| OI-7b99dd86 | unreferenced file | Step 3 | Step 3 | 2026-09-07 | Dashboard Widget Mockups.BACKUP-W05-v2.3-20260830-032027.html isn't mentioned in Step 3's own index |
+| OI-e1e272a4 | unreferenced file | Step 3 | Step 3 | 2026-09-07 | Dashboard Widget Mockups.BACKUP-W09-v2.9-20260830-041749.html isn't mentioned in Step 3's own index |
+| OI-c37130bd | unreferenced file | Step 3 | Step 3 | 2026-09-07 | Dashboard Widget Mockups.BACKUP-W09-v3.0-20260830-043227.html isn't mentioned in Step 3's own index |
+| OI-22f4d7c0 | unreferenced file | Step 3 | Step 3 | 2026-09-07 | Dashboard Widget Mockups.BACKUP-W09-v3.1-20260830-045604.html isn't mentioned in Step 3's own index |
+| OI-5df99cba | unreferenced file | Step 3 | Step 3 | 2026-09-07 | Dashboard Widget Mockups.BACKUP-W09-v3.2-20260830-050513.html isn't mentioned in Step 3's own index |
+| OI-78c6086b | unreferenced file | Step 3 | Step 3 | 2026-09-07 | Dashboard Widget Mockups.BACKUP-W09-v3.3-20260830-051355.html isn't mentioned in Step 3's own index |
+| OI-cbcd910a | unreferenced file | Step 3 | Step 3 | 2026-09-07 | Dashboard Widget Mockups.BACKUP-W11-cleanpass-20260903-133127.html isn't mentioned in Step 3's own index |
+| OI-d945bc3e | unreferenced file | Step 3 | Step 3 | 2026-09-07 | Dashboard Widget Mockups.BACKUP-W11-cssfix-20260903-115137.html isn't mentioned in Step 3's own index |
+| OI-19e6e84f | unreferenced file | Step 3 | Step 3 | 2026-09-07 | Dashboard Widget Mockups.BACKUP-W11-jocss-20260903-124400.html isn't mentioned in Step 3's own index |
+| OI-dc09ac4c | unreferenced file | Step 3 | Step 3 | 2026-09-07 | Dashboard Widget Mockups.BACKUP-W11-port-20260830-054549.html isn't mentioned in Step 3's own index |
+| OI-5abdabac | unreferenced file | Step 3 | Step 3 | 2026-09-07 | Dashboard Widget Mockups.BACKUP-W11-preDelete-20260903-140435.html isn't mentioned in Step 3's own index |
+| OI-7521bf71 | unreferenced file | Step 3 | Step 3 | 2026-09-07 | Dashboard Widget Mockups.BACKUP-W11-reach-20260830-055703.html isn't mentioned in Step 3's own index |
+| OI-de82e2b1 | unreferenced file | Step 3 | Step 3 | 2026-09-07 | Dashboard Widget Mockups.BACKUP-W11-v2.1-20260830-061450.html isn't mentioned in Step 3's own index |
+| OI-a933beb6 | unreferenced file | Step 3 | Step 3 | 2026-09-07 | Dashboard Widget Mockups.BACKUP-W11-v2.2-20260830-062130.html isn't mentioned in Step 3's own index |
+| OI-a694b0cc | unreferenced file | Step 3 | Step 3 | 2026-09-07 | Unattended Run - Decisions and Questions (2026-08-30).md isn't mentioned in Step 3's own index |
+| OI-f6b7d47e | unreferenced file | Step 3 | Step 3 | 2026-09-07 | Unattended Run - Decisions and Questions (2026-09-07).md isn't mentioned in Step 3's own index |
+| OI-1b233c12 | unreferenced file | Step 3 | Step 3 | 2026-09-07 | W11 - Fixed Asset Values - BUILD REQUIREMENTS (handoff).md isn't mentioned in Step 3's own index |
+| OI-2184de15 | unreferenced file | Step 3 | Step 3 | 2026-09-07 | W15 - Bank Balances - BUILD REQUIREMENTS (handoff).md isn't mentioned in Step 3's own index |
+| OI-cc2878d8 | unreferenced file | Step 3 | Step 3 | 2026-09-07 | Widget Styling Reference.md isn't mentioned in Step 3's own index |
+| OI-58cfb6ae | unreferenced file | Step 3 | Step 3 | 2026-09-07 | chart-fill-check.js isn't mentioned in Step 3's own index |
+| OI-8b73d398 | unreferenced file | Step 3 | Step 3 | 2026-09-07 | css-scope-matrix.py isn't mentioned in Step 3's own index |
+| OI-32139064 | unreferenced file | Step 3 | Step 3 | 2026-09-07 | css-split-selector-check.py isn't mentioned in Step 3's own index |
+| OI-2d64c730 | unreferenced file | Step 3 | Step 3 | 2026-09-07 | css-token-resolve-check.py isn't mentioned in Step 3's own index |
+| OI-54f6f5e0 | unreferenced file | Step 3 | Step 3 | 2026-09-07 | fc-scroll-check.js isn't mentioned in Step 3's own index |
+| OI-341786c5 | unreferenced file | Step 3 | Step 3 | 2026-09-07 | w11-change-check.js isn't mentioned in Step 3's own index |
+| OI-54069cfa | unreferenced file | Step 3 | Step 3 | 2026-09-07 | w11-faf-final.asserts.js isn't mentioned in Step 3's own index |
+| OI-01199cfc | unreferenced file | Step 3 | Step 3 | 2026-09-07 | w11-faf-final.driver.js isn't mentioned in Step 3's own index |
+| OI-2a6f8c22 | unreferenced file | Step 3 | Step 3 | 2026-09-07 | w11-faf-final.extract.js isn't mentioned in Step 3's own index |
+| OI-25d718c2 | unreferenced file | Step 3 | Step 3 | 2026-09-07 | w11-measure-check.js isn't mentioned in Step 3's own index |
+| OI-960a253f | unreferenced file | Step 3 | Step 3 | 2026-09-07 | w11-page-check.js isn't mentioned in Step 3's own index |
+| OI-a1cb147a | unreferenced file | Step 3 | Step 3 | 2026-09-07 | w11-server-check.js isn't mentioned in Step 3's own index |
+| OI-b7a78dec | unreferenced file | Step 3 | Step 3 | 2026-09-07 | w11-sort-check.js isn't mentioned in Step 3's own index |
+| OI-fd14f629 | unreferenced file | Step 3 | Step 3 | 2026-09-07 | w15-bkf-final.driver.js isn't mentioned in Step 3's own index |
+| OI-e9d815c3 | unreferenced file | Step 3 | Step 3 | 2026-09-07 | w15-owner-check.js isn't mentioned in Step 3's own index |
 
 ### Run: 2026-08-26 — Dashboard Container Demo completed
 
@@ -53,6 +82,154 @@ Built `Aditya_Widget_Design/Dashboard Container Demo.html` — a fully self-cont
 
 **Verified in browser:** empty state → drawer open → add widget (shimmer → render) → resize (Glance/Explore/Detail) → fullscreen modal → all interactions working with zero JS errors.
 ## Run history
+
+### Run: 2026-09-07 19:30
+
+First run - nothing to diff against yet. Everything below is baseline, not drift.
+
+**Deviations found (17):**
+- [↓ negative] Remittance Pledges (Step 5): Step 5 - API documents/Remittance Pledges/Remittance Pledges - API Spec.md still has the DRAFT line but the Step 5 index tracker status says "✅ Complete".
+- [↑ positive] (Empty Slot) (Step 4): Dashboard Tracker.xlsx Step 4 column says "Not Started" but Step 4 index's Tracker status column says "➖ N/A" - these should always match since one is synced from the other.
+- [↑ positive] Payroll Scheduled Time Off (Step 4/5): W09: Step 4 doc audit-stamped and lint-clean V2 spec exist on disk, but Step 4 index says In progress / Not started, Step 5 index says Not started, tracker says Not Started. All three are behind verified reality. Owner asked for these to be marked done; blocked on the DRAFT ruling below.
+- [↑ positive] Loans With Balance Due (Step 4/5): W10: Step 4 doc audit-stamped and lint-clean V2 spec exist on disk, but Step 4 index says In progress / Not started, Step 5 index says Not started, tracker says Not Started. All three are behind verified reality. Owner asked for these to be marked done; blocked on the DRAFT ruling below.
+- [↑ positive] Fixed Asset Values (Step 4/5): W11: Step 4 doc audit-stamped and lint-clean V2 spec exist on disk, but Step 4 index says In progress / Not started, Step 5 index says Not started, tracker says Not Started. All three are behind verified reality. Owner asked for these to be marked done; blocked on the DRAFT ruling below.
+- [↑ positive] Purchasing Management (Step 4/5): W13: Step 4 doc audit-stamped and lint-clean V2 spec exist on disk, but Step 4 index says In progress / Not started, Step 5 index says Not started, tracker says Not Started. All three are behind verified reality. Owner asked for these to be marked done; blocked on the DRAFT ruling below.
+- [↑ positive] Bank Balances (Step 4/5): W15: Step 4 doc audit-stamped and lint-clean V2 spec exist on disk, but Step 4 index says In progress / Not started, Step 5 index says Not started, tracker says Not Started. All three are behind verified reality. Owner asked for these to be marked done; blocked on the DRAFT ruling below.
+- [↑ positive] Accounts Payable By Due Date (Step 4/5): W16: Step 4 doc audit-stamped and lint-clean V2 spec exist on disk, but Step 4 index says In progress / Not started, Step 5 index says Not started, tracker says Not Started. All three are behind verified reality. Owner asked for these to be marked done; blocked on the DRAFT ruling below.
+- [↑ positive] Gifts Pledges (Step 4/5): W17: Step 4 doc audit-stamped and lint-clean V2 spec exist on disk, but Step 4 index says In progress / Not started, Step 5 index says Not started, tracker says Not Started. All three are behind verified reality. Owner asked for these to be marked done; blocked on the DRAFT ruling below.
+- [↓ negative] ALL 14 in-scope (Step 5): Every V2 spec deliberately carries 'Status: DRAFT - not final' (owner has not reviewed them). Marking Step 5 'Done' in tracker/indexes while the specs self-describe as DRAFT would manufacture 14 new deviations of exactly the W04 kind the script just caught. Needs a ruling: flip spec statuses to final (asserts review), use a 'Drafted - awaiting owner review' status, or accept the mismatch.
+- [↓ negative] Remittance Pledges (Step 5): Script-caught: the V1 spec still has its DRAFT line while the Step 5 index says Complete. The V2 spec superseded V1; decide whether V1 files get a 'superseded by v2/' marker or the index note changes.
+- [↓ negative] (Empty Slot) (Step 4): Script-caught: tracker says 'Not Started', Step 4 index says 'N/A'. One is synced from the other and they must match; which is canonical for an empty slot?
+- [↓ negative] Step 2 policy (Step 2): Owner asked for Steps 1-5 marked done, but this skill's own rule says Step 2 has NO per-widget done state and forbids inventing one. Needs a ruling before any Step 2 status is written anywhere.
+- [↓ negative] Scope (All): W08 (deferred), W12 (empty slot), W14 (not eligible past Step 3) cannot be marked done. Assumed excluded from 'all widgets'; confirm.
+- [↓ negative] Tooling (Step 5): scan_state.py is blind to the v2/ layout: it reads only '<Widget>/<Widget> - API Spec.md', so for W09-W17 it sees NO Step 5 spec at all despite lint-clean v2 pairs on disk. The tracker-keeper will misreport Step 5 forever until its scanner learns the v2/ path. Tooling fix needed, not applied.
+- [↓ negative] Payroll Distributions (Step 6): Reconciliation file statuses for findings 2/3/4 still read 'Not actioned' although the 09-02 audit found build+doc already satisfy them in effect. Statuses are yours to move; nothing touched.
+- [↓ negative] Sign-off coverage (Step 6): Five widgets have Jo dossiers but NO reconciliation file (W02, W11, W15, W16, W17), so every flag in them is permanently Unreviewed. Standing open item.
+
+**Unreferenced files spotted (44):**
+- [still present] Step 2: `Feargal Call - Action List (2026-08-25).md`
+- [still present] Step 3: `BACKUP-W15-pre-rebuild-2026-09-03.html`
+- [still present] Step 3: `Calendar Redesign Preview.html`
+- [still present] Step 3: `Dashboard Widget Mockups.BACKUP-W03-v2.2-20260830-011935.html`
+- [still present] Step 3: `Dashboard Widget Mockups.BACKUP-W03-v2.3-20260830-013919.html`
+- [still present] Step 3: `Dashboard Widget Mockups.BACKUP-W03-v2.4-20260830-015209.html`
+- [still present] Step 3: `Dashboard Widget Mockups.BACKUP-W03-v2.5-20260830-020339.html`
+- [still present] Step 3: `Dashboard Widget Mockups.BACKUP-W03-v2.6-20260830-022014.html`
+- [still present] Step 3: `Dashboard Widget Mockups.BACKUP-W05-v2.1-20260830-031156.html`
+- [still present] Step 3: `Dashboard Widget Mockups.BACKUP-W05-v2.2-20260830-031620.html`
+- [still present] Step 3: `Dashboard Widget Mockups.BACKUP-W05-v2.3-20260830-032027.html`
+- [still present] Step 3: `Dashboard Widget Mockups.BACKUP-W09-v2.9-20260830-041749.html`
+- [still present] Step 3: `Dashboard Widget Mockups.BACKUP-W09-v3.0-20260830-043227.html`
+- [still present] Step 3: `Dashboard Widget Mockups.BACKUP-W09-v3.1-20260830-045604.html`
+- [still present] Step 3: `Dashboard Widget Mockups.BACKUP-W09-v3.2-20260830-050513.html`
+- [still present] Step 3: `Dashboard Widget Mockups.BACKUP-W09-v3.3-20260830-051355.html`
+- [still present] Step 3: `Dashboard Widget Mockups.BACKUP-W11-cleanpass-20260903-133127.html`
+- [still present] Step 3: `Dashboard Widget Mockups.BACKUP-W11-cssfix-20260903-115137.html`
+- [still present] Step 3: `Dashboard Widget Mockups.BACKUP-W11-jocss-20260903-124400.html`
+- [still present] Step 3: `Dashboard Widget Mockups.BACKUP-W11-port-20260830-054549.html`
+- [still present] Step 3: `Dashboard Widget Mockups.BACKUP-W11-preDelete-20260903-140435.html`
+- [still present] Step 3: `Dashboard Widget Mockups.BACKUP-W11-reach-20260830-055703.html`
+- [still present] Step 3: `Dashboard Widget Mockups.BACKUP-W11-v2.1-20260830-061450.html`
+- [still present] Step 3: `Dashboard Widget Mockups.BACKUP-W11-v2.2-20260830-062130.html`
+- [still present] Step 3: `Unattended Run - Decisions and Questions (2026-08-30).md`
+- [still present] Step 3: `Unattended Run - Decisions and Questions (2026-09-07).md`
+- [still present] Step 3: `W11 - Fixed Asset Values - BUILD REQUIREMENTS (handoff).md`
+- [still present] Step 3: `W15 - Bank Balances - BUILD REQUIREMENTS (handoff).md`
+- [still present] Step 3: `Widget Styling Reference.md`
+- [still present] Step 3: `chart-fill-check.js`
+- [still present] Step 3: `css-scope-matrix.py`
+- [still present] Step 3: `css-split-selector-check.py`
+- [still present] Step 3: `css-token-resolve-check.py`
+- [still present] Step 3: `fc-scroll-check.js`
+- [still present] Step 3: `w11-change-check.js`
+- [still present] Step 3: `w11-faf-final.asserts.js`
+- [still present] Step 3: `w11-faf-final.driver.js`
+- [still present] Step 3: `w11-faf-final.extract.js`
+- [still present] Step 3: `w11-measure-check.js`
+- [still present] Step 3: `w11-page-check.js`
+- [still present] Step 3: `w11-server-check.js`
+- [still present] Step 3: `w11-sort-check.js`
+- [still present] Step 3: `w15-bkf-final.driver.js`
+- [still present] Step 3: `w15-owner-check.js`
+
+
+### Run: 2026-08-19 (decisions pass, same day)
+
+Owner decisions applied:
+
+- **Step 5 DRAFT headers removed (7 specs):** W01-W07's `- API Spec.md` files no longer say "Status: DRAFT — not final"; each now reads "Complete at Step 5 — awaiting management sign-off" with a dated note. The 7 matching Confluence `.html` files were updated to match. Items closed (resolved by action).
+- **W07 Step 6 tracker set to Complete** (owner: "Complete" = sign-off document exists, matching W03's treatment). `Dashboard Tracker.xlsx` column L updated; item closed.
+- **W03 Step 6 kept Complete, item left open** as the standing reminder that reconciliation findings 2-4 are not yet actioned into Steps 1-5.
+
+Baseline snapshot refreshed after the tracker and spec edits.
+
+
+### Run: 2026-08-19 (cleanup pass, same day)
+
+Closed by project owner: 33 items (all 20 "unreferenced file" findings plus the 13 Step 3 backup/scratch flags), resolved by action rather than dismissal:
+
+- **Deleted (15 files):** the archived `Step 3 - Mock_Work/_Archive/` backups and scratch drivers (11 `Dashboard Widget Mockups.BACKUP-*.html`, `Dashboard Widget Mockups.html.bak_W09F_20260808`, `w04/w09/w10_driver.scratch.js`), owner-approved. The `_Archive/` folder itself was removed too.
+- **Indexed (18 files):** Step 2's index now lists all 16 `Market Research/WNN - *.md` files (and corrects its stale "empty placeholder" note - all were researched by 2026-07-23); Step 3's index gained a row for `Widget_Specs/Time Window Module.md`; Step 5's index gained an entry for `Pending Questions - Codebase Findings (2026-07-30).md`.
+
+Orphan scan is now clean across Steps 1-5. Baseline snapshot refreshed after these changes.
+
+
+### Run: 2026-08-19 03:20
+
+First run - nothing to diff against yet. Everything below is baseline, not drift.
+
+**Deviations found (10):**
+- [↓ negative] Budget Compared to Actual (Step 5): Step 5 - API documents/Budget Compared to Actual/Budget Compared to Actual - API Spec.md still has the DRAFT line but the Step 5 index tracker status says "✅ Complete".
+- [↓ negative] Pension Plans (Step 5): Step 5 - API documents/Pension Plans/Pension Plans - API Spec.md still has the DRAFT line but the Step 5 index tracker status says "✅ Complete".
+- [↓ negative] Payroll Distributions (Step 5): Step 5 - API documents/Payroll Distributions/Payroll Distributions - API Spec.md still has the DRAFT line but the Step 5 index tracker status says "✅ Complete".
+- [↓ negative] Remittance Pledges (Step 5): Step 5 - API documents/Remittance Pledges/Remittance Pledges - API Spec.md still has the DRAFT line but the Step 5 index tracker status says "✅ Complete".
+- [↓ negative] Receivable Invoices Outstanding (Step 5): Step 5 - API documents/Receivable Invoices Outstanding/Receivable Invoices Outstanding - API Spec.md still has the DRAFT line but the Step 5 index tracker status says "✅ Complete".
+- [↓ negative] Insurance Billing Plans (Step 5): Step 5 - API documents/Insurance Billing Plans/Insurance Billing Plans - API Spec.md still has the DRAFT line but the Step 5 index tracker status says "✅ Complete".
+- [↓ negative] Deposit Accounts (Step 5): Step 5 - API documents/Deposit Accounts/Deposit Accounts - API Spec.md still has the DRAFT line but the Step 5 index tracker status says "✅ Complete".
+- [↑ positive] (Empty Slot) (Step 4): Dashboard Tracker.xlsx Step 4 column says "Not Started" but Step 4 index's Tracker status column says "➖ N/A" - these should always match since one is synced from the other.
+- [↑ positive] Deposit Accounts (Step 6): Sign-off export Deposits+On+Hand.doc exists on disk in Step 6, but Dashboard Tracker.xlsx column L (Step 6 - Design Sign Off) says "Not Started". Not auto-corrected: the project's own Step 6 index says the meaning of "Complete" in that column (document exists vs fully reconciled) is deliberately unsettled - owner to decide.
+- [↓ negative] Payroll Distributions (Step 6): Tracker column L says "Complete" but Reconciliation - Payroll Distributions.md findings 2 (comparison rejected), 3 (in-widget drill-through) and 4 (top-N amount-sort) are still marked Not actioned into Steps 1-5.
+
+**Being worked on, not reflected (3):**
+- Main Content Tasks (Step 4): Step 4 index's W14 row still says "In progress at Step 3" but Step 3's own index and the tracker both say Step 3 is Complete.
+- (index header) (Step 4): Step 4 index's "Built Finals" note is dated 2026-08-04 and doesn't record the newer verified Final Check builds: W09 (v2.8, verified 2026-08-08) and W10 (verified 2026-08-11).
+- (12 widgets) (Step 4): All 17 widgets have Step 6 Confluence dossiers (pulled 2026-07-27) but only W07's Step 4 doc has a "Sign-off Input (Jo)" section - the other upgraded-template docs (W01, W02, W04, W05, W06, W09, W10, W11, W13, W15, W16, W17) haven't logged her input yet.
+
+**Unreferenced files spotted (33):**
+- [still present] Step 2: `Market Research/W01 - Budget Compared to Actual.md`
+- [still present] Step 2: `Market Research/W02 - Pension Plans.md`
+- [still present] Step 2: `Market Research/W03 - Payroll Distributions.md`
+- [still present] Step 2: `Market Research/W04 - Remittance Pledges.md`
+- [still present] Step 2: `Market Research/W05 - Receivable Invoices Outstanding.md`
+- [still present] Step 2: `Market Research/W06 - Insurance Billing Plans.md`
+- [still present] Step 2: `Market Research/W07 - Deposit Accounts.md`
+- [still present] Step 2: `Market Research/W08 - My Status.md`
+- [still present] Step 2: `Market Research/W09 - Payroll Scheduled Time Off.md`
+- [still present] Step 2: `Market Research/W10 - Loans With Balance Due.md`
+- [still present] Step 2: `Market Research/W11 - Fixed Asset Values.md`
+- [still present] Step 2: `Market Research/W13 - Purchasing Management.md`
+- [still present] Step 2: `Market Research/W14 - Main Content Tasks.md`
+- [still present] Step 2: `Market Research/W15 - Bank Balances.md`
+- [still present] Step 2: `Market Research/W16 - Accounts Payable By Due Date.md`
+- [still present] Step 2: `Market Research/W17 - Gifts Pledges.md`
+- [still present] Step 3: `Dashboard Widget Mockups.BACKUP-2026-08-08-W09.html`
+- [still present] Step 3: `Dashboard Widget Mockups.BACKUP-W04-2026-08-08-popup.html`
+- [still present] Step 3: `Dashboard Widget Mockups.BACKUP-W04-2026-08-08-range.html`
+- [still present] Step 3: `Dashboard Widget Mockups.BACKUP-W04-2026-08-11-run2.html`
+- [still present] Step 3: `Dashboard Widget Mockups.BACKUP-W04-2026-08-11.html`
+- [still present] Step 3: `Dashboard Widget Mockups.BACKUP-W09-20260807-235013.html`
+- [still present] Step 3: `Dashboard Widget Mockups.BACKUP-W09-initials-20260808-003459.html`
+- [still present] Step 3: `Dashboard Widget Mockups.BACKUP-W09-outstanding.html`
+- [still present] Step 3: `Dashboard Widget Mockups.BACKUP-W09-ownerchanges-20260810-155740.html`
+- [still present] Step 3: `Dashboard Widget Mockups.BACKUP-W09-preinfo-20260808-005453.html`
+- [still present] Step 3: `Dashboard Widget Mockups.BACKUP-W09-statuscolour-20260810-100057.html`
+- [still present] Step 3: `Dashboard Widget Mockups.html.bak_W09F_20260808`
+- [still present] Step 3: `Widget_Specs/Time Window Module.md`
+- [still present] Step 3: `w04_driver.scratch.js`
+- [still present] Step 3: `w09_driver.scratch.js`
+- [still present] Step 3: `w10_driver.scratch.js`
+- [still present] Step 5: `Pending Questions - Codebase Findings (2026-07-30).md`
+
 
 ### Run: 2026-07-24 00:00
 

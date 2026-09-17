@@ -20,84 +20,262 @@ pre code { background: none; padding: 0; }
 <body>
 
 <h1>Remittance Pledges — API Spec</h1>
-<p><span class="status">Status: DRAFT — not final</span></p>
+<p><strong>Status: DRAFT — not final</strong> <em>(reopened 2026-08-24: the v3.0/v3.1/v3.2 widget rebuild changed the time-selection contract, added two response fields and added a third API. It was "Complete at Step 5 — awaiting management sign-off" from 2026-08-19; that applied to the v2.x design and no longer describes this document.)</em></p>
 <h2>Overview</h2>
-<p>The widget shows how well an organisation is keeping up with its remittance pledge commitments. For each activity it returns what was pledged, what should have been received by a chosen date (Expected), what has actually been paid, what remains outstanding, and the percentage paid, so the frontend can pace every pledge against its own term.</p>
-<p>Time selection is a single date: <code>receiptsThrough</code>. A payment counts only if its check date is on or before <code>receiptsThrough</code>, and Expected is paced up to that same date. <code>receiptsThrough</code> is therefore both the payment cutoff and the as-of anchor: a historical <code>receiptsThrough</code> reproduces a past reading exactly. There is no month preset, no fiscal-year filter, and no activity-type filter on this contract; the widget shows all active pledges for the company at the selected date.</p>
-<p>This spec is deliberately close to the existing remittance endpoint. The endpoint keeps its path and its flat per-activity rows. The one substantive change is a calculation fix, not a data-shape change: Expected is computed from each pledge's own <code>BeginDate</code> and <code>EndDate</code> rather than from a calendar-year fraction. The dates it needs are already read by the query today (they sit in the WHERE clause that filters active pledges on the selected date), so this is a SELECT-and-compute change with no schema change and no new query.</p>
-<h2>Tables</h2>
+<p>The Remittance Pledges widget shows which remittance pledges are <strong>not arriving as expected</strong>, and by how much. (Goal-progress framing belongs to W17 Gifts &amp; Pledges; see "Why v3 changed this spec" below.) It needs three backend calls:</p>
+<ol>
+<li><strong>Dashboard API</strong> (what the widget shows on screen): one call returning a per-activity pacing summary (pledged, expected, paid, outstanding, percent paid) for every active pledge at a chosen date.</li>
+<li><strong>Activity Payment History API</strong> (the "more information" popup): one call for a single activity returning its summary tiles plus the individual receipts (date, reference, amount, status) that make up its paid figure.</li>
+<li><strong>Pledge Payment Schedule API</strong> (added by v3.1, see below): one call for a single pledge returning its instalment schedule and which scheduled payments were received, part-received or <strong>skipped</strong>.</li>
+</ol>
+<p>All three are read-only. <strong>Time selection changed in v3.2 (2026-08-24) from a single date to a date RANGE</strong> — see "Why v3 changed this spec" immediately below for the reason and the exact consequences. There is still no month preset, no fiscal-year filter, and no activity-type filter on any contract.</p>
+<hr />
+<h2>Why v3 changed this spec (2026-08-24)</h2>
+<p>This spec was written against the v2.x design. Three things happened on 2026-08-24 that change the backend contract, and a developer reading the sections below needs the reason as much as the shape.</p>
+<p><strong>Driver 1 — the two widgets were splitting the same data two ways.</strong> W04 Remittance Pledges and W17 Gifts &amp; Pledges read near-identical data and had drifted into looking like the same widget. The project owner separated them by <strong>role</strong>: W04 now answers <em>"which pledges are not arriving as expected, and by how much"</em>; W17 answers <em>"how are we tracking against goal"</em>. Consequences for this API are mostly <strong>absence</strong> of new work — the exception framing (grouping rows into behind / on track / no-pledge, ranking by shortfall, headlining the money short) is all computable from fields this contract already returns. <strong>No new field is needed for the repositioning itself.</strong> One thing does need saying out loud, because a naive implementation gets it wrong: see "Aggregate shortfall" below.</p>
+<p><strong>Driver 2 — an SME correction to what the date control means.</strong> Edward Eoff, 2026-08-10 (recorded in <code>Step 2 - Feedback/Edward Eoff Interview - Tagged Q&amp;A by Widget (2026-08-10).md</code>, Tag: W04). Two findings bear directly on this contract:</p>
+<ul>
+<li>The legacy "Date Receipts Through" is not an open-ended cutoff. Verified live during the call: it is <strong>1 January of that year through the selected date</strong> — "it's just assuming a 1/1 to 8/1 date range." So the single-date model in the v2 spec was already an incomplete description of the real behaviour.</li>
+<li>The window does <strong>two jobs</strong>, not one: it selects <strong>which pledges are in scope</strong> ("the pledge is what dictates which activities display") and it bounds <strong>which receipts count</strong>. Edward's preferred enhancement was to let the user set both ends explicitly: "that way they're just in full control over it. And that way we don't have to assume anything or look at anything."</li>
+<li><strong>Terminology instruction, unprompted:</strong> never label this control "fiscal". "That makes people think about their general Ledger fiscal years. And this has nothing to do with the general Ledger fiscal year." Use <em>pledge year to date</em> or <em>calendar year to date</em>.</li>
+</ul>
+<p><strong>Driver 3 — the owner asked for skipped-payment visibility.</strong> Clicking a pledge should show that donor's own history: what they pledged, what they paid, and <em>which scheduled payment they missed</em>. That is a genuinely new capability and gets its own API below.</p>
+<h3>The one trap: do NOT window-bound <code>paid</code></h3>
+<p>The frontend build made this mistake first and it is worth recording so the backend does not repeat it. Scoping <code>paid</code> to the window while <code>expected</code> stayed cumulative to the pledge's own <code>BeginDate</code> made every pledge read as catastrophically behind under a short window (a $37,085 shortfall against $13,090 for the same data on a year window). That is a false reading, not an insight, because it compares a windowed numerator against a cumulative denominator.</p>
+<p><strong>Rule for this contract: pacing is inherently cumulative.</strong> <code>expected</code>, <code>paid</code>, <code>outstanding</code>, <code>pctPaid</code> and <code>daysAhead</code> are all measured from each pledge's <code>BeginDate</code> to <code>rangeEnd</code> and <strong>ignore <code>rangeStart</code> entirely</strong>. <code>rangeStart</code> affects exactly two things: the new <code>windowPaid</code> field, and which pledges are in scope. Keeping those separate is what makes the range's two jobs coexist without corrupting the maths.</p>
+<h3>Aggregate shortfall: sum per row, never net</h3>
+<p>The widget's headline figure is the behind-pace shortfall in money. If the API ever offers a grand-total shortfall, it must be <strong>the sum of per-row positive shortfalls</strong>, <code>SUM(GREATEST(0, expected - paid))</code>, not <code>GREATEST(0, SUM(expected) - SUM(paid))</code>. The netted version lets a pledge running ahead mask one running behind, which defeats the entire purpose of an exception widget. On the seeded reference data the two differ: $8,268 summed per row versus a smaller netted figure. The frontend computes this itself today, so this is guidance for any future server-side total, not a required field.</p>
+<h2>Data model (all three APIs)</h2>
+<p>Every field in this spec is classified as <strong>stored</strong> (read from a named column) or <strong>derived</strong> (computed, not stored). The column mappings were confirmed against the code (LLBLGen <code>[Column(...)]</code> entity mappings plus the <code>RMActivityRepository</code>/<code>RMHistoryDetailRepository</code> queries); the two companion documents in this folder hold the line-by-line provenance.</p>
 <table>
 <thead>
 <tr>
 <th>Table</th>
 <th>Fields used</th>
+<th>Notes</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td><code>RM_Activity</code></td>
-<td><code>ActivityID</code> (row id, the stable key), <code>Name</code> (activity label), <code>Sequence</code> (fixed row order). Scoped by <code>CompanyID</code></td>
+<td><code>ActivityID</code> (stable key), <code>Name</code> (label), <code>Sequence</code> (row order), <code>CompanyID</code> (scope)</td>
+<td>Names are org-editable, so <code>ActivityID</code> is the key, not the name</td>
 </tr>
 <tr>
 <td><code>RM_Pledge</code></td>
-<td><code>PledgeID</code>, <code>ActivityID</code> (join), <code>Active</code> (only active pledges are counted), <code>BeginDate</code> (date NOT NULL, term start), <code>EndDate</code> (date NOT NULL, term end), <code>Frequency</code> (payments per year: one of 2, 4, 6, 12, 24, 26, 52), <code>Duration</code> (total payment periods in the term). The default term on creation is <code>BeginDate</code> to <code>BeginDate + 1 year - 1 day</code>, but the user can set any <code>EndDate</code> (for example a 3-year capital campaign), persisted on every save</td>
+<td><code>PledgeID</code>, <code>ActivityID</code>, <code>BeginDate</code> (date NOT NULL), <code>EndDate</code> (date NOT NULL), <code>Frequency</code> (payments/year: 2,4,6,12,24,26,52), <code>Duration</code> (payment periods in term)</td>
+<td>The pledge term. Default term is <code>BeginDate</code> to <code>BeginDate + 1 year - 1 day</code>, but any <code>EndDate</code> can be set (e.g. a multi-year campaign)</td>
 </tr>
 <tr>
 <td><code>RM_PledgeDetail</code></td>
-<td><code>Pledge</code> (the pledged dollar amount). <code>SUM(RM_PledgeDetail.Pledge)</code> grouped by <code>ActivityID</code>, counting only rows whose parent <code>RM_Pledge.Active = true</code>, gives the activity's total pledged</td>
+<td><code>Pledge</code> (money)</td>
+<td><code>SUM(RM_PledgeDetail.Pledge)</code> grouped by <code>ActivityID</code> is the activity's total pledged</td>
 </tr>
 <tr>
-<td><code>RM_History</code> / <code>RM_HistoryDetail</code> / <code>RM_HistoryBatch</code></td>
-<td>Payments. A detail row counts toward Paid only if its batch is Posted (<code>RM_HistoryBatch.Posted = true</code>), the journal is not voided (<code>VoidJournalID IS NULL</code>), and its check date is on or before <code>receiptsThrough</code>. <code>SUM(RM_HistoryDetail.Amount)</code> grouped by <code>ActivityID</code> gives Paid</td>
+<td><code>RM_HistoryBatch</code></td>
+<td><code>Posted</code> (bit), <code>Online</code> (bit), <code>CompanyID</code></td>
+<td>A receipt counts toward paid only when <code>Posted = 1</code>. <code>Online</code> marks online/ACH-style batches</td>
+</tr>
+<tr>
+<td><code>RM_History</code></td>
+<td><code>HistoryID</code>, <code>HistoryBatchID</code>, <code>ChurchID</code>, <code>CheckDate</code> (date), <code>CheckNumber</code> (nvarchar(15), free text), <code>Amount</code> (whole-check total), <code>VoidJournalID</code> (null = live, set = reversed), <code>Note</code>, <code>TransactionNumber</code></td>
+<td>Receipt header. <code>CheckDate</code>, <code>CheckNumber</code> and the void/batch flags drive the popup</td>
+</tr>
+<tr>
+<td><code>RM_HistoryDetail</code></td>
+<td><code>HistoryDetailID</code>, <code>HistoryID</code>, <code>ActivityID</code>, <code>Amount</code> (money)</td>
+<td>The <strong>per-activity</strong> portion of a receipt. This is the amount that is summed and listed, NOT <code>RM_History.Amount</code> (the whole check)</td>
+</tr>
+<tr>
+<td><code>RM_PledgePercent</code></td>
+<td><code>ActivityID</code>, <code>Percent</code> (real), <code>StartDate</code> (date)</td>
+<td>A per-activity, per-date <strong>scheduled</strong> expected-percentage, configured under Remittance -&gt; Company Preferences -&gt; Pledge Percent Grid. It is the only stored pacing schedule in the system. <strong>Not used by the widget today</strong> (see Still needs sign-off)</td>
 </tr>
 </tbody>
 </table>
-<p><strong>Freshness note.</strong> The legacy widget backs its read with a file cache (<code>RMWidgetRecord</code>) that is invalidated when the active company changes. Any modern implementation should preserve that company-change invalidation so a company switch never serves another company's pledge figures.</p>
-<h2>Old vs. new</h2>
+<p><strong>Freshness / scoping note.</strong> The current read is company-scoped and backed by a file cache (<code>RMWidgetRecord</code>) invalidated on a company change. Any implementation must keep that company-change invalidation so a switch never serves another company's figures.</p>
+<hr />
+<h1>API 1: Dashboard (widget summary)</h1>
+<p>Returns one row per active pledge activity for the company, paced to <code>receiptsThrough</code>. This is everything the widget renders on the dashboard card.</p>
+<pre><code>GET /api/dashboard/remittance-pledges/data
+</code></pre>
+<h3>Parameters</h3>
+<p><strong>[v3.2 — 2026-08-24] <code>receiptsThrough</code> is replaced by a two-ended range.</strong> Reason: driver 2 above. The old single parameter is kept as a documented alias for one release so existing callers do not break.</p>
 <table>
 <thead>
 <tr>
-<th></th>
-<th>Old (live today)</th>
-<th>New (this contract)</th>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Endpoint</td>
-<td>One call keyed to a "Receipts Thru" date, returning flat per-activity rows</td>
-<td>Same endpoint, same flat per-activity rows. <code>receiptsThrough</code> is the one date parameter</td>
+<td><code>rangeEnd</code></td>
+<td>date</td>
+<td>no</td>
+<td>today (server date)</td>
+<td><strong>The pacing anchor</strong> — exactly what <code>receiptsThrough</code> was. Payments with a check date on or before this count toward <code>paid</code>; <code>expected</code> is paced to this date. Every pacing figure is driven by this and this alone</td>
 </tr>
 <tr>
-<td>Pledged, Paid, Outstanding</td>
-<td>Already returned per activity</td>
-<td>Unchanged. Each row also carries <code>activityId</code> as the stable key, since names are org-editable</td>
+<td><code>rangeStart</code></td>
+<td>date</td>
+<td>no</td>
+<td>1 January of <code>rangeEnd</code>'s calendar year</td>
+<td><strong>The window opener.</strong> Does NOT affect pacing. Two effects only: (1) it lower-bounds the new <code>windowPaid</code> field, and (2) it decides which pledges are in scope, via the overlap rule below. The default reproduces the legacy behaviour Edward verified live (1 Jan through the selected date), so omitting it gives today's numbers</td>
 </tr>
 <tr>
-<td>Header "Percent of year completed"</td>
-<td>Hardcoded as <code>(days since Jan 1) / 365</code>, a calendar-year fraction unrelated to any pledge term. <strong>Bug</strong></td>
-<td>Removed. There is no single "percent of year" figure; pacing is per pledge (see the formula below)</td>
-</tr>
-<tr>
-<td>YTD Expected per row</td>
-<td><code>(Annual / 12) * monthNumberOf(DateReceiptsThru)</code>, assuming a 12-month Jan to Dec cycle, never reading <code>BeginDate</code> or <code>EndDate</code>. <strong>Bug</strong></td>
-<td><code>Expected = TotalPledge * daysElapsedSinceBeginDate / totalTermDays</code>, computed on each pledge's own term</td>
-</tr>
-<tr>
-<td><code>BeginDate</code> / <code>EndDate</code></td>
-<td>Already read into the query (WHERE clause that filters active pledges on the date) but never used in the Expected math</td>
-<td>Now used in the Expected math. No schema change, no new query: the columns are already selected</td>
-</tr>
-<tr>
-<td>Comparison / prior period</td>
-<td>None</td>
-<td>None</td>
+<td><code>receiptsThrough</code></td>
+<td>date</td>
+<td>no</td>
+<td>—</td>
+<td><strong>Deprecated alias.</strong> If supplied, treat as <code>rangeEnd</code> with <code>rangeStart</code> defaulting as above. Log and remove once callers have migrated</td>
 </tr>
 </tbody>
 </table>
-<p>Both legacy behaviours produced the same class of error: a pledge on any term other than a Jan to Dec calendar year was paced against the wrong denominator. A mid-year start read too far ahead, and a multi-year campaign read far behind. The per-term formula corrects both.</p>
-<h2>Endpoint</h2>
-<pre><code>GET /api/dashboard/remittance-pledges/data
+<p><strong>Never surface this control to a user as "fiscal" anything</strong> (SME instruction, Edward Eoff 2026-08-10). Acceptable labels: "pledge year to date", "calendar year to date", or plain from/to dates.</p>
+<h4>Pledge-in-scope rule (new, v3.2)</h4>
+<p>A pledge is in scope when <strong>its own term overlaps the window</strong>:</p>
+<pre><code>BeginDate &lt;= rangeEnd  AND  EndDate &gt;= rangeStart
+</code></pre>
+<p>This replaces the v2 filter <code>BeginDate &lt;= receiptsThrough AND EndDate &gt;= receiptsThrough</code>, which tested a single instant and is why an ended-but-unpaid pledge silently dropped off (previously flagged in Still needs sign-off, and <strong>now partly resolved</strong>: with a range, a pledge that ended inside the window stays visible). It implements Edward's "the pledge is what dictates which activities display".</p>
+<p>An activity that fails this rule but still has receipts inside the window is a <strong>receipts-only row</strong> — see the new <code>hasPledgeInRange</code> field and the API 1 edge cases.</p>
+<h3>Response schema</h3>
+<p>A flat list, one row per active pledge activity, no envelope. Grand totals are client-side sums.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Stored / Derived</th>
+<th>Source or formula</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>activityId</code></td>
+<td>stored</td>
+<td><code>RM_Activity.ActivityID</code></td>
+</tr>
+<tr>
+<td><code>activityName</code></td>
+<td>stored</td>
+<td><code>RM_Activity.Name</code></td>
+</tr>
+<tr>
+<td><code>sequence</code></td>
+<td>stored</td>
+<td><code>RM_Activity.Sequence</code></td>
+</tr>
+<tr>
+<td><code>pledged</code></td>
+<td>stored (aggregate)</td>
+<td><code>SUM(RM_PledgeDetail.Pledge)</code> grouped by <code>ActivityID</code></td>
+</tr>
+<tr>
+<td><code>paid</code></td>
+<td>stored (conditional aggregate)</td>
+<td><code>SUM(RM_HistoryDetail.Amount)</code> where <code>RM_HistoryBatch.Posted = 1</code> AND <code>RM_History.VoidJournalID IS NULL</code> AND <code>RM_History.CheckDate &lt;= rangeEnd</code>. <strong>Cumulative — no lower bound. Do not apply <code>rangeStart</code> here</strong> (see "the one trap" above)</td>
+</tr>
+<tr>
+<td><code>windowPaid</code></td>
+<td>stored (conditional aggregate)</td>
+<td><strong>[v3.2 — new]</strong> Same predicate as <code>paid</code> plus <code>RM_History.CheckDate &gt;= rangeStart</code>. The "receipts that arrived inside the selected window" figure — the second of the range's two jobs. Always <code>&lt;= paid</code></td>
+</tr>
+<tr>
+<td><code>hasPledgeInRange</code></td>
+<td>derived (boolean)</td>
+<td><strong>[v3.2 — new]</strong> True when the activity has at least one pledge whose term overlaps the window (<code>BeginDate &lt;= rangeEnd AND EndDate &gt;= rangeStart</code>). When false, the frontend suppresses all pacing for that row and shows it as receipts-only; <code>pledged</code>, <code>expected</code>, <code>outstanding</code>, <code>pctPaid</code> and <code>daysAhead</code> should all be returned as <code>0</code>/<code>null</code> accordingly</td>
+</tr>
+<tr>
+<td><code>beginDate</code></td>
+<td>stored</td>
+<td><code>RM_Pledge.BeginDate</code></td>
+</tr>
+<tr>
+<td><code>endDate</code></td>
+<td>stored</td>
+<td><code>RM_Pledge.EndDate</code></td>
+</tr>
+<tr>
+<td><code>expected</code></td>
+<td>derived</td>
+<td>per-term pacing formula below</td>
+</tr>
+<tr>
+<td><code>outstanding</code></td>
+<td>derived</td>
+<td><code>max(0, pledged - paid)</code></td>
+</tr>
+<tr>
+<td><code>pctPaid</code></td>
+<td>derived</td>
+<td><code>paid / pledged</code> (null when <code>pledged = 0</code>)</td>
+</tr>
+<tr>
+<td><code>termDays</code></td>
+<td>derived</td>
+<td><code>endDate - beginDate</code> in days</td>
+</tr>
+<tr>
+<td><code>daysElapsed</code></td>
+<td>derived</td>
+<td><code>clamp(receiptsThrough - beginDate, 0, termDays)</code></td>
+</tr>
+<tr>
+<td><code>daysAhead</code></td>
+<td>derived</td>
+<td><code>(paid / pledged) * termDays - daysElapsed</code> (null when <code>pledged = 0</code>)</td>
+</tr>
+</tbody>
+</table>
+<h3>The pacing calculation (derived, not stored)</h3>
+<pre><code>termDays    = EndDate - BeginDate                       (days)
+daysElapsed = clamp(receiptsThrough - BeginDate, 0, termDays)
+expected    = pledged * daysElapsed / termDays
+outstanding = max(0, pledged - paid)
+pctPaid     = paid / pledged                            (null when pledged = 0)
+daysAhead   = (paid / pledged) * termDays - daysElapsed
+</code></pre>
+<p>Properties, all from one formula with no special cases:</p>
+<ul>
+<li><strong>Mid-term start:</strong> paces from the pledge's own <code>BeginDate</code>, a fraction of its own term, never of the calendar year.</li>
+<li><strong>Multi-year term:</strong> a 3-year campaign uses <code>termDays</code> of about 1095, so one year in reads about one third expected.</li>
+<li><strong>Before the term</strong> (<code>receiptsThrough &lt; BeginDate</code>): <code>daysElapsed = 0</code>, so <code>expected = 0</code>.</li>
+<li><strong>After the term</strong> (<code>receiptsThrough &gt; EndDate</code>): <code>daysElapsed</code> clamps to <code>termDays</code>, so <code>expected = pledged</code> (100%).</li>
+</ul>
+<p><code>daysAhead</code> is returned raw. The status band the widget colours by (dark green "30+ days ahead", green "On track", amber "About a month behind", red "60+ days behind", plus paid-in-full and no-pledge) is a <strong>frontend</strong> concern applied to <code>daysAhead</code> at thresholds +30, -30, -60. The API does not return a band string.</p>
+<h3>Example (rangeEnd 2026-07-31, rangeStart defaulting to 2026-01-01)</h3>
+<pre><code>GET /api/dashboard/remittance-pledges/data?rangeStart=2026-01-01&amp;rangeEnd=2026-07-31
+</code></pre>
+<pre><code>[
+  { &quot;activityId&quot;: &quot;a1e0c7d2-1111-4a01-9f01-0b1c2d3e4f01&quot;, &quot;activityName&quot;: &quot;General Fund Apportionment&quot;, &quot;sequence&quot;: 1, &quot;pledged&quot;: 24000, &quot;expected&quot;: 13912, &quot;paid&quot;: 7200,  &quot;outstanding&quot;: 16800, &quot;pctPaid&quot;: 0.300, &quot;beginDate&quot;: &quot;2026-01-01&quot;, &quot;endDate&quot;: &quot;2026-12-31&quot;, &quot;termDays&quot;: 364,  &quot;daysElapsed&quot;: 211, &quot;daysAhead&quot;: -101.8 },
+  { &quot;activityId&quot;: &quot;a1e0c7d2-4444-4a04-9f04-0b1c2d3e4f04&quot;, &quot;activityName&quot;: &quot;Outreach and Benevolence&quot;,   &quot;sequence&quot;: 4, &quot;pledged&quot;: 9000,  &quot;expected&quot;: 5217,  &quot;paid&quot;: 6300,  &quot;outstanding&quot;: 2700,  &quot;pctPaid&quot;: 0.700, &quot;beginDate&quot;: &quot;2026-01-01&quot;, &quot;endDate&quot;: &quot;2026-12-31&quot;, &quot;termDays&quot;: 364,  &quot;daysElapsed&quot;: 211, &quot;daysAhead&quot;: 43.8 },
+  { &quot;activityId&quot;: &quot;a1e0c7d2-5555-4a05-9f05-0b1c2d3e4f05&quot;, &quot;activityName&quot;: &quot;Capital Campaign Pledge&quot;,     &quot;sequence&quot;: 5, &quot;pledged&quot;: 30000, &quot;expected&quot;: 10822, &quot;paid&quot;: 11000, &quot;outstanding&quot;: 19000, &quot;pctPaid&quot;: 0.367, &quot;beginDate&quot;: &quot;2025-07-01&quot;, &quot;endDate&quot;: &quot;2028-06-30&quot;, &quot;termDays&quot;: 1095, &quot;daysElapsed&quot;: 395, &quot;daysAhead&quot;: 6.5 },
+  { &quot;activityId&quot;: &quot;a1e0c7d2-6666-4a06-9f06-0b1c2d3e4f06&quot;, &quot;activityName&quot;: &quot;Youth Ministry Fund&quot;,         &quot;sequence&quot;: 6, &quot;pledged&quot;: 0,     &quot;expected&quot;: 0,     &quot;paid&quot;: 500,   &quot;outstanding&quot;: 0,     &quot;pctPaid&quot;: null,  &quot;beginDate&quot;: &quot;2026-01-01&quot;, &quot;endDate&quot;: &quot;2026-12-31&quot;, &quot;termDays&quot;: 364,  &quot;daysElapsed&quot;: 211, &quot;daysAhead&quot;: null }
+]
+</code></pre>
+<p>Row check (General Fund Apportionment): <code>expected = 24000 * 211 / 364 = 13912</code>; <code>daysAhead = (7200 / 24000) * 364 - 211 = 109.2 - 211 = -101.8</code>, which the frontend bands "60+ days behind". Mock amounts illustrate the shapes and the reconciling arithmetic; the amounts are not the contract.</p>
+<h3>What the frontend derives, so the API does not have to</h3>
+<p>Recorded so nobody builds these server-side by mistake. All three are computed from fields above:</p>
+<ul>
+<li><strong>Row grouping</strong> (Behind pace / On track / No pledge in this range). Behind when <code>expected - paid &gt; 0</code> and <code>hasPledgeInRange</code>; on track when <code>paid &gt;= expected</code>; no-pledge when <code>hasPledgeInRange</code> is false. Same rule the aggregate <code>status</code> already used.</li>
+<li><strong>Status bands</strong> (30+ days ahead / On track / About a month behind / 60+ days behind) applied to raw <code>daysAhead</code> at +30, -30, -60. Unchanged from v2.</li>
+<li><strong>Ordering</strong> — worst shortfall first inside the behind group.</li>
+</ul>
+<h3>API 1 edge cases</h3>
+<ol>
+<li><strong>No pledge set</strong> (activity exists, no active pledge amount): <code>pledged = 0</code>, <code>pctPaid = null</code>, <code>daysAhead = null</code>; frontend renders a neutral "No pledge" row. Payments recorded against it still appear in <code>paid</code> at the grand-total level.
+1b. <strong>[v3.2 — NEW, and this one needs a new query path] Receipts inside the window but no pledge overlapping it.</strong> <code>hasPledgeInRange = false</code>, all pacing fields null/zero, <code>windowPaid</code> populated. <strong>This is not currently possible.</strong> Edward Eoff tested it live on 2026-08-10 — entering and posting a receipt against no pledge — and reported: the widget "is not going to show anything at all unless [a] pledge exists", because <code>paid</code> is reached by walking each in-scope pledge's linked receipts (<code>RMActivityRepository.GetWidgetData</code>). Serving receipts <em>without</em> a pledge join is therefore a <strong>new API capability, not a query tweak</strong>: the activity list would need to be the union of (activities with an in-scope pledge) and (activities with a posted, non-void receipt inside the window). Tracked as a blocking open item.</li>
+<li><strong>Voided or unposted payments:</strong> excluded from <code>paid</code> (<code>Posted = 1 AND VoidJournalID IS NULL</code>).</li>
+<li><strong>Company change:</strong> the <code>RMWidgetRecord</code> cache is invalidated so figures never carry across a company switch.</li>
+<li><strong>Ended-but-unpaid pledges:</strong> see Still needs sign-off, item on active-pledge inclusion.</li>
+</ol>
+<hr />
+<h1>API 2: Activity Payment History (the "more information" popup)</h1>
+<p>Opened from a dashboard row, this returns everything the popup shows for one activity: the summary tiles at the top, plus the individual receipts that make up the paid figure.</p>
+<pre><code>GET /api/dashboard/remittance-pledges/activity/{activityId}/payments
 </code></pre>
 <h3>Parameters</h3>
 <table>
@@ -106,184 +284,388 @@ pre code { background: none; padding: 0; }
 <th>Name</th>
 <th>Type</th>
 <th>Required</th>
-<th>Allowed values</th>
 <th>Default</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
+<td><code>activityId</code></td>
+<td>guid (path)</td>
+<td>yes</td>
+<td></td>
+<td><code>RM_Activity.ActivityID</code></td>
+</tr>
+<tr>
 <td><code>receiptsThrough</code></td>
-<td>date</td>
+<td>date (query)</td>
 <td>no</td>
-<td>any valid date</td>
-<td>today (server date)</td>
-<td>The payment cutoff and the as-of anchor. Payments with a check date on or before this date count toward Paid; Expected is paced up to this date. A historical value reproduces a past reading exactly</td>
+<td>today</td>
+<td>Same cutoff and pacing anchor as API 1; the receipt list and paid figure include only checks dated on or before this</td>
 </tr>
 </tbody>
 </table>
-<p>There is no activity-scope parameter: the endpoint returns one row per active pledge activity for the company. There is no separate <code>asOf</code>; <code>receiptsThrough</code> serves as the anchor. The two frontend presets (Today, End of last month) resolve to a concrete <code>receiptsThrough</code> date on the client before the call.</p>
-<h3>Example requests</h3>
-<pre><code>GET /api/dashboard/remittance-pledges/data
-GET /api/dashboard/remittance-pledges/data?receiptsThrough=2026-07-31
-GET /api/dashboard/remittance-pledges/data?receiptsThrough=2026-06-30
+<h3>Response schema</h3>
+<pre><code>{
+  &quot;activityId&quot;: &quot;a1e0c7d2-1111-4a01-9f01-0b1c2d3e4f01&quot;,
+  &quot;activityName&quot;: &quot;General Fund Apportionment&quot;,
+  &quot;pledged&quot;: 24000,
+  &quot;expected&quot;: 13912,
+  &quot;paid&quot;: 7200,
+  &quot;outstanding&quot;: 16800,
+  &quot;pctPaid&quot;: 0.300,
+  &quot;beginDate&quot;: &quot;2026-01-01&quot;,
+  &quot;endDate&quot;: &quot;2026-12-31&quot;,
+  &quot;termDays&quot;: 364,
+  &quot;daysElapsed&quot;: 211,
+  &quot;daysAhead&quot;: -101.8,
+  &quot;receiptsThrough&quot;: &quot;2026-07-31&quot;,
+  &quot;receiptCount&quot;: 3,
+  &quot;receipts&quot;: [
+    { &quot;date&quot;: &quot;2026-03-16&quot;, &quot;reference&quot;: &quot;ACH&quot;,        &quot;amount&quot;: 2400, &quot;status&quot;: &quot;Posted&quot; },
+    { &quot;date&quot;: &quot;2026-02-15&quot;, &quot;reference&quot;: &quot;Check 4118&quot;, &quot;amount&quot;: 2400, &quot;status&quot;: &quot;Posted&quot; },
+    { &quot;date&quot;: &quot;2026-01-15&quot;, &quot;reference&quot;: &quot;Check 4102&quot;, &quot;amount&quot;: 2400, &quot;status&quot;: &quot;Posted&quot; }
+  ]
+}
 </code></pre>
-<h2>The pacing calculation (the correct formula)</h2>
-<p>For each pledge, with dates read from <code>RM_Pledge</code>:</p>
-<pre><code>termDays    = EndDate - BeginDate                      (in days)
-daysElapsed = clamp(receiptsThrough - BeginDate, 0, termDays)
-Expected    = TotalPledge * daysElapsed / termDays
-Outstanding = max(0, TotalPledge - Paid)
-pctPaid     = Paid / TotalPledge                       (null when TotalPledge = 0)
-daysAhead   = (Paid / TotalPledge) * termDays - daysElapsed
-</code></pre>
-<p>Properties this gives, all handled by the same formula with no special cases in the query:</p>
-<ul>
-<li><strong>Mid-year start.</strong> A pledge beginning part way through the year paces from its own <code>BeginDate</code>, so its Expected is a fraction of its own term, never of the calendar year.</li>
-<li><strong>Multi-year term.</strong> A 3-year campaign uses <code>termDays</code> of roughly 1095, so being one year in reads as roughly one third expected, not one whole year.</li>
-<li><strong>Before the term starts</strong> (<code>receiptsThrough &lt; BeginDate</code>): <code>daysElapsed = 0</code>, so <code>Expected = 0</code>.</li>
-<li><strong>After the term ends</strong> (<code>receiptsThrough &gt; EndDate</code>): <code>daysElapsed</code> clamps to <code>termDays</code>, so <code>Expected = TotalPledge</code> (100%).</li>
-</ul>
-<p><code>daysAhead</code> is the pledge's paid-equivalent days minus its elapsed days: positive means paid ahead of schedule, negative means behind. It is returned as a raw number. The status band the widget colours by (dark green "30+ days ahead", green "On track", amber "About a month behind", red "60+ days behind", plus paid-in-full and no-pledge) is a FRONTEND presentation concern applied to <code>daysAhead</code> with thresholds at +30, -30 and -60. The API returns the raw numbers and does not return a band string.</p>
-<h2>Response schema</h2>
-<p>A flat list, one row per active pledge activity, no envelope. Grand totals are client-side sums over the rows.</p>
+<h3>Field sources (popup)</h3>
+<p>Summary block (top tiles), same values and same stored/derived split as an API 1 row:</p>
 <table>
 <thead>
 <tr>
 <th>Field</th>
+<th>Stored / Derived</th>
+<th>Source or formula</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>activityName</code></td>
+<td>stored</td>
+<td><code>RM_Activity.Name</code></td>
+</tr>
+<tr>
+<td><code>pledged</code> ("Total pledge")</td>
+<td>stored (aggregate)</td>
+<td><code>SUM(RM_PledgeDetail.Pledge)</code></td>
+</tr>
+<tr>
+<td><code>paid</code> ("Paid to date")</td>
+<td>stored (conditional aggregate)</td>
+<td><code>SUM(RM_HistoryDetail.Amount)</code> where posted, non-void, <code>CheckDate &lt;= receiptsThrough</code></td>
+</tr>
+<tr>
+<td><code>beginDate</code> / <code>endDate</code> ("Pledge term")</td>
+<td>stored</td>
+<td><code>RM_Pledge.BeginDate</code> / <code>RM_Pledge.EndDate</code></td>
+</tr>
+<tr>
+<td><code>expected</code> ("Expected by now")</td>
+<td>derived</td>
+<td>pacing formula (API 1)</td>
+</tr>
+<tr>
+<td><code>outstanding</code></td>
+<td>derived</td>
+<td><code>max(0, pledged - paid)</code></td>
+</tr>
+<tr>
+<td><code>pctPaid</code> ("% Paid")</td>
+<td>derived</td>
+<td><code>paid / pledged</code></td>
+</tr>
+<tr>
+<td><code>daysAhead</code> and the status pill / "days behind" narrative</td>
+<td>derived</td>
+<td>from <code>daysAhead</code>; the pill text and the "N days behind / $X behind pace" sentence are computed on the client and are not stored anywhere</td>
+</tr>
+<tr>
+<td><code>receiptCount</code> ("3 receipts")</td>
+<td>derived</td>
+<td>count of the qualifying <code>receipts</code> rows</td>
+</tr>
+</tbody>
+</table>
+<p>Receipts list: one row per <code>RM_HistoryDetail</code> for the activity, joined to its <code>RM_History</code> and <code>RM_HistoryBatch</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Stored / Derived</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>date</code></td>
+<td>stored</td>
+<td><code>RM_History.CheckDate</code></td>
+</tr>
+<tr>
+<td><code>reference</code></td>
+<td>stored</td>
+<td><code>RM_History.CheckNumber</code> (free text, nvarchar(15); real values include a check number, "ONLINE", or any string. There is no enumerated type. The "ACH" and "Check 4118" values in the mock are illustrative strings)</td>
+</tr>
+<tr>
+<td><code>amount</code></td>
+<td>stored</td>
+<td><code>RM_HistoryDetail.Amount</code> (the per-activity portion, NOT <code>RM_History.Amount</code> which is the whole check)</td>
+</tr>
+<tr>
+<td><code>status</code></td>
+<td>derived from stored flags</td>
+<td><code>RM_History.VoidJournalID IS NOT NULL</code> -&gt; "Voided"; else <code>RM_HistoryBatch.Posted = 1</code> -&gt; "Posted"; else <code>RM_HistoryBatch.Online = 1</code> -&gt; "Online (pending)"; else "Unposted"</td>
+</tr>
+</tbody>
+</table>
+<h3>Reference SQL</h3>
+<p>The drill-down is one <code>RM_HistoryDetail</code> row per payment, joined to its header and batch. There is already an inquiry method for this shape in the code (<code>RMHistoryDetailRepository.GetAllForInquiry</code>), which filters to posted, non-void detail rows for an activity and orders by <code>CheckDate</code>.</p>
+<p>Receipts list (all statuses, for the popup):</p>
+<pre><code>SELECT
+    h.CheckDate    AS [Date],
+    h.CheckNumber  AS [Reference],
+    hd.Amount      AS [Amount],
+    CASE
+        WHEN h.VoidJournalID IS NOT NULL THEN 'Voided'
+        WHEN b.Posted = 1                THEN 'Posted'
+        WHEN b.Online = 1                THEN 'Online (pending)'
+        ELSE 'Unposted'
+    END            AS [Status]
+FROM RM_HistoryDetail hd
+JOIN RM_History      h ON h.HistoryID      = hd.HistoryID
+JOIN RM_HistoryBatch b ON b.HistoryBatchID = h.HistoryBatchID
+WHERE hd.ActivityID = @ActivityID
+  AND b.CompanyID   = @CompanyID
+  AND (@ReceiptsThru IS NULL OR h.CheckDate &lt;= @ReceiptsThru)
+ORDER BY h.CheckDate DESC, hd.HistoryDetailID;
+</code></pre>
+<p>Paid-to-date total (the subset that counts toward <code>paid</code>, matching API 1):</p>
+<pre><code>SELECT ISNULL(SUM(hd.Amount), 0) AS Paid
+FROM RM_HistoryDetail hd
+JOIN RM_History      h ON h.HistoryID      = hd.HistoryID
+JOIN RM_HistoryBatch b ON b.HistoryBatchID = h.HistoryBatchID
+WHERE hd.ActivityID = @ActivityID
+  AND b.CompanyID   = @CompanyID
+  AND b.Posted      = 1
+  AND h.VoidJournalID IS NULL
+  AND h.CheckDate  &lt;= @ReceiptsThru;
+</code></pre>
+<h3>API 2 edge cases</h3>
+<ol>
+<li><strong>No receipts yet:</strong> <code>receipts</code> is empty, <code>receiptCount = 0</code>, <code>paid = 0</code>. The popup shows the summary tiles with an empty list.</li>
+<li><strong>A voided or online (not-yet-posted) receipt:</strong> it appears in <code>receipts</code> with <code>status</code> "Voided" / "Online (pending)" so the reviewer sees it, but it does NOT count toward <code>paid</code> (only Posted + non-void do). This is the one place the list total and <code>paid</code> can differ; keep the list showing all statuses and <code>paid</code> counting only the posted, non-void ones.</li>
+<li><strong>Whole-check split across activities:</strong> one <code>RM_History</code> (check) can have several <code>RM_HistoryDetail</code> rows for different activities. The popup lists only the detail rows for this activity, so a receipt's listed <code>amount</code> is the portion applied here, which can be less than the check's total (<code>RM_History.Amount</code>).</li>
+<li><strong><code>receiptsThrough</code> earlier than a payment:</strong> payments dated after it drop out of both <code>receipts</code> and <code>paid</code>, and <code>expected</code> re-paces to the earlier date, exactly like API 1.</li>
+</ol>
+<hr />
+<h1>API 3: Pledge Payment Schedule (new, v3.1 — the skipped-payment drill)</h1>
+<p><strong>Why this exists (driver 3).</strong> The widget's third drill level answers, for one donor's pledge: what did they commit to, which scheduled payments arrived, and <strong>which one did they skip</strong>. On an exception widget that is the payload — a shortfall figure tells you <em>that</em> someone is behind, this tells you <em>when they stopped paying</em>.</p>
+<pre><code>GET /api/dashboard/remittance-pledges/pledge/{pledgeId}/schedule
+</code></pre>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
 <th>Type</th>
+<th>Required</th>
+<th>Default</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>activityId</code></td>
-<td>guid</td>
-<td><code>RM_Activity.ActivityID</code>, the stable key (names are org-editable)</td>
+<td><code>pledgeId</code></td>
+<td>guid (path)</td>
+<td>yes</td>
+<td>—</td>
+<td><code>RM_Pledge.PledgeID</code></td>
 </tr>
 <tr>
-<td><code>activityName</code></td>
-<td>string</td>
-<td><code>RM_Activity.Name</code>, resolved at query time</td>
-</tr>
-<tr>
-<td><code>sequence</code></td>
-<td>int</td>
-<td><code>RM_Activity.Sequence</code>, the fixed default row order</td>
-</tr>
-<tr>
-<td><code>pledged</code></td>
-<td>number</td>
-<td>Total pledged for the activity: <code>SUM(RM_PledgeDetail.Pledge)</code> over active pledges</td>
-</tr>
-<tr>
-<td><code>expected</code></td>
-<td>number</td>
-<td>Expected to date, per the formula above</td>
-</tr>
-<tr>
-<td><code>paid</code></td>
-<td>number</td>
-<td><code>SUM(RM_HistoryDetail.Amount)</code> for posted, non-void rows with check date on or before <code>receiptsThrough</code></td>
-</tr>
-<tr>
-<td><code>outstanding</code></td>
-<td>number</td>
-<td><code>max(0, pledged - paid)</code></td>
-</tr>
-<tr>
-<td><code>pctPaid</code></td>
-<td>number or null</td>
-<td><code>paid / pledged</code>, null when <code>pledged</code> is 0</td>
-</tr>
-<tr>
-<td><code>beginDate</code></td>
+<td><code>rangeEnd</code></td>
 <td>date</td>
-<td><code>RM_Pledge.BeginDate</code></td>
-</tr>
-<tr>
-<td><code>endDate</code></td>
-<td>date</td>
-<td><code>RM_Pledge.EndDate</code></td>
-</tr>
-<tr>
-<td><code>termDays</code></td>
-<td>int</td>
-<td><code>endDate - beginDate</code> in days</td>
-</tr>
-<tr>
-<td><code>daysElapsed</code></td>
-<td>int</td>
-<td>Clamped elapsed days from <code>beginDate</code> to <code>receiptsThrough</code></td>
-</tr>
-<tr>
-<td><code>daysAhead</code></td>
-<td>number or null</td>
-<td>Paid-equivalent days minus elapsed days; null when <code>pledged</code> is 0</td>
+<td>no</td>
+<td>today</td>
+<td>The as-of date. An instalment due on or before this and still unfunded is <strong>missed</strong>; after it, <strong>not due yet</strong></td>
 </tr>
 </tbody>
 </table>
-<p>A no-pledge activity (a real activity with no active pledge amount) returns <code>pledged = 0</code>, <code>pctPaid = null</code>, <code>daysAhead = null</code>, and no expected pacing; the frontend renders it as a neutral "No pledge" row.</p>
-<h2>Examples</h2>
-<p>Mock figures shaped like production, anchored to <code>receiptsThrough=2026-07-31</code>. The shapes and the reconciling arithmetic are the contract, not the amounts.</p>
-<h3>Example 1: all active pledges, receiptsThrough 2026-07-31</h3>
-<pre><code>GET /api/dashboard/remittance-pledges/data?receiptsThrough=2026-07-31
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Stored / Derived</th>
+<th>Source or formula</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pledgeId</code></td>
+<td>stored</td>
+<td><code>RM_Pledge.PledgeID</code></td>
+</tr>
+<tr>
+<td><code>payerName</code></td>
+<td>stored</td>
+<td><code>CorePerson.DisplayNameLastFirst</code> via <code>RM_History.ChurchID</code> (the legacy screen's "Name" column)</td>
+</tr>
+<tr>
+<td><code>pledged</code></td>
+<td>stored</td>
+<td>that pledge's <code>RM_PledgeDetail.Pledge</code></td>
+</tr>
+<tr>
+<td><code>beginDate</code> / <code>endDate</code></td>
+<td>stored</td>
+<td><code>RM_Pledge.BeginDate</code> / <code>EndDate</code></td>
+</tr>
+<tr>
+<td><code>frequency</code></td>
+<td>stored</td>
+<td><code>RM_Pledge.Frequency</code> (payments per year: 2, 4, 6, 12, 24, 26, 52)</td>
+</tr>
+<tr>
+<td><code>duration</code></td>
+<td>stored</td>
+<td><code>RM_Pledge.Duration</code> (payment periods in the term)</td>
+</tr>
+<tr>
+<td><code>paid</code></td>
+<td>stored (conditional aggregate)</td>
+<td>that pledge's linked receipts, same posted/non-void predicate as API 1, <code>CheckDate &lt;= rangeEnd</code></td>
+</tr>
+<tr>
+<td><code>instalments[]</code></td>
+<td><strong>derived</strong></td>
+<td>one row per scheduled payment, see the algorithm below</td>
+</tr>
+<tr>
+<td><code>instalments[].dueDate</code></td>
+<td>derived</td>
+<td><code>BeginDate + (n * 12 / frequency)</code> months, clamped to <code>endDate</code></td>
+</tr>
+<tr>
+<td><code>instalments[].amountDue</code></td>
+<td>derived</td>
+<td><code>pledged / duration</code> (last instalment absorbs the rounding remainder)</td>
+</tr>
+<tr>
+<td><code>instalments[].amountApplied</code></td>
+<td>derived</td>
+<td>oldest-first allocation of <code>paid</code>, see below</td>
+</tr>
+<tr>
+<td><code>instalments[].status</code></td>
+<td>derived</td>
+<td><code>paid</code> / <code>part</code> / <code>missed</code> / <code>upcoming</code></td>
+</tr>
+<tr>
+<td><code>firstMissedDate</code></td>
+<td>derived</td>
+<td>earliest <code>dueDate</code> with status <code>missed</code>, null if none</td>
+</tr>
+<tr>
+<td><code>missedCount</code>, <code>missedAmount</code></td>
+<td>derived</td>
+<td>count and value of missed plus the unfunded portion of any <code>part</code></td>
+</tr>
+</tbody>
+</table>
+<h3>The allocation algorithm (this is the whole feature)</h3>
+<pre><code>n            = duration                       (number of instalments)
+amountDue[i] = pledged / n                    (last absorbs the remainder)
+dueDate[i]   = BeginDate + i * (12 / frequency) months, clamped to EndDate
+
+remaining = paid
+for i in 0..n-1:
+    applied[i] = min(amountDue[i], remaining)
+    remaining -= applied[i]
+    status[i] = applied[i] &gt;= amountDue[i]        -&gt; &quot;paid&quot;
+              : applied[i] &gt; 0                    -&gt; &quot;part&quot;
+              : dueDate[i] &lt;= rangeEnd            -&gt; &quot;missed&quot;
+              : otherwise                         -&gt; &quot;upcoming&quot;
 </code></pre>
-<pre><code>[
-  { &quot;activityId&quot;: &quot;a1e0c7d2-1111-4a01-9f01-0b1c2d3e4f01&quot;, &quot;activityName&quot;: &quot;General Fund Apportionment&quot;, &quot;sequence&quot;: 1, &quot;pledged&quot;: 24000, &quot;expected&quot;: 13912, &quot;paid&quot;: 7200,  &quot;outstanding&quot;: 16800, &quot;pctPaid&quot;: 0.300, &quot;beginDate&quot;: &quot;2026-01-01&quot;, &quot;endDate&quot;: &quot;2026-12-31&quot;, &quot;termDays&quot;: 364,  &quot;daysElapsed&quot;: 211, &quot;daysAhead&quot;: -101.8 },
-  { &quot;activityId&quot;: &quot;a1e0c7d2-2222-4a02-9f02-0b1c2d3e4f02&quot;, &quot;activityName&quot;: &quot;District Mission Share&quot;,     &quot;sequence&quot;: 2, &quot;pledged&quot;: 6000,  &quot;expected&quot;: 3478,  &quot;paid&quot;: 6000,  &quot;outstanding&quot;: 0,     &quot;pctPaid&quot;: 1.000, &quot;beginDate&quot;: &quot;2026-01-01&quot;, &quot;endDate&quot;: &quot;2026-12-31&quot;, &quot;termDays&quot;: 364,  &quot;daysElapsed&quot;: 211, &quot;daysAhead&quot;: 153.0 },
-  { &quot;activityId&quot;: &quot;a1e0c7d2-3333-4a03-9f03-0b1c2d3e4f03&quot;, &quot;activityName&quot;: &quot;Clergy Pension Assessment&quot;,  &quot;sequence&quot;: 3, &quot;pledged&quot;: 12000, &quot;expected&quot;: 6956,  &quot;paid&quot;: 5400,  &quot;outstanding&quot;: 6600,  &quot;pctPaid&quot;: 0.450, &quot;beginDate&quot;: &quot;2026-01-01&quot;, &quot;endDate&quot;: &quot;2026-12-31&quot;, &quot;termDays&quot;: 364,  &quot;daysElapsed&quot;: 211, &quot;daysAhead&quot;: -47.2 },
-  { &quot;activityId&quot;: &quot;a1e0c7d2-4444-4a04-9f04-0b1c2d3e4f04&quot;, &quot;activityName&quot;: &quot;Outreach and Benevolence&quot;,   &quot;sequence&quot;: 4, &quot;pledged&quot;: 9000,  &quot;expected&quot;: 5217,  &quot;paid&quot;: 6300,  &quot;outstanding&quot;: 2700,  &quot;pctPaid&quot;: 0.700, &quot;beginDate&quot;: &quot;2026-01-01&quot;, &quot;endDate&quot;: &quot;2026-12-31&quot;, &quot;termDays&quot;: 364,  &quot;daysElapsed&quot;: 211, &quot;daysAhead&quot;: 43.8 },
-  { &quot;activityId&quot;: &quot;a1e0c7d2-5555-4a05-9f05-0b1c2d3e4f05&quot;, &quot;activityName&quot;: &quot;Capital Campaign Pledge&quot;,     &quot;sequence&quot;: 5, &quot;pledged&quot;: 30000, &quot;expected&quot;: 10822, &quot;paid&quot;: 11000, &quot;outstanding&quot;: 19000, &quot;pctPaid&quot;: 0.367, &quot;beginDate&quot;: &quot;2025-07-01&quot;, &quot;endDate&quot;: &quot;2028-06-30&quot;, &quot;termDays&quot;: 1095, &quot;daysElapsed&quot;: 395, &quot;daysAhead&quot;: 6.5 },
-  { &quot;activityId&quot;: &quot;a1e0c7d2-6666-4a06-9f06-0b1c2d3e4f06&quot;, &quot;activityName&quot;: &quot;Youth Ministry Fund&quot;,         &quot;sequence&quot;: 6, &quot;pledged&quot;: 0,     &quot;expected&quot;: 0,     &quot;paid&quot;: 500,   &quot;outstanding&quot;: 0,     &quot;pctPaid&quot;: null,  &quot;beginDate&quot;: &quot;2026-01-01&quot;, &quot;endDate&quot;: &quot;2026-12-31&quot;, &quot;termDays&quot;: 364,  &quot;daysElapsed&quot;: 211, &quot;daysAhead&quot;: null }
-]
+<p><strong>Receipts are applied OLDEST FIRST.</strong> That is what makes a gap legible: the earliest unfunded instalment is the skipped payment, and everything after it is unfunded too. A property worth asserting in tests — no funded instalment may ever appear <em>after</em> an unfunded due one.</p>
+<h3>Example</h3>
+<pre><code>GET /api/dashboard/remittance-pledges/pledge/8f3.../schedule?rangeEnd=2026-07-31
 </code></pre>
-<p>Client-side grand totals: pledged 81,000 (24,000 + 6,000 + 12,000 + 9,000 + 30,000 + 0); expected 40,385 (13,912 + 3,478 + 6,956 + 5,217 + 10,822 + 0); paid 36,400 (7,200 + 6,000 + 5,400 + 6,300 + 11,000 + 500); outstanding 45,100. Overall paid is below overall expected, so the widget reads "behind pace"; overall percentage paid is 36,400 / 81,000, about 45%.</p>
-<p>Row check, General Fund Apportionment: Expected = 24,000 * 211 / 364 = 13,912. daysAhead = (7,200 / 24,000) * 364 - 211 = 109.2 - 211 = -101.8, which the frontend bands as "60+ days behind" (red).</p>
-<h3>Example 2: the multi-year pledge that reconciles on its own term</h3>
-<p>The Capital Campaign row from Example 1 is the case the calendar-year bug got wrong. Its own term is 2025-07-01 to 2028-06-30 (1,095 days). As of 2026-07-31, 395 days have elapsed, about 36% of the term:</p>
-<pre><code>{
-  &quot;activityId&quot;: &quot;a1e0c7d2-5555-4a05-9f05-0b1c2d3e4f05&quot;,
-  &quot;activityName&quot;: &quot;Capital Campaign Pledge&quot;,
-  &quot;pledged&quot;: 30000, &quot;paid&quot;: 11000,
-  &quot;expected&quot;: 10822,
-  &quot;beginDate&quot;: &quot;2025-07-01&quot;, &quot;endDate&quot;: &quot;2028-06-30&quot;,
-  &quot;termDays&quot;: 1095, &quot;daysElapsed&quot;: 395, &quot;daysAhead&quot;: 6.5
-}
-</code></pre>
-<ul>
-<li><strong>On its own term (correct):</strong> Expected = 30,000 * 395 / 1095 = 10,822. Paid 11,000 is slightly above expected, so daysAhead = (11,000 / 30,000) * 1095 - 395 = 401.5 - 395 = +6.5. The frontend bands this "On track" (green).</li>
-<li><strong>On a naive calendar-2026 basis (the old bug):</strong> the widget would have expected 30,000 * 212 / 365 = 17,425 by 31 July, making paid 11,000 look about 6,425 short, roughly 78 days behind, which would have banded "60+ days behind" (red).</li>
-</ul>
-<p>Same pledge, same payments, same date: correct math reads on track, the old calendar-year math read far behind. That is the whole point of the fix.</p>
-<h3>Example 3: an earlier receiptsThrough re-paces every row</h3>
-<pre><code>GET /api/dashboard/remittance-pledges/data?receiptsThrough=2026-06-30
-</code></pre>
-<p>Every row re-paces from the same <code>BeginDate</code> anchors and payments dated after 30 June drop out of Paid. Grand expected becomes 35,193 and grand paid becomes 33,100. For example General Fund Apportionment now has 180 elapsed days, so Expected = 24,000 * 180 / 364 = 11,868, and Capital Campaign has 364 elapsed days of its 1,095-day term, so Expected = 30,000 * 364 / 1095 = 9,973. The per-row expected values sum to 11,868 + 2,967 + 5,934 + 4,451 + 9,973 + 0 = 35,193.</p>
-<h2>Edge cases</h2>
+<p>Pledge of $683 over Mar 2025 to Feb 2026, monthly, $238 received:</p>
+<table>
+<thead>
+<tr>
+<th>Due date</th>
+<th>Amount due</th>
+<th>Received</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2025-03-01 … 2025-06-01</td>
+<td>$57 each</td>
+<td>$57 each</td>
+<td>paid</td>
+</tr>
+<tr>
+<td>2025-07-01</td>
+<td>$57</td>
+<td>$10</td>
+<td>part</td>
+</tr>
+<tr>
+<td>2025-08-01</td>
+<td>$57</td>
+<td>—</td>
+<td><strong>missed</strong></td>
+</tr>
+<tr>
+<td>2025-09-01 … 2026-02-01</td>
+<td>$57 each</td>
+<td>—</td>
+<td><strong>missed</strong> / upcoming</td>
+</tr>
+</tbody>
+</table>
+<p><code>firstMissedDate = 2025-08-01</code>, <code>missedCount = 7</code>, <code>missedAmount = $445</code>. Amounts illustrate the shape and the reconciling arithmetic; they are not the contract.</p>
+<h3>This makes an existing open item load-bearing</h3>
+<p>The v2 spec already flagged an open question: is <code>expected</code> <strong>linear-by-days</strong> (as built) or <strong>stepped by <code>Frequency</code>/<code>Duration</code></strong>, and should the org's stored <code>RM_PledgePercent</code> schedule drive it instead?</p>
+<p>That was optional while nothing consumed a schedule. <strong>It is not optional now.</strong> A skipped payment only exists if there are discrete scheduled payments to skip, so API 3 needs the stepped model. Two consequences:</p>
 <ol>
-<li><strong>Mid-year start.</strong> A pledge that begins part way through the year paces from its own <code>BeginDate</code>; its Expected is a fraction of its own term, not of the calendar year.</li>
-<li><strong>Multi-year term.</strong> A campaign spanning several years uses its full <code>termDays</code>; being one year into a three-year term reads as roughly one third expected (see Example 2). No calendar-year machinery is involved.</li>
-<li><strong>Pledge not yet started</strong> (<code>receiptsThrough &lt; BeginDate</code>): <code>daysElapsed = 0</code>, <code>Expected = 0</code>, <code>daysAhead</code> derives from Paid alone (usually 0). The frontend can still show the row.</li>
-<li><strong>Pledge already ended</strong> (<code>receiptsThrough &gt; EndDate</code>): <code>daysElapsed</code> clamps to <code>termDays</code>, so <code>Expected = pledged</code> (100%). Outstanding then equals whatever was never paid.</li>
-<li><strong>No pledge set</strong> (activity exists, no active pledge amount): <code>pledged = 0</code>, <code>pctPaid = null</code>, <code>daysAhead = null</code>; frontend renders a neutral "No pledge" row. Any payments recorded against such an activity still appear in Paid at the grand-total level.</li>
-<li><strong>receiptsThrough before the earliest payment or before any BeginDate:</strong> rows still return (the activities and pledges exist); Paid is 0 for pledges with no qualifying payments and Expected is 0 for pledges not yet started.</li>
-<li><strong>Voided or unposted payments:</strong> excluded from Paid, matching today's consistency filter (<code>Posted = true AND VoidJournalID IS NULL</code>).</li>
-<li><strong>Company change:</strong> the <code>RMWidgetRecord</code> file cache is invalidated so figures never carry across a company switch.</li>
+<li>If the answer is "stepped", then API 1's <code>expected</code> and API 3's schedule should be derived from the <strong>same</strong> definition, or the activity row and the drill will disagree with each other. That is the failure mode the frontend already hit once (the drill reconciling to a different anchor than its parent row).</li>
+<li>If the org has configured <code>RM_PledgePercent</code>, that stored schedule should almost certainly win over a computed one — it is the only stored pacing schedule in the system, and it is currently read by nothing.</li>
+</ol>
+<h3>API 3 edge cases</h3>
+<ol>
+<li><strong><code>duration</code> or <code>frequency</code> missing/zero:</strong> fall back to a single instalment for the full pledge due at <code>endDate</code>. Do not divide by zero.</li>
+<li><strong>Over-received pledge</strong> (<code>paid &gt; pledged</code>): every instalment is <code>paid</code>, the surplus is not allocated anywhere. The frontend shows it as paid in full.</li>
+<li><strong>Term ended, still unpaid:</strong> every instalment is due, so the unfunded ones are all <code>missed</code> — which is the case an outstanding widget most needs to show, and the one the v2 single-instant pledge filter used to hide.</li>
+<li><strong>Per-pledge receipt dates.</strong> The schedule above needs each pledge's own receipts. API 2 currently returns receipts at <strong>activity</strong> level. Either API 2 gains a <code>pledgeId</code> on each receipt row, or API 3 returns its own receipt list. Flagged below.</li>
 </ol>
 <h2>Not in scope</h2>
 <ul>
-<li><strong>No personal or payer data on the widget rows.</strong> The per-activity response carries amounts and dates only, no donor, member, or payer identity.</li>
-<li><strong>Payment history drill (already shown):</strong> the built widget's drill modal lists a pledge's receipts as date and amount with a receipt count through <code>receiptsThrough</code>. If a drill endpoint is built, it should return date and amount only, no payer identity. It is a secondary shape, not part of this per-activity contract.</li>
-<li><strong>No comparison or prior period.</strong> No prior-year, prior-period, or delta fields on this contract.</li>
-<li><strong>No month presets, no fiscal-year filter, no activity-type filter.</strong> The one filter is <code>receiptsThrough</code>.</li>
+<li><strong>No personal or payer data.</strong> Neither API returns donor, member, church, or payer identity. The receipts list is date, reference, amount, and status only.</li>
+<li><strong>No comparison or prior period,</strong> no month presets, no fiscal-year filter, no activity-type filter. <strong>[v3.2]</strong> The one time control is now the <code>rangeStart</code>/<code>rangeEnd</code> pair, and it must never be labelled "fiscal".</li>
+<li><strong>[v3.2] No server-side grouping, banding or ordering.</strong> The behind/on-track/no-pledge split, the day-based status bands and the worst-first ordering are all frontend concerns computed from the returned numbers.</li>
 </ul>
 <h2>Still needs sign-off</h2>
+<h3>Added by v3.0–v3.2 (2026-08-24)</h3>
 <ul>
-<li><strong>Linear-by-days vs stepped-by-payment-schedule (real open question).</strong> This spec paces Expected linearly by days elapsed. The <code>RM_Pledge</code> fields <code>Frequency</code> (payments per year) and <code>Duration</code> (payment periods in the term) would instead support a stepped expected curve: Expected steps up on each scheduled payment date rather than accruing continuously day by day. The two agree at term boundaries but differ between payment dates (a linear curve can read a pledge as slightly behind on a day when its next scheduled payment is not yet due). Confirm whether the expected curve should be linear by days (as specced and as built) or stepped by the payment schedule using <code>Frequency</code> and <code>Duration</code>. If stepped, the formula changes to accrue by scheduled periods, still off each pledge's own <code>BeginDate</code> and term.</li>
-<li><strong><code>receiptsThrough</code> default.</strong> Confirm the server default is today's date, and confirm the End of last month preset resolves on the client (as built) rather than the server.</li>
-<li><strong>Export endpoints.</strong> No export endpoint exists in the modern API. Decide whether export is client-side generation from the JSON the widget already holds or a server endpoint.</li>
-<li><strong>Active-pledge inclusion at a date.</strong> Confirm exactly which pledges are returned when <code>receiptsThrough</code> falls outside a pledge's term: only <code>Active = true</code> pledges whose <code>BeginDate &lt;= receiptsThrough</code>, or also pledges that have already ended, so an ended-but-unpaid pledge still surfaces its outstanding balance.</li>
+<li><strong>[BLOCKING for that mode] Receipts-only rows need a new query path.</strong> Serving an activity that has receipts inside the window but no overlapping pledge is not possible today — Edward Eoff verified live on 2026-08-10 that the widget shows nothing without a pledge, because <code>paid</code> is reached by walking each pledge's linked receipts. This needs the activity list to become a union of pledge-backed and receipt-backed activities. Until it exists, <code>hasPledgeInRange</code> will always be true and the receipts-only mode is forward design. <strong>Owner decision pending:</strong> accept as a known risk and ship the mode as design intent, or drop the mode and match today's backend exactly.</li>
+<li><strong>Stepped vs linear <code>expected</code>, now load-bearing rather than academic.</strong> See "This makes an existing open item load-bearing" under API 3. API 1 and API 3 must share one definition or the drill will contradict its parent row.</li>
+<li><strong>Per-pledge receipt rows.</strong> API 3's schedule needs receipts attributable to a single pledge. Today API 2 returns them at activity level. Decide: add <code>pledgeId</code> to API 2's receipt rows, or give API 3 its own list.</li>
+<li><strong>Per-pledge <code>Frequency</code>/<code>Duration</code> confirmation.</strong> The schedule assumes each pledge carries its own frequency and instalment count. <code>RM_Pledge</code> has both columns, but the frontend mock currently derives frequency from the <em>activity</em>, and per-pledge instalment counts have not been confirmed for <strong>remittance</strong> pledges (they are confirmed for GF pledges via <code>GFPledge.PledgeDue</code>). Confirm before the instalment dates shown to users are treated as real rather than illustrative.</li>
+<li><strong>Pledge volume.</strong> Edward warned one activity may carry roughly <strong>500 to 800 pledges</strong>, so any pledge-list response needs paging (the frontend pages at 20). ⚠️ That figure is reconstructed from a garbled transcript line ("508 hundred") and should be confirmed with him before it is used to size anything.</li>
+<li><strong>Server-side grand totals, if ever added:</strong> a total shortfall must be <code>SUM(GREATEST(0, expected - paid))</code>, never the netted form. See "Aggregate shortfall" in the v3 section.</li>
+</ul>
+<h3>Carried from v2 (still open)</h3>
+<ul>
+<li><strong>Expected pacing definition.</strong> The pacing figure (<code>expected</code>, <code>daysAhead</code>, the status pill, the "% of term elapsed" and "days behind" text) is <strong>derived, not stored</strong>. It is currently defined as linear-by-days over each pledge's own term. Two open points: (a) linear-by-days vs stepped-by-payment-schedule using <code>RM_Pledge.Frequency</code>/<code>Duration</code> (a stepped curve steps up on each scheduled payment date rather than accruing continuously); and (b) whether the org's configured schedule in <code>RM_PledgePercent</code> (<code>Percent</code> by <code>StartDate</code>) should drive expected instead of a computed proportion. <code>RM_PledgePercent</code> is the only stored pacing schedule in the system and is not read by the widget today. Confirm which definition is intended; the data supports any of the three.</li>
+<li><strong>"Current status" of an activity.</strong> Two different meanings exist: the payment-level status per receipt (Posted / Online / Voided / Unposted, stored via the batch/void flags) which API 2 returns, and the pacing status (on track / behind / paid-in-full) which is derived. Neither is a single stored "activity status" column.</li>
+<li><strong><code>receiptsThrough</code> default.</strong> Confirm the server default is today and that the End of last month preset resolves on the client.</li>
+<li><strong>Export.</strong> No export endpoint exists in the modern API. Decide client-side generation vs a server endpoint.</li>
+<li><strong>Active-pledge inclusion at a date.</strong> The live filter is <code>BeginDate &lt;= receiptsThrough AND EndDate &gt;= receiptsThrough</code> with NO <code>Active</code>-flag check, and it EXCLUDES pledges whose term has already ended even if they still owe (confirmed in <code>RMActivityRepository.GetWidgetData</code>). On an outstanding/pacing widget an ended-but-unpaid pledge silently drops off; confirm with SME whether that is intended. <strong>[v3.2 — partly addressed]</strong> The new overlap rule (<code>BeginDate &lt;= rangeEnd AND EndDate &gt;= rangeStart</code>) keeps a pledge visible if its term ended anywhere inside the window, so the drop-off is narrower than it was. A pledge that ended <em>before</em> <code>rangeStart</code> and still owes is still excluded, so the underlying SME question stands.</li>
+<li><strong><code>receiptsThrough</code> deprecation window.</strong> How long the alias stays before removal, and whether any caller outside this widget uses it.</li>
 </ul>
 
 </body>

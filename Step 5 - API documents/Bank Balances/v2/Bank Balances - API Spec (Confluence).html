@@ -1,0 +1,1176 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Bank Balances - API Spec</title>
+<style>
+body { font-family: -apple-system, Helvetica, Arial, sans-serif; max-width: 900px; margin: 30px auto; line-height: 1.5; color: #172B4D; }
+h1 { font-size: 24px; }
+h2 { font-size: 19px; border-bottom: 1px solid #DFE1E6; padding-bottom: 6px; margin-top: 32px; }
+h3 { font-size: 16px; margin-top: 20px; }
+table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+th, td { border: 1px solid #DFE1E6; padding: 6px 10px; text-align: left; vertical-align: top; }
+th { background: #F4F5F7; }
+code { background: #F4F5F7; padding: 1px 5px; border-radius: 3px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 90%; }
+pre { background: #F4F5F7; padding: 12px; border-radius: 4px; overflow-x: auto; }
+pre code { background: none; padding: 0; }
+.status { background: #FFF0B3; display: inline-block; padding: 3px 10px; border-radius: 3px; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<h1>Bank Balances - API Spec</h1>
+<p><span class="status">Status: Done - awaiting sign-off (drafting complete, owner review pending)</span></p>
+<hr />
+<h2>Overview</h2>
+<p>This widget shows the current cash position across every active bank account, and lets a user drill into one account to see how its balance moved since its last bank reconciliation: beginning balance, the five activity types (Deposits, Voids, Checks, Withdrawals, EFT), and the ending balance. Balances are a running tally of unreconciled items on top of the last reconciliation, which is the widget's core design, not a staleness bug.</p>
+<p>This contract defines <strong>three APIs</strong>: a paginated, server-sorted, server-aggregated account list fired on render (Glance reads only its aggregates), a single-account activity breakdown fired when the user selects one account, and an account picker lookup fired when the user opens the Account control. The justification for each split is in the API inventory below.</p>
+<p>Two facts shape this contract. First, <strong>the paginated accounts endpoint exists nowhere in the Modern API today</strong>: the existing <code>GET /api/dashboard/bank-balances/all</code> returns the whole set unpaged with no totals block, no paging, no sort contract and no overdrawn filter, so API 1 is central NEW backend work, not a reshaping of an existing read. Second, the Modern API's single-account endpoint returns only a summary balance, with no per-type breakdown and no activity data of any kind, so API 2 is entirely NEW as well; it is specced as forward design under the standing waiver and remains this widget's largest backend ask.</p>
+<h2>Design → API coverage</h2>
+<table>
+<thead>
+<tr>
+<th>Design element</th>
+<th>Type</th>
+<th>API</th>
+<th>Field(s)</th>
+<th>Provenance</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Total Balance figure (Glance, and All Accounts header)</td>
+<td>KPI</td>
+<td>API 1</td>
+<td><code>totals.ending</code>, <code>totalCount</code></td>
+<td>DERIVED, full filtered set [BUILD]</td>
+</tr>
+<tr>
+<td>Overdrawn pill on the total</td>
+<td>State</td>
+<td>none (client-side)</td>
+<td><code>totals.ending</code> &lt; 0</td>
+<td>DERIVED client [BUILD]</td>
+</tr>
+<tr>
+<td>Account control label and picker rows</td>
+<td>Filter</td>
+<td>API 3</td>
+<td><code>accounts[].accountId</code>, <code>accounts[].name</code>, <code>accounts[].endingBalance</code></td>
+<td>STORED + DERIVED [CODE]</td>
+</tr>
+<tr>
+<td>"All Bank Accounts" picker option and its combined figure</td>
+<td>Filter</td>
+<td>API 3</td>
+<td><code>combinedTotal</code>, <code>totalCount</code></td>
+<td>DERIVED [CODE]</td>
+</tr>
+<tr>
+<td>All-option visibility (only when more than one active account)</td>
+<td>State</td>
+<td>API 3</td>
+<td><code>totalCount</code></td>
+<td>DERIVED client rule over served count [DOC - Step 1 research]</td>
+</tr>
+<tr>
+<td>Overdrawn chip count</td>
+<td>KPI</td>
+<td>API 1</td>
+<td><code>overdrawnCount</code></td>
+<td>DERIVED, whole active set [BUILD]</td>
+</tr>
+<tr>
+<td>Overdrawn-only filter</td>
+<td>Filter</td>
+<td>API 1</td>
+<td><code>overdrawnOnly</code> param, echoed</td>
+<td>NEW param [BUILD]</td>
+</tr>
+<tr>
+<td>Balance Table rows (Account, Balance)</td>
+<td>Table column</td>
+<td>API 1</td>
+<td><code>rows[].accountId</code>, <code>rows[].name</code>, <code>rows[].endingBalance</code></td>
+<td>STORED + DERIVED [CODE]</td>
+</tr>
+<tr>
+<td>Overdrawn tag on a table row / bar</td>
+<td>State</td>
+<td>none (client-side)</td>
+<td><code>rows[].endingBalance</code> &lt; 0</td>
+<td>DERIVED client [BUILD]</td>
+</tr>
+<tr>
+<td>Totals row under the table</td>
+<td>Total</td>
+<td>API 1</td>
+<td><code>totals.ending</code></td>
+<td>DERIVED, full filtered set [BUILD]</td>
+</tr>
+<tr>
+<td>Balance Bar Chart bars and their shared scale</td>
+<td>Chart series</td>
+<td>API 1</td>
+<td><code>rows[].endingBalance</code>, <code>totals.maxEnding</code>, <code>totals.minEnding</code></td>
+<td>DERIVED [BUILD]</td>
+</tr>
+<tr>
+<td>Switch View (Table / Bars)</td>
+<td>View toggle</td>
+<td>none (client-side)</td>
+<td>same held API 1 response</td>
+<td>client view [BUILD]</td>
+</tr>
+<tr>
+<td>Pager (Previous / Next, "13 to 24 of 52")</td>
+<td>Control</td>
+<td>API 1</td>
+<td><code>page</code>, <code>pageSize</code>, <code>pageCount</code>, <code>totalCount</code></td>
+<td>DERIVED [BUILD]</td>
+</tr>
+<tr>
+<td>Single Account mode header (name, ending balance)</td>
+<td>KPI</td>
+<td>API 2</td>
+<td><code>name</code>, <code>endingBalance</code></td>
+<td>STORED + DERIVED [CODE]</td>
+</tr>
+<tr>
+<td>Seven-row breakdown table</td>
+<td>Table column</td>
+<td>API 2</td>
+<td><code>beginningBalance</code>, <code>deposits</code>, <code>voids</code>, <code>checks</code>, <code>withdrawals</code>, <code>eft</code>, <code>endingBalance</code></td>
+<td>DERIVED + NEW, see API 2 schema [DOC - Step 1 research]</td>
+</tr>
+<tr>
+<td>Beginning-balance source note (reconciliation vs opening balance)</td>
+<td>State</td>
+<td>API 2</td>
+<td><code>beginningFromReconciliation</code></td>
+<td>DERIVED [DOC - Step 1 research]</td>
+</tr>
+<tr>
+<td>Four-category activity chart (Detail, Single Account)</td>
+<td>Chart series</td>
+<td>API 2</td>
+<td><code>deposits</code>, <code>voids</code>, <code>checks</code>, <code>withdrawals</code> (magnitudes taken client-side)</td>
+<td>NEW fields, client display transform [BUILD]</td>
+</tr>
+<tr>
+<td>Empty state (no active accounts)</td>
+<td>State</td>
+<td>API 1 / API 3</td>
+<td><code>totalCount</code> = 0, empty <code>rows</code> / <code>accounts</code></td>
+<td>contract state [BUILD]</td>
+</tr>
+<tr>
+<td>Refresh</td>
+<td>Action</td>
+<td>API 1 or API 2 (whichever mode is active)</td>
+<td>re-fires the current read, selection preserved</td>
+<td>[DOC - Step 1 research]</td>
+</tr>
+<tr>
+<td>Data freshness stamp</td>
+<td>State</td>
+<td>all</td>
+<td><code>asOf</code></td>
+<td>DERIVED, server clock, informational</td>
+</tr>
+</tbody>
+</table>
+<p>Every response field below appears in a row above. The build computes <code>totals.beginning</code>, <code>totals.negativeCount</code> and <code>totals.neverReconciledCount</code> in its server stand-in but no rendered element consumes them, so they are not in this contract.</p>
+<h2>Tables</h2>
+<table>
+<thead>
+<tr>
+<th>Table / repository</th>
+<th>Fields and members used</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>BR_BankAccount</code></td>
+<td><code>BankAccountID</code>, <code>Name</code>, <code>Active</code>, <code>OpeningBalance</code>, GL scoping chain (<code>GLAccountID</code> up to <code>GLYear.CompanyID</code>)</td>
+</tr>
+<tr>
+<td><code>BR_Reconcile</code></td>
+<td><code>BankAccountID</code>, <code>EndingBalance</code>, <code>ReconcileEndingDate</code></td>
+</tr>
+<tr>
+<td><code>BR_Item</code></td>
+<td><code>BankAccountID</code>, <code>Amount</code>, <code>Type</code> (codes d / v / c / w / e), <code>ReconcileID</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>No new tables and no schema changes are needed.</strong> Everything here is new queries against existing tables; the NEW work is the endpoints, their aggregation and their paging, not storage.</p>
+<p>Core formulas and filters applied to every read, each quotable in isolation:</p>
+<ul>
+<li><strong>Ending balance per account</strong> = the most recent <code>BR_Reconcile.EndingBalance</code> (by <code>ReconcileEndingDate</code> descending), or <code>BR_BankAccount.OpeningBalance</code> if the account has never been reconciled, <strong>plus</strong> <code>SUM(BR_Item.Amount) WHERE ReconcileID IS NULL</code> for that account. [CODE - Widget_Comparison_Classic.html, Modern API bank-balances handler: <code>Ending = reconcileMap[id] or OpeningBalance + unreconciledMap[id] or 0</code>]</li>
+<li><strong>Activity per type</strong> = <code>SUM(BR_Item.Amount) WHERE ReconcileID IS NULL AND Type = '&lt;code&gt;'</code>, codes d Deposits, v Voids, c Checks, w Withdrawals, e EFT. Checks and Withdrawals are stored negative; the stored sign is what all arithmetic uses. [DOC - Step 1 research] [CODE - legacy <code>BankBalances : DataPanelControl</code>]</li>
+<li><strong>Ending balance in the breakdown</strong> = beginning balance plus all five activity sums. There is no separate stored balance; nothing can drift. [DOC - Step 1 research]</li>
+<li><strong>Overdrawn</strong> = ending balance strictly less than zero. [BUILD]</li>
+<li><strong>Every read is scoped</strong> <code>BR_BankAccount.Active = true</code> and company-scoped via the <code>BRBankAccount.GLAccount.GLDepartment...GLYear.CompanyID</code> join chain against the <code>X-Company-ID</code> context. [CODE - Widget_Comparison_Classic.html]</li>
+</ul>
+<h2>Old vs. new</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Old (live today)</th>
+<th>New (needed)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Account list read</td>
+<td><code>GET /api/dashboard/bank-balances/all</code> returns the whole set unpaged: <code>{GridRows[], ChartItems[]}</code>, <code>GridRow {BankAccountId, Name, EndingBalance, Active}</code></td>
+<td><strong>NEW</strong> - API 1: paginated, server-sorted, whitelisted-sort, overdrawn-filterable read with full-set totals, <code>maxEnding</code>/<code>minEnding</code>, <code>overdrawnCount</code> and <code>totalCount</code>. Exists in no Modern API document</td>
+</tr>
+<tr>
+<td>Chart data</td>
+<td><code>ChartItems {Name, Amount}</code>, positive balances only (the legacy pie excluded negatives)</td>
+<td>Dropped. Both presentations read API 1's rows; negative balances are served like any other row and the client renders them against the zero axis</td>
+</tr>
+<tr>
+<td>Single account read</td>
+<td><code>GET /api/dashboard/bank-balances/{bankAccountId:guid}</code> returns a summary balance only</td>
+<td><strong>NEW</strong> - API 2: the seven-line breakdown (beginning, five activity type sums, ending) plus <code>beginningFromReconciliation</code>. No per-type data exists in the Modern API today</td>
+</tr>
+<tr>
+<td>Filter list</td>
+<td><code>GET /api/dashboard/bank-balances/filters</code> returns <code>List&lt;DropDownItem&gt;</code>, Active only, "All Bank Accounts" (Guid.Empty) prepended when more than one exists</td>
+<td><strong>NEW (reshaped)</strong> - API 3: same query base, response gains <code>endingBalance</code> per account, <code>combinedTotal</code> and <code>totalCount</code>; the All option becomes a client rule over <code>totalCount</code> rather than a server-injected sentinel row</td>
+</tr>
+<tr>
+<td>Aggregation</td>
+<td>None. The client is handed every row</td>
+<td>Server computes all totals, the overdrawn count and the bar-scale extremes over the full filtered set</td>
+</tr>
+</tbody>
+</table>
+<h2>API inventory</h2>
+<table>
+<thead>
+<tr>
+<th>API</th>
+<th>Purpose</th>
+<th>Trigger (when it fires)</th>
+<th>Cardinality</th>
+<th>R/W</th>
+<th>Cache posture</th>
+<th>Split trigger</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>API 1 - Accounts page</td>
+<td>One page of account balances plus full-set aggregates</td>
+<td>Widget render (all tiers), page turn, overdrawn toggle, refresh in All Accounts mode</td>
+<td>One page (max <code>pageSize</code> rows) + one totals block</td>
+<td>R</td>
+<td>LIVE per request (balances move with every posting)</td>
+<td>Cardinality gap vs API 2 (unbounded list vs one entity); trigger gap vs API 3</td>
+</tr>
+<tr>
+<td>API 2 - Account activity breakdown</td>
+<td>The seven-line movement summary for one account</td>
+<td>User selects a single account; refresh in Single Account mode</td>
+<td>Exactly 7 values, bounded by definition</td>
+<td>R</td>
+<td>LIVE per request</td>
+<td>Grain gap (per-entity detail vs list); trigger gap (fires only on selection)</td>
+</tr>
+<tr>
+<td>API 3 - Account picker lookup</td>
+<td>Every active account with name and ending balance, plus the combined total</td>
+<td>User opens the Account control</td>
+<td>Full active set, narrow rows</td>
+<td>R</td>
+<td>LIVE per request; a short TTL is acceptable because the picker is advisory (see asOf note)</td>
+<td>Trigger gap (fires on open, not on render); conditional weight (the full set is only needed when the picker opens)</td>
+</tr>
+</tbody>
+</table>
+<p>Merges considered and closed: the full-set totals, the overdrawn count and the bar-scale extremes ride <strong>inside</strong> API 1 rather than a separate summary endpoint, because the chip, the totals row and the rows must reconcile on one screen from one response - splitting them invites a straddled write. The picker was considered as "API 1 with a huge pageSize" and kept separate: the picker needs the whole set regardless of the overdrawn filter, needs only two display fields per row, and must not inherit <code>pageSize</code>'s maximum. There is no write anywhere in this widget.</p>
+<h2>Call sequence</h2>
+<table>
+<thead>
+<tr>
+<th>Interaction</th>
+<th>Calls fired</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Initial widget load (Glance)</td>
+<td>API 1, <code>page=1</code>, <code>pageSize=1</code></td>
+<td>Glance reads <code>totals.ending</code> and <code>totalCount</code> only; the aggregate always spans all accounts, never any selection made at a larger tier</td>
+</tr>
+<tr>
+<td>Initial widget load (Explore / Detail, All Accounts)</td>
+<td>API 1, <code>page=1</code>, defaults</td>
+<td>Rows, totals, chip count and pager all come from this one response</td>
+</tr>
+<tr>
+<td>Open the Account control</td>
+<td>API 3</td>
+<td>Full active set with balances; the All option renders only when <code>totalCount</code> &gt; 1</td>
+</tr>
+<tr>
+<td>Select a single account</td>
+<td>API 2 with that <code>accountId</code></td>
+<td>Mode switch, not a row filter: API 1's list state (page, overdrawn filter) is abandoned; overdrawn filter is cleared client-side</td>
+</tr>
+<tr>
+<td>Select "All Bank Accounts"</td>
+<td>API 1, <code>page=1</code>, defaults</td>
+<td>Returns to All Accounts mode at page 1</td>
+</tr>
+<tr>
+<td>Toggle Overdrawn only</td>
+<td>API 1 with <code>overdrawnOnly=true</code> (or the param omitted to clear), <code>page=1</code></td>
+<td>Aggregates follow the filtered population; <code>overdrawnCount</code> never does</td>
+</tr>
+<tr>
+<td>Change page (Previous / Next)</td>
+<td>API 1 with the new <code>page</code></td>
+<td>Nothing else changes; totals must not move</td>
+</tr>
+<tr>
+<td>Switch view (Table / Bars)</td>
+<td>none</td>
+<td>Client re-renders the held API 1 response; both presentations read the same rows and totals</td>
+</tr>
+<tr>
+<td>Open drill / expand row</td>
+<td>none</td>
+<td>No row, bar or card is interactive; Single Account mode is the drill-in and rides the Account control</td>
+</tr>
+<tr>
+<td>Submit action</td>
+<td>none</td>
+<td>This widget has no write</td>
+</tr>
+<tr>
+<td>Refresh</td>
+<td>API 1 or API 2, whichever mode is active</td>
+<td>Account selection, view, page and filter preserved client-side</td>
+</tr>
+</tbody>
+</table>
+<p>Consistency across calls: every response carries <code>asOf</code>, the server's generation timestamp. It is <strong>informational, not a request parameter</strong> - point-in-time balance reconstruction does not exist in this data model, so two calls made across a posting may differ. Each single response is internally consistent (rows, totals and counts computed in one scan). The one cross-API pairing on screen - a picker balance from API 3 beside a breakdown from API 2 - treats API 2 as authoritative and the picker figure as advisory; drift between them is accepted and bounded by the two <code>asOf</code> values.</p>
+<h2>Filter architecture</h2>
+<table>
+<thead>
+<tr>
+<th>Filter</th>
+<th>Option source</th>
+<th>Cardinality</th>
+<th>Execution</th>
+<th>Aggregate effect</th>
+<th>Cascade</th>
+<th>"All" wire form</th>
+<th>Round trips</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Account</td>
+<td>LOOKUP - API 3</td>
+<td>About 50 active accounts, sometimes more [SME - Ben Lane, 13.07.2026]; no hard ceiling</td>
+<td>SERVER - a mode switch, not a row param: a single selection fires API 2 with <code>accountId</code> in the path; All Accounts fires API 1</td>
+<td>Yes - it swaps the entire dataset and shape</td>
+<td>Its own option list is refreshed on every open (API 3), so it cannot go stale</td>
+<td>"All Bank Accounts" = call API 1; no account param exists on API 1 at all</td>
+<td>1</td>
+</tr>
+<tr>
+<td>Overdrawn only</td>
+<td>DERIVED from the API 1 response (<code>overdrawnCount</code> &gt; 0 shows the chip)</td>
+<td>2 (on / off)</td>
+<td>SERVER - <code>overdrawnOnly=true</code> on API 1, applied before ordering, aggregation and the page cut</td>
+<td>Yes - <code>rows</code>, <code>totalCount</code>, <code>totals</code> and <code>pageCount</code> follow the filtered population; <code>overdrawnCount</code> alone always spans the whole active set</td>
+<td>Cleared client-side when the Account control switches to a single account, where it has no meaning</td>
+<td>Omit the param (equivalently <code>false</code>)</td>
+<td>1</td>
+</tr>
+<tr>
+<td>Switch View (Table / Bars)</td>
+<td>STATIC: <code>table</code>, <code>bars</code></td>
+<td>2</td>
+<td>CLIENT - a view over the held API 1 response. Framework 1 conditions: the set is already present (the served page plus full-set totals), it is provably bounded (at most <code>pageSize</code> rows, a served cap), and no server-computed aggregate changes (both views read the same <code>totals</code>)</td>
+<td>No</td>
+<td>None</td>
+<td>Not a data parameter</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Combination semantics:</strong> AND-narrowing does not arise, because the two data filters are mutually exclusive by design: Overdrawn only exists only in All Accounts mode, and selecting an account leaves it.</li>
+<li><strong>Conflict rule:</strong> API 2 defines no <code>overdrawnOnly</code> parameter, so an overdrawn-filtered single account is unrepresentable on the wire; an unknown parameter on either API is ignored, never an error. A stale <code>page</code> against a shrunk set is clamped (see the pagination contract). An <code>accountId</code> that is not an active account of the company returns 404 from API 2 and the client falls back to All Accounts mode.</li>
+<li><strong>Empty-result semantics:</strong> <code>overdrawnOnly=true</code> when nothing is overdrawn (possible in the race between the chip rendering and the click) returns a well-formed zero: <code>rows: []</code>, <code>totalCount: 0</code>, <code>totals.ending: 0</code>, <code>totals.maxEnding: 0</code>, <code>totals.minEnding: 0</code>, <code>pageCount: 1</code>, <code>page: 1</code> - never an error.</li>
+<li><strong>Blank-value rule:</strong> no filter operates on a nullable field. <code>endingBalance</code> is always computed (it degrades to <code>OpeningBalance + 0</code> for a never-reconciled, no-activity account), so the overdrawn test always has a number to compare and a blank can never behave as a wildcard.</li>
+</ul>
+<h2>Volume and performance</h2>
+<table>
+<thead>
+<tr>
+<th>Dataset</th>
+<th>Typical rows</th>
+<th>Worst realistic rows (basis)</th>
+<th>Row width</th>
+<th>Payload at worst</th>
+<th>Verdict</th>
+<th>Server cost model</th>
+<th>Cache posture</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>API 1 account rows</td>
+<td>52 [BUILD - demo fixture, five pages at page size 12]</td>
+<td>50+, no hard ceiling [SME - Ben Lane, 13.07.2026: "Up to 50, sometimes more. 3 is unrealistically low"]; exact ceiling [TO CONFIRM - backend team]</td>
+<td>3 fields, ~90 bytes</td>
+<td>One page: at most <code>pageSize</code> rows, ~9 KB at the maximum</td>
+<td>MUST PAGINATE</td>
+<td>Full-set aggregate per request: one scan of active accounts joined to two grouped subqueries (latest reconcile per account, unreconciled <code>SUM(BR_Item.Amount)</code> per account - the existing Modern handler's exact pattern), because totals, extremes and the overdrawn count span every account even when one page is served</td>
+<td>LIVE per request</td>
+</tr>
+<tr>
+<td>API 2 breakdown</td>
+<td>7 values, always</td>
+<td>7, bounded by definition (five fixed type codes plus two boundary balances) [DOC - Step 1 research]</td>
+<td>10 fields, ~250 bytes total</td>
+<td>~250 bytes</td>
+<td>BOUNDED</td>
+<td>One reconcile lookup plus one grouped sum over that account's unreconciled <code>BR_Item</code> rows</td>
+<td>LIVE per request</td>
+</tr>
+<tr>
+<td>API 3 picker lookup</td>
+<td>52 [BUILD - demo fixture]</td>
+<td>Same population as API 1: 50+, ceiling [TO CONFIRM - backend team]</td>
+<td>3 fields, ~70 bytes</td>
+<td>~3.5 KB at 50 accounts; ~35 KB at 500</td>
+<td>BOUNDED, conditional on the ceiling: the picker cannot page by design (it is the control that chooses an account), so if the confirmed ceiling is large this endpoint becomes a server-searched typeahead instead - an owner decision recorded in Still needs sign-off</td>
+<td>Full-set scan, same two grouped subqueries as API 1</td>
+<td>LIVE per request (short TTL acceptable; the figure is advisory)</td>
+</tr>
+</tbody>
+</table>
+<p>There is no time series anywhere in this widget, so no N × M product arises.</p>
+<h3>Pagination contract</h3>
+<p>Applies to API 1 only. APIs 2 and 3 do not paginate.</p>
+<ul>
+<li><strong>Params:</strong> <code>page</code> (1-based, default 1), <code>pageSize</code> (default <strong>12</strong>, maximum <strong>100</strong>). The default is the built page size; the maximum is this contract's decision and is listed for owner confirmation in Still needs sign-off.</li>
+<li><strong>What paginates:</strong> the <code>rows</code> array, and nothing else.</li>
+<li><strong>What does not:</strong> <code>totals.ending</code>, <code>totals.maxEnding</code>, <code>totals.minEnding</code>, <code>totalCount</code> and <code>overdrawnCount</code> are each computed over the <strong>full filtered set</strong> (and <code>overdrawnCount</code> over the full <em>active</em> set, ignoring the filter). Turning the page changes no total, no chart scale, no chip count and no KPI. A bar's length must not change when the page turns, which is exactly what <code>maxEnding</code>/<code>minEnding</code> exist to guarantee.</li>
+<li><strong>Sort params:</strong> <code>sortBy</code> with a whitelisted field list of exactly <strong>one member, <code>name</code></strong> - ordering is fixed alphabetical by design and is not user-changeable; that is a stated decision (the user loses column sorting, held as an open owner item), not an omission. <code>sortDir</code> (<code>asc</code> default, <code>desc</code> accepted). An unknown <code>sortBy</code> falls back to <code>name asc</code> and the response echoes what was actually applied; the key is never interpolated into an ORDER BY unchecked.</li>
+<li><strong>Deterministic total order:</strong> <code>name</code>, then <code>BankAccountID</code> as the unique tiebreaker, so two accounts with the same name can never swap, repeat or vanish across pages.</li>
+<li><strong><code>totalCount</code></strong> is returned in every response alongside <code>page</code>, <code>pageSize</code> and <code>pageCount</code>, so the client renders the pager without a second call.</li>
+<li><strong>Past the last page:</strong> the server clamps. A <code>page</code> beyond the end (or below 1, or non-numeric) is served as the nearest valid page, with the clamped <code>page</code> echoed so the client renders what it was actually given, with correct <code>totalCount</code> and aggregates - never an error. This matters because the overdrawn filter can shrink <code>pageCount</code> under a stale page index.</li>
+</ul>
+<h2>Where computation lives</h2>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Server or client</th>
+<th>Basis</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ending balance per account</td>
+<td>SERVER</td>
+<td>Last reconcile ending (or opening balance) + unreconciled sum</td>
+<td>Needs <code>BR_Reconcile</code> and <code>BR_Item</code>, which the client never holds</td>
+</tr>
+<tr>
+<td><code>totals.ending</code> (Total Balance KPI and totals row)</td>
+<td>SERVER</td>
+<td>SUM of ending balances over the full filtered set</td>
+<td>Spans accounts outside the served page</td>
+</tr>
+<tr>
+<td><code>overdrawnCount</code> (chip)</td>
+<td>SERVER</td>
+<td>COUNT of active accounts with ending balance &lt; 0, whole active set, filter ignored</td>
+<td>Must not move when the filter turns on or the page turns</td>
+</tr>
+<tr>
+<td><code>totals.maxEnding</code> / <code>totals.minEnding</code> (bar scale)</td>
+<td>SERVER</td>
+<td>MAX/MIN of ending balance over the full filtered set, each clamped so zero is always inside the range</td>
+<td>The bar chart scales to the full set, not the page</td>
+</tr>
+<tr>
+<td>Overdrawn flag on a row, pill on the total</td>
+<td>CLIENT</td>
+<td><code>endingBalance &lt; 0</code> on values already in the response</td>
+<td>Pure comparison over present values</td>
+</tr>
+<tr>
+<td>Breakdown line values (beginning, five types, ending)</td>
+<td>SERVER</td>
+<td>The core formulas in Tables</td>
+<td>Needs row-level <code>BR_Item</code> data</td>
+</tr>
+<tr>
+<td><code>beginningFromReconciliation</code></td>
+<td>SERVER</td>
+<td>EXISTS(<code>BR_Reconcile</code> row for the account)</td>
+<td>Same query already touches the table</td>
+</tr>
+<tr>
+<td>Activity-chart magnitudes (Checks, Withdrawals shown positive)</td>
+<td>CLIENT</td>
+<td><code>abs()</code> over served signed values</td>
+<td>Display transform only; the stored sign is authoritative and the server must never pre-flip it</td>
+</tr>
+<tr>
+<td>Activity-chart scale (largest magnitude)</td>
+<td>CLIENT</td>
+<td>max of four served values</td>
+<td>Four values, all present</td>
+</tr>
+<tr>
+<td>Bar lengths (both charts)</td>
+<td>CLIENT</td>
+<td>value / scale extreme</td>
+<td>Arithmetic over present values. Division-by-zero rule: when the scale denominator is zero (every balance exactly zero, or all four activity values zero) the client renders zero-length bars and no division is attempted; no divided value is ever null</td>
+</tr>
+<tr>
+<td>Server-computed percentages</td>
+<td>SERVER (none exist)</td>
+<td>-</td>
+<td>No percentage, ratio or pre-signed delta is served anywhere in this contract, so no server division-by-zero rule is needed; deltas do not arise</td>
+</tr>
+<tr>
+<td>Sort order</td>
+<td>SERVER</td>
+<td><code>name asc</code>, <code>BankAccountID</code> tiebreaker</td>
+<td>The set is paginated, so client sort is a defect</td>
+</tr>
+<tr>
+<td>Pager label ("13 to 24 of 52")</td>
+<td>CLIENT</td>
+<td><code>page</code>, <code>pageSize</code>, <code>totalCount</code></td>
+<td>Arithmetic over present values</td>
+</tr>
+<tr>
+<td>All-option visibility</td>
+<td>CLIENT</td>
+<td>API 3 <code>totalCount &gt; 1</code></td>
+<td>Served count; rule from the legacy design</td>
+</tr>
+<tr>
+<td>Overdrawn chip visibility</td>
+<td>CLIENT</td>
+<td><code>overdrawnCount &gt; 0</code></td>
+<td>Served count; a permanent zero-alarm chip is a design decision already taken</td>
+</tr>
+</tbody>
+</table>
+<p>Presentation thresholds: none exist beyond "less than zero is overdrawn", which is a definition, not a tunable band.</p>
+<h2>API 1: Accounts page</h2>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/bank-balances/accounts
+</code></pre>
+<p><strong>NEW.</strong> No Modern API document describes this endpoint; the nearest existing read (<code>/bank-balances/all</code>) is unpaged, unaggregated and unfiltered. This endpoint is the widget's central new backend work.</p>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>page</code></td>
+<td>int</td>
+<td>no</td>
+<td>1 or greater; out-of-range values are clamped</td>
+<td>1</td>
+<td>1-based page of account rows</td>
+</tr>
+<tr>
+<td><code>pageSize</code></td>
+<td>int</td>
+<td>no</td>
+<td>1 to 100</td>
+<td>12</td>
+<td>Rows per page. Maximum pending owner confirmation</td>
+</tr>
+<tr>
+<td><code>sortBy</code></td>
+<td>string</td>
+<td>no</td>
+<td>whitelist: <code>name</code></td>
+<td><code>name</code></td>
+<td>Unknown values fall back to <code>name</code>; the applied key is echoed</td>
+</tr>
+<tr>
+<td><code>sortDir</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>asc</code>, <code>desc</code></td>
+<td><code>asc</code></td>
+<td>Direction of the whitelisted sort</td>
+</tr>
+<tr>
+<td><code>overdrawnOnly</code></td>
+<td>bool</td>
+<td>no</td>
+<td><code>true</code>, <code>false</code></td>
+<td><code>false</code> (omit)</td>
+<td>Restricts rows, totals and counts to accounts with a negative ending balance; <code>overdrawnCount</code> ignores it</td>
+</tr>
+</tbody>
+</table>
+<p>Context header: <code>X-Company-ID</code>, required on every call, scopes every query (see Auth and scoping).</p>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/bank-balances/accounts?page=1
+GET /api/dashboard/bank-balances/accounts?page=1&amp;pageSize=12&amp;sortBy=name&amp;sortDir=asc&amp;overdrawnOnly=true
+</code></pre>
+<p>No parameter value here needs URL-encoding; all are ASCII tokens.</p>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>rows</code></td>
+<td>array</td>
+<td>DERIVED container of the row fields below [BUILD]</td>
+<td>The requested page only, already ordered by the server</td>
+</tr>
+<tr>
+<td><code>rows[].accountId</code></td>
+<td>guid</td>
+<td>STORED <code>BR_BankAccount.BankAccountID</code> [CODE]</td>
+<td>Unique account id, the sort tiebreaker</td>
+</tr>
+<tr>
+<td><code>rows[].name</code></td>
+<td>string</td>
+<td>STORED <code>BR_BankAccount.Name</code> [CODE]</td>
+<td>Account name, the sort key</td>
+</tr>
+<tr>
+<td><code>rows[].endingBalance</code></td>
+<td>decimal</td>
+<td>DERIVED lastReconcile.EndingBalance or OpeningBalance + SUM(unreconciled <code>BR_Item.Amount</code>) [CODE]</td>
+<td>Current running balance; negative means overdrawn</td>
+</tr>
+<tr>
+<td><code>totalCount</code></td>
+<td>int</td>
+<td>DERIVED COUNT over the full filtered set [BUILD]</td>
+<td>Size of the whole filtered set, never the page</td>
+</tr>
+<tr>
+<td><code>totals</code></td>
+<td>object</td>
+<td>DERIVED container of the aggregates below [BUILD]</td>
+<td>Aggregates over the full filtered set</td>
+</tr>
+<tr>
+<td><code>totals.ending</code></td>
+<td>decimal</td>
+<td>DERIVED SUM(endingBalance) over the full filtered set [BUILD]</td>
+<td>The Total Balance figure; also the totals row</td>
+</tr>
+<tr>
+<td><code>totals.maxEnding</code></td>
+<td>decimal</td>
+<td>DERIVED MAX(endingBalance, 0) over the full filtered set [BUILD]</td>
+<td>Upper bar-scale extreme; never below zero so the zero axis stays in range</td>
+</tr>
+<tr>
+<td><code>totals.minEnding</code></td>
+<td>decimal</td>
+<td>DERIVED MIN(endingBalance, 0) over the full filtered set [BUILD]</td>
+<td>Lower bar-scale extreme; never above zero</td>
+</tr>
+<tr>
+<td><code>overdrawnCount</code></td>
+<td>int</td>
+<td>DERIVED COUNT(endingBalance &lt; 0) over the whole active set, filter ignored [BUILD]</td>
+<td>The chip's number; states how many overdrawn accounts exist</td>
+</tr>
+<tr>
+<td><code>overdrawnOnly</code></td>
+<td>bool</td>
+<td>DERIVED echo of the applied filter [BUILD]</td>
+<td>So the client never guesses whether its rows are filtered</td>
+</tr>
+<tr>
+<td><code>page</code></td>
+<td>int</td>
+<td>DERIVED echo, clamped [BUILD]</td>
+<td>The page actually served</td>
+</tr>
+<tr>
+<td><code>pageSize</code></td>
+<td>int</td>
+<td>DERIVED echo [BUILD]</td>
+<td>The page size actually applied</td>
+</tr>
+<tr>
+<td><code>pageCount</code></td>
+<td>int</td>
+<td>DERIVED ceil(totalCount / pageSize), minimum 1 [BUILD]</td>
+<td>Pages in the filtered set</td>
+</tr>
+<tr>
+<td><code>sortBy</code></td>
+<td>string</td>
+<td>DERIVED echo of the applied whitelisted key [BUILD]</td>
+<td>What the server actually sorted by</td>
+</tr>
+<tr>
+<td><code>sortDir</code></td>
+<td>string</td>
+<td>DERIVED echo [BUILD]</td>
+<td>Applied direction</td>
+</tr>
+<tr>
+<td><code>asOf</code></td>
+<td>datetime</td>
+<td>DERIVED server clock at generation</td>
+<td>Informational freshness stamp</td>
+</tr>
+</tbody>
+</table>
+<h3>Example response</h3>
+<p>A five-account organization, one page:</p>
+<pre><code>{
+  &quot;rows&quot;: [
+    { &quot;accountId&quot;: &quot;6f1d2a3b-4c5d-4e6f-8a9b-0c1d2e3f4a5b&quot;, &quot;name&quot;: &quot;Building Fund Money Market&quot;, &quot;endingBalance&quot;: 88409.45 },
+    { &quot;accountId&quot;: &quot;2b3c4d5e-6f7a-4b8c-9d0e-1f2a3b4c5d6e&quot;, &quot;name&quot;: &quot;Missions Fund Checking&quot;, &quot;endingBalance&quot;: 15230.10 },
+    { &quot;accountId&quot;: &quot;9e8d7c6b-5a4f-4e3d-8c2b-1a0f9e8d7c6b&quot;, &quot;name&quot;: &quot;Operating Checking, Main&quot;, &quot;endingBalance&quot;: 268990.00 },
+    { &quot;accountId&quot;: &quot;4a5b6c7d-8e9f-4a1b-8c2d-3e4f5a6b7c8d&quot;, &quot;name&quot;: &quot;Payroll Clearing&quot;, &quot;endingBalance&quot;: 42610.25 },
+    { &quot;accountId&quot;: &quot;1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f&quot;, &quot;name&quot;: &quot;Youth Ministry Checking&quot;, &quot;endingBalance&quot;: -3120.80 }
+  ],
+  &quot;totalCount&quot;: 5,
+  &quot;totals&quot;: { &quot;ending&quot;: 412119.00, &quot;maxEnding&quot;: 268990.00, &quot;minEnding&quot;: -3120.80 },
+  &quot;overdrawnCount&quot;: 1,
+  &quot;overdrawnOnly&quot;: false,
+  &quot;page&quot;: 1,
+  &quot;pageSize&quot;: 12,
+  &quot;pageCount&quot;: 1,
+  &quot;sortBy&quot;: &quot;name&quot;,
+  &quot;sortDir&quot;: &quot;asc&quot;,
+  &quot;asOf&quot;: &quot;2026-09-07T14:12:05Z&quot;
+}
+</code></pre>
+<p>Reconciliation: the four in-credit balances sum as 268990.00 + 88409.45 + 15230.10 + 42610.25 = 415239.80, and the overdrawn account nets it down, 3120.80 + 412119.00 = 415239.80, so <code>totals.ending</code> 412119.00 equals the sum of every row's <code>endingBalance</code>; <code>overdrawnCount</code> 1 matches the one negative row; <code>totalCount</code> 5 matches the row population; <code>maxEnding</code> and <code>minEnding</code> are the largest and smallest row balances. <code>totals.ending</code> must equal API 3's <code>combinedTotal</code> for the same population.</p>
+<p>With <code>overdrawnOnly=true</code> on the same organization: <code>rows</code> holds only Youth Ministry Checking, <code>totalCount</code> 1, <code>totals.ending</code> -3120.80 (the overdrawn subtotal, reconciling as 3120.80 + 0.00 = 3120.80 in magnitude against the single row), <code>totals.maxEnding</code> 0, <code>totals.minEnding</code> -3120.80, <code>overdrawnCount</code> still 1, <code>overdrawnOnly</code> true, <code>pageCount</code> 1.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty (no active accounts)</td>
+<td>200: <code>rows: []</code>, <code>totalCount: 0</code>, <code>totals</code> all zero, <code>overdrawnCount: 0</code>, <code>pageCount: 1</code>, <code>page: 1</code>. The on-screen empty-state copy is an open design item; the shape is not</td>
+</tr>
+<tr>
+<td>Empty by filter (<code>overdrawnOnly=true</code>, none overdrawn)</td>
+<td>200: same well-formed zero, except <code>overdrawnOnly: true</code> and <code>overdrawnCount</code> reporting the true active-set count (0 in this state)</td>
+</tr>
+<tr>
+<td>Partial</td>
+<td>Does not arise: there is no requested span; an account with no unreconciled items simply contributes its reconciled (or opening) balance</td>
+</tr>
+<tr>
+<td>Not-yet-existing entity</td>
+<td>Does not arise: this endpoint takes no entity id</td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td>403 with an empty body; the widget-level treatment is an open product decision</td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td>503; the client shows its error state (treatment unspecified, an open design item) and never fabricates zeros</td>
+</tr>
+</tbody>
+</table>
+<h2>API 2: Account activity breakdown</h2>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/bank-balances/accounts/{accountId}/activity
+</code></pre>
+<p><strong>NEW - the widget's largest backend ask.</strong> The existing single-account read returns only a summary balance; no per-type breakdown and no activity-category data exist anywhere in the Modern API. This endpoint is specced as forward design under the standing waiver of that gap, and Single Account mode cannot ship until it exists. The legacy codebase computes exactly these values in-memory, so the logic has a reference implementation.</p>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>accountId</code></td>
+<td>guid (path)</td>
+<td>yes</td>
+<td>An active account of the company</td>
+<td>none</td>
+<td>The account to break down. Unknown, inactive or out-of-company ids return 404</td>
+</tr>
+</tbody>
+</table>
+<p>Context header: <code>X-Company-ID</code>, required.</p>
+<p>No paging, no sort, no filter: the seven-line order is structural and fixed, and the period is implicitly "since the last reconciliation" - there is deliberately no date parameter of any kind.</p>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/bank-balances/accounts/9e8d7c6b-5a4f-4e3d-8c2b-1a0f9e8d7c6b/activity
+GET /api/dashboard/bank-balances/accounts/1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f/activity
+</code></pre>
+<p>Both calls take the same shape; there is no filtered variant because the endpoint has no filters.</p>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>accountId</code></td>
+<td>guid</td>
+<td>STORED <code>BR_BankAccount.BankAccountID</code> [CODE]</td>
+<td>Echo of the path id</td>
+</tr>
+<tr>
+<td><code>name</code></td>
+<td>string</td>
+<td>STORED <code>BR_BankAccount.Name</code> [CODE]</td>
+<td>For the mode header</td>
+</tr>
+<tr>
+<td><code>beginningBalance</code></td>
+<td>decimal</td>
+<td>DERIVED last <code>BR_Reconcile.EndingBalance</code> by <code>ReconcileEndingDate</code> desc, else <code>BR_BankAccount.OpeningBalance</code> [DOC - Step 1 research] [CODE]</td>
+<td>Line 1 of the breakdown</td>
+</tr>
+<tr>
+<td><code>beginningFromReconciliation</code></td>
+<td>bool</td>
+<td>DERIVED EXISTS(<code>BR_Reconcile</code> for the account) [DOC - Step 1 research]</td>
+<td>Feeds the beginning-balance source note; <code>false</code> is defined behaviour, not an error</td>
+</tr>
+<tr>
+<td><code>deposits</code></td>
+<td>decimal</td>
+<td>NEW - SUM(<code>BR_Item.Amount</code>) WHERE <code>ReconcileID IS NULL</code> AND <code>Type='d'</code> [DOC - Step 1 research] [CODE - legacy]</td>
+<td>Stored-sign sum, normally positive</td>
+</tr>
+<tr>
+<td><code>voids</code></td>
+<td>decimal</td>
+<td>NEW - same, <code>Type='v'</code> [DOC - Step 1 research] [CODE - legacy]</td>
+<td>Stored-sign sum</td>
+</tr>
+<tr>
+<td><code>checks</code></td>
+<td>decimal</td>
+<td>NEW - same, <code>Type='c'</code> [DOC - Step 1 research] [CODE - legacy]</td>
+<td><strong>Served with its stored negative sign.</strong> The client takes magnitudes for the activity chart; the server must never pre-flip</td>
+</tr>
+<tr>
+<td><code>withdrawals</code></td>
+<td>decimal</td>
+<td>NEW - same, <code>Type='w'</code> [DOC - Step 1 research] [CODE - legacy]</td>
+<td>Served with its stored negative sign, as above</td>
+</tr>
+<tr>
+<td><code>eft</code></td>
+<td>decimal</td>
+<td>NEW - same, <code>Type='e'</code> [DOC - Step 1 research] [CODE - legacy]</td>
+<td>Either sign occurs in real data</td>
+</tr>
+<tr>
+<td><code>endingBalance</code></td>
+<td>decimal</td>
+<td>DERIVED beginningBalance + deposits + voids + checks + withdrawals + eft [DOC - Step 1 research]</td>
+<td>Line 7; also the account's figure in API 1 and API 3, and it must equal them at the same data state</td>
+</tr>
+<tr>
+<td><code>asOf</code></td>
+<td>datetime</td>
+<td>DERIVED server clock at generation</td>
+<td>Informational freshness stamp</td>
+</tr>
+</tbody>
+</table>
+<h3>Example response</h3>
+<pre><code>{
+  &quot;accountId&quot;: &quot;9e8d7c6b-5a4f-4e3d-8c2b-1a0f9e8d7c6b&quot;,
+  &quot;name&quot;: &quot;Operating Checking, Main&quot;,
+  &quot;beginningBalance&quot;: 412870.55,
+  &quot;beginningFromReconciliation&quot;: true,
+  &quot;deposits&quot;: 186240.00,
+  &quot;voids&quot;: 2140.00,
+  &quot;checks&quot;: -142380.25,
+  &quot;withdrawals&quot;: -31500.00,
+  &quot;eft&quot;: -58120.40,
+  &quot;endingBalance&quot;: 369249.90,
+  &quot;asOf&quot;: &quot;2026-09-07T14:12:09Z&quot;
+}
+</code></pre>
+<p>Reconciliation: money in sums as 412870.55 + 186240.00 + 2140.00 = 601250.55, money out as 142380.25 + 31500.00 + 58120.40 = 232000.65, and 232000.65 + 369249.90 = 601250.55, so <code>endingBalance</code> 369249.90 equals beginning plus all five stored-sign activity values; it is the same figure API 1 serves as this account's <code>endingBalance</code> and API 3 serves in the picker, at the same data state.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty (no unreconciled items)</td>
+<td>200: all five activity fields <code>0</code>, <code>endingBalance</code> equal to <code>beginningBalance</code>. A legitimate quiet account, not an error</td>
+</tr>
+<tr>
+<td>Partial (never reconciled)</td>
+<td>200: <code>beginningFromReconciliation: false</code>, <code>beginningBalance</code> = the opening balance. Defined behaviour</td>
+</tr>
+<tr>
+<td>Not-yet-existing entity (unknown, inactive, or another company's id)</td>
+<td>404 with an empty body; the client falls back to All Accounts mode</td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td>403, as API 1</td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td>503, as API 1</td>
+</tr>
+</tbody>
+</table>
+<h2>API 3: Account picker lookup</h2>
+<h3>Endpoint</h3>
+<pre><code>GET /api/dashboard/bank-balances/accounts/lookup
+</code></pre>
+<p><strong>NEW (reshaped).</strong> The existing <code>/bank-balances/filters</code> read proves the query base (active accounts, company-scoped, name-ordered), but its <code>DropDownItem</code> shape carries no balances and injects the All option as a sentinel row. This endpoint serves the same population with <code>endingBalance</code> per account plus the combined total, and leaves the All option to the client.</p>
+<h3>Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Allowed values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>none</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>The lookup takes no parameters beyond the context header; it always returns the full active set, unfiltered, in the canonical order</td>
+</tr>
+</tbody>
+</table>
+<p>Context header: <code>X-Company-ID</code>, required.</p>
+<h3>Example requests</h3>
+<pre><code>GET /api/dashboard/bank-balances/accounts/lookup
+GET /api/dashboard/bank-balances/accounts/lookup
+</code></pre>
+<p>The second call is identical by design - there is no filtered form of this request.</p>
+<h3>Response schema</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Provenance</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>accounts</code></td>
+<td>array</td>
+<td>DERIVED container of the row fields below [BUILD]</td>
+<td>Every active account, ordered by <code>name</code> then <code>BankAccountID</code>, the same total order as API 1 so the picker and the table can never disagree about the alphabet</td>
+</tr>
+<tr>
+<td><code>accounts[].accountId</code></td>
+<td>guid</td>
+<td>STORED <code>BR_BankAccount.BankAccountID</code> [CODE]</td>
+<td>Selection value; feeds API 2's path</td>
+</tr>
+<tr>
+<td><code>accounts[].name</code></td>
+<td>string</td>
+<td>STORED <code>BR_BankAccount.Name</code> [CODE]</td>
+<td>Row label</td>
+</tr>
+<tr>
+<td><code>accounts[].endingBalance</code></td>
+<td>decimal</td>
+<td>DERIVED, same formula as API 1 [CODE]</td>
+<td>Trailing figure per picker row; advisory (see the asOf note)</td>
+</tr>
+<tr>
+<td><code>combinedTotal</code></td>
+<td>decimal</td>
+<td>DERIVED SUM(endingBalance) over all active accounts [BUILD]</td>
+<td>The All Bank Accounts option's trailing figure</td>
+</tr>
+<tr>
+<td><code>totalCount</code></td>
+<td>int</td>
+<td>DERIVED COUNT of active accounts [BUILD]</td>
+<td>Drives the All-option visibility rule (shown only when greater than 1)</td>
+</tr>
+<tr>
+<td><code>asOf</code></td>
+<td>datetime</td>
+<td>DERIVED server clock at generation</td>
+<td>Informational freshness stamp</td>
+</tr>
+</tbody>
+</table>
+<h3>Example response</h3>
+<pre><code>{
+  &quot;accounts&quot;: [
+    { &quot;accountId&quot;: &quot;6f1d2a3b-4c5d-4e6f-8a9b-0c1d2e3f4a5b&quot;, &quot;name&quot;: &quot;Building Fund Money Market&quot;, &quot;endingBalance&quot;: 88409.45 },
+    { &quot;accountId&quot;: &quot;2b3c4d5e-6f7a-4b8c-9d0e-1f2a3b4c5d6e&quot;, &quot;name&quot;: &quot;Missions Fund Checking&quot;, &quot;endingBalance&quot;: 15230.10 },
+    { &quot;accountId&quot;: &quot;9e8d7c6b-5a4f-4e3d-8c2b-1a0f9e8d7c6b&quot;, &quot;name&quot;: &quot;Operating Checking, Main&quot;, &quot;endingBalance&quot;: 268990.00 },
+    { &quot;accountId&quot;: &quot;4a5b6c7d-8e9f-4a1b-8c2d-3e4f5a6b7c8d&quot;, &quot;name&quot;: &quot;Payroll Clearing&quot;, &quot;endingBalance&quot;: 42610.25 },
+    { &quot;accountId&quot;: &quot;1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f&quot;, &quot;name&quot;: &quot;Youth Ministry Checking&quot;, &quot;endingBalance&quot;: -3120.80 }
+  ],
+  &quot;combinedTotal&quot;: 412119.00,
+  &quot;totalCount&quot;: 5,
+  &quot;asOf&quot;: &quot;2026-09-07T14:12:07Z&quot;
+}
+</code></pre>
+<p>Reconciliation: 268990.00 + 88409.45 + 15230.10 + 42610.25 = 415239.80 in credit and 3120.80 + 412119.00 = 415239.80 nets the overdrawn account off, so <code>combinedTotal</code> 412119.00 equals the sum of every account's <code>endingBalance</code> and matches API 1's unfiltered <code>totals.ending</code> at the same data state.</p>
+<h3>State contracts</h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty (no active accounts)</td>
+<td>200: <code>accounts: []</code>, <code>combinedTotal: 0</code>, <code>totalCount: 0</code></td>
+</tr>
+<tr>
+<td>Partial</td>
+<td>Does not arise: the lookup has no requested span</td>
+</tr>
+<tr>
+<td>Not-yet-existing entity</td>
+<td>Does not arise: no entity id is taken</td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td>403, as API 1</td>
+</tr>
+<tr>
+<td>Upstream unavailable</td>
+<td>503, as API 1</td>
+</tr>
+</tbody>
+</table>
+<h2>Auth and scoping</h2>
+<ul>
+<li><strong>Company / tenant scoping:</strong> every call carries <code>X-Company-ID</code>, and every query is scoped through the <code>BRBankAccount.GLAccount.GLDepartment...GLYear.CompanyID</code> join chain [CODE - Widget_Comparison_Classic.html]. An <code>accountId</code> outside the scoped company is indistinguishable from an unknown id: 404.</li>
+<li><strong>Permission right:</strong> read-only throughout; there is no write. The legacy widget was gated by its <code>AccessUri /BankAccountManagement</code>; the Modern API's module field for this widget is <code>BankAccountMgmt</code> (a known naming inconsistency with the legacy string) [CODE]. The exact Modern permission right for these three reads is [TO CONFIRM - backend team / dev].</li>
+<li><strong>A user without the right</strong> sees: undecided. Hidden widget vs empty widget vs error card is a product decision, listed in Still needs sign-off; the APIs' side is fixed here as 403 with an empty body either way.</li>
+</ul>
+<h2>Edge cases</h2>
+<ol>
+<li><strong>Zero active accounts:</strong> every API returns its well-formed empty shape; the on-screen copy is an open design item, the shapes are not.</li>
+<li><strong>Exactly one active account:</strong> API 3 returns <code>totalCount: 1</code>; the client hides the All option and treats All Accounts mode as the single account's aggregate view. Server behaviour is unchanged.</li>
+<li><strong>Account with no unreconciled items:</strong> API 2 returns five zeros and <code>endingBalance</code> equal to <code>beginningBalance</code>; API 1 serves the reconciled balance. Quiet, not broken.</li>
+<li><strong>Never-reconciled account:</strong> <code>beginningFromReconciliation: false</code>, opening balance used. Defined behaviour throughout, never an error.</li>
+<li><strong><code>overdrawnOnly=true</code> with nothing overdrawn:</strong> well-formed zero response (the chip is hidden at zero, but a click can race a data change).</li>
+<li><strong>Unknown / stale <code>accountId</code> on API 2:</strong> 404; the client falls back to All Accounts mode rather than rendering an empty Single Account view.</li>
+<li><strong>Page past the end, or below 1, or non-numeric:</strong> clamped to the nearest valid page and echoed; correct <code>totalCount</code> and aggregates.</li>
+<li><strong>Unknown <code>sortBy</code>:</strong> falls back to <code>name asc</code>, echoed; never interpolated into the query.</li>
+<li><strong>Duplicate account names:</strong> the <code>BankAccountID</code> tiebreaker keeps the total order deterministic, so paging never repeats or skips an account.</li>
+<li><strong>Every balance exactly zero:</strong> <code>maxEnding</code> and <code>minEnding</code> both 0; the client's bar-scale denominator is zero and it renders zero-length bars without dividing (the stated zero rule).</li>
+<li><strong>Negative combined total:</strong> legitimate; Glance shows the negative figure and the client applies its overdrawn treatment to the total itself.</li>
+<li><strong>EFT sign:</strong> <code>eft</code> occurs with either sign in real data; nothing may assume it is money out.</li>
+<li><strong>Account deactivated between calls:</strong> the picker or list may briefly name an account API 2 then 404s on; the fallback in edge case 6 covers it, and the differing <code>asOf</code> stamps make the drift diagnosable.</li>
+<li><strong>Voids:</strong> stored positive (money returning); they are additive activity like deposits, not a subtraction.</li>
+</ol>
+<h2>Not in scope</h2>
+<ul>
+<li><strong>Download / export:</strong> this widget has no download at any size; nothing replaces it.</li>
+<li><strong>Search</strong> over accounts: not built, no endpoint; the picker scrolls the full set instead.</li>
+<li><strong>Sortable balance columns:</strong> ordering is fixed alphabetical; the <code>sortBy</code> whitelist is enforced anyway, so granting sort later is a whitelist extension plus a UI change, with no new endpoint.</li>
+<li><strong>Per-account drill overlay or navigation away from the dashboard:</strong> Single Account mode is the drill-in; rows, bars and chart columns are not interactive.</li>
+<li><strong>Account Cards presentation:</strong> not part of the design; the two presentations both read API 1.</li>
+<li><strong>Reconciliation status badges / a visible Last Reconciled date:</strong> open product item; if approved later it adds a field (for example <code>lastReconciledDate</code>) to API 1 rows and API 2 - not specced here.</li>
+<li><strong>Cash runway / available-vs-unrestricted cash split:</strong> needs fund-level data this contract does not carry; recorded as an open dossier question, not specced.</li>
+<li><strong>Unreconciled item count per account:</strong> open product item, not specced.</li>
+<li><strong>A time or date filter:</strong> the period is structurally "since the last reconciliation" and is not user-selectable.</li>
+<li><strong>Historical / point-in-time balances:</strong> <code>asOf</code> is an echo, never a request parameter; no reconstruction exists in the data model.</li>
+<li><strong>Multiple widget instances with a saved default account:</strong> a dashboard-shell concern, outside this contract.</li>
+<li><strong>Writes:</strong> none. Reconciliation itself belongs to the Bank Account Management module, not this widget.</li>
+<li><strong>The legacy pie's positive-only chart shape:</strong> not reproduced; negative balances are served like any other row.</li>
+</ul>
+<h2>Still needs sign-off</h2>
+<ol>
+<li><strong>API 2 does not exist in any form (the waived gap).</strong> The Modern API's single-account read returns a summary balance only; the seven-line breakdown and activity categories are a named backend ask. Decides: backend team / dev. Blocks: Single Account mode entirely. Status: the gap was explicitly waived as forward design for the build; the backend work itself remains open and this contract is its definition.</li>
+<li><strong>API 1 is central NEW work.</strong> The paginated, aggregated, overdrawn-filterable accounts endpoint appears in no Modern API document. Decides: backend team. Blocks: the whole All Accounts surface (which is also the Glance figure).</li>
+<li><strong>Paged-full-set design vs the SME's "top 3-5 plus view-all" preference.</strong> The interview recommendation of a small ranked list with a view-all escape differs from the built paged full set this contract funds [SME - Ben Lane, 13.07.2026]. Decides: owner with Design. Blocks: nothing in the contract - the paged design strictly supersets the data a top-N would need, but a top-N-by-balance variant would want <code>sortBy</code> extended beyond <code>name</code>.</li>
+<li><strong>SME attribution conflict.</strong> The Step 6 dossier names the 13 Jul 2026 SME as "Marvin"; this project's Step 2 records record Ben Lane for the same interview. Both stay recorded; whoever holds the recording settles it. Decides: owner. Blocks: nothing technical; it decides who confirms items 3 and 7.</li>
+<li><strong><code>pageSize</code> maximum (100) and the 1-based <code>page</code> naming</strong> are this contract's decisions, made to complete the pagination contract. Decides: owner + backend. Blocks: nothing; either is a one-line change.</li>
+<li><strong>API 3 volume posture.</strong> The picker deliberately serves the full set; if the confirmed account ceiling is far above 50, this endpoint becomes a server-searched typeahead instead. Decides: backend team with the owner, on the confirmed ceiling [TO CONFIRM - backend team]. Blocks: API 3's final shape only.</li>
+<li><strong>Worst-realistic account ceiling.</strong> "Up to 50, sometimes more" is the only citable figure [SME - Ben Lane, 13.07.2026]; no hard maximum exists. Decides: backend team (a live query settles it). Blocks: the BOUNDED verdict on API 3 and the <code>pageSize</code> maximum.</li>
+<li><strong>Currency / locale formatting rules - Unreviewed dossier finding.</strong> The dossier records a live localisation defect (a pound sign shown for a US organization on this widget [LIVE, 23 Jul 2026]); this project records no locale rule at all and the build formats US dollars. The API side is settled (raw decimals, no formatting on the wire), but whether a currency or locale indicator must be served is unresolved. Decides: owner (the finding is Unreviewed; no reconciliation file exists for this widget). Blocks: nothing on the wire today.</li>
+<li><strong>Available/unrestricted cash vs raw bank total - Unreviewed dossier finding, flagged "Do now" by its author.</strong> Distinguishing available from total cash needs fund data this contract does not carry. Both positions stand: the dossier urges the framing now; the project's design carries no such field. Decides: owner + SME. Blocks: nothing specced; if accepted it is a new field or endpoint.</li>
+<li><strong>Remaining Unreviewed dossier findings</strong> (multiple widget instances with a saved default account; labelling the unreconciled-only basis with an optional all-items view; values readable as text with overdrawn obvious everywhere - the last likely satisfied as built). No reconciliation file exists, so none has an owner status. Decides: owner. Blocks: the parts each touches, none of which required inventing contract fields.</li>
+<li><strong>Negative balances in the bar presentation.</strong> The legacy rule (pie excluded them) covered only a chart that is not carried forward; the served data includes them and the design renders them left of the zero axis with the gap named on screen. Decides: Design + owner (not yet named). Blocks: nothing on the wire - the rows are served either way.</li>
+<li><strong>Glance always showing the all-accounts aggregate regardless of selection.</strong> The same exception pattern as other widgets; flagged for owner confirmation. Blocks: nothing; API 1 already ignores account selection by construction.</li>
+<li><strong>Last Reconciled visibility</strong> (a visible date or status). Decides: experts/dev with the owner. Blocks: nothing; adds fields if approved.</li>
+<li><strong>Permission right and the no-right treatment.</strong> The exact Modern right for these reads, and whether a user without it sees a hidden widget, an empty widget or an error card [TO CONFIRM - backend team / dev; product side owner]. Blocks: the 403 handling's on-screen half.</li>
+<li><strong>Loading and error treatments</strong> are unspecified in every source and deliberately not invented; paging makes every page turn a round trip, so this widget needs a loading treatment more than most. Decides: Design + owner. Blocks: nothing on the wire.</li>
+</ol>
+
+</body>
+</html>
