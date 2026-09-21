@@ -1,0 +1,2253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dashboard — Amplify</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/helloimjolopez-collab/pathway-ds@main/src/tokens/tokens.css"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Red+Hat+Text:ital,wght@0,400;0,500;0,600;0,700&family=Red+Hat+Display:wght@600&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'Red Hat Text',sans-serif;background:#f5f3ef;color:var(--semantic-color-light-mode-text-static-primary-base,#202020)}
+button{font-family:inherit;cursor:pointer}
+a{text-decoration:none}
+.msr{font-family:'Material Symbols Rounded';font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 20;font-size:20px;line-height:1;display:inline-flex;align-items:center;user-select:none}
+.msr.fill{font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 20}
+.msr.sz16{font-size:16px}
+#app{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+#tnav{position:fixed;top:0;left:0;right:0;z-index:100;height:56px;background:var(--semantic-color-light-mode-fill-static-brand-base,#2d4889);display:flex;align-items:center;justify-content:space-between;padding:0 16px;gap:8px}
+#shell{display:flex;flex:1;margin-top:56px;overflow:hidden;height:calc(100vh - 56px)}
+#snav{width:240px;flex-shrink:0;background:var(--semantic-color-light-mode-surface-nav-light,#fafafa);border-right:0.5px solid var(--semantic-color-light-mode-stroke-static-neutral-light,#f6f6f6);display:flex;flex-direction:column;overflow-y:auto}
+#main{flex:1;overflow-y:auto;background:#f5f3ef;padding:0 36px 56px}
+.tn-l,.tn-r{display:flex;align-items:center;gap:8px}
+.tn-home{background:transparent;border:none;padding:6px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fbfbfb;line-height:0}
+.tn-home:hover{background:rgba(10,18,35,0.16)}
+.tn-org{background:transparent;border:none;padding:8px 10px;border-radius:8px;color:#fbfbfb;font-size:14px;font-weight:500;display:flex;align-items:center;gap:4px;letter-spacing:0.3px}
+.tn-org:hover{background:rgba(10,18,35,0.16)}
+.tn-sep{width:0.5px;height:20px;background:rgba(251,251,251,0.24)}
+.tn-ic{background:transparent;border:none;width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fbfbfb}
+.tn-ic:hover{background:rgba(10,18,35,0.16)}
+.tn-av{background:var(--semantic-color-light-mode-fill-static-accent-amethyst-base,#dcd9ef);border:none;width:32px;height:32px;border-radius:50%;font-size:11px;font-weight:600;color:var(--semantic-color-light-mode-text-static-accent-amethyst-contrast,#221e3f);display:flex;align-items:center;justify-content:center}
+.sn-sec{padding:16px 12px 4px;font-size:11px;font-weight:600;letter-spacing:0.6px;text-transform:uppercase;color:var(--semantic-color-light-mode-text-static-secondary-subtle,#606060)}
+.sn-item{display:flex;align-items:center;gap:12px;min-height:44px;padding:0 16px;width:100%;background:transparent;border:none;font-size:14px;font-weight:400;letter-spacing:0.3px;color:var(--semantic-color-light-mode-text-static-secondary-base,#484848);position:relative;text-align:left}
+.sn-item:hover{background:rgba(0,0,0,0.04)}
+.sn-item.act{background:var(--semantic-color-light-mode-fill-action-tertiary-base,#eef2fb);color:var(--semantic-color-light-mode-text-contextual-navitem-active,#1b2d57);font-weight:500}
+.sn-item.act::before{content:'';position:absolute;left:0;top:4px;bottom:4px;width:4px;background:var(--semantic-color-light-mode-fill-static-brand-base,#2d4889);border-radius:0 2px 2px 0}
+.sn-item .msr{color:var(--semantic-color-light-mode-icon-contextual-navitem-base,#484848)}
+.sn-item.act .msr{color:var(--semantic-color-light-mode-icon-contextual-navitem-active,#2d4889)}
+.pg-bc{font-size:14px;color:var(--semantic-color-light-mode-text-static-secondary-subtle,#606060);padding:16px 0 2px}
+.dbar{display:flex;align-items:center;justify-content:space-between;padding:8px 0 20px}
+.dbar-l{display:flex;align-items:center;gap:6px}
+.dbar-r{display:flex;align-items:center;gap:8px}
+.dbar-title{font-size:24px;font-weight:600;line-height:30px;color:var(--semantic-color-light-mode-text-static-primary-base,#202020)}
+.btn-gh{background:transparent;border:1px solid var(--semantic-color-light-mode-stroke-action-secondary-inverse-base,#d2d2d2);padding:0 12px;height:36px;border-radius:8px;font-size:14px;font-weight:500;color:var(--semantic-color-light-mode-text-static-primary-base,#202020);display:inline-flex;align-items:center;gap:6px}
+.btn-gh:hover{background:rgba(0,0,0,0.04)}
+.btn-pr{background:var(--semantic-color-light-mode-fill-action-primary-base,#4b6ec3);border:none;padding:0 14px;height:36px;border-radius:8px;font-size:14px;font-weight:500;color:#fff;display:inline-flex;align-items:center;gap:6px}
+.btn-pr:hover{background:var(--semantic-color-light-mode-fill-action-primary-hover,#5475c6)}
+.wgrid{display:flex;flex-direction:column;gap:16px}
+.wcard{background:#fff;border:0.5px solid var(--semantic-color-light-mode-stroke-action-secondary-inverse-base,#d2d2d2);border-radius:8px;overflow:visible}
+.wcard-hd{display:flex;align-items:center;justify-content:space-between;padding:12px 16px 10px;min-height:48px}
+.wcard-title{font-size:16px;font-weight:600;color:var(--semantic-color-light-mode-text-static-primary-base,#202020)}
+.wcard-acts{display:flex;align-items:center;gap:4px}
+.wic{background:transparent;border:none;width:32px;height:32px;border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--semantic-color-light-mode-text-static-secondary-subtle,#606060)}
+.wic:hover{background:rgba(0,0,0,0.06)}
+.wic .msr{font-size:18px}
+.wcard-body{padding:12px 16px 16px}
+.pay-mode-tag{display:inline-flex;align-items:center;gap:3px;padding:1px 7px;border-radius:99px;background:#eef2fb;color:#345499;font-size:11px;font-weight:600;margin-left:4px;vertical-align:middle;white-space:nowrap}
+.chips{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid var(--semantic-color-light-mode-stroke-action-secondary-inverse-base,#d2d2d2);border-radius:8px;background:#fff;font-size:13px;font-weight:500;color:var(--semantic-color-light-mode-text-static-secondary-base,#484848)}
+.chip:hover{background:rgba(0,0,0,0.04)}
+.chip .msr{font-size:16px;color:#606060}
+.vtog{display:inline-flex;border:1px solid var(--semantic-color-light-mode-stroke-action-secondary-inverse-base,#d2d2d2);border-radius:8px;overflow:hidden;background:#fff}
+.vtog button{padding:5px 12px;font-size:13px;font-weight:500;border:none;background:transparent;color:var(--semantic-color-light-mode-text-static-secondary-base,#484848);display:inline-flex;align-items:center;gap:5px;border-right:1px solid #d2d2d2}
+.vtog button:last-child{border-right:none}
+.vtog button.vact{background:var(--semantic-color-light-mode-fill-action-tertiary-base,#eef2fb);color:var(--semantic-color-light-mode-text-action-primary-base,#345499)}
+.vtog button .msr{font-size:15px}
+.kpi-row{display:flex;gap:16px;margin-bottom:14px;flex-wrap:wrap}
+.kpi-tile{flex:1;min-width:160px;border:0.5px solid #e8e8e8;border-radius:8px;padding:14px 16px}
+.kpi-lbl{font-size:12px;font-weight:500;color:#606060;margin-bottom:6px;letter-spacing:0.3px}
+.kpi-val{font-size:22px;font-weight:600;color:#202020;line-height:1.2}
+.kpi-sub{font-size:12px;color:#606060;margin-top:4px}
+.kpi-up{color:#1a7f3c}.kpi-dn{color:#c0392b}.kpi-warn{color:#e67e22}
+.wtbl{width:100%;border-collapse:collapse;font-size:14px}
+.wtbl th{font-size:12px;font-weight:600;color:#606060;letter-spacing:0.3px;text-align:left;padding:6px 8px 8px;border-bottom:1px solid #f0f0f0}
+.wtbl th.r{text-align:right}
+.wtbl td{padding:10px 8px;border-bottom:0.5px solid #f6f6f6;color:#202020;vertical-align:middle}
+.wtbl td.r{text-align:right;font-variant-numeric:tabular-nums}
+.wtbl tr:last-child td{border-bottom:none;font-weight:600}
+.bar-wrap{display:flex;flex-direction:column;gap:10px}
+.bar-row{display:flex;align-items:center;gap:10px;font-size:13px}
+.bar-lbl{width:180px;color:#484848;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-track{flex:1;height:10px;background:#f0f0f0;border-radius:5px;overflow:hidden}
+.bar-fill{height:100%;border-radius:5px;transition:width 0.3s}
+.bar-fill.gn{background:#4b6ec3}.bar-fill.am{background:#f5a623}.bar-fill.rd{background:#e74c3c}
+.bar-amt{width:80px;text-align:right;color:#484848;font-variant-numeric:tabular-nums}
+.alert-list{display:flex;flex-direction:column;gap:8px}
+.ac-cat{border:0.5px solid #e8e8e8;border-radius:8px;background:#fff;border-left:3px solid #e0e0e0;overflow:hidden}
+.ac-cat.sev-err{border-left-color:#c0392b}
+.ac-cat.sev-warn{border-left-color:#e67e22}
+.ac-hd{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;cursor:pointer;transition:background 0.15s;gap:10px}
+.ac-hd:hover{background:#f5f7fc}
+.ac-hd-l{flex:1;min-width:0}
+.ac-cat-title{font-size:14px;font-weight:600;color:#202020;margin-bottom:2px}
+.ac-cat-sub{font-size:12px;color:#888;line-height:1.4}
+.ac-hd-r{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.ac-count{font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;background:#f0f0f0;color:#606060}
+.ac-cat.sev-err .ac-count{background:#feeceb;color:#c0392b}
+.ac-cat.sev-warn .ac-count{background:#fff8e1;color:#b7620a}
+.ac-chev{font-size:18px;color:#888;transition:transform 0.2s;flex-shrink:0}
+.ac-cat.open .ac-chev{transform:rotate(180deg)}
+.ac-body{display:none;border-top:0.5px solid #f0f0f0}
+.ac-cat.open .ac-body{display:block}
+.ac-item{display:flex;align-items:center;justify-content:space-between;padding:10px 14px 10px 18px;cursor:pointer;border-bottom:0.5px solid #f6f6f6;transition:background 0.12s;gap:8px}
+.ac-item:last-child{border-bottom:none}
+.ac-item:hover{background:#f5f7fc}
+.ac-item-lbl{flex:1;font-size:13px;color:#484848;line-height:1.4}
+.ac-item-ic{font-size:16px;color:#bbb;flex-shrink:0}
+.sz-wrap{position:relative;display:inline-flex}
+.sz-pop{position:absolute;right:0;top:calc(100% + 6px);background:#fff;border:0.5px solid #e0e0e0;border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,0.14);padding:10px 8px;display:none;z-index:600;align-items:flex-end;gap:2px;white-space:nowrap}
+.sz-pop.open{display:flex}
+.sz-opt{display:flex;flex-direction:column;align-items:center;gap:8px;padding:8px 12px;border:2px solid transparent;background:transparent;border-radius:8px;cursor:pointer;font-size:11px;font-weight:500;color:#606060;font-family:'Red Hat Text',sans-serif;line-height:1.2;min-width:60px}
+.sz-opt:hover{background:rgba(0,0,0,0.04)}
+.sz-opt.sz-act{background:#eef2fb;color:#345499;border-color:#c5d2ef}
+.sz-ic-g{width:28px;height:13px;border-radius:3px;border:1.5px solid #aaa;background:#e8e8e8}
+.sz-opt.sz-act .sz-ic-g{border-color:#4b6ec3;background:#c5d2ef}
+.sz-ic-e{display:flex;gap:2px}
+.sz-ic-e span{width:12px;height:18px;border-radius:2px;border:1.5px solid #aaa;background:#e8e8e8;display:block}
+.sz-opt.sz-act .sz-ic-e span{border-color:#4b6ec3;background:#c5d2ef}
+.sz-ic-d{display:grid;grid-template-columns:1fr 1fr;gap:2px}
+.sz-ic-d span{width:11px;height:9px;border-radius:2px;border:1.5px solid #aaa;background:#e8e8e8;display:block}
+.sz-opt.sz-act .sz-ic-d span{border-color:#4b6ec3;background:#c5d2ef}
+.drawer{position:fixed;top:56px;right:0;bottom:0;width:360px;background:#fff;z-index:200;border-left:0.5px solid #d2d2d2;display:flex;flex-direction:column;transform:translateX(100%);transition:transform 260ms cubic-bezier(0.32,0.72,0,1);box-shadow:-4px 0 16px rgba(0,0,0,0.08)}
+.drawer.open{transform:translateX(0)}
+.dr-hd{display:flex;align-items:center;justify-content:space-between;padding:16px;border-bottom:0.5px solid #f0f0f0}
+.dr-hd h2{font-size:16px;font-weight:600;color:#202020}
+.dr-search{padding:12px 16px;border-bottom:0.5px solid #f0f0f0}
+.dr-srch-box{display:flex;align-items:center;gap:8px;padding:8px 10px;border:0.75px solid #d2d2d2;border-radius:6px;background:#fafafa}
+.dr-srch-box input{flex:1;border:none;outline:none;font-size:14px;font-family:'Red Hat Text',sans-serif;background:transparent}
+.dr-body{flex:1;overflow-y:auto;padding:8px 0}
+.dr-sec{padding:6px 16px 4px;font-size:11px;font-weight:600;letter-spacing:0.6px;text-transform:uppercase;color:#606060}
+.dr-widget{display:flex;align-items:center;gap:12px;padding:10px 16px;cursor:pointer;border:none;background:transparent;width:100%;text-align:left}
+.dr-widget:hover{background:rgba(0,0,0,0.04)}
+.dr-wic{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:#f4f2fa}
+.dr-wic .msr{font-size:18px;color:#6a5acd}
+.dr-winfo h4{font-size:14px;font-weight:500;color:#202020;margin-bottom:2px}
+.dr-winfo p{font-size:12px;color:#606060}
+.ov-bg{position:fixed;inset:0;background:rgba(0,0,0,0.32);z-index:150;opacity:0;pointer-events:none;transition:opacity 200ms}
+.ov-bg.open{opacity:1;pointer-events:all}
+.fs-modal{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.56);display:none;align-items:center;justify-content:center}
+.fs-modal.open{display:flex}
+.fs-inner{background:#fff;border-radius:12px;width:90vw;max-width:1200px;max-height:88vh;overflow:hidden;display:flex;flex-direction:column}
+.fs-hd{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:0.5px solid #f0f0f0}
+.fs-hd h2{font-size:18px;font-weight:600;color:#202020}
+.fs-body{flex:1;overflow-y:auto;padding:20px}
+.ddm{position:fixed;z-index:400;background:#fff;border:0.5px solid #e0e0e0;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.12);min-width:180px;padding:6px 0}
+.ddm-item{display:flex;align-items:center;gap:10px;padding:9px 14px;font-size:14px;color:#202020;cursor:pointer;border:none;background:transparent;width:100%;text-align:left}
+.ddm-item:hover{background:rgba(0,0,0,0.04)}
+.ddm-item .msr{font-size:16px;color:#606060}
+.ddm-sep{height:0.5px;background:#f0f0f0;margin:4px 0}
+.ddm-item.danger{color:#c0392b}.ddm-item.danger .msr{color:#c0392b}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600}
+.badge.rd{background:#feeceb;color:#c0392b}
+.badge.gn{background:#f0faf1;color:#1a7f3c}
+.badge.am{background:#fff8e1;color:#b7620a}
+.badge.bl{background:#eef2fb;color:#345499}
+.al-fields{margin-top:10px;padding:10px 12px;background:#fafafa;border-radius:6px;border:0.5px solid #ebebeb;display:flex;flex-direction:column;gap:6px}
+.al-field{display:flex;gap:8px;font-size:13px}
+.al-field-lbl{color:#888;font-weight:500;min-width:130px;flex-shrink:0}
+.al-field-val{color:#484848;line-height:1.5}
+#al-modal{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.48);display:none;align-items:center;justify-content:center}
+#al-modal.open{display:flex}
+.al-modal-inner{background:#fff;border-radius:12px;width:520px;max-width:94vw;max-height:88vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 16px 48px rgba(0,0,0,0.2)}
+.al-modal-hd{display:flex;align-items:flex-start;justify-content:space-between;padding:20px 20px 14px;gap:12px;border-bottom:0.5px solid #f0f0f0}
+.al-modal-hd-text{flex:1}
+.al-modal-sev{font-size:11px;font-weight:700;letter-spacing:0.5px;margin-bottom:6px;text-transform:uppercase}
+.al-modal-sev.err{color:#c0392b}.al-modal-sev.warn{color:#b7620a}
+.al-modal-title{font-size:16px;font-weight:600;color:#202020;line-height:1.35}
+.al-modal-body{flex:1;overflow-y:auto;padding:16px 20px 20px}
+.al-modal-desc{font-size:14px;color:#484848;line-height:1.6;margin-bottom:14px}
+.al-modal-ft{padding:14px 20px;border-top:0.5px solid #f0f0f0;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.al-modal-btn{padding:7px 16px;border-radius:8px;font-size:13px;font-weight:500;font-family:'Red Hat Text',sans-serif;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+.al-modal-btn.pr{background:#4b6ec3;border:none;color:#fff}.al-modal-btn.pr:hover{background:#5475c6}
+.al-modal-btn.gh{background:transparent;border:1px solid #d2d2d2;color:#202020}.al-modal-btn.gh:hover{background:rgba(0,0,0,0.04)}
+.al-modal-close{background:transparent;border:none;width:32px;height:32px;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#606060;cursor:pointer;flex-shrink:0}
+.al-modal-close:hover{background:rgba(0,0,0,0.06)}
+.al-po-hd-title{font-size:16px;font-weight:600;color:#202020;display:flex;align-items:center;flex-wrap:wrap;gap:8px;line-height:1.35}
+.al-po-status{display:inline-flex;align-items:center;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:600;white-space:nowrap}
+.al-po-status.act{background:#fff8e1;color:#b7620a}
+.al-po-status.rej{background:#feeceb;color:#c0392b}
+.al-po-status.pos{background:#f0faf1;color:#1a7f3c}
+.al-po-b{display:flex;flex-direction:column;gap:16px;padding:14px 20px 4px}
+.al-po-facts{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px}
+.al-po-fact{display:flex;flex-direction:column;gap:2px}
+.al-po-fact-k{font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:#999;font-weight:600}
+.al-po-fact-v{font-size:13px;color:#202020;font-weight:500}
+.al-po-sec{display:flex;flex-direction:column;gap:8px}
+.al-po-sec-h{font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:#999;font-weight:600}
+.al-po-lines{border:0.5px solid #e8e8e8;border-radius:9px;overflow:hidden}
+.al-po-line{display:flex;align-items:center;gap:12px;padding:8px 12px;border-bottom:0.5px solid #f0f0f0;font-size:13px}
+.al-po-line:last-child{border-bottom:none}
+.al-po-line-d{flex:1;color:#202020;line-height:1.4}
+.al-po-line-q{flex:0 0 auto;color:#999;font-size:12px;font-variant-numeric:tabular-nums}
+.al-po-line-a{flex:0 0 80px;text-align:right;font-weight:600;color:#202020;font-variant-numeric:tabular-nums}
+.al-po-line.tot{background:#fafafa}
+.al-po-line.tot .al-po-line-d{font-weight:700}
+.al-po-line.tot .al-po-line-a{font-weight:700}
+.al-po-trail{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:0}
+.al-po-step{display:flex;align-items:flex-start;gap:10px;padding:4px 0;position:relative}
+.al-po-step:not(:last-child)::before{content:"";position:absolute;left:9px;top:24px;bottom:-4px;width:2px;background:#f0f0f0}
+.al-po-step-ic{font-size:20px;flex:0 0 auto;color:#d0d0d0}
+.al-po-step.done .al-po-step-ic{color:#4b6ec3}
+.al-po-step-tx{display:flex;flex-direction:column;gap:1px;padding-top:2px}
+.al-po-step-l{font-size:13px;font-weight:600;color:#202020}
+.al-po-step-w{font-size:12px;color:#888;line-height:1.4}
+.al-modal-btn.danger{background:transparent;border:1px solid #d2d2d2;color:#c0392b}
+.al-modal-btn.danger:hover{background:#feeceb;border-color:#e8a49a}
+/* ── Financial KPI Cards — compact glance layout ───── */
+.kpi-cards-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.kpi-card{border:0.5px solid #e8e8e8;border-radius:10px;padding:12px 14px 11px;background:#fafafa;display:flex;flex-direction:column;gap:0;position:relative;min-width:0}
+.kpi-card-lbl{font-size:10px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:#999;padding-right:20px;margin-bottom:3px}
+.kpi-card-val{font-size:21px;font-weight:700;color:#202020;line-height:1.15;font-variant-numeric:tabular-nums;margin-bottom:5px}
+.kpi-card-meta{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.kpi-card-py{font-size:11px;color:#999;font-variant-numeric:tabular-nums}
+.kpi-card-meta-sep{font-size:11px;color:#d0d0d0}
+.kpi-card-var{display:inline-flex;align-items:center;gap:2px;font-size:11px;font-weight:700;border-radius:99px;padding:1px 7px;white-space:nowrap}
+.kpi-card-var.fav{background:#f0faf1;color:#1a7f3c}
+.kpi-card-var.unfav{background:#feeceb;color:#c0392b}
+.kpi-card-var.neu{background:#f4f4f4;color:#606060}
+.kpi-card-runway{margin-top:8px;padding:6px 10px;background:#eef2fb;border-radius:7px;display:flex;align-items:center;gap:7px;min-width:0}
+.kpi-card-runway-lbl{font-size:9.5px;text-transform:uppercase;letter-spacing:0.05em;font-weight:700;color:#6a85c8;white-space:nowrap;flex-shrink:0}
+.kpi-card-runway-val{font-size:14px;font-weight:700;color:#2d4889;white-space:nowrap;flex-shrink:0}
+.kpi-card-runway-sep{font-size:11px;color:#b8c8ef;flex-shrink:0}
+.kpi-card-runway-note{font-size:10px;color:#7890cc;line-height:1.3;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kpi-warn-wrap{position:absolute;top:12px;right:12px;display:flex;align-items:center;cursor:default}
+.kpi-warn-wrap .msr{color:#e67e22;font-size:16px}
+.kpi-warn-tip{position:absolute;top:calc(100% + 6px);right:0;z-index:60;background:#fff;border:0.5px solid #eed5b0;border-radius:9px;box-shadow:0 6px 20px rgba(0,0,0,0.13);padding:11px 13px;width:270px;display:none;pointer-events:auto;text-align:left}
+.kpi-warn-tip-acct.clickable{cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:6px}
+.kpi-warn-tip-acct.clickable:hover{background:#fff3e0;border-color:#f0c07a}
+.kpi-warn-tip-hd{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#b7620a;margin-bottom:5px;display:flex;align-items:center;gap:4px}
+.kpi-warn-tip-body{font-size:12px;color:#484848;line-height:1.55}
+.kpi-warn-tip-acct{margin-top:6px;padding:7px 9px;background:#fff8e1;border-radius:6px;border:0.5px solid #f5d788}
+.kpi-warn-tip-acct-name{font-size:12px;font-weight:600;color:#202020}
+.kpi-warn-tip-acct-date{font-size:11.5px;color:#b7620a;margin-top:1px}
+/* ── KPI Filter Chip ───────────────────────────────── */
+.kpi-flt-wrap{position:relative;display:inline-flex;margin-bottom:8px}
+.kpi-flt-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border:1px solid #d2d2d2;border-radius:8px;background:#fff;font-size:12px;font-weight:500;color:#484848;cursor:pointer;font-family:'Red Hat Text',sans-serif}
+.kpi-flt-chip:hover{background:rgba(0,0,0,0.04)}
+.kpi-flt-pop{position:absolute;left:0;top:calc(100% + 6px);background:#fff;border:0.5px solid #e0e0e0;border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,0.14);padding:8px 0;display:none;z-index:620;min-width:200px}
+.kpi-flt-pop.open{display:block}
+.kpi-flt-scope{font-size:11px;font-weight:700;color:#606060;padding:4px 16px 8px;letter-spacing:0.3px}
+.kpi-flt-opt{display:flex;align-items:center;gap:10px;width:100%;padding:8px 16px;border:none;background:transparent;font-size:14px;color:#202020;cursor:pointer;font-family:'Red Hat Text',sans-serif;text-align:left}
+.kpi-flt-opt:hover{background:rgba(0,0,0,0.04)}
+.kpi-flt-opt .msr{font-size:18px;color:#4b6ec3;flex-shrink:0}
+.kpi-flt-opt.kpi-flt-unsel .msr{visibility:hidden}
+.kpi-flt-sep{height:0.5px;background:#f0f0f0;margin:4px 0}
+.kpi-flt-sr{justify-content:space-between}
+.kpi-flt-sr-arrow{font-size:16px;color:#888}
+/* ── Special Report Modal ───────────────────────────── */
+#sr-modal{position:fixed;inset:0;z-index:800;background:rgba(0,0,0,0.48);display:none;align-items:center;justify-content:center}
+#sr-modal.open{display:flex}
+.sr-inner{background:#fff;border-radius:12px;width:580px;max-width:94vw;box-shadow:0 16px 48px rgba(0,0,0,0.2);display:flex;flex-direction:column;overflow:hidden}
+.sr-hd{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 14px;border-bottom:0.5px solid #f0f0f0}
+.sr-hd-left{display:flex;align-items:center;gap:10px}
+.sr-hd-left .msr{font-size:20px;color:#606060}
+.sr-hd h2{font-size:16px;font-weight:600;color:#202020}
+.sr-close{background:transparent;border:none;width:32px;height:32px;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#606060;cursor:pointer;flex-shrink:0}
+.sr-close:hover{background:rgba(0,0,0,0.06)}
+.sr-note{margin:16px 20px 0;padding:10px 12px;background:#f5f7ff;border:0.5px solid #c5d2ef;border-radius:8px;display:flex;align-items:flex-start;gap:8px;font-size:13px;color:#484848;line-height:1.5}
+.sr-note .msr{font-size:18px;color:#4b6ec3;flex-shrink:0;margin-top:1px}
+.sr-body{padding:20px 20px 8px;display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.sr-field{display:flex;flex-direction:column;gap:6px}
+.sr-lbl{font-size:12px;font-weight:500;color:#606060}
+.sr-select{border:1px solid #d2d2d2;border-radius:6px;padding:9px 10px;font-size:13px;font-family:'Red Hat Text',sans-serif;color:#202020;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24'%3E%3Cpath fill='%23888' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E") no-repeat right 8px center;appearance:none;width:100%;box-sizing:border-box;cursor:pointer}
+.sr-select:disabled{background-color:#f8f8f8;color:#aaa;cursor:not-allowed}
+.sr-ft{padding:14px 20px 20px;display:flex;gap:8px;justify-content:flex-end}
+/* ── Payment Modal ──────────────────────────────────── */
+#pay-modal{position:fixed;inset:0;z-index:600;background:rgba(0,0,0,0.52);display:none;align-items:center;justify-content:center}
+#pay-modal.open{display:flex}
+.pay-inner{background:#fff;border-radius:12px;width:600px;max-width:94vw;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 16px 48px rgba(0,0,0,0.24)}
+.pay-hd{display:flex;align-items:flex-start;justify-content:space-between;padding:18px 20px 14px;border-bottom:0.5px solid #f0f0f0;gap:12px}
+.pay-hd-left{flex:1;min-width:0}
+.pay-hd-eyebrow{font-size:10.5px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:#b7620a;margin-bottom:5px}
+.pay-hd-title{font-size:16px;font-weight:700;color:#202020;line-height:1.3}
+.pay-hd-sub{font-size:13px;color:#888;margin-top:2px}
+.pay-close{background:transparent;border:none;width:32px;height:32px;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#606060;cursor:pointer;flex-shrink:0}
+.pay-close:hover{background:rgba(0,0,0,0.06)}
+.pay-inv-bar{display:grid;grid-template-columns:1fr 1fr 1fr;background:#fafafa;border-bottom:0.5px solid #ebebeb}
+.pay-inv-cell{padding:9px 16px;display:flex;flex-direction:column;gap:2px;border-right:0.5px solid #ebebeb}
+.pay-inv-cell:last-child{border-right:none}
+.pay-inv-k{font-size:9.5px;text-transform:uppercase;letter-spacing:0.06em;font-weight:700;color:#aaa}
+.pay-inv-v{font-size:13px;font-weight:600;color:#202020;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pay-inv-v.red{color:#c0392b}
+.pay-body{flex:1;overflow-y:auto;padding:18px 20px 8px}
+.pay-method-bar{display:flex;border:1px solid #d2d2d2;border-radius:8px;overflow:hidden;margin-bottom:18px}
+.pay-m-btn{flex:1;padding:9px 4px 7px;font-size:11px;font-weight:600;border:none;background:transparent;color:#888;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;border-right:1px solid #d2d2d2;font-family:'Red Hat Text',sans-serif;line-height:1.2}
+.pay-m-btn:last-child{border-right:none}
+.pay-m-btn .msr{font-size:20px}
+.pay-m-btn.act{background:#eef2fb;color:#2d4889}
+.pay-m-btn.act .msr{color:#4b6ec3}
+.pay-form{display:flex;flex-direction:column;gap:13px;padding-bottom:8px}
+.pay-f-row{display:flex;gap:12px}
+.pay-f-field{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0}
+.pay-f-lbl{font-size:11.5px;font-weight:500;color:#606060}
+.pay-f-input{border:1px solid #d2d2d2;border-radius:6px;padding:8px 10px;font-size:13px;font-family:'Red Hat Text',sans-serif;color:#202020;background:#fff;outline:none;width:100%;box-sizing:border-box}
+.pay-f-input:focus{border-color:#4b6ec3;box-shadow:0 0 0 3px rgba(75,110,195,0.1)}
+.pay-f-input[readonly]{background:#f8f8f8;color:#888}
+.pay-f-select{border:1px solid #d2d2d2;border-radius:6px;padding:8px 10px;font-size:13px;font-family:'Red Hat Text',sans-serif;color:#202020;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24'%3E%3Cpath fill='%23888' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E") no-repeat right 8px center;appearance:none;width:100%;box-sizing:border-box}
+.pay-info-note{background:#f0f4ff;border:0.5px solid #c5d2ef;border-radius:7px;padding:9px 12px;font-size:12px;color:#4b6ec3;display:flex;align-items:flex-start;gap:7px;line-height:1.5;margin-top:2px}
+.pay-info-note .msr{font-size:16px;flex-shrink:0;margin-top:1px}
+.pay-chk-row{display:flex;align-items:center;gap:8px}
+.pay-chk-row input[type=checkbox]{width:15px;height:15px;accent-color:#4b6ec3;flex-shrink:0}
+.pay-chk-row label{font-size:13px;color:#484848;cursor:pointer}
+.pay-ft{padding:14px 20px;border-top:0.5px solid #f0f0f0;display:flex;gap:8px;justify-content:flex-end}
+/* ── ACH Verification Report Modal ─────────────────── */
+#ach-modal{position:fixed;inset:0;z-index:650;background:rgba(0,0,0,0.56);display:none;align-items:center;justify-content:center}
+#ach-modal.open{display:flex}
+.ach-inner{background:#f4f2ef;border-radius:12px;width:96vw;max-width:1340px;height:92vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,0.28)}
+.ach-topbar{display:flex;align-items:center;gap:12px;padding:0 20px;height:52px;background:#fff;border-bottom:0.5px solid #e0e0e0;flex-shrink:0}
+.ach-back-btn{background:transparent;border:none;display:inline-flex;align-items:center;gap:5px;font-size:13px;font-weight:500;color:#606060;cursor:pointer;padding:5px 8px;border-radius:6px;font-family:'Red Hat Text',sans-serif}
+.ach-back-btn:hover{background:rgba(0,0,0,0.06)}
+.ach-back-btn .msr{font-size:16px}
+.ach-topbar-sep{width:0.5px;height:20px;background:#e0e0e0}
+.ach-topbar-title{flex:1;font-size:16px;font-weight:600;color:#202020}
+.ach-topbar-tools{display:flex;align-items:center;gap:4px}
+.ach-body{flex:1;overflow:hidden}
+.ach-frame{width:100%;height:100%;border:none;display:block}
+.ach-footer{display:flex;gap:8px;justify-content:flex-end;align-items:center;padding:14px 20px;border-top:0.5px solid #e0e0e0;background:#fff;flex-shrink:0}
+/* ── Payment Voucher Modal ──────────────────────────── */
+#voucher-modal{position:fixed;inset:0;z-index:660;background:rgba(0,0,0,0.62);display:none;align-items:center;justify-content:center}
+#voucher-modal.open{display:flex}
+/* ── Finalize / Check Register Modal ───────────────── */
+#finalize-modal{position:fixed;inset:0;z-index:670;background:rgba(0,0,0,0.56);display:none;align-items:center;justify-content:center}
+#finalize-modal.open{display:flex}
+/* ── Finalize Post Modal ────────────────────────────── */
+#post-modal{position:fixed;inset:0;z-index:680;background:rgba(0,0,0,0.56);display:none;align-items:center;justify-content:center}
+#post-modal.open{display:flex}
+/* ── Budget Report Modal ────────────────────────────── */
+#budget-modal{position:fixed;inset:0;z-index:510;background:rgba(0,0,0,0.56);display:none;align-items:center;justify-content:center}
+#budget-modal.open{display:flex}
+.post-date-grp{display:flex;flex-direction:column;gap:2px;flex-shrink:0}
+.post-date-lbl{font-size:9px;font-weight:700;color:#c0392b;text-transform:uppercase;letter-spacing:0.3px}
+.post-date-input{border:1px solid #d2d2d2;border-radius:5px;padding:4px 8px;font-size:12px;font-family:'Red Hat Text',sans-serif;color:#202020;outline:none;width:130px}
+.post-date-input:focus{border-color:#4b6ec3;box-shadow:0 0 0 2px rgba(75,110,195,0.12)}
+.post-chk-wrap{display:flex;align-items:center;gap:7px;font-size:12.5px;color:#202020}
+.post-chk-wrap input[type=checkbox]{width:14px;height:14px;accent-color:#4b6ec3;flex-shrink:0;cursor:pointer}
+.post-chk-wrap label{cursor:pointer}
+.post-help-btn{background:transparent;border:1px solid #bbb;border-radius:50%;width:18px;height:18px;font-size:10px;font-weight:700;color:#606060;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0;flex-shrink:0;font-family:'Red Hat Text',sans-serif}
+.post-help-btn:hover{background:#f4f4f4}
+/* ── Bank Reconciliation Report Modal ───────────────── */
+#recon-modal{position:fixed;inset:0;z-index:700;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center}
+#recon-modal.open{display:flex}
+.recon-inner{background:#f4f2ef;border-radius:12px;width:96vw;max-width:1280px;height:90vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 24px 64px rgba(0,0,0,0.28)}
+.recon-topbar{display:flex;align-items:center;gap:12px;padding:0 20px;height:52px;background:#fff;border-bottom:0.5px solid #e0e0e0;flex-shrink:0}
+.recon-close-btn{background:transparent;border:none;display:inline-flex;align-items:center;gap:5px;font-size:13px;font-weight:500;color:#606060;cursor:pointer;padding:5px 8px;border-radius:6px}
+.recon-close-btn:hover{background:rgba(0,0,0,0.06)}
+.recon-close-btn .msr{font-size:16px}
+.recon-topbar-sep{width:0.5px;height:20px;background:#e0e0e0}
+.recon-topbar-title{flex:1;font-size:16px;font-weight:600;color:#202020}
+.recon-topbar-btns{display:flex;align-items:center;gap:8px}
+.recon-body{display:flex;flex:1;min-height:0;overflow:hidden}
+/* Left: config panel */
+.recon-cfg{width:380px;flex-shrink:0;background:#fff;border-right:0.5px solid #e0e0e0;display:flex;flex-direction:column;overflow:hidden}
+.recon-cfg-hd{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 0;flex-shrink:0}
+.recon-cfg-lbl{font-size:10px;font-weight:700;letter-spacing:0.7px;text-transform:uppercase;color:#999}
+.recon-tabs{display:flex;padding:0 16px;margin-top:4px;border-bottom:0.5px solid #e8e8e8;flex-shrink:0}
+.recon-tab{padding:10px 0;margin-right:20px;font-size:13px;font-weight:500;color:#888;background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;position:relative;top:0.5px;white-space:nowrap}
+.recon-tab.act{color:#4b6ec3;border-bottom-color:#4b6ec3;font-weight:600}
+.recon-form{flex:1;overflow-y:auto;padding:16px}
+.rf-field{margin-bottom:14px}
+.rf-lbl{font-size:11.5px;font-weight:500;color:#606060;margin-bottom:5px}
+.rf-input{width:100%;border:1px solid #d2d2d2;border-radius:6px;padding:8px 10px;font-size:13px;font-family:'Red Hat Text',sans-serif;color:#202020;background:#fff;outline:none;box-sizing:border-box}
+.rf-input:focus{border-color:#4b6ec3;box-shadow:0 0 0 3px rgba(75,110,195,0.1)}
+.rf-select{width:100%;border:1px solid #d2d2d2;border-radius:6px;padding:8px 10px;font-size:13px;font-family:'Red Hat Text',sans-serif;color:#202020;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24'%3E%3Cpath fill='%23888' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E") no-repeat right 8px center;appearance:none;box-sizing:border-box;cursor:pointer}
+.rf-chips-box{display:flex;flex-wrap:wrap;gap:5px;border:1px solid #d2d2d2;border-radius:6px;padding:7px 8px;background:#fff;cursor:pointer;align-items:center}
+.rf-chip{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;background:#eef2fb;border-radius:12px;font-size:11.5px;color:#345499;font-weight:500}
+.rf-chip-x{font-size:13px;color:#8a9ed4;cursor:pointer;font-family:'Material Symbols Rounded';font-variation-settings:'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 20;line-height:1}
+.rf-row{display:flex;gap:10px}
+.rf-row .rf-field{flex:1;margin-bottom:0}
+.rf-radio{display:flex;flex-direction:column;gap:8px}
+.rf-radio-opt{display:flex;align-items:center;gap:8px;font-size:13px;color:#202020;cursor:pointer}
+.rf-radio-opt input[type=radio]{accent-color:#4b6ec3;width:15px;height:15px;flex-shrink:0}
+/* Right: preview panel */
+.recon-pv{flex:1;min-width:0;background:#f4f2ef;display:flex;flex-direction:column;overflow:hidden}
+.recon-pv-hd{padding:16px 20px 10px;flex-shrink:0;font-size:13px;font-weight:600;color:#888;letter-spacing:0.2px}
+.recon-pv-body{flex:1;overflow-y:auto;padding:0 20px 20px}
+.recon-rpt{background:#fff;border:0.5px solid #e0e0e0;border-radius:8px;padding:28px 32px;max-width:720px;margin:0 auto}
+.recon-rpt-title{font-size:17px;font-weight:700;color:#202020;margin-bottom:2px}
+.recon-rpt-org{font-size:13px;color:#888;margin-bottom:22px}
+.recon-sum-hd{font-size:13px;font-weight:700;color:#202020;margin-bottom:8px;border-bottom:1.5px solid #d0d0d0;padding-bottom:5px}
+.recon-sum-tbl{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:22px}
+.recon-sum-tbl td{padding:3px 0;color:#202020}
+.recon-sum-tbl td:last-child{text-align:right;font-variant-numeric:tabular-nums}
+.recon-sum-tbl tr.bold td{font-weight:700;padding-top:7px;border-top:1px solid #ccc}
+.recon-tx-tbl{width:100%;border-collapse:collapse;font-size:12px}
+.recon-tx-tbl th{text-align:left;padding:5px 6px;border-bottom:2px solid #202020;font-size:12px;font-weight:700;color:#202020;white-space:nowrap}
+.recon-tx-tbl th.r,.recon-tx-tbl td.r{text-align:right}
+.recon-tx-tbl td{padding:5px 6px;border-bottom:0.5px solid #e8e8e8;color:#202020;vertical-align:middle;font-variant-numeric:tabular-nums}
+.recon-tx-tbl .recon-tx-neg{color:#c0392b}
+.recon-tx-tbl tr.recon-tx-sum td{font-weight:700;border-top:1.5px solid #d0d0d0;border-bottom:none;padding-top:7px}
+.recon-pv-note{padding:8px 20px 14px;font-size:11.5px;color:#aaa;text-align:right;flex-shrink:0}
+.recon-pv-note a{color:#4b6ec3;font-weight:600;cursor:pointer}
+.recon-page-sep{display:flex;align-items:center;gap:12px;margin:20px 0;color:#bbb;font-size:11px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase}
+.recon-page-sep::before,.recon-page-sep::after{content:'';flex:1;height:1px;background:#d8d4cf}
+/* ── KPI inline info tooltip ────────────────────────── */
+.kpi-info-wrap{position:relative;display:inline-flex;align-items:center;cursor:default;flex-shrink:0}
+.kpi-info-wrap .msr{color:#c0c0c0;transition:color 0.15s}
+.kpi-info-wrap:hover .msr{color:#4b6ec3}
+.kpi-info-tip{position:absolute;top:calc(100% + 6px);right:0;z-index:60;background:#fff;border:0.5px solid #c5d2ef;border-radius:9px;box-shadow:0 6px 20px rgba(0,0,0,0.13);padding:10px 12px;width:230px;display:none;pointer-events:none;font-size:12px;color:#484848;line-height:1.55;white-space:normal;text-align:left}
+.kpi-info-wrap:hover .kpi-info-tip,.kpi-info-wrap:focus .kpi-info-tip{display:block}
+/* ── Unreconciled accounts — count badge & degraded card ─ */
+.kpi-warn-badge{position:absolute;top:-5px;right:-5px;background:#c0392b;color:#fff;font-size:9px;font-weight:700;border-radius:99px;padding:1px 4px;min-width:14px;height:14px;display:inline-flex;align-items:center;justify-content:center;line-height:1;border:1.5px solid #fff;z-index:1}
+.kpi-warn-tip-cta{display:inline-flex;align-items:center;gap:5px;margin-top:8px;padding:5px 10px;background:#4b6ec3;border:none;border-radius:6px;color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:'Red Hat Text',sans-serif;width:100%;justify-content:center}
+.kpi-warn-tip-cta:hover{background:#5475c6}
+.kpi-card-val.kpi-val-degraded{text-decoration:line-through;color:#c0392b;opacity:0.65}
+.kpi-card-val.kpi-val-unavail{color:#bbb}
+.kpi-card-degrade{margin-top:8px;padding:8px 10px;background:#feeceb;border-radius:7px;border:0.5px solid #f5a9a0;display:flex;flex-direction:column;gap:3px}
+.kpi-card-degrade-hd{font-size:9.5px;font-weight:700;color:#c0392b;text-transform:uppercase;letter-spacing:0.4px}
+.kpi-card-degrade-body{font-size:11px;color:#484848;line-height:1.45}
+.kpi-card-degrade-cta{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:600;color:#c0392b;background:transparent;border:none;cursor:pointer;padding:0;font-family:'Red Hat Text',sans-serif;margin-top:3px}
+.kpi-card-degrade-cta:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+<div id="app">
+  <header id="tnav">
+    <div class="tn-l">
+      <button class="tn-home" title="Amplify Home">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M10.55 2.533a2.25 2.25 0 012.9 0l6.75 5.84A2.25 2.25 0 0121 10.09V19.5a1.5 1.5 0 01-1.5 1.5H15a1.5 1.5 0 01-1.5-1.5V15h-3v4.5A1.5 1.5 0 019 21H4.5A1.5 1.5 0 013 19.5v-9.41a2.25 2.25 0 01.8-1.717l6.75-5.84z" fill="#fbfbfb"/></svg>
+      </button>
+      <span class="tn-sep"></span>
+      <button class="tn-org">Grace Community Church <span class="msr sz16">expand_more</span></button>
+    </div>
+    <div class="tn-r">
+      <button class="tn-ic" title="Search"><span class="msr">search</span></button>
+      <button class="tn-ic" title="Help"><span class="msr">help</span></button>
+      <button class="tn-ic" title="Notifications"><span class="msr">notifications</span></button>
+      <button class="tn-av" title="Jo Lopez">JL</button>
+    </div>
+  </header>
+  <div id="shell">
+    <nav id="snav">
+      <div class="sn-sec">Accounting</div>
+      <button class="sn-item act"><span class="msr fill">dashboard</span><span>Dashboard</span></button>
+      <button class="sn-item"><span class="msr fill">account_balance</span><span>Funds & Accounts</span></button>
+      <button class="sn-item"><span class="msr fill">receipt_long</span><span>Transactions</span></button>
+      <button class="sn-item"><span class="msr fill">bar_chart</span><span>Budget</span></button>
+      <button class="sn-item"><span class="msr fill">payments</span><span>Payroll</span></button>
+      <button class="sn-item"><span class="msr fill">volunteer_activism</span><span>Giving</span></button>
+      <button class="sn-item"><span class="msr fill">group</span><span>Members</span></button>
+      <button class="sn-item"><span class="msr fill">settings</span><span>Settings</span></button>
+    </nav>
+    <main id="main">
+      <p class="pg-bc">Accounting Home</p>
+      <div class="dbar">
+        <div class="dbar-l">
+          <span class="dbar-title">Dashboard</span>
+          <button class="tn-ic" style="color:#484848;margin-left:2px"><span class="msr">expand_more</span></button>
+        </div>
+        <div class="dbar-r">
+          <button class="btn-gh" onclick="openDr()"><span class="msr sz16">search</span> Find a widget <span class="msr sz16">expand_more</span></button>
+          <button class="btn-gh"><span class="msr sz16">refresh</span> Refresh</button>
+          <button class="btn-pr"><span class="msr sz16">space_dashboard</span> Edit Dashboard</button>
+        </div>
+      </div>
+      <div class="wgrid">
+
+        <!-- Financial KPI v3 — Always-top, no resize/kebab -->
+        <div class="wcard" id="w-kpi3">
+          <div class="wcard-hd">
+            <span class="wcard-title">Financial KPI v3</span>
+            <div class="wcard-acts">
+              <button class="wic" title="Refresh"><span class="msr">refresh</span></button>
+              <button id="recon-demo-btn" onclick="cycleReconState()" title="Demo: cycle through reconciliation states" style="display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 9px;border:1px solid #b7dfc4;border-radius:6px;background:#f0faf1;font-size:11px;font-weight:600;color:#1a7f3c;cursor:pointer;font-family:'Red Hat Text',sans-serif;white-space:nowrap">
+                <span class="msr" id="recon-demo-ic" style="font-size:13px;color:#1a7f3c">check_circle</span>
+                <span id="recon-demo-lbl">All reconciled</span>
+                <span class="msr" style="font-size:11px">chevron_right</span>
+              </button>
+            </div>
+          </div>
+          <div class="wcard-body">
+            <div class="kpi-cards-row">
+
+              <!-- Card 1: Total Income -->
+              <div class="kpi-card">
+                <div class="kpi-card-lbl">Total Income — YTD</div>
+                <div class="kpi-card-val">$1,824,350</div>
+                <div class="kpi-card-meta">
+                  <span class="kpi-card-py">Prev yr $1,682,400</span>
+                  <span class="kpi-card-meta-sep">·</span>
+                  <span class="kpi-card-var fav">↑ 8.4%</span>
+                </div>
+              </div>
+
+              <!-- Card 2: Total Expenses -->
+              <div class="kpi-card">
+                <div class="kpi-card-lbl">Total Expenses — YTD</div>
+                <div class="kpi-card-val">$1,681,550</div>
+                <div class="kpi-card-meta">
+                  <span class="kpi-card-py">Prev yr $1,598,200</span>
+                  <span class="kpi-card-meta-sep">·</span>
+                  <span class="kpi-card-var unfav">↑ 5.2%</span>
+                </div>
+              </div>
+
+              <!-- Card 3: Net Income -->
+              <div class="kpi-card">
+                <div class="kpi-card-lbl">Net Income — YTD</div>
+                <div class="kpi-card-val">$142,800</div>
+                <div class="kpi-card-meta">
+                  <span class="kpi-card-py">Prev yr $84,200</span>
+                  <span class="kpi-card-meta-sep">·</span>
+                  <span class="kpi-card-var fav">↑ 69.6%</span>
+                </div>
+              </div>
+
+              <!-- Card 4: Cash Position — months as primary metric -->
+              <!--
+                Formula: Total Cash ÷ Avg Monthly OpEx (trailing 3 months)
+                  $3,224,350 ÷ $358,000 = 9.01 → displayed as 9 months
+                If fewer than 3 months of expense history are available,
+                the green strip label changes to "Trailing N mo" and a
+                note explains the limited history period used.
+              -->
+              <div class="kpi-card" id="kpi3-cash-card">
+                <div class="kpi-card-lbl">Cash Position</div>
+                <!-- Warning icon — dynamically updated by cycleReconState() -->
+                <div class="kpi-warn-wrap" id="kpi3-warn-wrap" tabindex="0"></div>
+                <div class="kpi-card-val" id="kpi3-val">9 <span style="font-size:13px;font-weight:500;color:#606060;letter-spacing:0">months</span></div>
+                <div class="kpi-card-meta" id="kpi3-meta">
+                  <span class="kpi-card-py">of operating runway</span>
+                  <span class="kpi-info-wrap" tabindex="0">
+                    <span class="msr" style="font-size:14px">info</span>
+                    <span class="kpi-info-tip">Avg monthly operating expenses calculated using May – Jul 2026 (3 months).</span>
+                  </span>
+                </div>
+                <div id="kpi3-degrade" style="display:none"></div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- Financial KPI v4 — 5-tier unreconciled account warning system -->
+        <div class="wcard" id="w-kpi4">
+          <div class="wcard-hd">
+            <span class="wcard-title">Financial KPI v4</span>
+            <div class="wcard-acts">
+              <button class="wic" title="Refresh"><span class="msr">refresh</span></button>
+              <button id="recon4-demo-btn" onclick="cycleReconState4()" title="Demo: cycle through 5 reconciliation tiers" style="display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 9px;border:1px solid #eed5b0;border-radius:6px;background:#fff8e1;font-size:11px;font-weight:600;color:#b7620a;cursor:pointer;font-family:'Red Hat Text',sans-serif;white-space:nowrap">
+                <span class="msr" id="recon4-demo-ic" style="font-size:13px;color:#e67e22">warning</span>
+                <span id="recon4-demo-lbl">Tier 1 · 1 acct</span>
+                <span class="msr" style="font-size:11px">chevron_right</span>
+              </button>
+            </div>
+          </div>
+          <div class="wcard-body">
+            <div class="kpi-cards-row">
+
+              <!-- Card 1: Total Income -->
+              <div class="kpi-card">
+                <div class="kpi-card-lbl">Total Income — YTD</div>
+                <div class="kpi-card-val">$1,824,350</div>
+                <div class="kpi-card-meta">
+                  <span class="kpi-card-py">Prev yr $1,682,400</span>
+                  <span class="kpi-card-meta-sep">·</span>
+                  <span class="kpi-card-var fav">↑ 8.4%</span>
+                </div>
+              </div>
+
+              <!-- Card 2: Total Expenses -->
+              <div class="kpi-card">
+                <div class="kpi-card-lbl">Total Expenses — YTD</div>
+                <div class="kpi-card-val">$1,681,550</div>
+                <div class="kpi-card-meta">
+                  <span class="kpi-card-py">Prev yr $1,598,200</span>
+                  <span class="kpi-card-meta-sep">·</span>
+                  <span class="kpi-card-var unfav">↑ 5.2%</span>
+                </div>
+              </div>
+
+              <!-- Card 3: Net Income -->
+              <div class="kpi-card">
+                <div class="kpi-card-lbl">Net Income — YTD</div>
+                <div class="kpi-card-val">$142,800</div>
+                <div class="kpi-card-meta">
+                  <span class="kpi-card-py">Prev yr $84,200</span>
+                  <span class="kpi-card-meta-sep">·</span>
+                  <span class="kpi-card-var fav">↑ 69.6%</span>
+                </div>
+              </div>
+
+              <!-- Card 4: Cash Position — 5-tier unreconciled warning -->
+              <div class="kpi-card" id="kpi4-cash-card">
+                <div class="kpi-card-lbl">Cash Position</div>
+                <div class="kpi-warn-wrap" id="kpi4-warn-wrap" tabindex="0">
+                  <span class="msr fill">warning</span>
+                  <div class="kpi-warn-tip">
+                    <div class="kpi-warn-tip-hd"><span class="msr sz16 fill" style="color:#e67e22">warning</span> Unreconciled Accounts</div>
+                    <div class="kpi-warn-tip-body">The cash figure may not reflect the true position. The following account has not been reconciled within the 30-day threshold:</div>
+                    <div class="kpi-warn-tip-acct">
+                      <div class="kpi-warn-tip-acct-name">Payroll Checking ··3355</div>
+                      <div class="kpi-warn-tip-acct-date">Last reconciled: Jul 26, 2026 — 31 days ago</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="kpi-card-val" id="kpi4-val">9 <span style="font-size:13px;font-weight:500;color:#606060;letter-spacing:0">months</span></div>
+                <div class="kpi-card-meta" id="kpi4-meta">
+                  <span class="kpi-card-py">of operating runway</span>
+                  <span class="kpi-info-wrap" tabindex="0">
+                    <span class="msr" style="font-size:14px">info</span>
+                    <span class="kpi-info-tip">Avg monthly operating expenses calculated using May – Jul 2026 (3 months).</span>
+                  </span>
+                </div>
+                <div id="kpi4-degrade" style="display:none"></div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- Financial KPI v5 — 2-colour (Amber <3 accts, Red >5 accts) + interactive clickable tooltip -->
+        <div class="wcard" id="w-kpi5">
+          <div class="wcard-hd">
+            <span class="wcard-title">Financial KPI v5</span>
+            <div class="wcard-acts">
+              <button class="wic" title="Refresh"><span class="msr">refresh</span></button>
+              <button id="recon5-demo-btn" onclick="cycleReconState5()" style="display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 9px;border:1px solid #eed5b0;border-radius:6px;background:#fff8e1;font-size:11px;font-weight:600;color:#b7620a;cursor:pointer;font-family:'Red Hat Text',sans-serif;white-space:nowrap">
+                <span class="msr" id="recon5-demo-ic" style="font-size:13px;color:#e67e22">warning</span>
+                <span id="recon5-demo-lbl">⚠ 1 acct</span>
+                <span class="msr" style="font-size:11px">chevron_right</span>
+              </button>
+            </div>
+          </div>
+          <div class="wcard-body">
+            <div class="kpi-cards-row">
+              <div class="kpi-card">
+                <div class="kpi-card-lbl">Total Income — YTD</div>
+                <div class="kpi-card-val">$1,824,350</div>
+                <div class="kpi-card-meta">
+                  <span class="kpi-card-py">Prev yr $1,682,400</span>
+                  <span class="kpi-card-meta-sep">·</span>
+                  <span class="kpi-card-var fav">↑ 8.4%</span>
+                </div>
+              </div>
+              <div class="kpi-card">
+                <div class="kpi-card-lbl">Total Expenses — YTD</div>
+                <div class="kpi-card-val">$1,681,550</div>
+                <div class="kpi-card-meta">
+                  <span class="kpi-card-py">Prev yr $1,598,200</span>
+                  <span class="kpi-card-meta-sep">·</span>
+                  <span class="kpi-card-var unfav">↑ 5.2%</span>
+                </div>
+              </div>
+              <div class="kpi-card">
+                <div class="kpi-card-lbl">Net Income — YTD</div>
+                <div class="kpi-card-val">$142,800</div>
+                <div class="kpi-card-meta">
+                  <span class="kpi-card-py">Prev yr $84,200</span>
+                  <span class="kpi-card-meta-sep">·</span>
+                  <span class="kpi-card-var fav">↑ 69.6%</span>
+                </div>
+              </div>
+              <!-- Card 4: Cash Position — amber <3 accts, red >5 accts -->
+              <div class="kpi-card" id="kpi5-cash-card">
+                <div class="kpi-card-lbl">Cash Position</div>
+                <div class="kpi-warn-wrap" id="kpi5-warn-wrap" tabindex="0">
+                  <span class="msr fill">warning</span>
+                  <div class="kpi-warn-tip">
+                    <div class="kpi-warn-tip-hd"><span class="msr sz16 fill" style="color:#e67e22">warning</span> 1 Unreconciled Account</div>
+                    <div class="kpi-warn-tip-body" style="margin-bottom:4px">The cash figure may not reflect the true position.</div>
+                    <div class="kpi-warn-tip-acct clickable" onclick="void(0)" role="button" tabindex="0">
+                      <div style="flex:1;min-width:0">
+                        <div class="kpi-warn-tip-acct-name">Payroll Checking ··3355</div>
+                        <div class="kpi-warn-tip-acct-date">Last reconciled: Jul 26, 2026 — 31 days ago</div>
+                      </div>
+                      <span class="msr" style="font-size:16px;color:#b7620a;flex-shrink:0">chevron_right</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="kpi-card-val" id="kpi5-val">9 <span style="font-size:13px;font-weight:500;color:#606060;letter-spacing:0">months</span></div>
+                <div class="kpi-card-meta" id="kpi5-meta">
+                  <span class="kpi-card-py">of operating runway</span>
+                  <span class="kpi-info-wrap" tabindex="0">
+                    <span class="msr" style="font-size:14px">info</span>
+                    <span class="kpi-info-tip">Avg monthly operating expenses calculated using May – Jul 2026 (3 months).</span>
+                  </span>
+                </div>
+                <div id="kpi5-degrade" style="display:none"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bank Balances -->
+        <div class="wcard" id="w-bb" data-sz="explore">
+          <div class="wcard-hd">
+            <span class="wcard-title">Bank Balances</span>
+            <div class="wcard-acts">
+              <button class="wic" title="Refresh"><span class="msr">refresh</span></button>
+              <div class="sz-wrap">
+                <button class="wic" title="Change size" onclick="toggleSz(event,'w-bb')"><span class="msr">aspect_ratio</span></button>
+                <div class="sz-pop" id="sz-w-bb">
+                  <button class="sz-opt" onclick="setSz('w-bb','glance')"><div class="sz-ic-g"></div>Glance</button>
+                  <button class="sz-opt sz-act" onclick="setSz('w-bb','explore')"><div class="sz-ic-e"><span></span><span></span></div>Explore</button>
+                  <button class="sz-opt" onclick="setSz('w-bb','detail')"><div class="sz-ic-d"><span></span><span></span><span></span><span></span></div>Detail</button>
+                </div>
+              </div>
+              <button class="wic" onclick="openDdm(event,'Bank Balances')"><span class="msr">more_vert</span></button>
+            </div>
+          </div>
+          <div class="wcard-body">
+            <div class="chips">
+              <button class="chip"><span class="msr sz16 fill">filter_alt</span> All Bank Accounts <span class="msr sz16">expand_more</span></button>
+            </div>
+            <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:12px">
+              <span style="font-size:28px;font-weight:700;color:#202020">$3,224,350</span>
+              <span style="font-size:14px;color:#606060">18 accounts</span>
+              <span class="badge rd"><span class="msr sz16 fill" style="color:#c0392b;margin-right:3px">warning</span>1 overdrawn</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border:0.75px solid #d2d2d2;border-radius:6px;background:#fff;margin-bottom:10px">
+              <span class="msr sz16 fill" style="color:#6b6b6b">search</span>
+              <input type="text" placeholder="Search accounts" style="flex:1;border:none;outline:none;font-size:14px;font-family:'Red Hat Text',sans-serif;background:transparent"/>
+            </div>
+            <table class="wtbl">
+              <thead><tr><th>Account <span class="msr sz16" style="vertical-align:middle">unfold_more</span></th><th class="r">Balance <span class="msr sz16" style="vertical-align:middle">unfold_more</span></th></tr></thead>
+              <tbody>
+                <tr><td>Building Fund Savings ··9042</td><td class="r">$845,500</td></tr>
+                <tr><td>Reserve Money Market ··2015</td><td class="r">$560,300</td></tr>
+                <tr><td>Operating Checking ··4021</td><td class="r">$467,500</td></tr>
+                <tr><td>General Fund Checking ··7710</td><td class="r">$327,800</td></tr>
+                <tr><td>Capital Campaign Savings ··4477</td><td class="r">$274,100</td></tr>
+                <tr><td>Debt Service Reserve ··8888</td><td class="r">$156,700</td></tr>
+                <tr><td>Missions Savings ··1188</td><td class="r">$133,400</td></tr>
+                <tr><td>Payroll Checking ··3355</td><td class="r" style="color:#c0392b">−$4,200</td></tr>
+                <tr><td>Total, all accounts</td><td class="r">$3,224,350</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Budget vs Actual -->
+        <div class="wcard" id="w-bva" data-sz="explore">
+          <div class="wcard-hd">
+            <span class="wcard-title">Budget Compared to Actual</span>
+            <div class="wcard-acts">
+              <div class="vtog">
+                <button class="vact"><span class="msr sz16 fill">bar_chart</span> Bar</button>
+                <button><span class="msr sz16">show_chart</span> Line</button>
+                <button><span class="msr sz16">table_rows</span> Table</button>
+              </div>
+              <button class="wic" title="Refresh"><span class="msr">refresh</span></button>
+              <div class="sz-wrap">
+                <button class="wic" title="Change size" onclick="toggleSz(event,'w-bva')"><span class="msr">aspect_ratio</span></button>
+                <div class="sz-pop" id="sz-w-bva">
+                  <button class="sz-opt" onclick="setSz('w-bva','glance')"><div class="sz-ic-g"></div>Glance</button>
+                  <button class="sz-opt sz-act" onclick="setSz('w-bva','explore')"><div class="sz-ic-e"><span></span><span></span></div>Explore</button>
+                  <button class="sz-opt" onclick="setSz('w-bva','detail')"><div class="sz-ic-d"><span></span><span></span><span></span><span></span></div>Detail</button>
+                </div>
+              </div>
+              <button class="wic" onclick="openDdm(event,'Budget Compared to Actual')"><span class="msr">more_vert</span></button>
+            </div>
+          </div>
+          <div class="wcard-body">
+            <div class="chips">
+              <button class="chip"><span class="msr sz16 fill">filter_alt</span> Income accounts <span class="msr sz16">expand_more</span></button>
+              <button class="chip"><span class="msr sz16 fill">filter_alt</span> This fiscal year <span class="msr sz16">expand_more</span></button>
+            </div>
+            <div class="bar-wrap">
+              <div class="bar-row"><span class="bar-lbl">General Fund</span><div class="bar-track"><div class="bar-fill gn" style="width:88%"></div></div><span class="bar-amt">$842,000</span></div>
+              <div class="bar-row"><span class="bar-lbl">Building Fund</span><div class="bar-track"><div class="bar-fill gn" style="width:62%"></div></div><span class="bar-amt">$590,000</span></div>
+              <div class="bar-row"><span class="bar-lbl">Missions</span><div class="bar-track"><div class="bar-fill am" style="width:45%"></div></div><span class="bar-amt">$128,500</span></div>
+              <div class="bar-row"><span class="bar-lbl">Youth Ministry</span><div class="bar-track"><div class="bar-fill gn" style="width:71%"></div></div><span class="bar-amt">$94,200</span></div>
+              <div class="bar-row"><span class="bar-lbl">Worship Arts</span><div class="bar-track"><div class="bar-fill rd" style="width:100%"></div></div><span class="bar-amt kpi-dn">$67,800 <span class="badge rd" style="font-size:11px">112%</span></span></div>
+              <div class="bar-row"><span class="bar-lbl">Administration</span><div class="bar-track"><div class="bar-fill am" style="width:38%"></div></div><span class="bar-amt">$42,100</span></div>
+            </div>
+            <div style="display:flex;gap:16px;margin-top:14px;font-size:12px;color:#606060">
+              <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#4b6ec3;display:inline-block"></span>Actual</span>
+              <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#e0e0e0;display:inline-block"></span>Budget</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Financial KPIs -->
+        <div class="wcard" id="w-kpi" data-sz="explore">
+          <div class="wcard-hd">
+            <span class="wcard-title">Financial KPI Cards</span>
+            <div class="wcard-acts">
+              <button class="wic" title="Refresh"><span class="msr">refresh</span></button>
+              <div class="sz-wrap">
+                <button class="wic" title="Change size" onclick="toggleSz(event,'w-kpi')"><span class="msr">aspect_ratio</span></button>
+                <div class="sz-pop" id="sz-w-kpi">
+                  <button class="sz-opt" onclick="setSz('w-kpi','glance')"><div class="sz-ic-g"></div>Glance</button>
+                  <button class="sz-opt sz-act" onclick="setSz('w-kpi','explore')"><div class="sz-ic-e"><span></span><span></span></div>Explore</button>
+                  <button class="sz-opt" onclick="setSz('w-kpi','detail')"><div class="sz-ic-d"><span></span><span></span><span></span><span></span></div>Detail</button>
+                </div>
+              </div>
+              <button class="wic" onclick="openDdm(event,'Financial KPIs')"><span class="msr">more_vert</span></button>
+            </div>
+          </div>
+          <div class="wcard-body">
+            <div class="kpi-cards-row">
+
+              <!-- Card 1: Total Income -->
+              <div class="kpi-card">
+                <div class="kpi-card-lbl">Total Income — YTD</div>
+                <div class="kpi-card-val">$1,824,350</div>
+                <div class="kpi-card-meta">
+                  <span class="kpi-card-py">Prev yr $1,682,400</span>
+                  <span class="kpi-card-meta-sep">·</span>
+                  <span class="kpi-card-var fav">↑ 8.4%</span>
+                </div>
+              </div>
+
+              <!-- Card 2: Total Expenses -->
+              <div class="kpi-card">
+                <div class="kpi-card-lbl">Total Expenses — YTD</div>
+                <div class="kpi-card-val">$1,681,550</div>
+                <div class="kpi-card-meta">
+                  <span class="kpi-card-py">Prev yr $1,598,200</span>
+                  <span class="kpi-card-meta-sep">·</span>
+                  <span class="kpi-card-var unfav">↑ 5.2%</span>
+                </div>
+              </div>
+
+              <!-- Card 3: Net Income -->
+              <div class="kpi-card">
+                <div class="kpi-card-lbl">Net Income — YTD</div>
+                <div class="kpi-card-val">$142,800</div>
+                <div class="kpi-card-meta">
+                  <span class="kpi-card-py">Prev yr $84,200</span>
+                  <span class="kpi-card-meta-sep">·</span>
+                  <span class="kpi-card-var fav">↑ 69.6%</span>
+                </div>
+              </div>
+
+              <!-- Card 4: Cash Position -->
+              <div class="kpi-card">
+                <div class="kpi-card-lbl">Cash Position</div>
+                <!-- Unreconciled warning tooltip -->
+                <div class="kpi-warn-wrap" tabindex="0">
+                  <span class="msr fill">warning</span>
+                  <div class="kpi-warn-tip">
+                    <div class="kpi-warn-tip-hd"><span class="msr sz16 fill" style="color:#e67e22">warning</span> Unreconciled Accounts</div>
+                    <div class="kpi-warn-tip-body">The cash figure may not reflect the true position. The following account has not been reconciled within the 30-day threshold:</div>
+                    <div class="kpi-warn-tip-acct">
+                      <div class="kpi-warn-tip-acct-name">Payroll Checking ··3355</div>
+                      <div class="kpi-warn-tip-acct-date">Last reconciled: Jul 26, 2026 — 31 days ago</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="kpi-card-val">$3,224,350</div>
+                <div class="kpi-card-meta">
+                  <span class="kpi-card-py">Prev yr $2,987,100</span>
+                  <span class="kpi-card-meta-sep">·</span>
+                  <span class="kpi-card-var fav">↑ 7.9%</span>
+                </div>
+                <div class="kpi-card-runway">
+                  <span class="kpi-card-runway-lbl">Runway</span>
+                  <span class="kpi-card-runway-val">9 months</span>
+                  <span class="kpi-card-runway-sep">·</span>
+                  <span class="kpi-card-runway-note">avg $358K/mo opex · trailing 3 mo</span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- Financial KPI Cards — Updated copy -->
+        <div class="wcard" id="w-kpi2" data-sz="explore">
+          <div class="wcard-hd">
+            <span class="wcard-title">Financial KPI Cards Updated</span>
+            <div class="wcard-acts">
+              <button class="wic" title="Refresh"><span class="msr">refresh</span></button>
+              <div class="sz-wrap">
+                <button class="wic" title="Change size" onclick="toggleSz(event,'w-kpi2')"><span class="msr">aspect_ratio</span></button>
+                <div class="sz-pop" id="sz-w-kpi2">
+                  <button class="sz-opt" onclick="setSz('w-kpi2','glance')"><div class="sz-ic-g"></div>Glance</button>
+                  <button class="sz-opt sz-act" onclick="setSz('w-kpi2','explore')"><div class="sz-ic-e"><span></span><span></span></div>Explore</button>
+                  <button class="sz-opt" onclick="setSz('w-kpi2','detail')"><div class="sz-ic-d"><span></span><span></span><span></span><span></span></div>Detail</button>
+                </div>
+              </div>
+              <button class="wic" onclick="openDdm(event,'Financial KPI Cards Updated')"><span class="msr">more_vert</span></button>
+            </div>
+          </div>
+          <div class="wcard-body">
+            <div class="kpi-cards-row">
+
+              <!-- Card 1: Total Income -->
+              <div class="kpi-card">
+                <div class="kpi-card-lbl">Total Income — YTD</div>
+                <div class="kpi-flt-wrap">
+                  <button class="kpi-flt-chip" onclick="toggleKpiFlt(event,'kpi-flt-income')">
+                    <span class="msr sz16 fill" style="color:#606060">filter_alt</span>
+                    <span class="kpi-flt-label" id="kpi-flt-income-lbl">Income accounts</span>
+                    <span class="msr sz16">expand_more</span>
+                  </button>
+                  <div class="kpi-flt-pop" id="kpi-flt-income">
+                    <div class="kpi-flt-scope">Account scope</div>
+                    <button class="kpi-flt-opt" onclick="setKpiFlt('kpi-flt-income','Income accounts',this)">
+                      <span class="msr">check</span> Income accounts
+                    </button>
+                    <div class="kpi-flt-sep"></div>
+                    <button class="kpi-flt-opt kpi-flt-sr" onclick="openSrModal()">
+                      <span>Special report</span><span class="msr kpi-flt-sr-arrow">chevron_right</span>
+                    </button>
+                  </div>
+                </div>
+                <div class="kpi-card-val">$1,824,350</div>
+                <div class="kpi-card-meta">
+                  <span class="kpi-card-py">Prev yr $1,682,400</span>
+                  <span class="kpi-card-meta-sep">·</span>
+                  <span class="kpi-card-var fav">↑ 8.4%</span>
+                </div>
+              </div>
+
+              <!-- Card 2: Total Expenses -->
+              <div class="kpi-card">
+                <div class="kpi-card-lbl">Total Expenses — YTD</div>
+                <div class="kpi-flt-wrap">
+                  <button class="kpi-flt-chip" onclick="toggleKpiFlt(event,'kpi-flt-expense')">
+                    <span class="msr sz16 fill" style="color:#606060">filter_alt</span>
+                    <span class="kpi-flt-label" id="kpi-flt-expense-lbl">Expense accounts</span>
+                    <span class="msr sz16">expand_more</span>
+                  </button>
+                  <div class="kpi-flt-pop" id="kpi-flt-expense">
+                    <div class="kpi-flt-scope">Account scope</div>
+                    <button class="kpi-flt-opt" onclick="setKpiFlt('kpi-flt-expense','Expense accounts',this)">
+                      <span class="msr">check</span> Expense accounts
+                    </button>
+                    <div class="kpi-flt-sep"></div>
+                    <button class="kpi-flt-opt kpi-flt-sr" onclick="openSrModal()">
+                      <span>Special report</span><span class="msr kpi-flt-sr-arrow">chevron_right</span>
+                    </button>
+                  </div>
+                </div>
+                <div class="kpi-card-val">$1,681,550</div>
+                <div class="kpi-card-meta">
+                  <span class="kpi-card-py">Prev yr $1,598,200</span>
+                  <span class="kpi-card-meta-sep">·</span>
+                  <span class="kpi-card-var unfav">↑ 5.2%</span>
+                </div>
+              </div>
+
+              <!-- Card 3: Net Income -->
+              <div class="kpi-card">
+                <div class="kpi-card-lbl">Net Income — YTD</div>
+                <div class="kpi-card-val">$142,800</div>
+                <div class="kpi-card-meta">
+                  <span class="kpi-card-py">Prev yr $84,200</span>
+                  <span class="kpi-card-meta-sep">·</span>
+                  <span class="kpi-card-var fav">↑ 69.6%</span>
+                </div>
+              </div>
+
+              <!-- Card 4: Cash Position -->
+              <div class="kpi-card">
+                <div class="kpi-card-lbl">Cash Position</div>
+                <!-- Unreconciled warning tooltip -->
+                <div class="kpi-warn-wrap" tabindex="0">
+                  <span class="msr fill">warning</span>
+                  <div class="kpi-warn-tip">
+                    <div class="kpi-warn-tip-hd"><span class="msr sz16 fill" style="color:#e67e22">warning</span> Unreconciled Accounts</div>
+                    <div class="kpi-warn-tip-body">The cash figure may not reflect the true position. The following account has not been reconciled within the 30-day threshold:</div>
+                    <div class="kpi-warn-tip-acct">
+                      <div class="kpi-warn-tip-acct-name">Payroll Checking ··3355</div>
+                      <div class="kpi-warn-tip-acct-date">Last reconciled: Jul 26, 2026 — 31 days ago</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="kpi-card-val">$3,224,350</div>
+                <div class="kpi-card-meta">
+                  <span class="kpi-card-py">Prev yr $2,987,100</span>
+                  <span class="kpi-card-meta-sep">·</span>
+                  <span class="kpi-card-var fav">↑ 7.9%</span>
+                </div>
+                <div class="kpi-card-runway">
+                  <span class="kpi-card-runway-lbl">Runway</span>
+                  <span class="kpi-card-runway-val">9 months</span>
+                  <span class="kpi-card-runway-sep">·</span>
+                  <span class="kpi-card-runway-note">avg $358K/mo opex · trailing 3 mo</span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- Alerts & Action Items — Explore/Detail only (no Glance) -->
+        <div class="wcard" id="w-al" data-sz="explore">
+          <div class="wcard-hd">
+            <span class="wcard-title">Alerts & Action Items</span>
+            <div class="wcard-acts">
+              <span class="badge rd" style="margin-right:4px">6</span>
+              <button class="wic" title="Refresh"><span class="msr">refresh</span></button>
+              <div class="sz-wrap">
+                <button class="wic" title="Change size" onclick="toggleSz(event,'w-al')"><span class="msr">aspect_ratio</span></button>
+                <div class="sz-pop" id="sz-w-al">
+                  <button class="sz-opt sz-act" onclick="setSz('w-al','explore')"><div class="sz-ic-e"><span></span><span></span></div>Explore</button>
+                  <button class="sz-opt" onclick="setSz('w-al','detail')"><div class="sz-ic-d"><span></span><span></span><span></span><span></span></div>Detail</button>
+                </div>
+              </div>
+              <button class="wic" onclick="openDdm(event,'Alerts & Action Items')"><span class="msr">more_vert</span></button>
+            </div>
+          </div>
+          <div class="wcard-body">
+            <div class="alert-list">
+              <!-- Category 1: Restricted Fund Compliance Breach -->
+              <div class="ac-cat sev-err" id="cat-1">
+                <div class="ac-hd" onclick="toggleCat('cat-1')">
+                  <div class="ac-hd-l">
+                    <div class="ac-cat-title">Restricted Fund Compliance Breach</div>
+                    <div class="ac-cat-sub">Expenditure exceeds restricted income — immediate action required</div>
+                  </div>
+                  <div class="ac-hd-r"><span class="ac-count">1 alert</span><span class="msr ac-chev">expand_more</span></div>
+                </div>
+                <div class="ac-body" id="body-cat-1">
+                  <div class="ac-item" onclick="openAlertModal('al-1-1')">
+                    <span class="ac-item-lbl">Missions Fund — $35,200 over restricted income (135.8%)</span>
+                    <span class="msr ac-item-ic">chevron_right</span>
+                  </div>
+                </div>
+              </div>
+              <!-- Category 2: Overdue Payables -->
+              <div class="ac-cat sev-err" id="cat-2">
+                <div class="ac-hd" onclick="toggleCat('cat-2')">
+                  <div class="ac-hd-l">
+                    <div class="ac-cat-title">Overdue Payables</div>
+                    <div class="ac-cat-sub">3 AP invoices past due — $24,350 total outstanding</div>
+                  </div>
+                  <div class="ac-hd-r"><span class="ac-count">3 alerts</span><span class="msr ac-chev">expand_more</span></div>
+                </div>
+                <div class="ac-body" id="body-cat-2">
+                  <div class="ac-item" onclick="openAlertModal('al-2-1')">
+                    <span class="ac-item-lbl">Acme Audio LLC · INV-2024-4421 · $12,400 · 22 days overdue <span class="pay-mode-tag">AVID Pay</span></span>
+                    <span class="msr ac-item-ic">chevron_right</span>
+                  </div>
+                  <div class="ac-item" onclick="openAlertModal('al-2-2')">
+                    <span class="ac-item-lbl">City Building Services · INV-2024-4398 · $8,750 · 16 days overdue <span class="pay-mode-tag">ACH</span></span>
+                    <span class="msr ac-item-ic">chevron_right</span>
+                  </div>
+                  <div class="ac-item" onclick="openAlertModal('al-2-3')">
+                    <span class="ac-item-lbl">Grace Print & Design · INV-2024-4410 · $3,200 · 9 days overdue <span class="pay-mode-tag">EFT</span></span>
+                    <span class="msr ac-item-ic">chevron_right</span>
+                  </div>
+                </div>
+              </div>
+              <!-- Category 3: Unreconciled Bank Account -->
+              <div class="ac-cat sev-warn" id="cat-3">
+                <div class="ac-hd" onclick="toggleCat('cat-3')">
+                  <div class="ac-hd-l">
+                    <div class="ac-cat-title">Unreconciled Bank Account</div>
+                    <div class="ac-cat-sub">1 account exceeds the 30-day reconciliation threshold</div>
+                  </div>
+                  <div class="ac-hd-r"><span class="ac-count">1 alert</span><span class="msr ac-chev">expand_more</span></div>
+                </div>
+                <div class="ac-body" id="body-cat-3">
+                  <div class="ac-item" onclick="openAlertModal('al-3-1')">
+                    <span class="ac-item-lbl">Payroll Checking ··3355 — last reconciled Jul 26, 2026 (31 days ago)</span>
+                    <span class="msr ac-item-ic">chevron_right</span>
+                  </div>
+                </div>
+              </div>
+              <!-- Category 4: Budget Exceeded -->
+              <div class="ac-cat sev-warn" id="cat-4">
+                <div class="ac-hd" onclick="toggleCat('cat-4')">
+                  <div class="ac-hd-l">
+                    <div class="ac-cat-title">Budget Exceeded</div>
+                    <div class="ac-cat-sub">1 fund has exceeded its annual budget allocation</div>
+                  </div>
+                  <div class="ac-hd-r"><span class="ac-count">1 alert</span><span class="msr ac-chev">expand_more</span></div>
+                </div>
+                <div class="ac-body" id="body-cat-4">
+                  <div class="ac-item" onclick="openAlertModal('al-4-1')">
+                    <span class="ac-item-lbl">Worship Arts — $67,800 actual vs $60,500 budget (112%)</span>
+                    <span class="msr ac-item-ic">chevron_right</span>
+                  </div>
+                </div>
+              </div>
+              <!-- Category 5: Stale Approval Queue -->
+              <div class="ac-cat sev-warn" id="cat-5">
+                <div class="ac-hd" onclick="toggleCat('cat-5')">
+                  <div class="ac-hd-l">
+                    <div class="ac-cat-title">Stale Approval Queue</div>
+                    <div class="ac-cat-sub">2 items waiting beyond the 5-business-day threshold</div>
+                  </div>
+                  <div class="ac-hd-r"><span class="ac-count">2 alerts</span><span class="msr ac-chev">expand_more</span></div>
+                </div>
+                <div class="ac-body" id="body-cat-5">
+                  <div class="ac-item" onclick="openAlertModal('al-5-1')">
+                    <span class="ac-item-lbl">INV-2024-4433 · $18,500 · 8 days waiting · Approver: Sarah J.</span>
+                    <span class="msr ac-item-ic">chevron_right</span>
+                  </div>
+                  <div class="ac-item" onclick="openAlertModal('al-5-2')">
+                    <span class="ac-item-lbl">PO-2024-0891 · $6,200 · 6 days waiting · Approver: Michael R.</span>
+                    <span class="msr ac-item-ic">chevron_right</span>
+                  </div>
+                </div>
+              </div>
+              <!-- Category 6: Receivable Invoices Outstanding -->
+              <div class="ac-cat sev-warn" id="cat-6">
+                <div class="ac-hd" onclick="toggleCat('cat-6')">
+                  <div class="ac-hd-l">
+                    <div class="ac-cat-title">Receivable Invoices Outstanding</div>
+                    <div class="ac-cat-sub">7 AR invoices unpaid — $18,450 total, oldest 45 days</div>
+                  </div>
+                  <div class="ac-hd-r"><span class="ac-count">7 alerts</span><span class="msr ac-chev">expand_more</span></div>
+                </div>
+                <div class="ac-body" id="body-cat-6">
+                  <div class="ac-item" onclick="openAlertModal('al-6-1')">
+                    <span class="ac-item-lbl">Riverside Community Group · INV-AR-2024-0112 · $3,800 · 45 days</span>
+                    <span class="msr ac-item-ic">chevron_right</span>
+                  </div>
+                  <div class="ac-item" onclick="openAlertModal('al-6-2')">
+                    <span class="ac-item-lbl">Grace Preschool Program · INV-AR-2024-0098 · $6,500 · 38 days</span>
+                    <span class="msr ac-item-ic">chevron_right</span>
+                  </div>
+                  <div class="ac-item" onclick="openAlertModal('al-6-3')">
+                    <span class="ac-item-lbl">Hillside Bible Fellowship · INV-AR-2024-0103 · $2,200 · 32 days</span>
+                    <span class="msr ac-item-ic">chevron_right</span>
+                  </div>
+                  <div class="ac-item" onclick="openAlertModal('al-6-4')">
+                    <span class="ac-item-lbl">Westside Community Center · INV-AR-2024-0107 · $1,900 · 28 days</span>
+                    <span class="msr ac-item-ic">chevron_right</span>
+                  </div>
+                  <div class="ac-item" onclick="openAlertModal('al-6-5')">
+                    <span class="ac-item-lbl">St. Andrew's Parish · INV-AR-2024-0109 · $1,450 · 22 days</span>
+                    <span class="msr ac-item-ic">chevron_right</span>
+                  </div>
+                  <div class="ac-item" onclick="openAlertModal('al-6-6')">
+                    <span class="ac-item-lbl">Grace Community Ministries · INV-AR-2024-0115 · $1,300 · 18 days</span>
+                    <span class="msr ac-item-ic">chevron_right</span>
+                  </div>
+                  <div class="ac-item" onclick="openAlertModal('al-6-7')">
+                    <span class="ac-item-lbl">Northgate Baptist Church · INV-AR-2024-0118 · $1,300 · 14 days</span>
+                    <span class="msr ac-item-ic">chevron_right</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Alerts & Action Items — Updated copy -->
+        <div class="wcard" id="w-al2" data-sz="detail">
+          <div class="wcard-hd">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span class="wcard-title">Alerts and Action Items Updated</span>
+              <span class="badge rd">6 alerts</span>
+            </div>
+            <div class="wcard-acts">
+              <button class="wic" title="Refresh"><span class="msr">refresh</span></button>
+              <div class="sz-wrap">
+                <button class="wic" title="Change size" onclick="toggleSz(event,'w-al2')"><span class="msr">aspect_ratio</span></button>
+                <div class="sz-pop" id="sz-w-al2">
+                  <button class="sz-opt" onclick="setSz('w-al2','explore')"><div class="sz-ic-e"><span></span><span></span></div>Explore</button>
+                  <button class="sz-opt sz-act" onclick="setSz('w-al2','detail')"><div class="sz-ic-d"><span></span><span></span><span></span><span></span></div>Detail</button>
+                </div>
+              </div>
+              <button class="wic" onclick="openDdm(event,'Alerts and Action Items Updated')"><span class="msr">more_vert</span></button>
+            </div>
+          </div>
+          <div class="wcard-body">
+            <div class="alert-list">
+              <!-- Category 1: Restricted Fund Compliance Breach -->
+              <div class="ac-cat sev-err" id="cat2-1">
+                <div class="ac-hd" onclick="toggleCat('cat2-1')">
+                  <div class="ac-hd-l">
+                    <div style="display:flex;align-items:center;gap:8px"><div class="ac-cat-title">Restricted Fund Compliance Breach</div><span class="ac-count">1</span></div>
+                    <div class="ac-cat-sub">Expenditure exceeds restricted income — immediate action required</div>
+                  </div>
+                  <div class="ac-hd-r"><span class="msr ac-chev">expand_more</span></div>
+                </div>
+                <div class="ac-body" id="body-cat2-1">
+                  <div class="ac-item" onclick="openAlertModal('al-1-1')">
+                    <span class="ac-item-lbl">Missions Fund — $35,200 over restricted income (135.8%)</span>
+                    <span class="msr ac-item-ic">chevron_right</span>
+                  </div>
+                </div>
+              </div>
+              <!-- Category 2: Overdue Payables -->
+              <div class="ac-cat sev-err" id="cat2-2">
+                <div class="ac-hd" onclick="toggleCat('cat2-2')">
+                  <div class="ac-hd-l">
+                    <div style="display:flex;align-items:center;gap:8px"><div class="ac-cat-title">Overdue Payables</div><span class="ac-count">3</span></div>
+                    <div class="ac-cat-sub">3 AP invoices past due — $24,350 total outstanding</div>
+                  </div>
+                  <div class="ac-hd-r"><span class="msr ac-chev">expand_more</span></div>
+                </div>
+                <div class="ac-body" id="body-cat2-2">
+                  <div class="ac-item" onclick="openAlertModal('al-2-1')">
+                    <span class="ac-item-lbl">Acme Audio LLC · INV-2024-4421 · $12,400 · 22 days overdue</span>
+                    <span class="msr ac-item-ic">chevron_right</span>
+                  </div>
+                  <div class="ac-item" onclick="openAlertModal('al-2-2')">
+                    <span class="ac-item-lbl">City Building Services · INV-2024-4398 · $8,750 · 16 days overdue</span>
+                    <span class="msr ac-item-ic">chevron_right</span>
+                  </div>
+                  <div class="ac-item" onclick="openAlertModal('al-2-3')">
+                    <span class="ac-item-lbl">Grace Print & Design · INV-2024-4410 · $3,200 · 9 days overdue</span>
+                    <span class="msr ac-item-ic">chevron_right</span>
+                  </div>
+                </div>
+              </div>
+              <!-- Category 3: Unreconciled Bank Account -->
+              <div class="ac-cat sev-warn" id="cat2-3">
+                <div class="ac-hd" onclick="toggleCat('cat2-3')">
+                  <div class="ac-hd-l">
+                    <div style="display:flex;align-items:center;gap:8px"><div class="ac-cat-title">Unreconciled Bank Account</div><span class="ac-count">1</span></div>
+                    <div class="ac-cat-sub">1 account exceeds the 30-day reconciliation threshold</div>
+                  </div>
+                  <div class="ac-hd-r"><span class="msr ac-chev">expand_more</span></div>
+                </div>
+                <div class="ac-body" id="body-cat2-3">
+                  <div class="ac-item" onclick="openAlertModal('al-3-1')">
+                    <span class="ac-item-lbl">Payroll Checking ··3355 — last reconciled Jul 26, 2026 (31 days ago)</span>
+                    <span class="msr ac-item-ic">chevron_right</span>
+                  </div>
+                </div>
+              </div>
+              <!-- Category 4: Budget Exceeded -->
+              <div class="ac-cat sev-warn" id="cat2-4">
+                <div class="ac-hd" onclick="toggleCat('cat2-4')">
+                  <div class="ac-hd-l">
+                    <div style="display:flex;align-items:center;gap:8px"><div class="ac-cat-title">Budget Exceeded</div><span class="ac-count">1</span></div>
+                    <div class="ac-cat-sub">1 fund has exceeded its annual budget allocation</div>
+                  </div>
+                  <div class="ac-hd-r"><span class="msr ac-chev">expand_more</span></div>
+                </div>
+                <div class="ac-body" id="body-cat2-4">
+                  <div class="ac-item" onclick="openAlertModal('al-4-1')">
+                    <span class="ac-item-lbl">Worship Arts — $67,800 actual vs $60,500 budget (112%)</span>
+                    <span class="msr ac-item-ic">chevron_right</span>
+                  </div>
+                </div>
+              </div>
+              <!-- Category 5: Stale Approval Queue -->
+              <div class="ac-cat sev-warn" id="cat2-5">
+                <div class="ac-hd" onclick="toggleCat('cat2-5')">
+                  <div class="ac-hd-l">
+                    <div style="display:flex;align-items:center;gap:8px"><div class="ac-cat-title">Stale Approval Queue</div><span class="ac-count">2</span></div>
+                    <div class="ac-cat-sub">2 items waiting beyond the 5-business-day threshold</div>
+                  </div>
+                  <div class="ac-hd-r"><span class="msr ac-chev">expand_more</span></div>
+                </div>
+                <div class="ac-body" id="body-cat2-5">
+                  <div class="ac-item" onclick="openAlertModal('al-5-1')">
+                    <span class="ac-item-lbl">INV-2024-4433 · $18,500 · 8 days waiting · Approver: Sarah J.</span>
+                    <span class="msr ac-item-ic">chevron_right</span>
+                  </div>
+                  <div class="ac-item" onclick="openAlertModal('al-5-2')">
+                    <span class="ac-item-lbl">PO-2024-0891 · $6,200 · 6 days waiting · Approver: Michael R.</span>
+                    <span class="msr ac-item-ic">chevron_right</span>
+                  </div>
+                </div>
+              </div>
+              <!-- Category 6: Receivable Invoices Outstanding -->
+              <div class="ac-cat sev-warn" id="cat2-6">
+                <div class="ac-hd" onclick="toggleCat('cat2-6')">
+                  <div class="ac-hd-l">
+                    <div style="display:flex;align-items:center;gap:8px"><div class="ac-cat-title">Receivable Invoices Outstanding</div><span class="ac-count">7</span></div>
+                    <div class="ac-cat-sub">7 AR invoices unpaid — $18,450 total, oldest 45 days</div>
+                  </div>
+                  <div class="ac-hd-r"><span class="msr ac-chev">expand_more</span></div>
+                </div>
+                <div class="ac-body" id="body-cat2-6">
+                  <div class="ac-item" onclick="openAlertModal('al-6-1')">
+                    <span class="ac-item-lbl">Riverside Community Group · INV-AR-2024-0112 · $3,800 · 45 days</span>
+                    <span class="msr ac-item-ic">chevron_right</span>
+                  </div>
+                  <div class="ac-item" onclick="openAlertModal('al-6-2')">
+                    <span class="ac-item-lbl">Grace Preschool Program · INV-AR-2024-0098 · $6,500 · 38 days</span>
+                    <span class="msr ac-item-ic">chevron_right</span>
+                  </div>
+                  <div class="ac-item" onclick="openAlertModal('al-6-3')">
+                    <span class="ac-item-lbl">Hillside Bible Fellowship · INV-AR-2024-0103 · $2,200 · 32 days</span>
+                    <span class="msr ac-item-ic">chevron_right</span>
+                  </div>
+                  <div class="ac-item" onclick="openAlertModal('al-6-4')">
+                    <span class="ac-item-lbl">Westside Community Center · INV-AR-2024-0107 · $1,900 · 28 days</span>
+                    <span class="msr ac-item-ic">chevron_right</span>
+                  </div>
+                  <div class="ac-item" onclick="openAlertModal('al-6-5')">
+                    <span class="ac-item-lbl">St. Andrew's Parish · INV-AR-2024-0109 · $1,450 · 22 days</span>
+                    <span class="msr ac-item-ic">chevron_right</span>
+                  </div>
+                  <div class="ac-item" onclick="openAlertModal('al-6-6')">
+                    <span class="ac-item-lbl">Grace Community Ministries · INV-AR-2024-0115 · $1,300 · 18 days</span>
+                    <span class="msr ac-item-ic">chevron_right</span>
+                  </div>
+                  <div class="ac-item" onclick="openAlertModal('al-6-7')">
+                    <span class="ac-item-lbl">Northgate Baptist Church · INV-AR-2024-0118 · $1,300 · 14 days</span>
+                    <span class="msr ac-item-ic">chevron_right</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+<div id="dr-bg" class="ov-bg" onclick="closeDr()"></div>
+<div id="drawer" class="drawer">
+  <div class="dr-hd">
+    <h2>Find a Widget</h2>
+    <button class="wic" onclick="closeDr()"><span class="msr">close</span></button>
+  </div>
+  <div class="dr-search">
+    <div class="dr-srch-box">
+      <span class="msr sz16 fill" style="color:#606060">search</span>
+      <input type="text" id="dr-q" placeholder="Search widgets..." oninput="filterDr(this.value)"/>
+    </div>
+  </div>
+  <div class="dr-body" id="dr-body">
+    <div class="dr-sec">Finance</div>
+    <button class="dr-widget"><div class="dr-wic"><span class="msr fill">account_balance</span></div><div class="dr-winfo"><h4>Bank Balances</h4><p>Live account balances and activity</p></div></button>
+    <button class="dr-widget"><div class="dr-wic"><span class="msr fill">bar_chart</span></div><div class="dr-winfo"><h4>Budget vs Actual</h4><p>Spending vs budget by category</p></div></button>
+    <button class="dr-widget"><div class="dr-wic"><span class="msr fill">insights</span></div><div class="dr-winfo"><h4>Financial KPI Cards</h4><p>Income, expenses, net income & cash runway</p></div></button>
+    <button class="dr-widget"><div class="dr-wic"><span class="msr fill">notifications_active</span></div><div class="dr-winfo"><h4>Alerts & Action Items</h4><p>Actionable alerts and tasks</p></div></button>
+    <div class="dr-sec">Payroll</div>
+    <button class="dr-widget"><div class="dr-wic"><span class="msr fill">payments</span></div><div class="dr-winfo"><h4>Payroll Distributions</h4><p>Payroll by department and type</p></div></button>
+    <button class="dr-widget"><div class="dr-wic"><span class="msr fill">event_available</span></div><div class="dr-winfo"><h4>Scheduled Time Off</h4><p>Pending and approved time off</p></div></button>
+    <div class="dr-sec">Giving</div>
+    <button class="dr-widget"><div class="dr-wic"><span class="msr fill">volunteer_activism</span></div><div class="dr-winfo"><h4>Remittance Pledges</h4><p>Pledge status and fulfilment</p></div></button>
+    <button class="dr-widget"><div class="dr-wic"><span class="msr fill">receipt_long</span></div><div class="dr-winfo"><h4>Receivable Invoices</h4><p>Outstanding invoice aging</p></div></button>
+    <div class="dr-sec">Loans</div>
+    <button class="dr-widget"><div class="dr-wic"><span class="msr fill">credit_score</span></div><div class="dr-winfo"><h4>Loans with Balance Due</h4><p>Active loans and delinquency</p></div></button>
+    <button class="dr-widget"><div class="dr-wic"><span class="msr fill">account_balance_wallet</span></div><div class="dr-winfo"><h4>Deposit Accounts</h4><p>Member deposit account summary</p></div></button>
+  </div>
+</div>
+<!-- Alert Detail Modal -->
+<div id="al-modal" onclick="if(event.target===this)closeAlertModal()">
+  <div class="al-modal-inner">
+    <div class="al-modal-hd">
+      <div class="al-modal-hd-text">
+        <div class="al-modal-sev" id="al-modal-sev"></div>
+        <div class="al-modal-title" id="al-modal-title"></div>
+      </div>
+      <button class="al-modal-close" onclick="closeAlertModal()"><span class="msr">close</span></button>
+    </div>
+    <div class="al-modal-body" id="al-modal-body"></div>
+    <div class="al-modal-ft" id="al-modal-ft"></div>
+  </div>
+</div>
+<!-- Payment Modal -->
+<div id="pay-modal" onclick="if(event.target===this)closePayModal()">
+  <div class="pay-inner">
+    <div class="pay-hd">
+      <div class="pay-hd-left">
+        <div class="pay-hd-eyebrow">Overdue Payable</div>
+        <div class="pay-hd-title" id="pay-hd-title">Pay Invoice</div>
+        <div class="pay-hd-sub" id="pay-hd-sub"></div>
+      </div>
+      <button class="pay-close" onclick="closePayModal()"><span class="msr">close</span></button>
+    </div>
+    <div class="pay-inv-bar">
+      <div class="pay-inv-cell">
+        <span class="pay-inv-k">Vendor</span>
+        <span class="pay-inv-v" id="pay-inv-vendor"></span>
+      </div>
+      <div class="pay-inv-cell">
+        <span class="pay-inv-k">Invoice</span>
+        <span class="pay-inv-v" id="pay-inv-num"></span>
+      </div>
+      <div class="pay-inv-cell">
+        <span class="pay-inv-k">Amount Due</span>
+        <span class="pay-inv-v red" id="pay-inv-amt"></span>
+      </div>
+    </div>
+    <div class="pay-body" id="pay-form-content">
+      <!-- Modal content injected by openPayModal -->
+    </div>
+    <div class="pay-ft">
+      <button class="al-modal-btn gh" onclick="closePayModal()">Cancel</button>
+      <button class="al-modal-btn pr" onclick="submitPayment()"><span class="msr sz16">check_circle</span> Submit Payment</button>
+    </div>
+  </div>
+</div>
+<!-- Bank Reconciliation Report Modal -->
+<div id="recon-modal" onclick="if(event.target===this)closeReconModal()">
+  <div class="recon-inner">
+    <div class="recon-topbar">
+      <button class="recon-close-btn" onclick="closeReconModal()"><span class="msr">close</span> Close</button>
+      <span class="recon-topbar-sep"></span>
+      <span class="recon-topbar-title">Bank Reconciliation</span>
+    </div>
+    <div class="recon-body">
+      <div class="recon-pv">
+        <div class="recon-pv-body" style="padding-top:24px">
+          <div class="recon-rpt">
+            <div class="recon-rpt-title">Bank Reconciliation</div>
+            <div class="recon-rpt-org">Grace Community Church</div>
+            <div class="recon-sum-hd">Summary</div>
+            <table class="recon-sum-tbl">
+              <tr><td>Opening Balance:</td><td>$996,749.74</td></tr>
+              <tr><td>Deposits:</td><td>$0.00</td></tr>
+              <tr><td>Checks and Voids:</td><td>$0.00</td></tr>
+              <tr><td>Withdrawals:</td><td>$0.00</td></tr>
+              <tr class="bold"><td>Ending Balance:</td><td>$1,024,219.08</td></tr>
+            </table>
+            <table class="recon-tx-tbl">
+              <thead>
+                <tr>
+                  <th>Canceled</th><th>Item #</th><th>Type</th><th>Date</th><th>Payee</th><th>Journal #</th><th class="r">Amount</th><th>Reconciled</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="6" style="font-weight:600;padding-top:8px">Beginning Balance</td><td class="r" style="font-weight:600">$996,749.74</td><td></td></tr>
+                <tr><td></td><td>607</td><td>Check</td><td style="white-space:nowrap">07/01/2026</td><td>Church Insurance Co</td><td>CD 2</td><td class="r recon-tx-neg">−$1,341.63</td><td></td></tr>
+                <tr><td></td><td>9000065</td><td>Deposit</td><td style="white-space:nowrap">07/06/2026</td><td>Sunday July 5 donations</td><td>CN 2</td><td class="r">$24,220.00</td><td></td></tr>
+                <tr><td></td><td>608</td><td>Check</td><td style="white-space:nowrap">07/13/2026</td><td>Dunder Mifflin Paper Company, Inc.</td><td>CD 3</td><td class="r recon-tx-neg">−$100.00</td><td></td></tr>
+                <tr><td></td><td>9000065</td><td>Deposit</td><td style="white-space:nowrap">07/13/2026</td><td>Sunday July 12 donations</td><td>CN 1</td><td class="r">$22,320.00</td><td></td></tr>
+                <tr><td></td><td>601</td><td>Check</td><td style="white-space:nowrap">07/15/2026</td><td>Dunder Mifflin Paper Company, Inc.</td><td>CD 103</td><td class="r recon-tx-neg">−$50.00</td><td></td></tr>
+                <tr><td></td><td>9000066</td><td>Deposit</td><td style="white-space:nowrap">07/20/2026</td><td>Sunday July 19 donations</td><td>CN 4</td><td class="r">$19,840.00</td><td></td></tr>
+                <tr><td></td><td>609</td><td>Check</td><td style="white-space:nowrap">07/21/2026</td><td>Riverside Utilities</td><td>CD 5</td><td class="r recon-tx-neg">−$2,114.50</td><td></td></tr>
+                <tr><td></td><td>610</td><td>Check</td><td style="white-space:nowrap">07/22/2026</td><td>Acme Audio LLC</td><td>CD 6</td><td class="r recon-tx-neg">−$12,400.00</td><td></td></tr>
+                <tr><td></td><td>9000067</td><td>Deposit</td><td style="white-space:nowrap">07/27/2026</td><td>Sunday July 26 donations</td><td>CN 5</td><td class="r">$21,560.00</td><td></td></tr>
+                <tr><td></td><td>611</td><td>Check</td><td style="white-space:nowrap">07/28/2026</td><td>CleanPro Facilities</td><td>CD 7</td><td class="r recon-tx-neg">−$2,800.00</td><td></td></tr>
+                <tr><td></td><td>612</td><td>EFT</td><td style="white-space:nowrap">07/31/2026</td><td>IRS — Payroll Tax Q2</td><td>EF 1</td><td class="r recon-tx-neg">−$18,440.00</td><td></td></tr>
+                <tr class="recon-tx-sum"><td colspan="6">Ending Balance</td><td class="r">$1,030,443.08</td><td></td></tr>
+                <tr class="recon-tx-sum"><td colspan="6">Total Items</td><td class="r">$33,795.34</td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="recon-page-sep">Page 2 — August 2026</div>
+
+          <div class="recon-rpt">
+            <div class="recon-rpt-title">Bank Reconciliation</div>
+            <div class="recon-rpt-org">Grace Community Church · Payroll Checking ··3355 · Aug 1 – Aug 15, 2026</div>
+            <div class="recon-sum-hd">Summary</div>
+            <table class="recon-sum-tbl">
+              <tr><td>Opening Balance:</td><td>$1,030,443.08</td></tr>
+              <tr><td>Deposits:</td><td>$44,720.00</td></tr>
+              <tr><td>Checks and Voids:</td><td>−$21,884.20</td></tr>
+              <tr><td>Withdrawals:</td><td>$0.00</td></tr>
+              <tr class="bold"><td>Ending Balance:</td><td>$1,053,278.88</td></tr>
+            </table>
+            <table class="recon-tx-tbl">
+              <thead>
+                <tr>
+                  <th>Canceled</th><th>Item #</th><th>Type</th><th>Date</th><th>Payee</th><th>Journal #</th><th class="r">Amount</th><th>Reconciled</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="6" style="font-weight:600;padding-top:8px">Beginning Balance</td><td class="r" style="font-weight:600">$1,030,443.08</td><td></td></tr>
+                <tr><td></td><td>9000068</td><td>Deposit</td><td style="white-space:nowrap">08/03/2026</td><td>Sunday Aug 2 donations</td><td>CN 6</td><td class="r">$23,100.00</td><td></td></tr>
+                <tr><td></td><td>613</td><td>Check</td><td style="white-space:nowrap">08/04/2026</td><td>Church Insurance Co</td><td>CD 8</td><td class="r recon-tx-neg">−$1,341.63</td><td></td></tr>
+                <tr><td></td><td>614</td><td>Check</td><td style="white-space:nowrap">08/05/2026</td><td>Grace Print & Design</td><td>CD 9</td><td class="r recon-tx-neg">−$3,200.00</td><td></td></tr>
+                <tr><td></td><td>9000069</td><td>Deposit</td><td style="white-space:nowrap">08/10/2026</td><td>Sunday Aug 9 donations</td><td>CN 7</td><td class="r">$21,620.00</td><td></td></tr>
+                <tr><td></td><td>615</td><td>Check</td><td style="white-space:nowrap">08/11/2026</td><td>City Building Services</td><td>CD 10</td><td class="r recon-tx-neg">−$8,750.00</td><td></td></tr>
+                <tr><td></td><td>616</td><td>Check</td><td style="white-space:nowrap">08/12/2026</td><td>Dunder Mifflin Paper Company, Inc.</td><td>CD 11</td><td class="r recon-tx-neg">−$210.00</td><td></td></tr>
+                <tr><td></td><td>617</td><td>Check</td><td style="white-space:nowrap">08/14/2026</td><td>Riverside Utilities</td><td>CD 12</td><td class="r recon-tx-neg">−$2,114.50</td><td></td></tr>
+                <tr><td></td><td>618</td><td>EFT</td><td style="white-space:nowrap">08/15/2026</td><td>State Payroll Tax — Aug</td><td>EF 2</td><td class="r recon-tx-neg">−$6,268.07</td><td></td></tr>
+                <tr class="recon-tx-sum"><td colspan="6">Ending Balance</td><td class="r">$1,053,278.88</td><td></td></tr>
+                <tr class="recon-tx-sum"><td colspan="6">Total Items</td><td class="r">$56,604.14</td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="recon-page-sep">Page 3 — August 16–28, 2026</div>
+
+          <div class="recon-rpt">
+            <div class="recon-rpt-title">Bank Reconciliation</div>
+            <div class="recon-rpt-org">Grace Community Church · Payroll Checking ··3355 · Aug 16 – Aug 28, 2026</div>
+            <div class="recon-sum-hd">Summary</div>
+            <table class="recon-sum-tbl">
+              <tr><td>Opening Balance:</td><td>$1,053,278.88</td></tr>
+              <tr><td>Deposits:</td><td>$45,880.00</td></tr>
+              <tr><td>Checks and Voids:</td><td>−$14,957.80</td></tr>
+              <tr><td>Withdrawals:</td><td>$0.00</td></tr>
+              <tr class="bold"><td>Ending Balance:</td><td>$1,084,201.08</td></tr>
+            </table>
+            <table class="recon-tx-tbl">
+              <thead>
+                <tr>
+                  <th>Canceled</th><th>Item #</th><th>Type</th><th>Date</th><th>Payee</th><th>Journal #</th><th class="r">Amount</th><th>Reconciled</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="6" style="font-weight:600;padding-top:8px">Beginning Balance</td><td class="r" style="font-weight:600">$1,053,278.88</td><td></td></tr>
+                <tr><td></td><td>9000070</td><td>Deposit</td><td style="white-space:nowrap">08/17/2026</td><td>Sunday Aug 16 donations</td><td>CN 8</td><td class="r">$24,340.00</td><td></td></tr>
+                <tr><td></td><td>619</td><td>Check</td><td style="white-space:nowrap">08/18/2026</td><td>CleanPro Facilities</td><td>CD 13</td><td class="r recon-tx-neg">−$2,800.00</td><td></td></tr>
+                <tr><td></td><td>620</td><td>Check</td><td style="white-space:nowrap">08/19/2026</td><td>Summit Events Co</td><td>CD 14</td><td class="r recon-tx-neg">−$5,100.00</td><td></td></tr>
+                <tr><td></td><td>621</td><td>Check</td><td style="white-space:nowrap">08/20/2026</td><td>Church Insurance Co</td><td>CD 15</td><td class="r recon-tx-neg">−$1,341.63</td><td></td></tr>
+                <tr><td></td><td>9000071</td><td>Deposit</td><td style="white-space:nowrap">08/24/2026</td><td>Sunday Aug 23 donations</td><td>CN 9</td><td class="r">$21,540.00</td><td></td></tr>
+                <tr><td></td><td>622</td><td>Check</td><td style="white-space:nowrap">08/25/2026</td><td>Riverside Utilities</td><td>CD 16</td><td class="r recon-tx-neg">−$2,114.50</td><td></td></tr>
+                <tr><td></td><td>623</td><td>Check</td><td style="white-space:nowrap">08/26/2026</td><td>Dunder Mifflin Paper Company, Inc.</td><td>CD 17</td><td class="r recon-tx-neg">−$210.00</td><td></td></tr>
+                <tr><td></td><td>624</td><td>EFT</td><td style="white-space:nowrap">08/28/2026</td><td>IRS — Payroll Tax Aug</td><td>EF 3</td><td class="r recon-tx-neg">−$3,391.67</td><td></td></tr>
+                <tr class="recon-tx-sum"><td colspan="6">Ending Balance</td><td class="r">$1,084,201.08</td><td></td></tr>
+                <tr class="recon-tx-sum"><td colspan="6">Total Items</td><td class="r">$57,592.47</td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- ACH Verification Report Modal -->
+<div id="ach-modal" onclick="if(event.target===this)closeAchModal()">
+  <div class="ach-inner">
+    <div class="ach-topbar">
+      <button class="ach-back-btn" onclick="backFromAch()">
+        <span class="msr">arrow_back</span> Back
+      </button>
+      <span class="ach-topbar-sep"></span>
+      <span class="ach-topbar-title">ACH Verification Report</span>
+      <div class="ach-topbar-tools">
+        <button class="wic" title="Print"><span class="msr">print</span></button>
+        <button class="wic" title="Download"><span class="msr">download</span></button>
+      </div>
+    </div>
+    <div class="ach-body">
+      <iframe id="ach-frame" class="ach-frame"></iframe>
+    </div>
+    <div class="ach-footer">
+      <button class="al-modal-btn gh" onclick="closeAchModal()">Cancel</button>
+      <button class="al-modal-btn pr" onclick="openVoucherModal()"><span class="msr sz16">check_circle</span> Continue</button>
+    </div>
+  </div>
+</div>
+<!-- Payment Voucher Modal -->
+<div id="voucher-modal" onclick="if(event.target===this)closeVoucherModal()">
+  <div class="ach-inner">
+    <div class="ach-topbar">
+      <button class="ach-back-btn" onclick="backFromVoucher()">
+        <span class="msr">arrow_back</span> Back
+      </button>
+      <span class="ach-topbar-sep"></span>
+      <span class="ach-topbar-title">Payment Voucher</span>
+      <div class="ach-topbar-tools">
+        <button class="wic" title="Print"><span class="msr">print</span></button>
+        <button class="wic" title="Download"><span class="msr">download</span></button>
+      </div>
+    </div>
+    <div class="ach-body">
+      <iframe id="voucher-frame" class="ach-frame"></iframe>
+    </div>
+    <div class="ach-footer">
+      <button class="al-modal-btn gh" onclick="closeVoucherModal()">Cancel</button>
+      <button class="al-modal-btn pr" onclick="openFinalizeModal()"><span class="msr sz16">check_circle</span> Continue</button>
+    </div>
+  </div>
+</div>
+<!-- Finalize Checks / Check Register Vouchers Modal -->
+<div id="finalize-modal" onclick="if(event.target===this)closeFinalizeModal()">
+  <div class="ach-inner">
+    <div class="ach-topbar">
+      <button class="ach-back-btn" onclick="backFromFinalize()">
+        <span class="msr">arrow_back</span> Back
+      </button>
+      <span class="ach-topbar-sep"></span>
+      <span class="ach-topbar-title">Check Register Vouchers</span>
+      <div class="ach-topbar-tools">
+        <button class="wic" title="Print"><span class="msr">print</span></button>
+        <button class="wic" title="Download"><span class="msr">download</span></button>
+      </div>
+    </div>
+    <div class="ach-body">
+      <iframe id="finalize-frame" class="ach-frame"></iframe>
+    </div>
+    <div class="ach-footer">
+      <button class="al-modal-btn pr" onclick="openPostModal()"><span class="msr sz16">download</span> Download ACH File & Continue</button>
+    </div>
+  </div>
+</div>
+<!-- Finalize Post Modal -->
+<div id="post-modal" onclick="if(event.target===this)closePostModal()">
+  <div class="ach-inner">
+    <div class="ach-topbar">
+      <button class="ach-back-btn" onclick="backFromPost()">
+        <span class="msr">arrow_back</span> Back
+      </button>
+      <span class="ach-topbar-sep"></span>
+      <span class="ach-topbar-title">Finalize Post</span>
+      <div class="ach-topbar-tools">
+        <button class="wic" title="Print"><span class="msr">print</span></button>
+        <button class="wic" title="Download"><span class="msr">download</span></button>
+      </div>
+    </div>
+    <div class="ach-body">
+      <iframe id="post-frame" class="ach-frame"></iframe>
+    </div>
+    <div class="ach-footer" style="justify-content:space-between;flex-wrap:wrap;gap:12px">
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+        <div class="post-date-grp">
+          <span class="post-date-lbl">* Posting Date</span>
+          <input class="post-date-input" type="date" value="2026-09-10"/>
+        </div>
+        <div class="post-chk-wrap">
+          <input type="checkbox" id="post-gl-chk"/>
+          <label for="post-gl-chk">Post Directly to General Ledger without Editing?</label>
+          <button class="post-help-btn" title="Help">?</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="al-modal-btn gh" onclick="closePostModal()">Cancel</button>
+        <button class="al-modal-btn pr" onclick="completePaymentFlow()"><span class="msr sz16">check_circle</span> Finalize Post</button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Budget Report Modal -->
+<div id="budget-modal" onclick="if(event.target===this)closeBudgetModal()">
+  <div class="ach-inner">
+    <div class="ach-topbar">
+      <button class="ach-back-btn" onclick="closeBudgetModal()">
+        <span class="msr">arrow_back</span> Back
+      </button>
+      <span class="ach-topbar-sep"></span>
+      <span class="ach-topbar-title">Budgeted Financial Statement</span>
+      <div class="ach-topbar-tools">
+        <button class="wic" title="Print"><span class="msr">print</span></button>
+        <button class="wic" title="Download"><span class="msr">download</span></button>
+      </div>
+    </div>
+    <div class="ach-body">
+      <iframe id="budget-frame" class="ach-frame"></iframe>
+    </div>
+    <div class="ach-footer">
+      <button class="al-modal-btn pr" onclick="closeBudgetModal()"><span class="msr sz16">check_circle</span> Done</button>
+    </div>
+  </div>
+</div>
+<!-- Special Report Modal -->
+<div id="sr-modal" onclick="if(event.target===this)closeSrModal()">
+  <div class="sr-inner">
+    <div class="sr-hd">
+      <div class="sr-hd-left">
+        <span class="msr">description</span>
+        <h2>Choose a special report</h2>
+      </div>
+      <button class="sr-close" onclick="closeSrModal()"><span class="msr">close</span></button>
+    </div>
+    <div class="sr-note">
+      <span class="msr">info</span>
+      <span>Choose a report, then a line within it. That line is what gets compared against its budget.</span>
+    </div>
+    <div class="sr-body">
+      <div class="sr-field">
+        <label class="sr-lbl">Report name</label>
+        <select class="sr-select" id="sr-report-name" onchange="onSrReportChange(this)">
+          <option value="" disabled selected>Select a report</option>
+          <option>General Ledger Summary</option>
+          <option>Income Statement</option>
+          <option>Balance Sheet</option>
+          <option>Cash Flow Report</option>
+        </select>
+      </div>
+      <div class="sr-field">
+        <label class="sr-lbl">Report line</label>
+        <select class="sr-select" id="sr-report-line" disabled>
+          <option value="" disabled selected>Select a report first</option>
+        </select>
+      </div>
+    </div>
+    <div class="sr-ft">
+      <button class="al-modal-btn gh" onclick="closeSrModal()">Cancel</button>
+      <button class="al-modal-btn pr" onclick="closeSrModal()">Apply</button>
+    </div>
+  </div>
+</div>
+<div id="fs-bg" class="ov-bg" onclick="closeFs()"></div>
+<div id="fs-modal" class="fs-modal"><div class="fs-inner"><div class="fs-hd"><h2 id="fs-title">Widget</h2><button class="wic" onclick="closeFs()"><span class="msr">close</span></button></div><div class="fs-body" id="fs-body"></div></div></div>
+<div id="ddm" class="ddm" style="display:none"></div>
+<script>
+var ALERT_ITEMS={
+  'al-1-1':{sev:'err',sevLabel:'Critical — Immediate Action Required',title:'Restricted Fund Compliance Breach — Missions Fund',detail:'Expenditure against this restricted fund has exceeded restricted income. Board notification may be required under gift acceptance policy.',fields:[['Fund','Missions Restricted Fund'],['YTD Expenditure','<span style="color:#c0392b;font-weight:600">$133,400</span>'],['Income Received','$98,200'],['Breach Amount','<span style="color:#c0392b;font-weight:600">$35,200 (135.8% of income)</span>'],['First Detected','Today, Aug 26, 2026']],action:'Review Restricted Fund',moduleBtn:'Go to General Ledger'},
+  'al-2-1':{type:'pay',sev:'err',sevLabel:'Urgent — Payment Overdue',title:'Acme Audio LLC — INV-2024-4421 Overdue',payData:{vendor:'Acme Audio LLC',invoice:'INV-2024-4421',amount:'$12,400.00',dueDate:'Aug 4, 2026',daysOverdue:22,fund:'General Fund — Worship',method:'AVID Pay'},detail:'This invoice is 22 days past its due date. Payment should be arranged immediately to avoid supplier relationship risk.',fields:[['Vendor','Acme Audio LLC'],['Invoice','INV-2024-4421'],['Amount','$12,400'],['Due Date','Aug 4, 2026'],['Days Overdue','<span style="color:#c0392b;font-weight:600">22 days</span>'],['Payment Method','AVID Pay']],action:'Pay Invoice',moduleBtn:'Go to Accounts Payable'},
+  'al-2-2':{type:'pay',sev:'err',sevLabel:'Urgent — Payment Overdue',title:'City Building Services — INV-2024-4398 Overdue',payData:{vendor:'City Building Services',invoice:'INV-2024-4398',amount:'$8,750.00',dueDate:'Aug 10, 2026',daysOverdue:16,fund:'General Fund — Facilities',method:'ACH'},detail:'This invoice is 16 days past its due date. Payment should be arranged immediately to avoid supplier relationship risk.',fields:[['Vendor','City Building Services'],['Invoice','INV-2024-4398'],['Amount','$8,750'],['Due Date','Aug 10, 2026'],['Days Overdue','<span style="color:#c0392b;font-weight:600">16 days</span>'],['Payment Method','ACH']],action:'Pay Invoice',moduleBtn:'Go to Accounts Payable'},
+  'al-2-3':{type:'pay',sev:'err',sevLabel:'Urgent — Payment Overdue',title:'Grace Print & Design — INV-2024-4410 Overdue',payData:{vendor:'Grace Print & Design',invoice:'INV-2024-4410',amount:'$3,200.00',dueDate:'Aug 17, 2026',daysOverdue:9,fund:'Communications',method:'EFT'},detail:'This invoice is 9 days past its due date. Payment should be arranged to maintain vendor relationships.',fields:[['Vendor','Grace Print & Design'],['Invoice','INV-2024-4410'],['Amount','$3,200'],['Due Date','Aug 17, 2026'],['Days Overdue','<span style="color:#c0392b;font-weight:600">9 days</span>'],['Payment Method','EFT']],action:'Pay Invoice',moduleBtn:'Go to Accounts Payable'},
+  'al-3-1':{type:'recon',sev:'warn',sevLabel:'Attention — Action Recommended',title:'Unreconciled Bank Account — Payroll Checking ··3355',detail:'This account has not been reconciled within the organisation\'s configured threshold. Unreconciled accounts may contain undetected errors or unauthorised activity.',fields:[['Account','Payroll Checking ··3355'],['Last Reconciled','July 26, 2026'],['Days Since','<span style="color:#e67e22;font-weight:600">31 days (threshold: 30)</span>'],['Configured By','Administrator (configurable)']],action:'Begin Reconciliation',moduleBtn:'Go to Bank Account Mgmt'},
+  'al-4-1':{type:'budget',sev:'warn',sevLabel:'Attention — Budget Exceeded',title:'Budget Exceeded — Worship Arts ($7,300 over)',detail:'YTD expenditure has exceeded 100% of the annual budget for this fund. No further commitments should be made without a budget amendment or board approval.',fields:[['Fund / Dept','Worship Arts'],['Annual Budget','$60,500'],['YTD Actual','<span style="color:#e67e22;font-weight:600">$67,800 (112%)</span>'],['Overspend','<span style="color:#e67e22;font-weight:600">$7,300</span>']],action:'View Budget Detail',moduleBtn:'Go to General Ledger'},
+  'al-5-1':{type:'po',sev:'warn',sevLabel:'Attention — Approval Stalled',docType:'Invoice',title:'INV-2024-4433',status:'Pending Approval',statusTone:'act',facts:[['Invoice No.','INV-2024-4433'],['Invoice Date','Aug 14, 2026'],['Vendor','Riverside AV Solutions'],['Requested By','David Chen'],['Fund','General Fund — Worship'],['Total Amount','$18,500']],lines:[['Audio System Upgrade — Main Sanctuary','1 unit','$12,500'],['Wireless Microphone Set (8-pack)','2 sets','$3,600'],['Installation & Configuration','1 service','$2,400'],['Total','','$18,500',true]],trail:[{done:true,label:'Submitted',who:'David Chen · Aug 14, 2026'},{done:true,label:'Finance Pre-check',who:'Automated · Aug 15, 2026'},{done:false,label:'Department Head Approval',who:'Sarah J. · Waiting 8 business days'}],moduleBtn:'Go to AP / Purchasing'},
+  'al-5-2':{type:'po',sev:'warn',sevLabel:'Attention — Approval Stalled',docType:'Purchase Order',title:'PO-2024-0891',status:'Pending Approval',statusTone:'act',facts:[['PO Number','PO-2024-0891'],['PO Date','Aug 16, 2026'],['Vendor','CleanPro Facilities'],['Requested By','James Okafor'],['Fund','General Fund — Facilities'],['Total Amount','$6,200']],lines:[['Deep Cleaning Service — Fellowship Hall','2 sessions','$2,800'],['HVAC Filter Replacement (bulk)','24 units','$1,920'],['Exterior Window Cleaning','1 service','$1,480'],['Total','','$6,200',true]],trail:[{done:true,label:'Submitted',who:'James Okafor · Aug 16, 2026'},{done:false,label:'Facilities Director Approval',who:'Michael R. · Waiting 6 business days'}],moduleBtn:'Go to AP / Purchasing'},
+  'al-6-1':{sev:'warn',sevLabel:'Attention — Invoice Outstanding',title:'Riverside Community Group — INV-AR-2024-0112',detail:'This AR invoice has been outstanding for 45 days. Manual follow-up is recommended given the age of this invoice.',fields:[['Payee','Riverside Community Group'],['Invoice','INV-AR-2024-0112'],['Amount','$3,800'],['Days Outstanding','<span style="color:#e67e22;font-weight:600">45 days</span>'],['Next Auto-Reminder','Aug 28, 2026']],action:'View Invoice',moduleBtn:'Go to Giving / AR'},
+  'al-6-2':{sev:'warn',sevLabel:'Attention — Invoice Outstanding',title:'Grace Preschool Program — INV-AR-2024-0098',detail:'This AR invoice has been outstanding for 38 days.',fields:[['Payee','Grace Preschool Program'],['Invoice','INV-AR-2024-0098'],['Amount','$6,500'],['Days Outstanding','<span style="color:#e67e22;font-weight:600">38 days</span>'],['Next Auto-Reminder','Aug 28, 2026']],action:'View Invoice',moduleBtn:'Go to Giving / AR'},
+  'al-6-3':{sev:'warn',sevLabel:'Attention — Invoice Outstanding',title:'Hillside Bible Fellowship — INV-AR-2024-0103',detail:'This AR invoice has been outstanding for 32 days.',fields:[['Payee','Hillside Bible Fellowship'],['Invoice','INV-AR-2024-0103'],['Amount','$2,200'],['Days Outstanding','<span style="color:#e67e22;font-weight:600">32 days</span>'],['Next Auto-Reminder','Aug 28, 2026']],action:'View Invoice',moduleBtn:'Go to Giving / AR'},
+  'al-6-4':{sev:'warn',sevLabel:'Attention — Invoice Outstanding',title:'Westside Community Center — INV-AR-2024-0107',detail:'This AR invoice has been outstanding for 28 days.',fields:[['Payee','Westside Community Center'],['Invoice','INV-AR-2024-0107'],['Amount','$1,900'],['Days Outstanding','<span style="color:#e67e22;font-weight:600">28 days</span>'],['Next Auto-Reminder','Aug 28, 2026']],action:'View Invoice',moduleBtn:'Go to Giving / AR'},
+  'al-6-5':{sev:'warn',sevLabel:'Attention — Invoice Outstanding',title:"St. Andrew's Parish — INV-AR-2024-0109",detail:"This AR invoice has been outstanding for 22 days.",fields:[['Payee',"St. Andrew's Parish"],['Invoice','INV-AR-2024-0109'],['Amount','$1,450'],['Days Outstanding','<span style="color:#e67e22;font-weight:600">22 days</span>'],['Next Auto-Reminder','Aug 28, 2026']],action:'View Invoice',moduleBtn:'Go to Giving / AR'},
+  'al-6-6':{sev:'warn',sevLabel:'Attention — Invoice Outstanding',title:'Grace Community Ministries — INV-AR-2024-0115',detail:'This AR invoice has been outstanding for 18 days.',fields:[['Payee','Grace Community Ministries'],['Invoice','INV-AR-2024-0115'],['Amount','$1,300'],['Days Outstanding','<span style="color:#e67e22;font-weight:600">18 days</span>'],['Next Auto-Reminder','Aug 28, 2026']],action:'View Invoice',moduleBtn:'Go to Giving / AR'},
+  'al-6-7':{sev:'warn',sevLabel:'Attention — Invoice Outstanding',title:'Northgate Baptist Church — INV-AR-2024-0118',detail:'This AR invoice has been outstanding for 14 days.',fields:[['Payee','Northgate Baptist Church'],['Invoice','INV-AR-2024-0118'],['Amount','$1,300'],['Days Outstanding','<span style="color:#e67e22;font-weight:600">14 days</span>'],['Next Auto-Reminder','Aug 28, 2026']],action:'View Invoice',moduleBtn:'Go to Giving / AR'}
+};
+function toggleCat(id){var el=document.getElementById(id);if(el)el.classList.toggle('open');}
+function openAlertModal(id){
+  var a=ALERT_ITEMS[id];if(!a)return;
+  if(a.type==='recon'){
+    document.getElementById('recon-modal').classList.add('open');
+    return;
+  }
+  if(a.type==='budget'){
+    openBudgetModal();
+    return;
+  }
+  if(a.type==='pay'){
+    openPayModal(a);
+    return;
+  }
+  if(a.type==='po'){
+    var sev=document.getElementById('al-modal-sev');
+    sev.className='al-modal-sev '+a.sev;sev.textContent=a.sevLabel;
+    document.getElementById('al-modal-title').innerHTML='<span class="al-po-hd-title">'+a.docType+': '+a.title+'<span class="al-po-status '+a.statusTone+'">'+a.status+'</span></span>';
+    var facts=a.facts.map(function(f){return '<div class="al-po-fact"><span class="al-po-fact-k">'+f[0]+'</span><span class="al-po-fact-v">'+f[1]+'</span></div>';}).join('');
+    var lines=a.lines.map(function(l){return '<div class="al-po-line'+(l[3]?' tot':'')+'"><span class="al-po-line-d">'+l[0]+'</span>'+(l[1]?'<span class="al-po-line-q">'+l[1]+'</span>':'')+'<span class="al-po-line-a">'+l[2]+'</span></div>';}).join('');
+    var steps=a.trail.map(function(s){return '<li class="al-po-step'+(s.done?' done':'')+'"><span class="msr al-po-step-ic">'+(s.done?'check_circle':'radio_button_unchecked')+'</span><div class="al-po-step-tx"><span class="al-po-step-l">'+s.label+'</span><span class="al-po-step-w">'+s.who+'</span></div></li>';}).join('');
+    document.getElementById('al-modal-body').style.padding='0';
+    document.getElementById('al-modal-body').innerHTML='<div class="al-po-b"><div class="al-po-facts">'+facts+'</div><div class="al-po-sec"><div class="al-po-sec-h">Line Items</div><div class="al-po-lines">'+lines+'</div></div><div class="al-po-sec"><div class="al-po-sec-h">Approval Trail</div><ul class="al-po-trail">'+steps+'</ul></div></div>';
+    document.getElementById('al-modal-ft').innerHTML=
+      '<button class="al-modal-btn gh" onclick="closeAlertModal()"><span class="msr sz16">open_in_new</span> '+a.moduleBtn+'</button>'+
+      '<button class="al-modal-btn danger" onclick="closeAlertModal()"><span class="msr sz16">cancel</span> Reject</button>'+
+      '<button class="al-modal-btn pr" onclick="closeAlertModal()"><span class="msr sz16">check_circle</span> Approve</button>';
+  } else {
+    var sev=document.getElementById('al-modal-sev');
+    sev.className='al-modal-sev '+a.sev;sev.textContent=a.sevLabel;
+    document.getElementById('al-modal-title').textContent=a.title;
+    var fields=a.fields.map(function(f){return '<div class="al-field"><span class="al-field-lbl">'+f[0]+'</span><span class="al-field-val">'+f[1]+'</span></div>';}).join('');
+    document.getElementById('al-modal-body').style.padding='';
+    document.getElementById('al-modal-body').innerHTML='<p class="al-modal-desc">'+a.detail+'</p><div class="al-fields">'+fields+'</div>';
+    document.getElementById('al-modal-ft').innerHTML=
+      '<button class="al-modal-btn gh" onclick="closeAlertModal()"><span class="msr sz16">open_in_new</span> '+a.moduleBtn+'</button>'+
+      '<button class="al-modal-btn pr" onclick="closeAlertModal()"><span class="msr sz16">arrow_forward</span> '+a.action+'</button>';
+  }
+  document.getElementById('al-modal').classList.add('open');
+}
+function closeAlertModal(){document.getElementById('al-modal').classList.remove('open');}
+function openReconModal(){document.getElementById('recon-modal').classList.add('open');}
+function closeReconModal(){document.getElementById('recon-modal').classList.remove('open');}
+var _budgetSrcdocSet=false;
+function openBudgetModal(){
+  var frame=document.getElementById('budget-frame');
+  if(frame&&!_budgetSrcdocSet){
+    _budgetSrcdocSet=true;
+    frame.srcdoc='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,Helvetica,sans-serif;font-size:12px;background:#d0d0d0;height:100vh;display:flex;flex-direction:column;overflow:hidden}.rv-toolbar{background:#f0f0f0;border-bottom:1px solid #bbb;padding:5px 8px;display:flex;align-items:center;gap:4px;flex-shrink:0;flex-wrap:wrap}.rv-nav-btn{background:#e4e4e4;border:1px solid #bbb;border-radius:2px;padding:2px 6px;cursor:pointer;font-size:11px;line-height:1.3;color:#333}.rv-nav-btn:hover{background:#d8d8d8}.rv-page-input{width:28px;border:1px solid #bbb;border-radius:2px;padding:1px 3px;font-size:11px;text-align:center}.rv-page-of{font-size:11px;color:#444;padding:0 4px}.rv-toolbar-sep{width:1px;height:20px;background:#bbb;margin:0 4px;flex-shrink:0}.rv-export-select{border:1px solid #bbb;border-radius:2px;padding:2px 4px;font-size:11px;background:#e4e4e4;color:#333;cursor:pointer}.rv-toolbar-btn{background:#e4e4e4;border:1px solid #bbb;border-radius:2px;padding:3px 10px;font-size:11px;cursor:pointer;color:#333}.rv-toolbar-btn:hover{background:#d8d8d8}.rv-icon-btn{background:#e4e4e4;border:1px solid #bbb;border-radius:2px;padding:3px 6px;font-size:13px;cursor:pointer;color:#333;line-height:1}.rv-icon-btn:hover{background:#d8d8d8}.rv-body{display:flex;flex:1;overflow:hidden}.rv-sidebar{width:182px;flex-shrink:0;background:#fff;border-right:1px solid #ccc;overflow-y:auto;padding:6px 0}.rv-tree-root{padding:5px 10px;font-size:12px;color:#333;cursor:pointer;display:flex;align-items:center;gap:4px}.rv-tree-root::before{content:"⊟";font-size:11px;color:#555;flex-shrink:0}.rv-tree-child{padding:4px 10px 4px 24px;font-size:12px;color:#0000cc;cursor:pointer;display:flex;align-items:center;gap:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rv-tree-child:hover{background:#eef2ff}.rv-tree-child::before{content:"■";font-size:8px;color:#333;flex-shrink:0}.rv-main{flex:1;overflow-y:auto;background:#d0d0d0;padding:20px;display:flex;justify-content:center;align-items:flex-start}.rv-page{background:#fff;border:2px solid #000080;width:800px;max-width:100%;padding:28px 32px 36px;font-size:11px;color:#000;line-height:1.5}.rv-hdr{font-size:11px;margin-bottom:14px;line-height:1.7}.rv-hdr-line{margin:0}.rv-section-lbl{font-size:11px;font-weight:bold;text-align:center;padding:4px 0 2px}.rv-sub-lbl{font-size:11px;font-weight:bold;text-align:center;padding:2px 0}.rv-tbl{width:100%;border-collapse:collapse;font-size:10.5px;margin-top:4px}.rv-tbl th{text-align:right;padding:2px 4px 4px;border-bottom:1px solid #000;font-weight:bold;font-size:10.5px;white-space:nowrap}.rv-tbl th:first-child{text-align:left}.rv-tbl td{padding:2px 4px;font-size:10.5px;vertical-align:top}.rv-tbl td:not(:first-child){text-align:right;font-variant-numeric:tabular-nums}.rv-tbl .tot-row td{border-top:1px solid #000;font-weight:bold;padding-top:3px}.rv-tbl .grand-row td{border-top:2px solid #000;font-weight:bold;padding-top:4px;font-size:11px}.rv-footer-note{display:flex;justify-content:space-between;margin-top:20px;font-size:10.5px;color:#333;border-top:1px solid #ccc;padding-top:6px}</style></head><body><div class="rv-toolbar"><button class="rv-nav-btn">&#8635;</button><button class="rv-nav-btn">&#9632;</button><button class="rv-nav-btn">|&#9664;</button><button class="rv-nav-btn">&#9664;</button><input class="rv-page-input" value="1"/><span class="rv-page-of">of 34</span><button class="rv-nav-btn">&#9654;</button><button class="rv-nav-btn">&#9654;|</button><div class="rv-toolbar-sep"></div><select class="rv-export-select"><option>Export to the sele...</option><option>PDF</option><option>Excel</option><option>Word</option><option>CSV</option></select><button class="rv-toolbar-btn">Export</button><div class="rv-toolbar-sep"></div><button class="rv-icon-btn">&#128438;</button><button class="rv-icon-btn">&#9707;</button></div><div class="rv-body"><div class="rv-sidebar"><div class="rv-tree-root">Budgeted Financial Statement</div><div class="rv-tree-child">Fund: 1 Church Departme...</div><div class="rv-tree-child">Fund: 1 Church Departme...</div><div class="rv-tree-child">Fund: 1 Church Departme...</div><div class="rv-tree-child">Fund: 1 Church Departme...</div><div class="rv-tree-child">Fund: 1 Church Departme...</div><div class="rv-tree-child">Fund: 1 Church Departme...</div><div class="rv-tree-child">Fund: 1 Church Departme...</div><div class="rv-tree-child">Fund: 1 Church Departme...</div><div class="rv-tree-child">Fund: 1 Church Departme...</div><div class="rv-tree-child">Fund: 2 School Departme...</div><div class="rv-tree-child">Fund: 2 School Departme...</div><div class="rv-tree-child">Fund: 2 School Departme...</div><div class="rv-tree-child">Fund: 2 School Departme...</div></div><div class="rv-main"><div class="rv-page"><div class="rv-hdr"><div class="rv-hdr-line"><strong>Budgeted Financial Statement for Period 1 - July</strong></div><div class="rv-hdr-line">Company#: 1 Name: Saint Michael Church</div><div class="rv-hdr-line">Fiscal Year Beginning 7/1/2023</div><div class="rv-hdr-line">Fund: 1 Church / Department: 10 Gen Income</div></div><table class="rv-tbl"><thead><tr><th style="text-align:left;width:120px">Budget</th><th style="width:95px">Annual Budget for Period</th><th style="width:85px">Actual for Period</th><th style="width:90px">Variance for Period</th><th style="width:85px">Budget YTD</th><th style="width:80px">Actual YTD</th><th style="width:110px">Var. Actual to Annual Budget Dollar</th></tr></thead><tbody><tr><td colspan="7" class="rv-section-lbl">INCOME</td></tr><tr><td colspan="7" class="rv-sub-lbl">OFFERINGS</td></tr><tr><td></td><td>$41,000.00</td><td>$3,416.63</td><td>$0.00</td><td>($3,416.63)</td><td>$3,416.63</td><td>$0.00</td></tr><tr><td></td><td>($41,000.00)</td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td>$1,111.00</td><td>$92.62</td><td>$0.00</td><td>($92.62)</td><td>$92.62</td><td>$0.00</td></tr><tr><td></td><td>($1,111.00)</td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td>$20,000.00</td><td>$0.00</td><td>$0.00</td><td>$0.00</td><td>$0.00</td><td>$0.00</td></tr><tr><td></td><td>($20,000.00)</td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td>$60.00</td><td>$20.00</td><td>$0.00</td><td>($20.00)</td><td>$20.00</td><td>$0.00</td></tr><tr><td></td><td>($60.00)</td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td>$500.00</td><td>$41.63</td><td>$0.00</td><td>($41.63)</td><td>$41.63</td><td>$0.00</td></tr><tr><td></td><td>($500.00)</td><td></td><td></td><td></td><td></td><td></td></tr><tr class="tot-row"><td></td><td>$62,671.00</td><td>$3,570.88</td><td>$0.00</td><td>($3,570.88)</td><td>$3,570.88</td><td>$0.00</td></tr><tr><td></td><td>($62,671.00)</td><td></td><td></td><td></td><td></td><td></td></tr><tr><td colspan="7" class="rv-sub-lbl">OTHER INCOME</td></tr><tr><td></td><td>$1,818.00</td><td>$151.50</td><td>$0.00</td><td>($151.50)</td><td>$151.50</td><td>$0.00</td></tr><tr><td></td><td>($1,818.00)</td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td>$1,919.00</td><td>$159.88</td><td>$0.00</td><td>($159.88)</td><td>$159.88</td><td>$0.00</td></tr><tr><td></td><td>($1,919.00)</td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td>$2,020.00</td><td>$168.37</td><td>$0.00</td><td>($168.37)</td><td>$168.37</td><td>$0.00</td></tr><tr><td></td><td>($2,020.00)</td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td>$2,121.00</td><td>$176.75</td><td>$0.00</td><td>($176.75)</td><td>$176.75</td><td>$0.00</td></tr><tr><td></td><td>($2,121.00)</td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td>$2,222.00</td><td>$185.13</td><td>$0.00</td><td>($185.13)</td><td>$185.13</td><td>$0.00</td></tr><tr><td></td><td>($2,222.00)</td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td>$2,323.00</td><td>$193.62</td><td>$0.00</td><td>($193.62)</td><td>$193.62</td><td>$0.00</td></tr><tr><td></td><td>($2,323.00)</td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td>$2,424.00</td><td>$202.00</td><td>$0.00</td><td>($202.00)</td><td>$202.00</td><td>$0.00</td></tr><tr><td></td><td>($2,424.00)</td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td>$2,525.00</td><td>$210.38</td><td>$0.00</td><td>($210.38)</td><td>$210.38</td><td>$0.00</td></tr><tr><td></td><td>($2,525.00)</td><td></td><td></td><td></td><td></td><td></td></tr><tr class="tot-row"><td></td><td>$17,372.00</td><td>$1,447.63</td><td>$0.00</td><td>($1,447.63)</td><td>$1,447.63</td><td>$0.00</td></tr><tr><td></td><td>($17,372.00)</td><td></td><td></td><td></td><td></td><td></td></tr><tr class="grand-row"><td></td><td>$80,043.00</td><td>$5,018.51</td><td>$0.00</td><td>($5,018.51)</td><td>$5,018.51</td><td>$0.00</td></tr><tr><td></td><td>($80,043.00)</td><td></td><td></td><td></td><td></td><td></td></tr></tbody></table><div class="rv-footer-note"><span>Report created on 9/10/2026 5:56 AM</span><span>Page 1 of 34</span></div></div></div></div></body></html>';
+  }
+  document.getElementById('budget-modal').classList.add('open');
+}
+function closeBudgetModal(){document.getElementById('budget-modal').classList.remove('open');}
+var _payData=null;
+function openPayModal(a){
+  _payData=a;
+  var d=a.payData;
+  document.getElementById('pay-hd-title').textContent=d.vendor+' — '+d.invoice;
+  document.getElementById('pay-hd-sub').textContent=d.daysOverdue+' days overdue · Due '+d.dueDate+' · '+d.method;
+  document.getElementById('pay-inv-vendor').textContent=d.vendor;
+  document.getElementById('pay-inv-num').textContent=d.invoice;
+  document.getElementById('pay-inv-amt').textContent=d.amount;
+  var body=document.getElementById('pay-form-content');
+  if(d.method==='AVID Pay'){
+    body.innerHTML=
+      '<div class="pay-form">'+
+        '<div class="pay-f-row" style="align-items:flex-end;gap:16px">'+
+          '<div class="pay-f-field" style="max-width:200px">'+
+            '<label class="pay-f-lbl"><span style="color:#c0392b;margin-right:2px">*</span>Avid Pay Check Date</label>'+
+            '<input class="pay-f-input" type="date" value="2026-08-31"/>'+
+          '</div>'+
+        '</div>'+
+        '<div class="pay-f-row">'+
+          '<div class="pay-f-field" style="max-width:200px">'+
+            '<label class="pay-f-lbl">Avid Pay First Check #</label>'+
+            '<input class="pay-f-input" value="AXP0243"/>'+
+          '</div>'+
+        '</div>'+
+        '<div style="margin:16px 0 10px;font-size:13px;font-weight:600;color:#202020;text-align:center">Accounts Payable Check Register Settings</div>'+
+        '<div class="pay-chk-row"><input type="checkbox" id="avid-chk-notes"/><label for="avid-chk-notes">Show notes</label></div>'+
+        '<div class="pay-chk-row" style="margin-top:8px"><input type="checkbox" id="avid-chk-setup"/><label for="avid-chk-setup">Show setup information</label></div>'+
+        '<div class="pay-chk-row" style="margin-top:8px"><input type="checkbox" id="avid-chk-proj"/><label for="avid-chk-proj">Show project information</label></div>'+
+      '</div>';
+  } else if(d.method==='ACH'){
+    body.innerHTML=
+      '<div class="pay-form">'+
+        '<div class="pay-f-row" style="align-items:flex-end;gap:16px">'+
+          '<div class="pay-f-field" style="max-width:200px">'+
+            '<label class="pay-f-lbl"><span style="color:#c0392b;margin-right:2px">*</span>Check Date</label>'+
+            '<input class="pay-f-input" type="date" value="2026-08-31"/>'+
+          '</div>'+
+        '</div>'+
+        '<div class="pay-f-row" style="align-items:center;gap:12px;flex-wrap:wrap">'+
+          '<div class="pay-f-field" style="max-width:160px">'+
+            '<label class="pay-f-lbl"><span style="color:#c0392b;margin-right:2px">*</span>First Check #</label>'+
+            '<input class="pay-f-input" value="127"/>'+
+          '</div>'+
+          '<span style="font-size:12px;color:#888;padding-top:18px;white-space:nowrap"># of checks: 0, vouchers: 1</span>'+
+        '</div>'+
+        '<div class="pay-chk-row" style="margin-top:4px"><input type="checkbox" id="ach-chk-email"/><label for="ach-chk-email">Email vouchers?</label></div>'+
+        '<div style="margin:16px 0 10px;font-size:13px;font-weight:600;color:#202020;text-align:center">Accounts Payable Check Register Settings</div>'+
+        '<div class="pay-chk-row"><input type="checkbox" id="ach-chk-notes"/><label for="ach-chk-notes">Show notes</label></div>'+
+        '<div class="pay-chk-row" style="margin-top:8px"><input type="checkbox" id="ach-chk-setup"/><label for="ach-chk-setup">Show setup information</label></div>'+
+        '<div class="pay-chk-row" style="margin-top:8px"><input type="checkbox" id="ach-chk-proj"/><label for="ach-chk-proj">Show project information</label></div>'+
+      '</div>';
+  } else {
+    body.innerHTML='';
+  }
+  document.getElementById('pay-modal').classList.add('open');
+}
+function closePayModal(){document.getElementById('pay-modal').classList.remove('open');}
+function openDr(){document.getElementById('drawer').classList.add('open');document.getElementById('dr-bg').classList.add('open');}
+function closeDr(){document.getElementById('drawer').classList.remove('open');document.getElementById('dr-bg').classList.remove('open');}
+function filterDr(q){
+  q=q.toLowerCase();
+  document.querySelectorAll('.dr-widget').forEach(function(el){el.style.display=el.textContent.toLowerCase().includes(q)?'':'none';});
+  document.querySelectorAll('.dr-sec').forEach(function(sec){
+    var nxt=sec.nextElementSibling,vis=false;
+    while(nxt&&!nxt.classList.contains('dr-sec')){if(nxt.style.display!=='none')vis=true;nxt=nxt.nextElementSibling;}
+    sec.style.display=vis?'':'none';
+  });
+}
+function openFs(title){
+  document.getElementById('fs-title').textContent=title;
+  document.getElementById('fs-body').innerHTML='<p style="color:#606060;font-size:14px;padding:8px 0">Fullscreen expanded view for <strong>'+title+'</strong>.</p>';
+  document.getElementById('fs-modal').classList.add('open');
+}
+function closeFs(){document.getElementById('fs-modal').classList.remove('open');}
+var _ddmW=null;
+function openDdm(e,wname){
+  e.stopPropagation();
+  var ddm=document.getElementById('ddm');
+  if(_ddmW===wname&&ddm.style.display==='block'){closeDdm();return;}
+  _ddmW=wname;
+  var safe=wname.replace(/&/g,'&').replace(/'/g,"\\'");
+  ddm.innerHTML=
+    '<button class="ddm-item" onclick="closeDdm()"><span class="msr">refresh</span> Refresh</button>'+
+    '<button class="ddm-item" onclick="openFs(\''+safe+"');closeDdm()\"><span class=\"msr\">open_in_full</span> Expand to fullscreen</button>"+
+    '<div class="ddm-sep"></div>'+
+    '<button class="ddm-item danger" onclick="closeDdm()"><span class="msr">delete</span> Remove widget</button>';
+  var r=e.currentTarget.getBoundingClientRect();
+  ddm.style.top=(r.bottom+4)+'px';
+  ddm.style.left=Math.min(r.right-180,window.innerWidth-196)+'px';
+  ddm.style.display='block';
+}
+function closeDdm(){document.getElementById('ddm').style.display='none';_ddmW=null;}
+document.addEventListener('click',function(e){if(_ddmW&&!e.target.closest('#ddm'))closeDdm();});
+document.addEventListener('click',function(e){
+  var btn=e.target.closest('.vtog button');
+  if(btn){btn.closest('.vtog').querySelectorAll('button').forEach(function(b){b.classList.remove('vact');});btn.classList.add('vact');}
+});
+var _szOpen=null;
+function toggleSz(e,id){
+  e.stopPropagation();
+  var pop=document.getElementById('sz-'+id);
+  if(!pop)return;
+  var wasOpen=pop.classList.contains('open');
+  document.querySelectorAll('.sz-pop.open').forEach(function(p){p.classList.remove('open');});
+  _szOpen=null;
+  if(!wasOpen){pop.classList.add('open');_szOpen=id;}
+}
+function setSz(id,sz){
+  var card=document.getElementById(id);
+  if(card)card.setAttribute('data-sz',sz);
+  var pop=document.getElementById('sz-'+id);
+  if(pop){
+    pop.querySelectorAll('.sz-opt').forEach(function(o){
+      var fn=o.getAttribute('onclick')||'';
+      o.classList.toggle('sz-act',fn.indexOf("'"+sz+"'")>-1);
+    });
+  }
+  document.querySelectorAll('.sz-pop.open').forEach(function(p){p.classList.remove('open');});
+  _szOpen=null;
+}
+document.addEventListener('click',function(e){
+  if(_szOpen&&!e.target.closest('.sz-wrap')){
+    document.querySelectorAll('.sz-pop.open').forEach(function(p){p.classList.remove('open');});
+    _szOpen=null;
+  }
+});
+var _kpiFltOpen=null;
+function toggleKpiFlt(e,id){
+  e.stopPropagation();
+  var pop=document.getElementById(id);
+  if(!pop)return;
+  var wasOpen=pop.classList.contains('open');
+  document.querySelectorAll('.kpi-flt-pop.open').forEach(function(p){p.classList.remove('open');});
+  _kpiFltOpen=null;
+  if(!wasOpen){pop.classList.add('open');_kpiFltOpen=id;}
+}
+function setKpiFlt(popId,label,btn){
+  var pop=document.getElementById(popId);
+  if(!pop)return;
+  pop.querySelectorAll('.kpi-flt-opt:not(.kpi-flt-sr)').forEach(function(o){o.classList.add('kpi-flt-unsel');});
+  btn.classList.remove('kpi-flt-unsel');
+  var wrap=pop.closest('.kpi-flt-wrap');
+  if(wrap){var lbl=wrap.querySelector('.kpi-flt-label');if(lbl)lbl.textContent=label;}
+  pop.classList.remove('open');_kpiFltOpen=null;
+}
+function openSrModal(){
+  document.querySelectorAll('.kpi-flt-pop.open').forEach(function(p){p.classList.remove('open');});
+  _kpiFltOpen=null;
+  document.getElementById('sr-report-name').selectedIndex=0;
+  var line=document.getElementById('sr-report-line');
+  line.disabled=true;line.innerHTML='<option value="" disabled selected>Select a report first</option>';
+  document.getElementById('sr-modal').classList.add('open');
+}
+function closeSrModal(){document.getElementById('sr-modal').classList.remove('open');}
+function onSrReportChange(sel){
+  var line=document.getElementById('sr-report-line');
+  line.disabled=false;
+  line.innerHTML='<option value="" disabled selected>Select a report line</option>'+
+    '<option>Total Income</option><option>Total Expenses</option><option>Net Income</option><option>Operating Expenses</option>';
+}
+document.addEventListener('click',function(e){
+  if(_kpiFltOpen&&!e.target.closest('.kpi-flt-wrap')){
+    document.querySelectorAll('.kpi-flt-pop.open').forEach(function(p){p.classList.remove('open');});
+    _kpiFltOpen=null;
+  }
+});
+var _achSrcdocSet=false;
+function submitPayment(){
+  document.getElementById('pay-modal').classList.remove('open');
+  openAchModal();
+}
+function openAchModal(){
+  var frame=document.getElementById('ach-frame');
+  if(frame&&!_achSrcdocSet){
+    _achSrcdocSet=true;
+    frame.srcdoc='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,Helvetica,sans-serif;font-size:12px;background:#d0d0d0;height:100vh;display:flex;flex-direction:column;overflow:hidden}.rv-toolbar{background:#f0f0f0;border-bottom:1px solid #bbb;padding:5px 8px;display:flex;align-items:center;gap:4px;flex-shrink:0;flex-wrap:wrap}.rv-nav-btn{background:#e4e4e4;border:1px solid #bbb;border-radius:2px;padding:2px 6px;cursor:pointer;font-size:11px;line-height:1.3;color:#333}.rv-nav-btn:hover{background:#d8d8d8}.rv-page-input{width:28px;border:1px solid #bbb;border-radius:2px;padding:1px 3px;font-size:11px;text-align:center}.rv-page-of{font-size:11px;color:#444;padding:0 4px}.rv-toolbar-sep{width:1px;height:20px;background:#bbb;margin:0 4px;flex-shrink:0}.rv-export-select{border:1px solid #bbb;border-radius:2px;padding:2px 4px;font-size:11px;background:#e4e4e4;color:#333;cursor:pointer}.rv-toolbar-btn{background:#e4e4e4;border:1px solid #bbb;border-radius:2px;padding:3px 10px;font-size:11px;cursor:pointer;color:#333}.rv-toolbar-btn:hover{background:#d8d8d8}.rv-icon-btn{background:#e4e4e4;border:1px solid #bbb;border-radius:2px;padding:3px 6px;font-size:13px;cursor:pointer;color:#333;line-height:1}.rv-icon-btn:hover{background:#d8d8d8}.rv-body{display:flex;flex:1;overflow:hidden}.rv-sidebar{width:182px;flex-shrink:0;background:#fff;border-right:1px solid #ccc;overflow-y:auto;padding:6px 0}.rv-sidebar-item{padding:5px 10px 5px 12px;font-size:12px;color:#0000cc;cursor:pointer;display:flex;align-items:center;gap:5px;text-decoration:none}.rv-sidebar-item:hover{background:#eef2ff}.rv-sidebar-item::before{content:"■";font-size:8px;color:#333;flex-shrink:0}.rv-main{flex:1;overflow-y:auto;background:#d0d0d0;padding:20px;display:flex;justify-content:center;align-items:flex-start}.rv-report-page{background:#fff;border:2px solid #000080;width:740px;max-width:100%;padding:32px 36px;font-size:11.5px;color:#000;line-height:1.5}.rv-title{font-size:12px;font-weight:bold;margin-bottom:2px}.rv-org{font-size:11.5px;margin-bottom:12px}.rv-hdr-grid{display:grid;grid-template-columns:1fr 1fr;gap:2px 24px;margin-bottom:14px;font-size:11.5px}.rv-hdr-row{display:flex;gap:0}.rv-hdr-lbl{white-space:nowrap;min-width:0}.rv-hdr-val{font-weight:normal}.rv-divider{height:1px;background:#ddd;margin:10px 0}.rv-tbl{width:100%;border-collapse:collapse;font-size:11px;margin-top:6px}.rv-tbl th{border-bottom:1px solid #000;padding:3px 6px;text-align:left;font-weight:bold;text-decoration:underline;white-space:nowrap;font-size:11px}.rv-tbl td{padding:3px 6px;vertical-align:top;font-size:11px}.rv-tbl .r{text-align:right}.rv-tbl .offset{font-size:10px;color:#555}.rv-totals{margin-top:18px;font-size:11.5px}.rv-total-row{display:flex;gap:8px;margin-bottom:3px}.rv-total-lbl{font-weight:bold}</style></head><body><div class="rv-toolbar"><button class="rv-nav-btn" title="Refresh">&#8635;</button><button class="rv-nav-btn" title="Stop">&#9632;</button><button class="rv-nav-btn" title="First">|&#9664;</button><button class="rv-nav-btn" title="Previous">&#9664;</button><input class="rv-page-input" value="1" /><span class="rv-page-of">of 1</span><button class="rv-nav-btn" title="Next">&#9654;</button><button class="rv-nav-btn" title="Last">&#9654;|</button><div class="rv-toolbar-sep"></div><select class="rv-export-select"><option>Export to the selected...</option><option>PDF</option><option>Excel</option><option>Word</option><option>CSV</option></select><button class="rv-toolbar-btn">Export</button><div class="rv-toolbar-sep"></div><button class="rv-icon-btn" title="Print">&#128438;</button><button class="rv-icon-btn" title="Toggle layout">&#9707;</button></div><div class="rv-body"><div class="rv-sidebar"><a class="rv-sidebar-item">ACH Verification Report</a></div><div class="rv-main"><div class="rv-report-page"><div class="rv-hdr-grid"><div><div class="rv-title">ACH Verification Report</div><div style="font-size:11.5px">Company#: 1 Name: Saint Michael Church</div></div><div><div class="rv-hdr-row"><span class="rv-hdr-lbl">Company Name:&nbsp;&nbsp;</span><span class="rv-hdr-val">Saint Michael Church</span></div><div class="rv-hdr-row"><span class="rv-hdr-lbl">Company ID #:&nbsp;&nbsp;</span><span class="rv-hdr-val">1123456789</span></div><div class="rv-hdr-row"><span class="rv-hdr-lbl">Effective Date:&nbsp;&nbsp;</span><span class="rv-hdr-val">9/10/2026</span></div></div></div><div class="rv-hdr-grid" style="margin-top:10px"><div><div class="rv-hdr-row"><span class="rv-hdr-lbl">Immediate Destination ID:</span></div><div class="rv-hdr-row" style="margin-top:2px"><span class="rv-hdr-lbl">Immediate Destination Name:&nbsp;&nbsp;</span><span class="rv-hdr-val">First Church</span></div><div class="rv-hdr-row" style="margin-top:2px"><span class="rv-hdr-lbl">Transaction Date:&nbsp;&nbsp;</span><span class="rv-hdr-val">9/10/2026</span></div></div><div><div class="rv-hdr-row"><span class="rv-hdr-lbl">Immediate Origin ID:</span></div><div class="rv-hdr-row" style="margin-top:2px"><span class="rv-hdr-lbl">Immediate Origin Name:&nbsp;&nbsp;</span><span class="rv-hdr-val">First National Bank</span></div><div class="rv-hdr-row" style="margin-top:2px"><span class="rv-hdr-lbl">Transaction Time:&nbsp;&nbsp;</span><span class="rv-hdr-val">04:00</span></div></div></div><div class="rv-divider"></div><table class="rv-tbl"><thead><tr><th>Acct. Type</th><th>Bank Routing #</th><th>Bank Account #</th><th class="r">Deposit Amount</th><th>Name ID</th><th>Name</th><th class="r">Tracer #</th><th>Emailed<br>Voucher</th></tr></thead><tbody><tr><td>Checking</td><td>*****4311</td><td>*****6789</td><td class="r">$1.00</td><td>4825</td><td>ACH Vendor</td><td class="r">2560749700<br>00001</td><td>No</td></tr><tr><td></td><td>*****0000</td><td>*****6586</td><td class="r">$1.00</td><td>1123456789</td><td>Saint Michael Church</td><td class="r">2560749700<br>00002</td><td></td></tr><tr><td colspan="8"><span class="offset">Company offset draft</span></td></tr></tbody></table><div class="rv-totals"><div class="rv-total-row"><span class="rv-total-lbl">Total Number of Transactions:</span><span>1</span></div><div class="rv-total-row"><span class="rv-total-lbl">Number of ACH Vouchers:</span><span>2</span></div></div></div></div></div></body></html>';
+  }
+  document.getElementById('ach-modal').classList.add('open');
+}
+function closeAchModal(){document.getElementById('ach-modal').classList.remove('open');}
+function backFromAch(){
+  closeAchModal();
+  if(_payData){document.getElementById('pay-modal').classList.add('open');}
+}
+var _voucherSrcdocSet=false;
+function openVoucherModal(){
+  closeAchModal();
+  var frame=document.getElementById('voucher-frame');
+  if(frame&&!_voucherSrcdocSet){
+    _voucherSrcdocSet=true;
+    frame.srcdoc='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,Helvetica,sans-serif;font-size:12px;background:#d0d0d0;height:100vh;display:flex;flex-direction:column;overflow:hidden}.rv-toolbar{background:#f0f0f0;border-bottom:1px solid #bbb;padding:5px 8px;display:flex;align-items:center;gap:4px;flex-shrink:0;flex-wrap:wrap}.rv-nav-btn{background:#e4e4e4;border:1px solid #bbb;border-radius:2px;padding:2px 6px;cursor:pointer;font-size:11px;line-height:1.3;color:#333}.rv-nav-btn:hover{background:#d8d8d8}.rv-page-input{width:28px;border:1px solid #bbb;border-radius:2px;padding:1px 3px;font-size:11px;text-align:center}.rv-page-of{font-size:11px;color:#444;padding:0 4px}.rv-toolbar-sep{width:1px;height:20px;background:#bbb;margin:0 4px;flex-shrink:0}.rv-export-select{border:1px solid #bbb;border-radius:2px;padding:2px 4px;font-size:11px;background:#e4e4e4;color:#333;cursor:pointer}.rv-toolbar-btn{background:#e4e4e4;border:1px solid #bbb;border-radius:2px;padding:3px 10px;font-size:11px;cursor:pointer;color:#333}.rv-toolbar-btn:hover{background:#d8d8d8}.rv-icon-btn{background:#e4e4e4;border:1px solid #bbb;border-radius:2px;padding:3px 6px;font-size:13px;cursor:pointer;color:#333;line-height:1}.rv-icon-btn:hover{background:#d8d8d8}.rv-body{display:flex;flex:1;overflow:hidden}.rv-sidebar{width:182px;flex-shrink:0;background:#fff;border-right:1px solid #ccc;overflow-y:auto;padding:6px 0}.rv-sidebar-item{padding:5px 10px 5px 12px;font-size:12px;color:#0000cc;cursor:pointer;display:flex;align-items:center;gap:5px;text-decoration:none}.rv-sidebar-item:hover{background:#eef2ff}.rv-sidebar-item::before{content:"■";font-size:8px;color:#333;flex-shrink:0}.rv-main{flex:1;overflow-y:auto;background:#d0d0d0;padding:20px;display:flex;justify-content:center;align-items:flex-start}.rv-page{background:#fff;border:2px solid #000080;width:700px;max-width:100%;padding:40px 48px 60px;font-size:11.5px;color:#000;line-height:1.6;min-height:820px;position:relative}.rv-page-title{text-align:right;font-size:13px;font-weight:bold;margin-bottom:24px}.rv-sender{font-size:11.5px;line-height:1.6;margin-bottom:80px}.rv-recipient{font-size:11.5px;line-height:1.6;margin-bottom:40px;margin-left:60px}.rv-divider{height:1px;background:#aaa;margin-bottom:14px}.rv-payline{font-size:11.5px;margin-bottom:12px}.rv-tbl{width:100%;border-collapse:collapse;font-size:11px}.rv-tbl th{text-align:left;padding:2px 6px 4px;border-bottom:1px solid #000;font-weight:bold;text-decoration:underline;font-size:11px}.rv-tbl th.r,.rv-tbl td.r{text-align:right}.rv-tbl td{padding:2px 6px;font-size:11px}.rv-tbl .tot-row td{padding-top:2px}</style></head><body><div class="rv-toolbar"><button class="rv-nav-btn" title="Refresh">&#8635;</button><button class="rv-nav-btn" title="Stop">&#9632;</button><button class="rv-nav-btn" title="First">|&#9664;</button><button class="rv-nav-btn" title="Previous">&#9664;</button><input class="rv-page-input" value="1"/><span class="rv-page-of">of 1</span><button class="rv-nav-btn" title="Next">&#9654;</button><button class="rv-nav-btn" title="Last">&#9654;|</button><div class="rv-toolbar-sep"></div><select class="rv-export-select"><option>Export to the selec...</option><option>PDF</option><option>Excel</option><option>Word</option><option>CSV</option></select><button class="rv-toolbar-btn">Export</button><div class="rv-toolbar-sep"></div><button class="rv-icon-btn" title="Print">&#128438;</button><button class="rv-icon-btn" title="Toggle layout">&#9707;</button></div><div class="rv-body"><div class="rv-sidebar"><a class="rv-sidebar-item">Payment Voucher</a></div><div class="rv-main"><div class="rv-page"><div class="rv-page-title">Payment Voucher</div><div class="rv-sender">Saint Michael Church<br>checking<br>Memphis TN 38112</div><div class="rv-recipient">ACH Vendor<br>1313 Mockingbird Lane<br>Bartlett TN 38133</div><div class="rv-divider"></div><div class="rv-payline">Pay Date: 09/10/2026&nbsp;&nbsp;&nbsp;Ck#: ACH&nbsp;&nbsp;&nbsp;Voucher ID#: 4825&nbsp;&nbsp;ACH Vendor</div><table class="rv-tbl"><thead><tr><th>Invoice</th><th>Date</th><th>Description</th><th class="r">Net</th></tr></thead><tbody><tr><td>2</td><td>12/17/2020</td><td>ACH</td><td class="r">$10.00</td></tr><tr class="tot-row"><td></td><td></td><td>Total</td><td class="r">$10.00</td></tr></tbody></table></div></div></div></body></html>';
+  }
+  document.getElementById('voucher-modal').classList.add('open');
+}
+function closeVoucherModal(){document.getElementById('voucher-modal').classList.remove('open');}
+function backFromVoucher(){
+  closeVoucherModal();
+  document.getElementById('ach-modal').classList.add('open');
+}
+var _finalizeSrcdocSet=false;
+function openFinalizeModal(){
+  closeVoucherModal();
+  var frame=document.getElementById('finalize-frame');
+  if(frame&&!_finalizeSrcdocSet){
+    _finalizeSrcdocSet=true;
+    frame.srcdoc='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,Helvetica,sans-serif;font-size:12px;background:#d0d0d0;height:100vh;display:flex;flex-direction:column;overflow:hidden}.rv-toolbar{background:#f0f0f0;border-bottom:1px solid #bbb;padding:5px 8px;display:flex;align-items:center;gap:4px;flex-shrink:0;flex-wrap:wrap}.rv-nav-btn{background:#e4e4e4;border:1px solid #bbb;border-radius:2px;padding:2px 6px;cursor:pointer;font-size:11px;line-height:1.3;color:#333}.rv-nav-btn:hover{background:#d8d8d8}.rv-page-input{width:28px;border:1px solid #bbb;border-radius:2px;padding:1px 3px;font-size:11px;text-align:center}.rv-page-of{font-size:11px;color:#444;padding:0 4px}.rv-toolbar-sep{width:1px;height:20px;background:#bbb;margin:0 4px;flex-shrink:0}.rv-export-select{border:1px solid #bbb;border-radius:2px;padding:2px 4px;font-size:11px;background:#e4e4e4;color:#333;cursor:pointer}.rv-toolbar-btn{background:#e4e4e4;border:1px solid #bbb;border-radius:2px;padding:3px 10px;font-size:11px;cursor:pointer;color:#333}.rv-toolbar-btn:hover{background:#d8d8d8}.rv-icon-btn{background:#e4e4e4;border:1px solid #bbb;border-radius:2px;padding:3px 6px;font-size:13px;cursor:pointer;color:#333;line-height:1}.rv-icon-btn:hover{background:#d8d8d8}.rv-body{display:flex;flex:1;overflow:hidden}.rv-sidebar{width:182px;flex-shrink:0;background:#fff;border-right:1px solid #ccc;overflow-y:auto;padding:6px 0}.rv-tree-root{padding:5px 10px;font-size:12px;color:#333;cursor:pointer;display:flex;align-items:center;gap:4px;font-weight:normal}.rv-tree-root::before{content:"⊟";font-size:11px;color:#555;flex-shrink:0}.rv-tree-child{padding:4px 10px 4px 24px;font-size:12px;color:#0000cc;cursor:pointer;display:flex;align-items:center;gap:5px}.rv-tree-child:hover{background:#eef2ff}.rv-tree-child::before{content:"■";font-size:8px;color:#333;flex-shrink:0}.rv-main{flex:1;overflow-y:auto;background:#d0d0d0;padding:20px;display:flex;justify-content:center;align-items:flex-start}.rv-page{background:#fff;border:2px solid #000080;width:700px;max-width:100%;padding:32px 36px 40px;font-size:11px;color:#000;line-height:1.5;position:relative}.rv-hdr{font-size:11px;margin-bottom:16px;line-height:1.7}.rv-hdr-line{margin:0}.rv-divider{height:0;margin:0}.rv-tbl{width:100%;border-collapse:collapse;font-size:11px;margin-top:4px}.rv-tbl th{text-align:left;padding:2px 4px 4px;border-bottom:1px solid #000;font-weight:bold;text-decoration:underline;font-size:11px;white-space:nowrap}.rv-tbl td{padding:2px 4px;font-size:11px;vertical-align:top}.rv-tbl .r{text-align:right}.rv-vendor-row td{background:#e8e8e8;font-weight:bold;padding:3px 4px}.rv-vendor-total td{padding:4px 4px 2px}.rv-vendor-total .underline{text-decoration:underline;font-weight:bold}.rv-section-total td{padding:3px 4px}.rv-section-total .underline{text-decoration:underline;font-weight:bold}.rv-footer-note{display:flex;justify-content:space-between;margin-top:20px;font-size:10.5px;color:#333;border-top:none}</style></head><body><div class="rv-toolbar"><button class="rv-nav-btn" title="Refresh">&#8635;</button><button class="rv-nav-btn" title="Stop">&#9632;</button><button class="rv-nav-btn" title="First">|&#9664;</button><button class="rv-nav-btn" title="Previous">&#9664;</button><input class="rv-page-input" value="1"/><span class="rv-page-of">of 1</span><button class="rv-nav-btn" title="Next">&#9654;</button><button class="rv-nav-btn" title="Last">&#9654;|</button><div class="rv-toolbar-sep"></div><select class="rv-export-select"><option>Export to the selec...</option><option>PDF</option><option>Excel</option><option>Word</option><option>CSV</option></select><button class="rv-toolbar-btn">Export</button><div class="rv-toolbar-sep"></div><button class="rv-icon-btn" title="Print">&#128438;</button><button class="rv-icon-btn" title="Toggle layout">&#9707;</button></div><div class="rv-body"><div class="rv-sidebar"><div class="rv-tree-root">Finalize Checks</div><div class="rv-tree-child">Check Register Vouchers</div></div><div class="rv-main"><div class="rv-page"><div class="rv-hdr"><div class="rv-hdr-line"><strong>A/P Voucher Register Pay Date 9/10/2026</strong></div><div class="rv-hdr-line">1 Saint Michael Church</div><div class="rv-hdr-line">Fiscal Year 23-24 Period 1 July CD 0000022</div><div class="rv-hdr-line">1-10180 ACB savings</div></div><table class="rv-tbl"><thead><tr><th style="width:110px">Vendor<br>Invoice #</th><th style="width:200px">Description</th><th style="width:80px">Invoice Date</th><th style="width:80px">Due Date</th><th style="width:200px">Account</th><th class="r" style="width:80px">Amount</th></tr></thead><tbody><tr class="rv-vendor-row"><td colspan="6">ACH Vendor</td></tr><tr><td style="padding-left:16px">2</td><td>ACH</td><td>12/17/2020</td><td>12/17/2020</td><td>1-0-30-52160 Computer Supplies</td><td class="r">$10.00</td></tr><tr class="rv-vendor-total"><td colspan="1"><strong>ACH Vendor</strong></td><td colspan="3"></td><td style="text-align:right;padding-right:8px">Voucher Total</td><td class="r"><span class="underline">$10.00</span></td></tr><tr><td colspan="6" style="padding:6px 0 0"></td></tr><tr class="rv-section-total"><td colspan="5">Total for Vouchers</td><td class="r"><span class="underline">$10.00</span></td></tr><tr class="rv-section-total"><td colspan="5">Total for Bank Including Checks</td><td class="r"><span class="underline">$10.00</span></td></tr></tbody></table><div class="rv-footer-note"><span>Report created on 9/10/2026 7:32 AM</span><span>Page 1 of 1</span></div></div></div></div></body></html>';
+  }
+  document.getElementById('finalize-modal').classList.add('open');
+}
+function closeFinalizeModal(){document.getElementById('finalize-modal').classList.remove('open');}
+function backFromFinalize(){
+  closeFinalizeModal();
+  document.getElementById('voucher-modal').classList.add('open');
+}
+var _postSrcdocSet=false;
+function openPostModal(){
+  closeFinalizeModal();
+  var frame=document.getElementById('post-frame');
+  if(frame&&!_postSrcdocSet){
+    _postSrcdocSet=true;
+    frame.srcdoc='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,Helvetica,sans-serif;font-size:12px;background:#d0d0d0;height:100vh;display:flex;flex-direction:column;overflow:hidden}.rv-toolbar{background:#f0f0f0;border-bottom:1px solid #bbb;padding:5px 8px;display:flex;align-items:center;gap:4px;flex-shrink:0;flex-wrap:wrap}.rv-nav-btn{background:#e4e4e4;border:1px solid #bbb;border-radius:2px;padding:2px 6px;cursor:pointer;font-size:11px;line-height:1.3;color:#333}.rv-nav-btn:hover{background:#d8d8d8}.rv-page-input{width:28px;border:1px solid #bbb;border-radius:2px;padding:1px 3px;font-size:11px;text-align:center}.rv-page-of{font-size:11px;color:#444;padding:0 4px}.rv-toolbar-sep{width:1px;height:20px;background:#bbb;margin:0 4px;flex-shrink:0}.rv-export-select{border:1px solid #bbb;border-radius:2px;padding:2px 4px;font-size:11px;background:#e4e4e4;color:#333;cursor:pointer}.rv-toolbar-btn{background:#e4e4e4;border:1px solid #bbb;border-radius:2px;padding:3px 10px;font-size:11px;cursor:pointer;color:#333}.rv-toolbar-btn:hover{background:#d8d8d8}.rv-icon-btn{background:#e4e4e4;border:1px solid #bbb;border-radius:2px;padding:3px 6px;font-size:13px;cursor:pointer;color:#333;line-height:1}.rv-icon-btn:hover{background:#d8d8d8}.rv-body{display:flex;flex:1;overflow:hidden}.rv-sidebar{width:182px;flex-shrink:0;background:#fff;border-right:1px solid #ccc;overflow-y:auto;padding:6px 0}.rv-tree-root{padding:5px 10px;font-size:12px;color:#333;cursor:pointer;display:flex;align-items:center;gap:4px}.rv-tree-root::before{content:"⊟";font-size:11px;color:#555;flex-shrink:0}.rv-tree-child{padding:4px 10px 4px 24px;font-size:12px;color:#0000cc;cursor:pointer;display:flex;align-items:center;gap:5px}.rv-tree-child:hover{background:#eef2ff}.rv-tree-child::before{content:"■";font-size:8px;color:#333;flex-shrink:0}.rv-main{flex:1;overflow-y:auto;background:#d0d0d0;padding:20px;display:flex;justify-content:center;align-items:flex-start}.rv-page{background:#fff;border:2px solid #000080;width:700px;max-width:100%;padding:32px 36px 40px;font-size:11px;color:#000;line-height:1.5;position:relative}.rv-hdr{font-size:11px;margin-bottom:20px;line-height:1.7}.rv-hdr-line{margin:0}.rv-tbl{width:100%;border-collapse:collapse;font-size:11px;margin-top:4px}.rv-tbl th{text-align:left;padding:2px 4px 4px;border-bottom:1px solid #000;font-weight:bold;text-decoration:underline;font-size:11px;white-space:nowrap}.rv-tbl td{padding:2px 4px;font-size:11px;vertical-align:top}.rv-tbl .r{text-align:right}.rv-vendor-row td{font-weight:bold;padding:3px 4px}.rv-vendor-total td{padding:4px 4px 2px}.rv-vendor-total .underline{text-decoration:underline;font-weight:bold}.rv-section-total td{padding:3px 4px}.rv-section-total .underline{text-decoration:underline;font-weight:bold}.rv-footer-note{display:flex;justify-content:space-between;margin-top:20px;font-size:10.5px;color:#333}</style></head><body><div class="rv-toolbar"><button class="rv-nav-btn">&#8635;</button><button class="rv-nav-btn">&#9632;</button><button class="rv-nav-btn">|&#9664;</button><button class="rv-nav-btn">&#9664;</button><input class="rv-page-input" value="1"/><span class="rv-page-of">of 1</span><button class="rv-nav-btn">&#9654;</button><button class="rv-nav-btn">&#9654;|</button><div class="rv-toolbar-sep"></div><select class="rv-export-select"><option>Export to the selec...</option><option>PDF</option><option>Excel</option><option>Word</option></select><button class="rv-toolbar-btn">Export</button><div class="rv-toolbar-sep"></div><button class="rv-icon-btn">&#128438;</button><button class="rv-icon-btn">&#9707;</button></div><div class="rv-body"><div class="rv-sidebar"><div class="rv-tree-root">Finalize Checks</div><div class="rv-tree-child">Check Register Vouchers</div></div><div class="rv-main"><div class="rv-page"><div class="rv-hdr"><div class="rv-hdr-line"><strong>A/P Voucher Register Pay Date 9/10/2026</strong></div><div class="rv-hdr-line">1 Saint Michael Church</div><div class="rv-hdr-line">Fiscal Year 23-24 Period 1 July CD 0000022</div><div class="rv-hdr-line">1-10180 ACB savings</div></div><table class="rv-tbl"><thead><tr><th style="width:110px">Vendor<br>Invoice #</th><th style="width:200px">Description</th><th style="width:80px">Invoice Date</th><th style="width:80px">Due Date</th><th style="width:200px">Account</th><th class="r" style="width:80px">Amount</th></tr></thead><tbody><tr class="rv-vendor-row"><td colspan="6">ACH Vendor</td></tr><tr><td style="padding-left:16px">2</td><td>ACH</td><td>12/17/2020</td><td>12/17/2020</td><td>1-0-30-52160 Computer Supplies</td><td class="r">$10.00</td></tr><tr class="rv-vendor-total"><td><strong>ACH Vendor</strong></td><td colspan="3"></td><td style="text-align:right;padding-right:8px">Voucher Total</td><td class="r"><span class="underline">$10.00</span></td></tr><tr><td colspan="6" style="padding:6px 0 0"></td></tr><tr class="rv-section-total"><td colspan="5">Total for Vouchers</td><td class="r"><span class="underline">$10.00</span></td></tr><tr class="rv-section-total"><td colspan="5">Total for Bank Including Checks</td><td class="r"><span class="underline">$10.00</span></td></tr></tbody></table><div class="rv-footer-note"><span>Report created on 9/10/2026 7:33 AM</span><span>Page 1 of 1</span></div></div></div></div></body></html>';
+  }
+  document.getElementById('post-modal').classList.add('open');
+}
+function closePostModal(){document.getElementById('post-modal').classList.remove('open');}
+function backFromPost(){
+  closePostModal();
+  document.getElementById('finalize-modal').classList.add('open');
+}
+function downloadFinalizeReport(){
+  /* Prototype: simulate download by briefly flashing the button — real impl would generate/fetch a PDF */
+  var a=document.createElement('a');
+  a.href='data:text/plain;charset=utf-8,ACH+Voucher+Register+Report';
+  a.download='ACH_Voucher_Register_9-10-2026.txt';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+}
+function completePaymentFlow(){
+  closePostModal();
+  closeFinalizeModal();
+  closeVoucherModal();
+  closeAchModal();
+  closePayModal();
+  closeAlertModal();
+}
+/* ── Recon warning state cycling — Financial KPI v3 demo ──
+   Threshold logic: unreconciled balance ÷ total cash
+     clean : ≤ 5%   → no flag, show months normally
+     amber : >5–15% → amber ⚠, months visible, tooltip shows acct detail + %
+     red   : >15%   → red 🔴, suppress months (→ "—"), inline alert with count + %
+   Mock data (total cash = $3,224,350):
+     clean : $0 unreconciled — 0 accts (0%)
+     amber : $294,000 unreconciled — 1 acct (9.1%)
+     red   : $741,800 unreconciled — 5 accts (23.0%)
+*/
+var _reconStateIdx=0;
+var _reconStateData=[
+  {label:'All reconciled',  icon:'check_circle', state:'clean', pct:0,    accts:0},
+  {label:'9.1% \u00b7 1 acct',   icon:'warning',     state:'amber', pct:9.1,  accts:1},
+  {label:'23% \u00b7 5 accts',   icon:'error',       state:'red',   pct:23.0, accts:5}
+];
+function cycleReconState(){
+  _reconStateIdx=(_reconStateIdx+1)%_reconStateData.length;
+  var d=_reconStateData[_reconStateIdx];
+  var lbl=document.getElementById('recon-demo-lbl');
+  var ic=document.getElementById('recon-demo-ic');
+  var btn=document.getElementById('recon-demo-btn');
+  if(lbl)lbl.textContent=d.label;
+  if(ic)ic.textContent=d.icon;
+  if(btn){
+    if(d.state==='clean'){
+      btn.style.cssText='display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 9px;border:1px solid #b7dfc4;border-radius:6px;background:#f0faf1;font-size:11px;font-weight:600;color:#1a7f3c;cursor:pointer;font-family:\'Red Hat Text\',sans-serif;white-space:nowrap';
+      if(ic)ic.style.color='#1a7f3c';
+    } else if(d.state==='amber'){
+      btn.style.cssText='display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 9px;border:1px solid #eed5b0;border-radius:6px;background:#fff8e1;font-size:11px;font-weight:600;color:#b7620a;cursor:pointer;font-family:\'Red Hat Text\',sans-serif;white-space:nowrap';
+      if(ic)ic.style.color='#e67e22';
+    } else {
+      btn.style.cssText='display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 9px;border:1px solid #f5a9a0;border-radius:6px;background:#feeceb;font-size:11px;font-weight:600;color:#c0392b;cursor:pointer;font-family:\'Red Hat Text\',sans-serif;white-space:nowrap';
+      if(ic)ic.style.color='#c0392b';
+    }
+  }
+  applyReconState(d.state, d.pct, d.accts);
+}
+function applyReconState(state, pct, accts){
+  var ww=document.getElementById('kpi3-warn-wrap');
+  var ve=document.getElementById('kpi3-val');
+  var me=document.getElementById('kpi3-meta');
+  var de=document.getElementById('kpi3-degrade');
+  if(!ww||!ve||!me||!de)return;
+  /* Reset */
+  ve.className='kpi-card-val';
+  me.style.display='';
+  de.style.display='none';
+  de.innerHTML='';
+  var infoTip='<span class="kpi-info-wrap" tabindex="0"><span class="msr" style="font-size:14px">info</span><span class="kpi-info-tip">Total cash \u00f7 avg monthly operating expenses over the last 3 months</span></span>';
+  var normalVal='9 <span style="font-size:13px;font-weight:500;color:#606060;letter-spacing:0">months</span>';
+  var normalMeta='<span class="kpi-card-py">of operating runway</span>'+infoTip;
+  if(state==='clean'){
+    /* No flag — all accounts reconciled, no warning icon */
+    ww.innerHTML='';
+    ve.innerHTML=normalVal;
+    me.innerHTML=normalMeta;
+  } else if(state==='amber'){
+    /* >5% and ≤15% — amber warning, months still shown, tooltip with detail + % */
+    var pctStr=pct.toFixed(1)+'%';
+    var unreconAmt='$294,000';
+    ww.innerHTML=
+      '<span class="msr fill">warning</span>'+
+      '<div class="kpi-warn-tip">'+
+        '<div class="kpi-warn-tip-hd"><span class="msr sz16 fill" style="color:#e67e22">warning</span> Unreconciled Account</div>'+
+        '<div class="kpi-warn-tip-body">'+
+          '<strong>'+pctStr+' of total cash</strong> ('+unreconAmt+') is in accounts not yet reconciled. '+
+          'The runway figure may not reflect the true position.'+
+        '</div>'+
+        '<div class="kpi-warn-tip-acct">'+
+          '<div class="kpi-warn-tip-acct-name">Payroll Checking \u00b7\u00b73355</div>'+
+          '<div class="kpi-warn-tip-acct-date">Unreconciled balance: '+unreconAmt+' \u00b7 Last reconciled: Jul 26, 2026 \u2014 31 days ago</div>'+
+        '</div>'+
+      '</div>';
+    ve.innerHTML=normalVal;
+    me.innerHTML=normalMeta;
+  } else if(state==='red'){
+    /* >15% — red, suppress months, inline alert */
+    var pctStr=Math.round(pct)+'%';
+    var acctLabel=accts+' acct'+(accts!==1?'s':'');
+    var unreconAmt='$741,800';
+    ww.innerHTML=
+      '<span class="msr fill" style="color:#c0392b">error</span>';
+    ve.className='kpi-card-val kpi-val-unavail';
+    ve.innerHTML='\u2014';
+    me.style.display='none';
+    de.style.display='';
+    de.innerHTML=
+      '<div class="kpi-card-degrade">'+
+        '<div class="kpi-card-degrade-hd">Cash runway unavailable</div>'+
+        '<div class="kpi-card-degrade-body">'+
+          acctLabel+' \u00b7 '+pctStr+' of total cash ('+unreconAmt+') is unreconciled. '+
+          'The runway figure cannot be reliably calculated.'+
+        '</div>'+
+        '<button class="kpi-card-degrade-cta" onclick="void(0)"><span class="msr sz16">open_in_new</span> Review in Bank Account Mgmt</button>'+
+      '</div>';
+  }
+}
+/* ── KPI v4 — 5-tier recon warning demo ── */
+var _recon4TierIdx=0;
+var _recon4TierData=[
+  {label:'Tier 1 \u00b7 1 acct',tier:1},
+  {label:'Tier 2 \u00b7 5 accts',tier:2},
+  {label:'Tier 3 \u00b7 47 accts',tier:3},
+  {label:'Tier 4 \u00b7 118 accts',tier:4},
+  {label:'Tier 5 \u00b7 All 120',tier:5}
+];
+function cycleReconState4(){
+  _recon4TierIdx=(_recon4TierIdx+1)%_recon4TierData.length;
+  var d=_recon4TierData[_recon4TierIdx];
+  var lbl=document.getElementById('recon4-demo-lbl');
+  var ic=document.getElementById('recon4-demo-ic');
+  var btn=document.getElementById('recon4-demo-btn');
+  if(lbl)lbl.textContent=d.label;
+  if(btn&&ic){
+    if(d.tier<=2){
+      btn.style.cssText="display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 9px;border:1px solid #eed5b0;border-radius:6px;background:#fff8e1;font-size:11px;font-weight:600;color:#b7620a;cursor:pointer;font-family:'Red Hat Text',sans-serif;white-space:nowrap";
+      ic.textContent='warning';ic.style.color='#e67e22';
+    } else {
+      btn.style.cssText="display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 9px;border:1px solid #f5a9a0;border-radius:6px;background:#feeceb;font-size:11px;font-weight:600;color:#c0392b;cursor:pointer;font-family:'Red Hat Text',sans-serif;white-space:nowrap";
+      ic.textContent='error';ic.style.color='#c0392b';
+    }
+  }
+  applyReconTier4(d.tier);
+}
+function applyReconTier4(tier){
+  var ww=document.getElementById('kpi4-warn-wrap');
+  var ve=document.getElementById('kpi4-val');
+  var me=document.getElementById('kpi4-meta');
+  var de=document.getElementById('kpi4-degrade');
+  if(!ww||!ve||!me||!de)return;
+  ve.className='kpi-card-val';
+  me.style.display='';
+  de.style.display='none';
+  de.innerHTML='';
+  var infoTip='<span class="kpi-info-wrap" tabindex="0"><span class="msr" style="font-size:14px">info</span><span class="kpi-info-tip">Total cash \u00f7 avg monthly operating expenses over the last 3 months</span></span>';
+  var normalVal='9 <span style="font-size:13px;font-weight:500;color:#606060;letter-spacing:0">months</span>';
+  var normalMeta='<span class="kpi-card-py">of operating runway</span>'+infoTip;
+  if(tier===1){
+    ww.innerHTML='<span class="msr fill">warning</span><div class="kpi-warn-tip"><div class="kpi-warn-tip-hd"><span class="msr sz16 fill" style="color:#e67e22">warning</span> Unreconciled Accounts</div><div class="kpi-warn-tip-body">The cash figure may not reflect the true position. The following account has not been reconciled within the 30-day threshold:</div><div class="kpi-warn-tip-acct"><div class="kpi-warn-tip-acct-name">Payroll Checking \u00b7\u00b73355</div><div class="kpi-warn-tip-acct-date">Last reconciled: Jul 26, 2026 \u2014 31 days ago</div></div></div>';
+    ve.innerHTML=normalVal;me.innerHTML=normalMeta;
+  } else if(tier===2){
+    ww.innerHTML='<span class="msr fill">warning</span><div class="kpi-warn-tip"><div class="kpi-warn-tip-hd"><span class="msr sz16 fill" style="color:#e67e22">warning</span> 5 Unreconciled Accounts</div><div class="kpi-warn-tip-body">The cash figure may not reflect the true position. 5 accounts exceed the 30-day threshold \u2014 showing most stale first:</div><div class="kpi-warn-tip-acct"><div class="kpi-warn-tip-acct-name">Missions Savings \u00b7\u00b71188</div><div class="kpi-warn-tip-acct-date" style="color:#c0392b">Last reconciled: Jun 25, 2026 \u2014 62 days ago</div></div><div class="kpi-warn-tip-acct" style="margin-top:4px"><div class="kpi-warn-tip-acct-name">Operating Checking \u00b7\u00b74021</div><div class="kpi-warn-tip-acct-date" style="color:#c0392b">Last reconciled: Jul 12, 2026 \u2014 45 days ago</div></div><div class="kpi-warn-tip-acct" style="margin-top:4px"><div class="kpi-warn-tip-acct-name">Payroll Checking \u00b7\u00b73355</div><div class="kpi-warn-tip-acct-date">Last reconciled: Jul 26, 2026 \u2014 31 days ago</div></div><div style="font-size:11px;color:#4b6ec3;margin-top:7px;font-weight:600;cursor:pointer">+ 2 more \u00b7 View all in Bank Account Mgmt \u2192</div></div>';
+    ve.innerHTML=normalVal;me.innerHTML=normalMeta;
+  } else if(tier===3){
+    ww.innerHTML='<span class="msr fill" style="color:#c0392b">error</span><div class="kpi-warn-tip"><div class="kpi-warn-tip-hd" style="color:#c0392b"><span class="msr sz16 fill" style="color:#c0392b">error</span> 47 Unreconciled Accounts</div><div class="kpi-warn-tip-body">A large number of accounts exceed the 30-day threshold. The cash position shown may be significantly inaccurate. Immediate systemic review is required.</div><button class="kpi-warn-tip-cta" onclick="void(0)"><span class="msr sz16">open_in_new</span> Review in Bank Account Mgmt</button></div>';
+    ve.innerHTML=normalVal;me.innerHTML=normalMeta;
+  } else if(tier===4){
+    ww.innerHTML='<span class="msr fill" style="color:#c0392b">error</span><div class="kpi-warn-tip"><div class="kpi-warn-tip-hd" style="color:#c0392b"><span class="msr sz16 fill" style="color:#c0392b">error</span> 118 Unreconciled Accounts</div><div class="kpi-warn-tip-body">Nearly all bank accounts are unreconciled. The cash position figure is unreliable. See the alert below.</div></div>';
+    ve.className='kpi-card-val kpi-val-degraded';
+    ve.innerHTML='9 <span style="font-size:13px;font-weight:500">months</span>';
+    me.style.display='none';
+    de.style.display='';
+    de.innerHTML='<div class="kpi-card-degrade"><div class="kpi-card-degrade-hd">Data integrity compromised</div><div class="kpi-card-degrade-body">118 of 120 accounts are unreconciled. This figure may be materially inaccurate.</div><button class="kpi-card-degrade-cta" onclick="void(0)"><span class="msr sz16">open_in_new</span> Review now in Bank Account Mgmt</button></div>';
+  } else if(tier===5){
+    ww.innerHTML='<span class="msr fill" style="color:#c0392b">error</span>';
+    ve.className='kpi-card-val kpi-val-unavail';
+    ve.innerHTML='\u2014';
+    me.style.display='none';
+    de.style.display='';
+    de.innerHTML='<div class="kpi-card-degrade"><div class="kpi-card-degrade-hd">Unable to calculate</div><div class="kpi-card-degrade-body">All 120 bank accounts are unreconciled. No reliable cash figure can be shown.</div><button class="kpi-card-degrade-cta" onclick="void(0)"><span class="msr sz16">open_in_new</span> Review now in Bank Account Mgmt</button></div>';
+  }
+}
+/* ── Global interactive tooltip ─────────────────────────────────────────────
+   Replaces CSS :hover so .kpi-warn-tip stays open when the mouse moves into
+   it (enabling clicks on account cards and CTA buttons inside the tip).
+   Uses a 200 ms close-delay so the mouse can travel from icon → tooltip
+   without the tooltip collapsing.
+*/
+(function(){
+  var _tt={};
+  document.addEventListener('mouseover',function(e){
+    var wrap=e.target.closest?e.target.closest('.kpi-warn-wrap'):null;
+    if(!wrap)return;
+    var id=wrap.id||'_';
+    clearTimeout(_tt[id]);
+    var tip=wrap.querySelector('.kpi-warn-tip');
+    if(tip)tip.style.display='block';
+  });
+  document.addEventListener('mouseout',function(e){
+    var wrap=e.target.closest?e.target.closest('.kpi-warn-wrap'):null;
+    if(!wrap)return;
+    if(wrap.contains(e.relatedTarget))return;/* still inside wrap — ignore */
+    var id=wrap.id||'_';
+    _tt[id]=setTimeout(function(){
+      var tip=wrap.querySelector('.kpi-warn-tip');
+      if(tip)tip.style.display='none';
+    },200);
+  });
+})();
+/* ── KPI v5 — 2-colour: Amber (<3 accts) · Red (>5 accts) ──────────────────
+   Demo states: Amber 1 → Amber 2 → Red 6 → Clean → Amber 1 …
+   Account cards show a right chevron indicating they are clickable/navigable.
+*/
+var _recon5StateIdx=1;/* start at amber-1 so the clickable chevron is visible immediately */
+var _recon5StateData=[
+  {label:'No warning',  icon:'check_circle', state:'clean', accts:0},
+  {label:'\u26a0 1 acct',  icon:'warning',     state:'amber', accts:1},
+  {label:'\u26a0 2 accts', icon:'warning',     state:'amber', accts:2},
+  {label:'\u25cf 6 accts', icon:'error',       state:'red',   accts:6}
+];
+function cycleReconState5(){
+  _recon5StateIdx=(_recon5StateIdx+1)%_recon5StateData.length;
+  var d=_recon5StateData[_recon5StateIdx];
+  var lbl=document.getElementById('recon5-demo-lbl');
+  var ic=document.getElementById('recon5-demo-ic');
+  var btn=document.getElementById('recon5-demo-btn');
+  if(lbl)lbl.textContent=d.label;
+  if(ic)ic.textContent=d.icon;
+  if(btn){
+    if(d.state==='clean'){
+      btn.style.cssText="display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 9px;border:1px solid #b7dfc4;border-radius:6px;background:#f0faf1;font-size:11px;font-weight:600;color:#1a7f3c;cursor:pointer;font-family:'Red Hat Text',sans-serif;white-space:nowrap";
+      if(ic)ic.style.color='#1a7f3c';
+    } else if(d.state==='amber'){
+      btn.style.cssText="display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 9px;border:1px solid #eed5b0;border-radius:6px;background:#fff8e1;font-size:11px;font-weight:600;color:#b7620a;cursor:pointer;font-family:'Red Hat Text',sans-serif;white-space:nowrap";
+      if(ic)ic.style.color='#e67e22';
+    } else {
+      btn.style.cssText="display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 9px;border:1px solid #f5a9a0;border-radius:6px;background:#feeceb;font-size:11px;font-weight:600;color:#c0392b;cursor:pointer;font-family:'Red Hat Text',sans-serif;white-space:nowrap";
+      if(ic)ic.style.color='#c0392b';
+    }
+  }
+  applyReconState5(d.state,d.accts);
+}
+function applyReconState5(state,accts){
+  var ww=document.getElementById('kpi5-warn-wrap');
+  var ve=document.getElementById('kpi5-val');
+  var me=document.getElementById('kpi5-meta');
+  var de=document.getElementById('kpi5-degrade');
+  if(!ww||!ve||!me||!de)return;
+  ve.className='kpi-card-val';
+  me.style.display='';
+  de.style.display='none';de.innerHTML='';
+  var infoTip='<span class="kpi-info-wrap" tabindex="0"><span class="msr" style="font-size:14px">info</span><span class="kpi-info-tip">Avg monthly operating expenses calculated using May \u2013 Jul 2026 (3 months).</span></span>';
+  var normalVal='9 <span style="font-size:13px;font-weight:500;color:#606060;letter-spacing:0">months</span>';
+  var normalMeta='<span class="kpi-card-py">of operating runway</span>'+infoTip;
+  function acctCard(name,date,isFirst,dateRed){
+    var mt=isFirst?'':'margin-top:4px;';
+    var dc=dateRed?'color:#c0392b;':'';
+    return '<div class="kpi-warn-tip-acct clickable" onclick="void(0)" role="button" tabindex="0" style="'+mt+'">'+
+      '<div style="flex:1;min-width:0">'+
+        '<div class="kpi-warn-tip-acct-name">'+name+'</div>'+
+        '<div class="kpi-warn-tip-acct-date" style="'+dc+'">'+date+'</div>'+
+      '</div>'+
+      '<span class="msr" style="font-size:16px;color:#b7620a;flex-shrink:0">chevron_right</span>'+
+    '</div>';
+  }
+  if(state==='clean'){
+    ww.innerHTML='';
+    ve.innerHTML=normalVal;
+    me.innerHTML=normalMeta;
+  } else if(state==='amber'){
+    var hd=(accts===1)?'1 Unreconciled Account':'2 Unreconciled Accounts';
+    var cards='';
+    if(accts>=1)cards+=acctCard('Payroll Checking \u00b7\u00b73355','Last reconciled: Jul 26, 2026 \u2014 31 days ago',true,false);
+    if(accts>=2)cards+=acctCard('Missions Savings \u00b7\u00b71188','Last reconciled: Jun 25, 2026 \u2014 62 days ago',false,true);
+    ww.innerHTML=
+      '<span class="msr fill">warning</span>'+
+      '<div class="kpi-warn-tip">'+
+        '<div class="kpi-warn-tip-hd"><span class="msr sz16 fill" style="color:#e67e22">warning</span> '+hd+'</div>'+
+        '<div class="kpi-warn-tip-body" style="margin-bottom:4px">The cash figure may not reflect the true position.</div>'+
+        cards+
+      '</div>';
+    ve.innerHTML=normalVal;me.innerHTML=normalMeta;
+  } else if(state==='red'){
+    ww.innerHTML=
+      '<span class="msr fill" style="color:#c0392b">error</span>'+
+      '<div class="kpi-warn-tip">'+
+        '<div class="kpi-warn-tip-hd" style="color:#c0392b"><span class="msr sz16 fill" style="color:#c0392b">error</span> 6 Unreconciled Accounts</div>'+
+        '<div class="kpi-warn-tip-body">A significant number of accounts exceed the 30\u2011day reconciliation threshold. The cash position shown may be inaccurate.</div>'+
+        '<button class="kpi-warn-tip-cta" onclick="void(0)"><span class="msr sz16">open_in_new</span> Review in Bank Account Mgmt</button>'+
+      '</div>';
+    ve.innerHTML=normalVal;me.innerHTML=normalMeta;
+  }
+}
+</script>
+</body>
+</html>
