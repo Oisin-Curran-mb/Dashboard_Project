@@ -4376,7 +4376,7 @@
 .fkp-row{
   flex:1 1 auto;
   display:grid;
-  grid-template-columns:repeat(4,1fr);
+  grid-template-columns:repeat(3,1fr);
   gap:10px;
   min-height:0;
 }
@@ -20907,9 +20907,6 @@ function fkpBandHTML(){
     '<div class="fkp-hd">'+
       '<span class="fkp-title">Financial KPI</span>'+
       '<span class="fkp-hd-sp"></span>'+
-      '<button type="button" class="fkp-demo" data-fkp="cycle" data-sev="'+sev+'" data-tip="Prototype control only. Cycles the reconciliation warning through its four states so reviewers can see each one. It does not exist in production." data-tip-plain>'+
-        ICON(d.ic)+'<span>'+fkpEsc(d.lbl)+'</span>'+
-      '</button>'+
       refresh+
     '</div>'+
     '<div class="fkp-row">'+
