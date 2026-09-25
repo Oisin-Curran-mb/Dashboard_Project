@@ -21523,7 +21523,11 @@ function alertsCatHTML(cat,wid){
     var cfgKey=cat.id+":"+idx;
     var cfg=AL_ITEM_MODALS[cfgKey]||null;
     var btns;
-    if(cfg&&cfg.type==="approval"){
+    if(cfg&&cfg.btnSec){
+      btns='<div class="al-item-actions">'
+        +'<button class="al-act-btn sec" data-action="al-item" data-wid="'+wid+'" data-cat="'+cat.id+'" data-idx="'+idx+'"><span class="material-symbols-rounded">visibility</span>'+cfg.btnSec.label+'</button>'
+        +'</div>';
+    } else if(cfg&&cfg.type==="approval"){
       btns='<div class="al-item-actions">'
         +'<button class="al-act-btn sec" data-action="al-item" data-wid="'+wid+'" data-cat="'+cat.id+'" data-idx="'+idx+'"><span class="material-symbols-rounded">visibility</span>Review</button>'
         +'<button class="al-act-btn pri" data-action="al-item" data-wid="'+wid+'" data-cat="'+cat.id+'" data-idx="'+idx+'"><span class="material-symbols-rounded">check_circle</span>Approve</button>'
@@ -21784,7 +21788,7 @@ var AL_ITEM_MODALS={
       {lbl:"Breach Amount",val:"$35,200 (135.8% of income)",err:true},
       {lbl:"First Detected",val:"Today, Aug 26, 2026",err:false}
     ],
-    btnPri:{icon:"arrow_forward",label:"Review Restricted Fund"}
+    btnSec:{label:"Review Fund"}
   },
 
   /* ── Overdue Payables ── */
@@ -21926,7 +21930,7 @@ var AL_ITEM_MODALS={
 
   /* ── Purchase Order Queue ── */
   "al-cat-5:0":{
-    type:"approval",
+    btnSec:{label:"Review"},
     sevLabel:"Attention — Approval Stalled",
     invoiceNo:"INV-2024-4433",
     badge:"Pending Approval",
@@ -21951,7 +21955,7 @@ var AL_ITEM_MODALS={
     ]
   },
   "al-cat-5:1":{
-    type:"approval",
+    btnSec:{label:"Review"},
     sevLabel:"Attention — Approval Stalled",
     invoiceNo:"PO-2024-0891",
     badge:"Pending Approval",
