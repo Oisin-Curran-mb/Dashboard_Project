@@ -4376,7 +4376,7 @@
 .fkp-row{
   flex:1 1 auto;
   display:grid;
-  grid-template-columns:repeat(4,1fr);
+  grid-template-columns:repeat(3,1fr);
   gap:10px;
   min-height:0;
 }
@@ -20907,14 +20907,10 @@ function fkpBandHTML(){
     '<div class="fkp-hd">'+
       '<span class="fkp-title">Financial KPI</span>'+
       '<span class="fkp-hd-sp"></span>'+
-      '<button type="button" class="fkp-demo" data-fkp="cycle" data-sev="'+sev+'" data-tip="Prototype control only. Cycles the reconciliation warning through its four states so reviewers can see each one. It does not exist in production." data-tip-plain>'+
-        ICON(d.ic)+'<span>'+fkpEsc(d.lbl)+'</span>'+
-      '</button>'+
       refresh+
     '</div>'+
     '<div class="fkp-row">'+
       FKP_TILES.map(fkpTileHTML).join("")+
-      fkpCashHTML()+
     '</div>'+
   '</div>';
 }
@@ -21495,7 +21491,7 @@ var AL_CATS=[
     items:["Payroll Checking ··3355 — last reconciled Jul 26, 2026 (31 days ago)"]},
   {id:"al-cat-4",sev:"warn",action:false,title:"Budget Exceeded",sub:"1 fund has exceeded its annual budget allocation",
     items:["Worship Arts — $67,800 actual vs $60,500 budget (112%)"]},
-  {id:"al-cat-5",sev:"warn",action:true,title:"Stale Approval Queue",sub:"2 items waiting beyond the 5-business-day threshold",
+  {id:"al-cat-5",sev:"warn",action:true,title:"Purchase Order Queue",sub:"2 items waiting beyond the 5-business-day threshold",
     items:[
       "INV-2024-4433 · $18,500 · 8 days waiting · Approver: Sarah J.",
       "PO-2024-0891 · $6,200 · 6 days waiting · Approver: Michael R."
@@ -21527,7 +21523,11 @@ function alertsCatHTML(cat,wid){
     var cfgKey=cat.id+":"+idx;
     var cfg=AL_ITEM_MODALS[cfgKey]||null;
     var btns;
-    if(cfg&&cfg.type==="approval"){
+    if(cfg&&cfg.btnSec){
+      btns='<div class="al-item-actions">'
+        +'<button class="al-act-btn sec" data-action="al-item" data-wid="'+wid+'" data-cat="'+cat.id+'" data-idx="'+idx+'"><span class="material-symbols-rounded">visibility</span>'+cfg.btnSec.label+'</button>'
+        +'</div>';
+    } else if(cfg&&cfg.type==="approval"){
       btns='<div class="al-item-actions">'
         +'<button class="al-act-btn sec" data-action="al-item" data-wid="'+wid+'" data-cat="'+cat.id+'" data-idx="'+idx+'"><span class="material-symbols-rounded">visibility</span>Review</button>'
         +'<button class="al-act-btn pri" data-action="al-item" data-wid="'+wid+'" data-cat="'+cat.id+'" data-idx="'+idx+'"><span class="material-symbols-rounded">check_circle</span>Approve</button>'
@@ -21788,7 +21788,7 @@ var AL_ITEM_MODALS={
       {lbl:"Breach Amount",val:"$35,200 (135.8% of income)",err:true},
       {lbl:"First Detected",val:"Today, Aug 26, 2026",err:false}
     ],
-    btnPri:{icon:"arrow_forward",label:"Review Restricted Fund"}
+    btnSec:{label:"Review Fund"}
   },
 
   /* ── Overdue Payables ── */
@@ -21804,7 +21804,7 @@ var AL_ITEM_MODALS={
       {lbl:"Vendor",val:"Acme Audio LLC",err:false},
       {lbl:"Due Date",val:"Aug 4, 2026",err:false}
     ],
-    btnPri:{icon:"arrow_forward",label:"Pay Invoice"}
+    btnPri:{icon:"arrow_forward",label:"Process Payment"}
   },
   "al-cat-2:1":{
     sevLabel:"Critical — Payment Overdue",
@@ -21818,7 +21818,7 @@ var AL_ITEM_MODALS={
       {lbl:"Vendor",val:"City Building Services",err:false},
       {lbl:"Due Date",val:"Aug 10, 2026",err:false}
     ],
-    btnPri:{icon:"arrow_forward",label:"Pay Invoice"}
+    btnPri:{icon:"arrow_forward",label:"Process Payment"}
   },
   "al-cat-2:2":{
     sevLabel:"Critical — Payment Overdue",
@@ -21832,7 +21832,7 @@ var AL_ITEM_MODALS={
       {lbl:"Vendor",val:"Grace Print & Design",err:false},
       {lbl:"Due Date",val:"Aug 17, 2026",err:false}
     ],
-    btnPri:{icon:"arrow_forward",label:"Pay Invoice"}
+    btnPri:{icon:"arrow_forward",label:"Process Payment"}
   },
 
   /* ── Receivable Invoices Outstanding ── */
@@ -21928,9 +21928,9 @@ var AL_ITEM_MODALS={
     btnPri:{icon:"arrow_forward",label:"View Invoice"}
   },
 
-  /* ── Stale Approval Queue ── */
+  /* ── Purchase Order Queue ── */
   "al-cat-5:0":{
-    type:"approval",
+    btnSec:{label:"Review"},
     sevLabel:"Attention — Approval Stalled",
     invoiceNo:"INV-2024-4433",
     badge:"Pending Approval",
@@ -21955,7 +21955,7 @@ var AL_ITEM_MODALS={
     ]
   },
   "al-cat-5:1":{
-    type:"approval",
+    btnSec:{label:"Review"},
     sevLabel:"Attention — Approval Stalled",
     invoiceNo:"PO-2024-0891",
     badge:"Pending Approval",
